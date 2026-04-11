@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjRjRDOUQ2Ii8+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjE3MiIgaGVpZ2h0PSIxNzIiIHJ4PSIzNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0UyNzIzIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8dGV4dCB4PSI5MCIgeT0iMTE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI3NCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9Ii00Ij5FPHRzcGFuIGZpbGw9IiM3QjNGM0YiPk08L3RzcGFuPjwvdGV4dD4KICA8dGV4dCB4PSI5MCIgeT0iMTM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9IjYiIG9wYWNpdHk9IjAuNyI+RUxWQTwvdGV4dD4KPC9zdmc+">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjRjRDOUQ2Ii8+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjE3MiIgaGVpZ2h0PSIxNzIiIHJ4PSIzNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0UyNzIzIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8dGV4dCB4PSI5MCIgeT0iMTE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI3NCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9Ii00Ij5FPHRzcGFuIGZpbGw9IiM3QjNGM0YiPk08L3RzcGFuPjwvdGV4dD4KICA8dGV4dCB4PSI5MCIgeT0iMTM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9IjYiIG9wYWNpdHk9IjAuNyI+RUxWQTwvdGV4dD4KPC9zdmc+">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Elva's Hub">
+<meta name="theme-color" content="#F4C9D6">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Elva's Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -1319,7 +1325,7 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 .tag-pill-item:hover { background: rgba(196,154,114,0.2); }
 .tag-pill-item .tag-x { font-size: 11px; opacity: 0.6; margin-left: 2px; }
 .tag-input-wrap { display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
-  background: var(--cream); border: 1px solid var(--border);
+  background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r-sm); padding: 6px 10px; min-height: 38px;
   cursor: text; transition: border-color var(--dur); }
 .tag-input-wrap:focus-within { border-color: var(--mocha); }
@@ -2656,6 +2662,50 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
+
+<!-- PASSWORD LOCK SCREEN -->
+<div id="lock-screen" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1a0f08 0%,#2b1d12 50%,#1a0f08 100%);display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;">
+  <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(196,154,114,0.2);border-radius:20px;padding:40px 36px;width:320px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px">&#128272;</div>
+    <div style="font-family:'Libre Baskerville',serif;font-size:22px;color:#f5ede0;margin-bottom:6px;">Elva&#39;s Planner</div>
+    <div style="font-size:12px;color:rgba(196,154,114,0.7);margin-bottom:28px;letter-spacing:1px">ENTER PASSWORD TO CONTINUE</div>
+    <input id="lock-input" type="password" placeholder="Password"
+      style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(196,154,114,0.3);border-radius:10px;padding:13px 16px;color:#f5ede0;font-family:'Jost',sans-serif;font-size:15px;outline:none;margin-bottom:12px;text-align:center;letter-spacing:3px;"
+      onkeydown="if(event.key===&#39;Enter&#39;)checkLock()"/>
+    <div id="lock-error" style="color:#f87171;font-size:12px;margin-bottom:12px;height:16px;"></div>
+    <button onclick="checkLock()" style="width:100%;padding:13px;background:linear-gradient(135deg,#c49a72,#b8895e);border:none;border-radius:10px;color:#1a0f08;font-family:'Jost',sans-serif;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1px;">UNLOCK</button>
+    <div style="margin-top:20px;font-size:10px;color:rgba(196,154,114,0.4);letter-spacing:1px">YOUR DATA STAYS ON THIS DEVICE</div>
+  </div>
+</div>
+<script>
+(function() {
+  const PW_HASH = 'e312ecd12883999d2625178250bac01049a8722846c9b92503724147e3cfddc9';
+  const SK = 'elva_auth_v1';
+  if (sessionStorage.getItem(SK) === '1') {
+    document.getElementById('lock-screen').remove(); return;
+  }
+  window.checkLock = async function() {
+    const val = document.getElementById('lock-input').value;
+    if (!val) return;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+    const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    if (hash === PW_HASH) {
+      sessionStorage.setItem(SK, '1');
+      const ls = document.getElementById('lock-screen');
+      ls.style.transition = 'opacity .4s'; ls.style.opacity = '0';
+      setTimeout(() => ls.remove(), 400);
+    } else {
+      const err = document.getElementById('lock-error');
+      const inp = document.getElementById('lock-input');
+      err.textContent = 'Incorrect password';
+      inp.style.borderColor = '#f87171'; inp.value = '';
+      setTimeout(() => { err.textContent = ''; inp.style.borderColor = 'rgba(196,154,114,0.3)'; }, 2000);
+    }
+  };
+  setTimeout(() => document.getElementById('lock-input')?.focus(), 100);
+})();
+</script>
+
 <button class="hamburger" id="hamburger" onclick="toggleMobile()">&#9776;</button>
 
 <!-- SIDEBAR -->
@@ -10946,7 +10996,7 @@ const CalSync = (() => {
 
     const params = new URLSearchParams({
       client_id:             _cfg.clientId,
-      redirect_uri:          _cfg.proxyUrl + '/oauth/callback',
+      redirect_uri:          _cfg.proxyUrl.replace(/\/+$/, '') + '/oauth/callback',
       response_type:         'code',
       scope:                 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
       access_type:           'offline',
@@ -10960,15 +11010,27 @@ const CalSync = (() => {
     const popup = window.open('https://accounts.google.com/o/oauth2/v2/auth?' + params,
       'gcal_auth', 'width=520,height=640,left=200,top=80');
 
-    window.addEventListener('message', async ev => {
+    const _oauthHandler = async ev => {
       try {
-        if (new URL(_cfg.proxyUrl).origin !== ev.origin &&
-            window.location.origin !== ev.origin) return;
-        if (!ev.data?.code) return;
+        // Accept message from proxy origin or same origin
+        const proxyOrigin = new URL(_cfg.proxyUrl).origin;
+        const validOrigin = ev.origin === proxyOrigin ||
+                            ev.origin === window.location.origin ||
+                            ev.origin === 'null'; // file:// origin
+        if (!validOrigin && ev.data?.code) {
+          // Still try if we got a code — some browsers report wrong origin
+        } else if (!validOrigin) return;
+        if (!ev.data?.code && !ev.data?.error) return;
+        window.removeEventListener('message', _oauthHandler);
         popup?.close();
+        if (ev.data.error) { log('OAuth error: ' + ev.data.error, 'err'); return; }
         await _exchangeCode(ev.data.code, sessionStorage.getItem('_csp_v'));
       } catch(e) { log('OAuth message error: ' + e.message, 'err'); }
-    }, { once: true });
+    };
+    window.addEventListener('message', _oauthHandler);
+
+    // Timeout after 5 minutes
+    setTimeout(() => window.removeEventListener('message', _oauthHandler), 300000);
 
     // Fallback for same-origin postMessage
     window._elvaOAuthCode = async (code) => _exchangeCode(code, sessionStorage.getItem('_csp_v'));
@@ -10980,7 +11042,7 @@ const CalSync = (() => {
     const res = await fetch(_cfg.proxyUrl + '/oauth/token', {
       method:  'POST',
       headers: { 'Content-Type':'application/json' },
-      body:    JSON.stringify({ code, code_verifier: verifier, redirect_uri: _cfg.proxyUrl + '/oauth/callback' })
+      body:    JSON.stringify({ code, code_verifier: verifier, redirect_uri: _cfg.proxyUrl.replace(/\/+$/, '') + '/oauth/callback' })
     });
     if (!res.ok) { log('Token exchange failed: ' + res.status, 'err'); return; }
     const t = await res.json();
