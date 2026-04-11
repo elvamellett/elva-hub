@@ -144,7 +144,7 @@ body {
   transition: all var(--dur) var(--ease);
 }
 .add-task-btn:hover { background: rgba(100,70,40,0.16); color: #2e1a0a; }
-.main { margin-left: 220px; min-height: 100vh; display: flex; flex-direction: column; }
+.main { margin-left: 220px; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 .page-header {
   padding: 26px 38px 20px;
   border-bottom: 1px solid var(--border);
@@ -493,14 +493,57 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 /* ── Warm hover tint on touch ── */
 .task-item:active,.cd-card:active,.history-row:active{opacity:0.85}
 
-@media(max-width:768px){
-  .sidebar{transform:translateX(-100%);transition:transform 0.28s}.sidebar.open{transform:translateX(0)}
-  .main{margin-left:0;margin-top:0}.hamburger{display:flex}
-  .page-header{padding:16px 16px 14px 56px}.page-title{font-size:24px}
-  .dash-top{grid-template-columns:1fr 1fr}.dash-mid,.dash-bottom{grid-template-columns:1fr}
-  .daily-layout{grid-template-columns:1fr}
-  .form-row,.form-row-3{grid-template-columns:1fr}
-  .filter-bar{padding:10px 16px}
+/* ── DESKTOP (default) ─────────────────────────────── */
+.main { margin-left: 220px; min-height: 100vh; display: flex; flex-direction: column; flex: 1; }
+.hamburger { display: none; }
+
+/* ── TABLET (≤900px) ───────────────────────────────── */
+@media (max-width: 900px) {
+  .main { margin-left: 180px; }
+  .sidebar { width: 180px; }
+  [style*="padding:0 38px"], [style*="padding:20px 38px"],
+  [style*="padding:22px 38px"], [style*="padding:18px 38px"] {
+    padding-left: 20px !important; padding-right: 20px !important;
+  }
+}
+
+/* ── MOBILE (≤768px) ───────────────────────────────── */
+@media (max-width: 768px) {
+  /* Layout */
+  .sidebar { transform: translateX(-100%); transition: transform 0.28s; z-index: 300; width: 220px !important; }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 40px rgba(0,0,0,.4); }
+  .main { margin-left: 0 !important; }
+  .hamburger { display: flex; }
+  /* Page header */
+  .page-header { padding: 14px 16px 12px 56px; flex-wrap: wrap; gap: 8px; }
+  .page-title { font-size: 22px; }
+  .header-actions { flex-wrap: wrap; gap: 6px; }
+  /* Padding overrides */
+  .page-content { padding-bottom: 80px; }
+  /* Grids */
+    .dash-stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 14px; }
+.daily-morning-bar { flex-direction: column; gap: 10px; }
+  .form-row, .form-row-3, .gcal-config-grid { grid-template-columns: 1fr; }
+  .filter-bar { padding: 8px 12px; gap: 4px; }
+  .filter-chip { padding: 4px 10px; font-size: 10px; }
+    .nh-grid { grid-template-columns: 1fr; }
+  .wt-table-wrap { overflow-x: auto; }
+  .dash-top { grid-template-columns: 1fr 1fr; }
+  .dash-mid, .dash-bottom { grid-template-columns: 1fr; }
+  .dash-quick-grid { grid-template-columns: repeat(3,1fr); }
+  /* Padding */
+  [style*="padding:20px 38px"], [style*="padding:22px 38px"],
+  [style*="padding:18px 38px"], [style*="padding:0 38px"] {
+    padding-left: 14px !important; padding-right: 14px !important;
+  }
+}
+
+/* ── SMALL MOBILE (≤480px) ─────────────────────────── */
+@media (max-width: 480px) {
+  .dash-stats-bar { grid-template-columns: repeat(2,1fr); }
+  .page-header { padding-top: 52px; }
+  .cal-view-toggle { flex-wrap: wrap; }
+  .master-todo-table th:nth-child(3), .master-todo-table td:nth-child(3) { display: none; }
 }
 
 /* ═══ NEW FEATURE STYLES ═══════════════════════════════════════ */
@@ -1787,11 +1830,7 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 
 
 /* ── UNIFIED TODO SYSTEM ── */
-.todo-page-wrap {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-}
+.todo-page-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 .todo-dept-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r-md); padding: 18px 20px;
@@ -2420,9 +2459,7 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
   display: flex; align-items: center; gap: 8px;
   font-size: 12px; color: var(--text); font-weight: 400;
 }
-.daily-v2-grid {
-  display: grid; grid-template-columns: 1fr 340px; gap: 18px;
-}
+.daily-v2-grid { display: grid; grid-template-columns: 1fr 340px; gap: 18px; }
 .daily-v2-main, .daily-v2-aside { display: flex; flex-direction: column; gap: 14px; }
 .daily-section-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -2486,16 +2523,13 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 }
 .daily-note-bullet { color: var(--mocha); flex-shrink: 0; }
 @media (max-width: 768px) {
-  .daily-v2-grid { grid-template-columns: 1fr; }
+  
   .daily-morning-bar { flex-direction: column; align-items: stretch; }
 }
 
 
 /* ── DASHBOARD V2 ──────────────────────────────────── */
 .dash-v2 { max-width: 1100px; padding-top: 8px; }
-.dash-stats-bar {
-  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 14px;
-}
 .dash-stat-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r-md); padding: 14px 16px; text-align: center;
@@ -2518,11 +2552,16 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 .dash-progress-fill  { height: 100%; background: var(--mocha); border-radius: 2px; transition: width .4s; }
 .dash-progress-pct   { font-size: 11px; color: var(--mocha); font-weight: 600; width: 32px; text-align: right; }
 .dash-v2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.dash-v2-col  { display: flex; flex-direction: column; gap: 14px; }
+.dash-v2-col { display: flex; flex-direction: column; gap: 14px; }
 .dash-v2-widget {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r-md); padding: 14px 16px;
 }
+
+/* ── DESKTOP GRID LAYOUTS ──────────────────────────── */
+.daily-v2-main, .daily-v2-aside { display: flex; flex-direction: column; gap: 14px; }
+.dash-quick-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+
 .dash-widget-urgent { border-color: rgba(181,53,53,.3); background: rgba(181,53,53,.04); }
 .dash-widget-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -2555,8 +2594,7 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 .dash-quick-btn span:first-child { font-size: 18px; }
 @media (max-width: 768px) {
   .dash-stats-bar { grid-template-columns: repeat(2,1fr); }
-  .dash-v2-grid   { grid-template-columns: 1fr; }
-}
+  }
 
 
 /* ── NOTIFICATION HUB ────────────────────────────────── */
@@ -2915,7 +2953,7 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
     </div>
 
     <!-- Unified tab bar -->
-    <div style="padding:0 38px;border-bottom:1px solid var(--border);background:var(--white);position:sticky;top:56px;z-index:40;display:flex;align-items:center;justify-content:space-between">
+    <div style="padding:0 38px;border-bottom:1px solid var(--border);background:var(--white);position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;gap:0" id="work-tabs">
         <button class="work-tab active" data-wtab="tasks"     onclick="switchWorkTab('tasks',this)">Tasks &amp; Calendar</button>
         <button class="work-tab"        data-wtab="operations" onclick="switchWorkTab('operations',this)">Operations</button>
