@@ -2696,6 +2696,64 @@ body.dark-mode .filter-chip { border-color: var(--border); background: transpare
 .sri-meta  { font-size: 11px; color: var(--muted); margin-top: 2px;
              display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
+
+/* ── WORK OVERVIEW ─────────────────────────────────── */
+.work-overview { max-width: 1100px; }
+.work-ov-stats {
+  display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-bottom: 20px;
+}
+.work-ov-stat {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 12px 14px; text-align: center;
+}
+.work-ov-stat-num { font-size: 24px; font-weight: 700; color: var(--latte); line-height: 1; }
+.work-ov-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.work-ov-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+.work-ov-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 16px 18px;
+}
+.work-ov-card-wide { grid-column: span 3; }
+.work-ov-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; font-weight: 600; color: var(--latte); margin-bottom: 12px;
+}
+.work-ov-task-row {
+  display: flex; align-items: center; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.work-ov-task-row:last-child { border-bottom: none; }
+.work-ov-task-info { flex:1; cursor:pointer; display:flex; align-items:center; gap:8px; min-width:0; }
+.work-ov-task-title { font-size:13px; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.work-ov-module-stat { display:flex; align-items:baseline; gap:6px; margin-bottom:6px; }
+.work-ov-big-num { font-size:32px; font-weight:700; color:var(--latte); line-height:1; }
+.work-ov-big-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.work-ov-mini-row {
+  display:flex; align-items:center; gap:8px; padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,.03); font-size:12px;
+}
+.work-ov-mini-row:last-child { border-bottom:none; }
+.staff-avatar-sm {
+  width:22px; height:22px; border-radius:50%; background:var(--mocha);
+  color:#1a0f08; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+@media (max-width: 900px) {
+  .work-ov-stats { grid-template-columns: repeat(3,1fr); }
+  .work-ov-grid  { grid-template-columns: 1fr 1fr; }
+  .work-ov-card-wide { grid-column: span 2; }
+}
+@media (max-width: 600px) {
+  .work-ov-stats { grid-template-columns: repeat(2,1fr); }
+  .work-ov-grid  { grid-template-columns: 1fr; }
+  .work-ov-card-wide { grid-column: span 1; }
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -9793,8 +9851,6 @@ let _workTab = 'tasks';
 
 function switchWorkTab(tab, el) {
   _workTab = tab;
-
-  // Update tab buttons
   document.querySelectorAll('.work-tab').forEach(t => t.classList.toggle('active', t.dataset.wtab === tab));
 
   // Update header actions
@@ -9818,11 +9874,180 @@ function switchWorkTab(tab, el) {
   renderUnifiedWorkBody();
 }
 
+
+// ── WORK HUB OVERVIEW ────────────────────────────────────────────
+function renderWorkOverview() {
+  const body = document.getElementById('work-page-body');
+  if (!body) return;
+  ensureNewData();
+
+  const tod = today();
+  const wh  = D.workHub;
+
+  // Work tasks
+  const allWork   = D.tasks.filter(t => t.cat === 'work' && t.status === 'incomplete');
+  const overdue   = allWork.filter(t => isOverdue(t.dueDate, t.dueTime));
+  const dueToday  = allWork.filter(t => t.dueDate === tod);
+  const priOrd    = {urgent:0,high:1,normal:2,low:3};
+
+  // Operations
+  const suppliers = (wh.suppliers||[]);
+  const pendingOrders = suppliers.reduce((n,s) => n + (s.orders||[]).filter(o=>o.status==='ordered'||o.status==='pending').length, 0);
+
+  // eCommerce
+  const openIssues = (wh.ecom?.issues||[]).filter(i=>i.status!=='resolved').length;
+
+  // Staff
+  const staffCount = (wh.staff||[]).length;
+  const staffTasks = (wh.staff||[]).reduce((n,m) => n + (m.tasks||[]).filter(t=>!t.done).length, 0);
+
+  // Freelance
+  const clients    = (D.clients||[]);
+  const activeClients = clients.filter(c=>c.status==='active').length;
+
+  body.innerHTML = `
+  <div class="work-overview">
+
+    <!-- Stats bar -->
+    <div class="work-ov-stats">
+      ${[
+        {n:allWork.length,   l:'Open Tasks',    c:allWork.length?'color:var(--latte)':''},
+        {n:overdue.length,   l:'Overdue',       c:overdue.length?'color:var(--urgent)':''},
+        {n:dueToday.length,  l:'Due Today',     c:dueToday.length?'color:var(--mocha)':''},
+        {n:pendingOrders,    l:'Pending Orders', c:''},
+        {n:openIssues,       l:'Open Issues',   c:openIssues?'color:var(--mocha)':''},
+        {n:staffTasks,       l:'Staff Tasks',   c:''},
+      ].map(s=>`<div class="work-ov-stat">
+        <div class="work-ov-stat-num" style="${s.c}">${s.n}</div>
+        <div class="work-ov-stat-lbl">${s.l}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="work-ov-grid">
+
+      <!-- TASKS MODULE -->
+      <div class="work-ov-card work-ov-card-wide">
+        <div class="work-ov-card-head">
+          <span>📋 Tasks</span>
+          <button class="btn btn-ghost btn-xs" onclick="switchWorkTab('tasks',null);renderUnifiedWorkBody()">View all →</button>
+        </div>
+        ${overdue.length ? `<div style="margin-bottom:10px">
+          <div class="section-label" style="margin-top:0;color:var(--urgent)">⚠ Overdue (${overdue.length})</div>
+          ${overdue.slice(0,3).map(t=>`<div class="work-ov-task-row">
+            <div class="todo-item-check" onclick="toggleTask('${t.id}')"></div>
+            <div class="work-ov-task-info" onclick="openTaskDetail('${t.id}')">
+              <span class="work-ov-task-title">${t.title}</span>
+              <span style="font-size:10px;color:var(--urgent)">${fmtDateShort(t.dueDate)}</span>
+            </div>
+          </div>`).join('')}
+        </div>` : ''}
+        <div class="section-label" style="margin-top:0">Due Today (${dueToday.length})</div>
+        ${dueToday.length===0
+          ? `<div style="font-size:12px;color:var(--muted);padding:4px 0">No tasks today 🎉</div>`
+          : dueToday.sort((a,b)=>(priOrd[a.priority]||2)-(priOrd[b.priority]||2)).slice(0,5).map(t=>`
+          <div class="work-ov-task-row">
+            <div class="todo-item-check" onclick="toggleTask('${t.id}')"></div>
+            <div class="work-ov-task-info" onclick="openTaskDetail('${t.id}')">
+              <span class="work-ov-task-title">${t.title}</span>
+              ${t.dueTime?`<span style="font-size:10px;color:var(--muted)">${t.dueTime.slice(0,5)}</span>`:''}
+            </div>
+            <div class="dash-task-pri pri-dot-${t.priority||'normal'}"></div>
+          </div>`).join('')}
+        <div style="margin-top:10px">
+          <input class="hub-add-input" placeholder="Quick add work task…"
+            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderWorkOverview();}"/>
+        </div>
+      </div>
+
+      <!-- OPERATIONS MODULE -->
+      <div class="work-ov-card">
+        <div class="work-ov-card-head">
+          <span>📦 Operations</span>
+          <button class="btn btn-ghost btn-xs" onclick="switchWorkTab('operations',null);renderUnifiedWorkBody()">View →</button>
+        </div>
+        <div class="work-ov-module-stat">
+          <span class="work-ov-big-num">${suppliers.length}</span>
+          <span class="work-ov-big-lbl">Suppliers</span>
+        </div>
+        <div style="font-size:12px;color:${pendingOrders?'var(--mocha)':'var(--muted)'};margin-bottom:8px">
+          ${pendingOrders} pending order${pendingOrders!==1?'s':''}
+        </div>
+        ${suppliers.slice(0,3).map(s=>`<div class="work-ov-mini-row">
+          <span style="font-size:12px">${s.name}</span>
+          <span style="font-size:11px;color:var(--muted)">${(s.orders||[]).filter(o=>o.status==='ordered').length} orders</span>
+        </div>`).join('')}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="switchWorkTab('operations',null);renderUnifiedWorkBody()">Manage Suppliers</button>
+      </div>
+
+      <!-- eCOMMERCE MODULE -->
+      <div class="work-ov-card">
+        <div class="work-ov-card-head">
+          <span>🛍️ eCommerce</span>
+          <button class="btn btn-ghost btn-xs" onclick="switchWorkTab('ecommerce',null);renderUnifiedWorkBody()">View →</button>
+        </div>
+        <div class="work-ov-module-stat">
+          <span class="work-ov-big-num" style="${openIssues?'color:var(--urgent)':''}">${openIssues}</span>
+          <span class="work-ov-big-lbl">Open Issues</span>
+        </div>
+        ${(wh.ecom?.issues||[]).filter(i=>i.status!=='resolved').slice(0,3).map(issue=>`
+        <div class="work-ov-mini-row">
+          <span style="font-size:12px">${issue.title||issue.desc?.slice(0,30)||'Issue'}</span>
+          <span style="font-size:10px;color:${issue.status==='open'?'var(--urgent)':'var(--mocha)'}">${issue.status}</span>
+        </div>`).join('')}
+        ${!openIssues?`<div style="font-size:12px;color:var(--muted);padding:4px 0">No open issues ✓</div>`:''}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="switchWorkTab('ecommerce',null);renderUnifiedWorkBody()">Manage Store</button>
+      </div>
+
+      <!-- STAFF MODULE -->
+      <div class="work-ov-card">
+        <div class="work-ov-card-head">
+          <span>👥 Staff</span>
+          <button class="btn btn-ghost btn-xs" onclick="switchWorkTab('staff',null);renderUnifiedWorkBody()">View →</button>
+        </div>
+        <div class="work-ov-module-stat">
+          <span class="work-ov-big-num">${staffCount}</span>
+          <span class="work-ov-big-lbl">Team Members</span>
+        </div>
+        <div style="font-size:12px;color:${staffTasks?'var(--mocha)':'var(--muted)'};margin-bottom:8px">
+          ${staffTasks} open task${staffTasks!==1?'s':''}
+        </div>
+        ${(wh.staff||[]).slice(0,3).map(m=>`<div class="work-ov-mini-row">
+          <div class="staff-avatar-sm">${m.name[0]}</div>
+          <span style="font-size:12px">${m.name}</span>
+          <span style="font-size:11px;color:var(--muted)">${(m.tasks||[]).filter(t=>!t.done).length} tasks</span>
+        </div>`).join('')}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="switchWorkTab('staff',null);renderUnifiedWorkBody()">Manage Staff</button>
+      </div>
+
+      <!-- FREELANCE MODULE -->
+      <div class="work-ov-card">
+        <div class="work-ov-card-head">
+          <span>🤝 Freelance</span>
+          <button class="btn btn-ghost btn-xs" onclick="switchWorkTab('freelance',null);renderUnifiedWorkBody()">View →</button>
+        </div>
+        <div class="work-ov-module-stat">
+          <span class="work-ov-big-num">${clients.length}</span>
+          <span class="work-ov-big-lbl">Clients</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
+          ${activeClients} active client${activeClients!==1?'s':''}
+        </div>
+        ${clients.slice(0,3).map(cl=>`<div class="work-ov-mini-row">
+          <span style="font-size:12px">${cl.name}</span>
+          <span style="font-size:10px;color:${cl.status==='active'?'var(--personal)':'var(--muted)'}">${cl.status||'active'}</span>
+        </div>`).join('')}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="switchWorkTab('freelance',null);renderUnifiedWorkBody()">Manage Clients</button>
+      </div>
+
+    </div><!-- /grid -->
+  </div>`;
+}
+
 function renderUnifiedWork() {
-  // Always reset to tasks tab when navigating to Work page
+  // Always reset to overview when navigating to Work page
   _workTab = 'tasks';
   document.querySelectorAll('.work-tab').forEach(t => t.classList.toggle('active', t.dataset.wtab === 'tasks'));
-  renderUnifiedWorkBody();
+  renderWorkOverview();
 }
 
 function renderUnifiedWorkBody() {
@@ -10043,13 +10268,22 @@ function renderUnifiedWorkEcom(body) {
   const priColor = p => ({high:'var(--urgent)',med:'var(--high)',low:'var(--muted)'}[p] || 'var(--muted)');
   const stColor  = s => ({open:'var(--college)',watch:'var(--high)',resolved:'var(--personal)'}[s] || 'var(--muted)');
 
-  let html = `<div class="work-stats-strip">
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Open Issues</div><div class="work-stat-chip-val" style="${open?'color:var(--urgent)':''}">${open}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Resolved</div><div class="work-stat-chip-val">${issues.filter(i=>i.status==='resolved').length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Notes</div><div class="work-stat-chip-val">${notes.length}</div></div>
-  </div>
-
-  <div class="wh-tabs">
+  let html = '<div class="work-section">';
+  html += `<div class="work-ov-stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="work-ov-stat">
+      <div class="work-ov-stat-num" style="${open?'color:var(--urgent)':''}">${open}</div>
+      <div class="work-ov-stat-lbl">Open Issues</div>
+    </div>
+    <div class="work-ov-stat">
+      <div class="work-ov-stat-num" style="color:var(--personal)">${issues.filter(i=>i.status==='resolved').length}</div>
+      <div class="work-ov-stat-lbl">Resolved</div>
+    </div>
+    <div class="work-ov-stat">
+      <div class="work-ov-stat-num">${notes.length}</div>
+      <div class="work-ov-stat-lbl">Notes</div>
+    </div>
+  </div>`;
+  html += `<div class="wh-tabs">
     <button class="wh-tab${whSubTab==='orders'?' active':''}" onclick="whSubTab='orders';renderUnifiedWorkEcom(document.getElementById('work-page-body'))">Issues (${issues.length})</button>
     <button class="wh-tab${whSubTab==='notes'?' active':''}" onclick="whSubTab='notes';renderUnifiedWorkEcom(document.getElementById('work-page-body'))">Notes (${notes.length})</button>
   </div>`;
@@ -10899,7 +11133,7 @@ function initViewSync() {
   Views.register('calendar',   ['tasks','reminders','calNav'],() => renderCalendarPage());
   Views.register('agenda',     ['tasks','reminders','calNav'],() => renderAgenda());
   Views.register('daily',      ['tasks','reminders','calNav'],() => { currentDailyDate = Cal.dateStr(); renderDailyPage(); });
-  Views.register('work',       ['tasks'],                    () => renderUnifiedWorkBody());
+  Views.register('work',       ['tasks'],                    () => { if(_workTab==='tasks') renderWorkOverview(); else renderUnifiedWorkBody(); });
   Views.register('personal',   ['tasks','reminders'],        () => renderCategoryPage('personal'));
   Views.register('college',    ['tasks','reminders'],        () => renderCategoryPage('college'));
   Views.register('dashboard',  ['tasks','reminders'],        () => renderDashboard());
