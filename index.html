@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjRjRDOUQ2Ii8+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjE3MiIgaGVpZ2h0PSIxNzIiIHJ4PSIzNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0UyNzIzIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8dGV4dCB4PSI5MCIgeT0iMTE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI3NCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9Ii00Ij5FPHRzcGFuIGZpbGw9IiM3QjNGM0YiPk08L3RzcGFuPjwvdGV4dD4KICA8dGV4dCB4PSI5MCIgeT0iMTM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9IjYiIG9wYWNpdHk9IjAuNyI+RUxWQTwvdGV4dD4KPC9zdmc+">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjRjRDOUQ2Ii8+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjE3MiIgaGVpZ2h0PSIxNzIiIHJ4PSIzNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0UyNzIzIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8dGV4dCB4PSI5MCIgeT0iMTE2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI3NCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9Ii00Ij5FPHRzcGFuIGZpbGw9IiM3QjNGM0YiPk08L3RzcGFuPjwvdGV4dD4KICA8dGV4dCB4PSI5MCIgeT0iMTM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzNFMjcyMyIgbGV0dGVyLXNwYWNpbmc9IjYiIG9wYWNpdHk9IjAuNyI+RUxWQTwvdGV4dD4KPC9zdmc+">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,7 +13,10 @@
 <meta name="theme-color" content="#F4C9D6">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Elva's Planner v3</title>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"></noscript>
 <style>
 :root {
   /* ── Palette ── */
@@ -248,7 +254,7 @@ body {
 .task-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4}
 .task-meta{display:flex;align-items:center;gap:7px;margin-top:5px;flex-wrap:wrap}
 .cat-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:0.5px}
-.cat-work{background:var(--work-bg);color:var(--work)}.cat-personal{background:var(--personal-bg);color:var(--personal)}.cat-college{background:var(--college-bg);color:var(--college)}
+.cat-work{background:var(--work-bg);color:#c49a72}.cat-personal{background:var(--personal-bg);color:#5d8a6a}.cat-college{background:var(--college-bg);color:#4a7fb5}
 .due-tag{font-size:11px;color:var(--muted)}
 .due-tag.overdue{color:var(--urgent);font-weight:500}
 .due-tag.today{color:var(--mocha);font-weight:500}
@@ -945,20 +951,20 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 }
 .agenda-day-label.today-label { color: #c49a72; font-weight: 700; }
 .agenda-day-label.past-label { color: #8a7262; }
-.agenda-sep { flex: 1; height: 1px; background: var(--border); }
+.agenda-sep { flex: 1; height: 1px; background: #4a3020; }
 .agenda-day-count { font-size: 10px; color: #8a7262; }
 .agenda-item {
   display: flex; align-items: flex-start; gap: 10px;
-  padding: 9px 13px; background: #321e12;
-  border: 1px solid #4a3020; border-radius: var(--r-sm);
-  margin-bottom: 5px; cursor: pointer;
-  transition: border-color var(--dur), box-shadow var(--dur);
-  border-left: 3px solid;
+  padding: 10px 14px; background: #321e12;
+  border: 1px solid #4a3020; border-radius: 10px;
+  margin-bottom: 7px; cursor: pointer;
+  transition: border-color .15s;
 }
+.agenda-item:hover { border-color: #c49a72; }
 .agenda-item:hover { border-color: #7a5c42; box-shadow: var(--shadow-sm); }
-.ai-work { border-left-color: var(--work); }
-.ai-personal { border-left-color: var(--personal); }
-.ai-college { border-left-color: var(--college); }
+.ai-work { border-left-color: #c49a72; }
+.ai-personal { border-left-color: #5d8a6a; }
+.ai-college { border-left-color: #4a7fb5; }
 .ai-reminder { border-left-color: #c49a72; }
 .ai-countdown { border-left-color: var(--high); }
 .agenda-item-time { font-size: 11px; color: #8a7262; min-width: 44px; flex-shrink: 0; margin-top: 1px; }
@@ -1507,7 +1513,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 .todo-item.done-item { opacity: 0.45; }
 .todo-item-check {
   width: 16px; height: 16px; border-radius: 4px;
-  border: 1.5px solid var(--latte); background: #2b1d12;
+  border: 1.5px solid #7a5c42; background: #2b1d12;
   flex-shrink: 0; margin-top: 1px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 160ms;
@@ -2085,7 +2091,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 }
 .daily-progress-wrap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 180px; }
 .daily-progress-bar {
-  flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+  flex: 1; height: 6px; background: #4a3020; border-radius: 3px; overflow: hidden;
 }
 .daily-progress-fill { height: 100%; background: #c49a72; border-radius: 3px; transition: width .4s ease; }
 .daily-progress-label { font-size: 11px; color: #8a7262; white-space: nowrap; }
@@ -2196,7 +2202,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
 }
 .dash-progress-label { font-size: 12px; color: #8a7262; white-space: nowrap; }
-.dash-progress-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.dash-progress-track { flex: 1; height: 4px; background: #4a3020; border-radius: 2px; overflow: hidden; }
 .dash-progress-fill  { height: 100%; background: #c49a72; border-radius: 2px; transition: width .4s; }
 .dash-progress-pct   { font-size: 11px; color: #c49a72; font-weight: 600; width: 32px; text-align: right; }
 .dash-v2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -2290,7 +2296,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 }
 .nh-toggle input { opacity: 0; width: 0; height: 0; }
 .nh-toggle-slider {
-  position: absolute; inset: 0; background: var(--border);
+  position: absolute; inset: 0; background: #4a3020;
   border-radius: 10px; cursor: pointer; transition: background .2s;
 }
 .nh-toggle-slider::before {
@@ -2416,9 +2422,17 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 }
 #work-page-body input::placeholder { color: #8a7262 !important; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 </head>
 <body>
+
+<div id="app-loader" style="position:fixed;inset:0;z-index:99998;background:#2b1d12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="font-family:Georgia,serif;font-size:28px;color:#c49a72;letter-spacing:4px;">EM</div>
+  <div style="width:40px;height:40px;border:3px solid #4a3020;border-top-color:#c49a72;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <div style="font-size:11px;color:#8a7262;letter-spacing:2px;text-transform:uppercase;">Loading...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
 
 <!-- PASSWORD LOCK SCREEN -->
 <div id="lock-screen" data-version="v3" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1a0f08 0%,#2b1d12 50%,#1a0f08 100%);display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;">
@@ -5179,6 +5193,9 @@ function toast(msg) {
 //  INIT
 // ═══════════════════════════════════════════════════
 function init() {
+  // Hide loader
+  const loader = document.getElementById('app-loader');
+  if (loader) { loader.style.opacity='0'; loader.style.transition='opacity 0.3s'; setTimeout(()=>loader.remove(),300); }
   ensureNewData();
   // Set today's greeting
   const h = new Date().getHours();
@@ -7469,76 +7486,66 @@ function setAgendaFilter(f, el) {
 function renderAgenda() {
   const el = document.getElementById('agenda-body'); if (!el) return;
   const days = parseInt(document.getElementById('agenda-range')?.value || 7);
-  const tod = new Date(); tod.setHours(0, 0, 0, 0);
+  const tod = new Date(); tod.setHours(0,0,0,0);
 
-  // Build all items for the range
   const allItems = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(tod); d.setDate(tod.getDate() + i);
-    const ds = d.toISOString().slice(0, 10);
-
-    D.tasks.filter(t => (t.dueDate === ds) && t.status === 'incomplete').forEach(t => {
+    const ds = d.toISOString().slice(0,10);
+    D.tasks.filter(t => t.dueDate === ds && t.status === 'incomplete').forEach(t => {
       if (_agendaFilter !== 'all' && _agendaFilter !== t.cat) return;
-      allItems.push({ date: ds, time: t.dueTime || '', title: t.title, cat: t.cat, type: 'task', id: t.id, priority: t.priority });
+      allItems.push({date:ds, time:t.dueTime||'', title:t.title, cat:t.cat, type:'task', id:t.id, priority:t.priority});
     });
     D.reminders.filter(r => r.date === ds && r.status === 'pending').forEach(r => {
       if (_agendaFilter !== 'all' && _agendaFilter !== 'reminders') return;
-      allItems.push({ date: ds, time: r.time || '', title: r.title, cat: 'reminder', type: 'reminder', id: r.id });
-    });
-    ensureCountdowns();
-    D.countdowns.forEach(cd => {
-      const eff = cdEffectiveDate(cd);
-      if (eff.toISOString().slice(0, 10) === ds) {
-        if (_agendaFilter !== 'all') return;
-        allItems.push({ date: ds, time: '', title: (cd.emoji || '') + ' ' + cd.name, cat: 'countdown', type: 'countdown', id: cd.id });
-      }
+      allItems.push({date:ds, time:r.time||'', title:r.title, cat:'reminder', type:'reminder', id:r.id});
     });
   }
 
   if (!allItems.length) {
-    el.innerHTML = `<div style="text-align:center;padding:50px;color:#8a7262">
-      <div style="font-size:32px;margin-bottom:12px">🗓️</div>
-      Nothing scheduled for the next ${days} days
+    el.innerHTML = `<div style="text-align:center;padding:50px;color:#8a7262;">
+      <div style="font-size:32px;margin-bottom:12px;">🗓️</div>
+      <div style="font-size:14px;">Nothing scheduled for the next ${days} days</div>
     </div>`;
     return;
   }
 
-  // Group by date
   const byDate = {};
   allItems.forEach(item => { (byDate[item.date] = byDate[item.date] || []).push(item); });
 
-  const todStr = tod.toISOString().slice(0, 10);
+  const todStr = tod.toISOString().slice(0,10);
   const mnths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const catClass = cat => ({ work:'ai-work', personal:'ai-personal', college:'ai-college', reminder:'ai-reminder', countdown:'ai-countdown' }[cat] || 'ai-work');
-  const catTag = cat => `<span class="agenda-item-cat cat-${cat}">${cat}</span>`;
-  const priDot = p => ({ urgent:'🔴', high:'🟠', normal:'', low:'🔵' }[p] || '');
+  const priDot = p => ({urgent:'🔴',high:'🟠',normal:'',low:'🔵'}[p]||'');
+  const catColor = cat => ({work:'#c49a72',personal:'#5d8a6a',college:'#4a7fb5',reminder:'#8a7262',countdown:'#c49a72'}[cat]||'#8a7262');
+  const catLabel = cat => ({work:'WORK',personal:'PERSONAL',college:'COLLEGE',reminder:'REMINDER',countdown:'COUNTDOWN'}[cat]||cat.toUpperCase());
+  const borderCol = cat => ({work:'#c49a72',personal:'#5d8a6a',college:'#4a7fb5',reminder:'#8a7262'}[cat]||'#4a3020');
 
   let html = '';
   Object.keys(byDate).sort().forEach(ds => {
-    const d = new Date(ds + 'T00:00:00');
+    const d = new Date(ds+'T00:00:00');
     const isToday = ds === todStr;
-    const isTomorrow = ds === new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-    const label = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + mnths[d.getMonth()];
-    const items = byDate[ds].sort((a, b) => (a.time || '99:99') > (b.time || '99:99') ? 1 : -1);
+    const isTomorrow = ds === new Date(Date.now()+86400000).toISOString().slice(0,10);
+    const label = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : dayNames[d.getDay()]+', '+d.getDate()+' '+mnths[d.getMonth()];
+    const items = byDate[ds].sort((a,b) => (a.time||'99:99') > (b.time||'99:99') ? 1 : -1);
 
-    html += `<div class="agenda-day-group">
-      <div class="agenda-day-header">
-        <span class="agenda-day-label${isToday ? ' today-label' : ''}">${label}</span>
-        <span class="agenda-sep"></span>
-        <span class="agenda-day-count">${items.length} item${items.length !== 1 ? 's' : ''}</span>
+    html += `<div style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:${isToday?'16':'14'}px;font-weight:${isToday?'600':'400'};color:${isToday?'#c49a72':'#e8d8c4'};">${label}</span>
+        <div style="flex:1;height:1px;background:#4a3020;"></div>
+        <span style="font-size:11px;color:#8a7262;">${items.length} item${items.length!==1?'s':''}</span>
       </div>
-      ${items.map(item => `<div class="agenda-item ${catClass(item.cat)}"
-        onclick="${item.type === 'task' ? `openTaskDetail('${item.id}')` : ''}">
-        <span class="agenda-item-time">${item.time ? item.time.slice(0, 5) : 'All day'}</span>
-        <span class="agenda-item-title">${priDot(item.priority)} ${item.title}</span>
-        ${catTag(item.cat)}
+      ${items.map(item => `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${borderCol(item.cat)};border-radius:10px;margin-bottom:8px;cursor:pointer;" onclick="${item.type==='task'?`openTaskDetail('${item.id}')`:''}" >
+        <span style="font-size:12px;color:#8a7262;min-width:50px;flex-shrink:0;">${item.time?item.time.slice(0,5):'All day'}</span>
+        <span style="font-size:13px;color:#e8d8c4;flex:1;">${priDot(item.priority)} ${item.title}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(196,154,114,0.1);color:${catColor(item.cat)};letter-spacing:1px;">${catLabel(item.cat)}</span>
       </div>`).join('')}
     </div>`;
   });
 
   el.innerHTML = html;
 }
+
 
 // ════════════════════════════════════════════════════════
 //  FEATURE: 7 — DASHBOARD INSIGHTS + STREAKS
@@ -10374,34 +10381,34 @@ function renderTodoBoardAll(body) {
     const done     = allTasks.filter(t => t.status === 'complete').length;
     const overdue  = tasks.filter(t => isOverdue(t.dueDate, t.dueTime));
 
-    return `<div class="todo-dept-card">
-      <div class="todo-dept-header">
-        <div class="todo-dept-title">
+    return `<div style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#e8d8c4;">
           <span>${dept.icon}</span> ${dept.label}
         </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${overdue.length ? `<span style="font-size:9px;color:#c0392b;font-weight:700;background:rgba(181,53,53,.12);padding:2px 6px;border-radius:10px">⚠ ${overdue.length} overdue</span>` : ''}
-          <span class="todo-dept-count">${tasks.length}</span>
-          <button class="btn btn-ghost btn-xs" onclick="setTodoFilter('${dept.id}',document.querySelector('[data-tf=\'${dept.id}\']'))">→</button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${overdue.length ? `<span style="font-size:9px;color:#c0392b;font-weight:700;background:rgba(181,53,53,.12);padding:2px 8px;border-radius:10px;">⚠ ${overdue.length} overdue</span>` : ''}
+          <span style="font-size:12px;color:#8a7262;background:#3a2415;padding:2px 8px;border-radius:20px;">${tasks.length}</span>
+          <button style="background:#3a2415;border:1px solid #4a3020;color:#c49a72;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;" onclick="goTo('${dept.page||'work'}',null)">&rarr;</button>
         </div>
       </div>
-      ${tasks.length === 0 && done === 0
-        ? `<div style="font-size:12px;color:#8a7262;padding:8px 0;text-align:center">Nothing here yet</div>`
-        : tasks.length === 0
-        ? `<div style="font-size:12px;color:#3a8f60;padding:8px 0">✓ All ${done} task${done!==1?'s':''} complete</div>`
-        : tasks.slice(0,5).map(t => renderTodoItem(t, dept.badge)).join('')
-      }
-      ${tasks.length > 5 ? `<div style="font-size:11px;color:#c49a72;margin-top:6px;cursor:pointer;text-align:right"
-        onclick="setTodoFilter('${dept.id}',document.querySelector('[data-tf=\'${dept.id}\']'))">+ ${tasks.length-5} more →</div>` : ''}
-      <div style="margin-top:10px">
-        <input class="hub-add-input" id="todo-add-${dept.id}"
-          placeholder="Add to ${dept.label}…"
-          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${dept.id}',this.value.trim());this.value='';}" />
+      ${tasks.slice(0,5).map(t => `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #3a2415;">
+          <div style="width:16px;height:16px;border-radius:50%;border:2px solid #4a3020;flex-shrink:0;cursor:pointer;" onclick="toggleTask('${t.id}')"></div>
+          <span style="font-size:13px;color:#e8d8c4;flex:1;cursor:pointer;" onclick="openTaskDetail('${t.id}')">${t.title}</span>
+          ${t.dueDate ? `<span style="font-size:10px;color:${isOverdue(t.dueDate,t.dueTime)?'#c0392b':'#8a7262'};">${fmtDateShort(t.dueDate)}</span>` : ''}
+        </div>`).join('')}
+      ${!tasks.length ? `<div style="text-align:center;padding:12px 0;color:#8a7262;font-size:12px;">Nothing here yet</div>` : ''}
+      <div style="margin-top:10px;">
+        <input style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;" placeholder="Add to ${dept.label}…"
+          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${dept.id}',this.value);this.value='';}"/>
       </div>
     </div>`;
   }).join('');
-  body.innerHTML = `<div class="todo-page-wrap">${deptHtml}</div>`;
+
+  body.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:4px 0;">${deptHtml}</div>`;
 }
+
 
 // ── Board: single dept detail ─────────────────────────────
 function renderTodoBoardFiltered(body, tasks, filterId) {
