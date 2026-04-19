@@ -2785,10 +2785,6 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   </div>
 
 
-  <!-- WORKHUB redirects to unified Work page -->
-  <div class="page-content" id="page-workhub" style="display:none!important"></div>
-
-
   <!-- FREELANCE CRM -->
   <div class="page-content" id="page-freelance">
     <div class="page-header">
@@ -3727,9 +3723,11 @@ let curPage = 'dashboard';
 const pageLabels = {dashboard:'Dashboard',master:'Master To-Do',daily:'Daily Page',reminders:'Reminders',work:'Work',personal:'Personal',college:'College',notes:'Notes',history:'History',search:'Search'};
 
 function goTo(page, el) {
+  const target = document.getElementById('page-'+page);
+  if (!target) { console.warn('goTo: missing page', page); return; }
   document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
+  target.classList.add('active');
   if (el) el.classList.add('active');
   else { const ni = document.querySelector(`[data-page="${page}"]`); if(ni) ni.classList.add('active'); }
   curPage = page;
@@ -5554,8 +5552,10 @@ let addInvClientIdx=null;
 function openAddInvoice(ci){addInvClientIdx=ci;document.getElementById('inv-desc').value='';document.getElementById('inv-amount').value='';document.getElementById('inv-status').value='unpaid';document.getElementById('inv-date').value='';openModal('modal-add-invoice');}
 function saveInvoice(){
   const desc=document.getElementById('inv-desc').value.trim();const amount=document.getElementById('inv-amount').value;if(!desc||!amount){toast('Description and amount required');return;}
-  if(!D.clients[addInvClientIdx].invoices)D.clients[addInvClientIdx].invoices=[];
-  D.clients[addInvClientIdx].invoices.push({desc,amount,status:document.getElementById('inv-status').value,date:document.getElementById('inv-date').value});
+  const client = (addInvClientIdx!=null) ? D.clients[addInvClientIdx] : null;
+  if(!client){toast('No client selected');return;}
+  if(!client.invoices)client.invoices=[];
+  client.invoices.push({desc,amount,status:document.getElementById('inv-status').value,date:document.getElementById('inv-date').value});
   save();closeModal('modal-add-invoice');renderFreelance();toast('Invoice added ✓');
 }
 
@@ -5802,7 +5802,8 @@ function renderContacts(){
   </div>`).join('');
 }
 function editContactByIdx(idx){
-  editConIdx=idx;const c=D.contacts[idx];
+  const c=D.contacts[idx]; if(!c) return;
+  editConIdx=idx;
   document.getElementById('con-name').value=c.name;document.getElementById('con-role').value=c.role||'';
   document.getElementById('con-phone').value=c.phone||'';document.getElementById('con-email').value=c.email||'';
   document.getElementById('con-notes').value=c.notes||'';conCat=c.cat||'work';
@@ -10984,11 +10985,17 @@ const CalSync = (() => {
   function _esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function _setStatus(s) {
-    const el = document.getElementById('gcal-status-pill');
-    if (!el) return;
     const map = { connected:'🟢 Connected', syncing:'🔄 Syncing…', disconnected:'🔴 Disconnected', error:'🟡 Error' };
-    el.textContent = map[s] || s;
-    el.dataset.status = s;
+    const label = map[s] || s;
+    const inline = document.getElementById('gcal-status-pill-inline');
+    if (inline) { inline.textContent = label; inline.dataset.status = s; }
+    const headerPill = document.getElementById('gcal-status-pill');
+    if (headerPill) {
+      headerPill.dataset.status = s;
+      headerPill.className = 'gcal-status-pill ' + s;
+      const txt = document.getElementById('gcal-status-text');
+      if (txt) txt.textContent = label.replace(/^\S+\s*/, '');
+    }
   }
 
   // ── OAuth2 PKCE ────────────────────────────────────────────────────────
@@ -11859,7 +11866,7 @@ export default {
           background:rgba(0,0,0,.2);border-radius:10px;padding:13px 18px;margin-bottom:18px;
           flex-wrap:wrap;gap:8px">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-          <span id="gcal-status-pill" data-status="connected" style="font-size:13px;font-weight:600">🟢 Connected</span>
+          <span id="gcal-status-pill-inline" data-status="connected" style="font-size:13px;font-weight:600">🟢 Connected</span>
           <span style="font-size:12px;color:#8a7262" id="gcal-last-sync">Last sync: ${lastSync}</span>
           <span style="font-size:11px;color:#8a7262">🔄 Every ${_cfg.syncInterval}s</span>
         </div>
