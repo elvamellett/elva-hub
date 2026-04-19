@@ -9626,8 +9626,9 @@ function renderWorkOverview() {
             <div class="dash-task-pri pri-dot-${t.priority||'normal'}"></div>
           </div>`).join('')}
         <div style="margin-top:10px">
-          <input class="hub-add-input" placeholder="Quick add work task…"
-            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderWorkOverview();}"/>
+          <input type="text" placeholder="Quick add work task…"
+            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderWorkOverview();}"
+            style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/>
         </div>
       </div>
 
@@ -9801,7 +9802,7 @@ function renderUnifiedWorkTasks(body) {
   html += '</div></div>';
 
   // Quick add
-  html += `<div style="margin-top:16px;"><input class="hub-add-input" placeholder="Quick add work task…" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderUnifiedWorkBody();}"/></div>`;
+  html += `<div style="margin-top:16px;"><input type="text" placeholder="Quick add work task…" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderUnifiedWorkBody();}" style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/></div>`;
 
   html += '</div>';
   body.innerHTML = html;
@@ -10508,9 +10509,10 @@ function renderTodoBoardFiltered(body, tasks, filterId) {
         </div>` : ''}
         ${incomplete.map(t => renderTodoItemFull(t, deptCfg.badge)).join('')}
         <div style="margin-top:12px">
-          <input class="hub-add-input" id="todo-add-${filterId}"
+          <input type="text" id="todo-add-${filterId}"
             placeholder="Add a task…"
-            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${filterId}',this.value.trim());this.value='';}" />
+            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${filterId}',this.value.trim());this.value='';}"
+            style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;" />
         </div>
       </div>
       ${complete.length ? `<div style="margin-top:16px">
@@ -10659,9 +10661,10 @@ function renderHubTodoStrip(deptId, containerId) {
     ${tasks.slice(0,6).map(t => renderTodoItem(t, cfg.badge)).join('')}
     ${!tasks.length ? '<div style="font-size:12px;color:#8a7262;padding:6px 0">No open tasks</div>' : ''}
     <div style="margin-top:8px">
-      <input class="hub-add-input" id="hub-todo-${deptId}"
+      <input type="text" id="hub-todo-${deptId}"
         placeholder="Add task…"
-        onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${deptId}',this.value);this.value='';renderHubTodoStrip('${deptId}','${containerId}');}"/>
+        onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${deptId}',this.value);this.value='';renderHubTodoStrip('${deptId}','${containerId}');}"
+        style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/>
     </div>
   </div>`;
 }
