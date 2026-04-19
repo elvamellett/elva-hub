@@ -7737,11 +7737,6 @@ function initFeatures() {
   processRecurringTasks();
   renderNotifBell();
 
-  // Init calendar drag-create after a delay (calendar may not be rendered yet)
-  document.addEventListener('click', e => {
-    if (e.target.closest('[data-page="calendar"]')) setTimeout(initCalDragCreate, 300);
-  });
-
   // Show onboarding for first-time users
   if (!localStorage.getItem('elva_onboarded') && !D.tasks.some(t => !['t1','t2','t3','t4'].includes(t.id))) {
     setTimeout(showOnboarding, 600);
@@ -9128,6 +9123,10 @@ function whRenderSection(section) {
   else if (section === 'staff-member')    html = whRenderStaffMember(wh, whActiveId);
 
   if (body) body.innerHTML = html;
+  // Also refresh the unified Work page body (the actually-visible surface)
+  if (typeof renderUnifiedWorkBody === 'function' && document.getElementById('work-page-body')) {
+    try { renderUnifiedWorkBody(); } catch (err) { console.warn('renderUnifiedWorkBody failed', err); }
+  }
   return html;
 }
 
