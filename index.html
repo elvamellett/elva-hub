@@ -10658,11 +10658,10 @@ function renderHubTodoStrip(deptId, containerId) {
     </div>
     ${tasks.slice(0,6).map(t => renderTodoItem(t, cfg.badge)).join('')}
     ${!tasks.length ? '<div style="font-size:12px;color:#8a7262;padding:6px 0">No open tasks</div>' : ''}
-    <div style="margin-top:8px;display:flex;gap:7px">
+    <div style="margin-top:8px">
       <input class="hub-add-input" id="hub-todo-${deptId}"
         placeholder="Add task…"
         onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${deptId}',this.value);this.value='';renderHubTodoStrip('${deptId}','${containerId}');}"/>
-      <button class="btn btn-secondary btn-sm" onclick="addTodoDeptTask('${deptId}',document.getElementById('hub-todo-${deptId}').value);document.getElementById('hub-todo-${deptId}').value='';renderHubTodoStrip('${deptId}','${containerId}')">Add</button>
     </div>
   </div>`;
 }
