@@ -3075,18 +3075,18 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         <button class="btn btn-primary btn-sm" onclick="openAddTask()">+ Task</button>
       </div>
     </div>
-    <div class="filter-bar">
-      <span class="filter-chip active" data-tf="all"         onclick="setTodoFilter('all',this)">All</span>
-      <span class="filter-chip" data-tf="work"               onclick="setTodoFilter('work',this)">Work</span>
-      <span class="filter-chip" data-tf="operations"         onclick="setTodoFilter('operations',this)">Operations</span>
-      <span class="filter-chip" data-tf="ecommerce"          onclick="setTodoFilter('ecommerce',this)">eCommerce</span>
-      <span class="filter-chip" data-tf="staff"              onclick="setTodoFilter('staff',this)">Staff</span>
-      <span class="filter-chip" data-tf="freelance"          onclick="setTodoFilter('freelance',this)">Freelance</span>
-      <span class="filter-chip fc-personal" data-tf="personal" onclick="setTodoFilter('personal',this)">Personal</span>
-      <span class="filter-chip fc-college"  data-tf="college"  onclick="setTodoFilter('college',this)">College</span>
-      <span class="filter-sep"></span>
-      <span class="filter-chip" data-tf="urgent"             onclick="setTodoFilter('urgent',this)">🔴 Urgent</span>
-      <span class="filter-chip" data-tf="overdue"            onclick="setTodoFilter('overdue',this)">Overdue</span>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:14px 38px 12px;border-bottom:1px solid #4a3020;background:#341f13;">
+      <span data-tf="all"        onclick="setTodoFilter('all',this)"        style="display:inline-block;font-size:11px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;background:#c49a72;border:1px solid #c49a72;color:#1a0f08;letter-spacing:0.3px;user-select:none;">All</span>
+      <span data-tf="work"       onclick="setTodoFilter('work',this)"       style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Work</span>
+      <span data-tf="operations" onclick="setTodoFilter('operations',this)" style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Operations</span>
+      <span data-tf="ecommerce"  onclick="setTodoFilter('ecommerce',this)"  style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">eCommerce</span>
+      <span data-tf="staff"      onclick="setTodoFilter('staff',this)"      style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Staff</span>
+      <span data-tf="freelance"  onclick="setTodoFilter('freelance',this)"  style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Freelance</span>
+      <span data-tf="personal"   onclick="setTodoFilter('personal',this)"   style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Personal</span>
+      <span data-tf="college"    onclick="setTodoFilter('college',this)"    style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">College</span>
+      <span style="width:1px;height:20px;background:#4a3020;margin:0 4px;display:inline-block;"></span>
+      <span data-tf="urgent"     onclick="setTodoFilter('urgent',this)"     style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">🔴 Urgent</span>
+      <span data-tf="overdue"    onclick="setTodoFilter('overdue',this)"    style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Overdue</span>
     </div>
     <div id="todo-board-body" style="padding:20px 38px 60px"></div>
   </div>
@@ -10325,10 +10325,14 @@ function addTodoDeptTask(deptId, title) {
 }
 
 // ── Filter state ──────────────────────────────────────────
+const _TODO_CHIP_INACTIVE = 'display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;';
+const _TODO_CHIP_ACTIVE   = 'display:inline-block;font-size:11px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;background:#c49a72;border:1px solid #c49a72;color:#1a0f08;letter-spacing:0.3px;user-select:none;';
+
 function setTodoFilter(f, el) {
   _todoFilter = f;
-  document.querySelectorAll('#page-todo-board .filter-chip').forEach(c => c.classList.remove('active'));
-  if (el) el.classList.add('active');
+  document.querySelectorAll('#page-todo-board [data-tf]').forEach(c => {
+    c.style.cssText = (c.dataset.tf === f) ? _TODO_CHIP_ACTIVE : _TODO_CHIP_INACTIVE;
+  });
   renderTodoBoard();
 }
 function toggleTodoView() {
@@ -10375,33 +10379,53 @@ function renderTodoBoard() {
 
 // ── Board: all depts as columns ───────────────────────────
 function renderTodoBoardAll(body) {
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
   const deptHtml = TODO_DEPTS.map(dept => {
     const allTasks = getTodoTasks(dept.id);
     const tasks    = allTasks.filter(t => t.status === 'incomplete');
-    const done     = allTasks.filter(t => t.status === 'complete').length;
     const overdue  = tasks.filter(t => isOverdue(t.dueDate, t.dueTime));
+    const navPage  = dept.page || 'work';
 
-    return `<div style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#e8d8c4;">
-          <span>${dept.icon}</span> ${dept.label}
+    const headerRight = [
+      overdue.length
+        ? `<span style="font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(181,53,53,0.12);color:#c0392b;white-space:nowrap;">⚠ ${overdue.length} overdue</span>`
+        : '',
+      `<span style="font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;background:#3a2415;color:#8a7262;">${tasks.length}</span>`,
+      `<button type="button" onclick="goTo('${esc(navPage)}',null)" style="background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:4px 10px;font-size:12px;line-height:1;cursor:pointer;color:#c49a72;font-family:inherit;">&rarr;</button>`,
+    ].join('');
+
+    const taskRows = tasks.slice(0,5).map(t => {
+      const isOd = isOverdue(t.dueDate, t.dueTime);
+      const dueHtml = t.dueDate
+        ? `<span style="font-size:10px;color:${isOd ? '#c0392b' : '#8a7262'};white-space:nowrap;">${esc(fmtDateShort(t.dueDate))}</span>`
+        : '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #3a2415;">
+        <div onclick="toggleTask('${esc(t.id)}')" style="width:16px;height:16px;border-radius:50%;border:2px solid #4a3020;flex-shrink:0;cursor:pointer;background:transparent;"></div>
+        <span onclick="openTaskDetail('${esc(t.id)}')" style="flex:1;font-size:13px;color:#e8d8c4;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(t.title)}</span>
+        ${dueHtml}
+      </div>`;
+    }).join('');
+
+    const empty = tasks.length ? '' :
+      `<div style="text-align:center;padding:14px 0;color:#8a7262;font-size:12px;">Nothing here yet</div>`;
+
+    return `<div style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#e8d8c4;min-width:0;">
+          <span style="flex-shrink:0;">${dept.icon || '📋'}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(dept.label)}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${overdue.length ? `<span style="font-size:9px;color:#c0392b;font-weight:700;background:rgba(181,53,53,.12);padding:2px 8px;border-radius:10px;">⚠ ${overdue.length} overdue</span>` : ''}
-          <span style="font-size:12px;color:#8a7262;background:#3a2415;padding:2px 8px;border-radius:20px;">${tasks.length}</span>
-          <button style="background:#3a2415;border:1px solid #4a3020;color:#c49a72;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;" onclick="goTo('${dept.page||'work'}',null)">&rarr;</button>
-        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">${headerRight}</div>
       </div>
-      ${tasks.slice(0,5).map(t => `
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #3a2415;">
-          <div style="width:16px;height:16px;border-radius:50%;border:2px solid #4a3020;flex-shrink:0;cursor:pointer;" onclick="toggleTask('${t.id}')"></div>
-          <span style="font-size:13px;color:#e8d8c4;flex:1;cursor:pointer;" onclick="openTaskDetail('${t.id}')">${t.title}</span>
-          ${t.dueDate ? `<span style="font-size:10px;color:${isOverdue(t.dueDate,t.dueTime)?'#c0392b':'#8a7262'};">${fmtDateShort(t.dueDate)}</span>` : ''}
-        </div>`).join('')}
-      ${!tasks.length ? `<div style="text-align:center;padding:12px 0;color:#8a7262;font-size:12px;">Nothing here yet</div>` : ''}
-      <div style="margin-top:10px;">
-        <input style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;" placeholder="Add to ${dept.label}…"
-          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${dept.id}',this.value);this.value='';}"/>
+      ${taskRows}
+      ${empty}
+      <div style="margin-top:12px;">
+        <input type="text" placeholder="Add to ${esc(dept.label)}…"
+          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${esc(dept.id)}',this.value);this.value='';}"
+          style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;font-family:inherit;" />
       </div>
     </div>`;
   }).join('');
