@@ -9886,73 +9886,117 @@ function whRenderSupplierInline(wh, supId) {
   const sup = wh.suppliers.find(s => s.id === supId);
   if (!sup) return '';
 
-  const statusDot = s => ({pending:'wh-dot-pending',ordered:'wh-dot-ordered',received:'wh-dot-received',issue:'wh-dot-issue'}[s]||'wh-dot-pending');
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+  const dotColor = s => ({pending:'#c49a72', ordered:'#b8900a', received:'#5d8a6a', issue:'#b53535'}[s] || '#c49a72');
+
+  const openCount = sup.orders.filter(o => !o.done).length;
+
+  const S = {
+    back: 'display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8a7262;cursor:pointer;margin-bottom:14px;user-select:none;',
+    header: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;',
+    title: 'font-size:16px;font-weight:600;color:#e8d8c4;',
+    addBtn: 'background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;',
+    statsStrip: 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;',
+    chip: 'background:#321e12;border:1px solid #4a3020;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;',
+    chipLabel: 'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;',
+    chipVal: 'font-size:22px;font-weight:700;color:#e8d8c4;line-height:1.1;',
+    chipValAccent: 'font-size:22px;font-weight:700;color:#c49a72;line-height:1.1;',
+    tabBar: 'display:flex;gap:0;border-bottom:1px solid #4a3020;margin-bottom:14px;',
+    tabInactive: 'padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:#8a7262;border-bottom:2px solid transparent;letter-spacing:0.4px;font-family:inherit;',
+    tabActive:   'padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#e8d8c4;border-bottom:2px solid #c49a72;letter-spacing:0.4px;font-family:inherit;',
+    row: 'display:flex;align-items:center;gap:10px;background:#321e12;border:1px solid #4a3020;border-radius:10px;padding:10px 12px;margin-bottom:8px;',
+    entryTitle: 'font-size:13px;color:#e8d8c4;font-weight:500;',
+    entryMeta:  'font-size:11px;color:#8a7262;margin-top:2px;',
+    select: 'background:#3a2415;border:1px solid #4a3020;color:#e8d8c4;border-radius:6px;font-size:11px;padding:4px 8px;max-width:120px;font-family:inherit;cursor:pointer;outline:none;',
+    del: 'background:transparent;border:1px solid #4a3020;color:#b53535;border-radius:6px;padding:4px 8px;font-size:12px;line-height:1;cursor:pointer;font-family:inherit;',
+    empty: 'text-align:center;padding:24px 0;color:#8a7262;font-size:12px;',
+    addRow: 'display:flex;gap:8px;margin-top:12px;',
+    input: 'flex:1;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;font-family:inherit;',
+    addSmall: 'background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;',
+  };
+
+  const headerActionBtn =
+    whSubTab === 'orders'  ? `<button type="button" style="${S.addBtn}" onclick="whAddOrder('${esc(sup.id)}')">+ Order</button>` :
+    whSubTab === 'notes'   ? `<button type="button" style="${S.addBtn}" onclick="whAddSupNote('${esc(sup.id)}')">+ Note</button>` :
+    whSubTab === 'credits' ? `<button type="button" style="${S.addBtn}" onclick="whAddCredit('${esc(sup.id)}')">+ Credit</button>` : '';
+
+  const tabBtn = (id, label) => `<button type="button" style="${whSubTab===id?S.tabActive:S.tabInactive}" onclick="whSubTab='${id}';whGoSupplier('${esc(sup.id)}')">${label}</button>`;
+
+  let bodyHtml = '';
+  if (whSubTab === 'orders') {
+    if (sup.orders.length) {
+      bodyHtml = sup.orders.slice().reverse().map((o, ri) => {
+        const idx = sup.orders.length - 1 - ri;
+        const opts = ['pending','ordered','received','issue']
+          .map(s => `<option value="${s}"${o.status===s?' selected':''}>${s}</option>`).join('');
+        return `<div style="${S.row}">
+          <div style="width:10px;height:10px;border-radius:50%;background:${dotColor(o.status)};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="${S.entryTitle}">${esc(o.title)}</div>
+            <div style="${S.entryMeta}">${o.ref?'Ref: '+esc(o.ref)+' · ':''}${esc(o.date||'')}</div>
+          </div>
+          <select style="${S.select}" onchange="whUpdateOrder('${esc(sup.id)}',${idx},this.value)">${opts}</select>
+          <button type="button" style="${S.del}" onclick="whDelOrder('${esc(sup.id)}',${idx})">✕</button>
+        </div>`;
+      }).join('');
+    } else {
+      bodyHtml = `<div style="${S.empty}">No orders yet</div>`;
+    }
+  } else if (whSubTab === 'notes') {
+    const noteRows = sup.notes.slice().reverse().map((n, ri) => {
+      const idx = sup.notes.length - 1 - ri;
+      const text = typeof n === 'string' ? n : (n.text || '');
+      const date = typeof n === 'object' && n ? (n.date || '') : '';
+      return `<div style="${S.row}">
+        <span style="font-size:16px;flex-shrink:0;">📝</span>
+        <div style="flex:1;font-size:13px;color:#e8d8c4;min-width:0;">${esc(text)}</div>
+        <div style="${S.entryMeta}">${esc(date)}</div>
+        <button type="button" style="${S.del}" onclick="whDelSupNote('${esc(sup.id)}',${idx})">✕</button>
+      </div>`;
+    }).join('');
+    bodyHtml = `${noteRows || `<div style="${S.empty}">No notes yet</div>`}
+      <div style="${S.addRow}">
+        <input type="text" id="sup-note-inp-${esc(sup.id)}" placeholder="Add a note…"
+          style="${S.input}"
+          onkeydown="if(event.key==='Enter')whAddSupNote('${esc(sup.id)}')" />
+        <button type="button" style="${S.addSmall}" onclick="whAddSupNote('${esc(sup.id)}')">Add</button>
+      </div>`;
+  } else if (whSubTab === 'credits') {
+    const creditRows = sup.credits.map((cr, i) => `<div style="${S.row}">
+      <span style="font-size:16px;flex-shrink:0;">💳</span>
+      <div style="flex:1;min-width:0;">
+        <div style="${S.entryTitle}">${esc(cr.title)}</div>
+        <div style="${S.entryMeta}">${esc(cr.amount||'')}${cr.amount&&cr.date?' · ':''}${esc(cr.date||'')}</div>
+      </div>
+      <button type="button" style="${S.del}" onclick="whDelCredit('${esc(sup.id)}',${i})">✕</button>
+    </div>`).join('');
+    bodyHtml = creditRows || `<div style="${S.empty}">No credit notes</div>`;
+  }
 
   return `
-  <div class="wh-back-btn" onclick="whActiveSection='ops';whActiveId=null;renderUnifiedWorkOps(document.getElementById('work-page-body'))">← Suppliers</div>
-  <div class="wh-section-header">
-    <div class="wh-section-title">📦 ${sup.name}</div>
-    <div style="display:flex;gap:8px">
-      ${whSubTab==='orders' ? `<button class="btn btn-primary btn-sm" onclick="whAddOrder('${sup.id}')">+ Order</button>` : ''}
-      ${whSubTab==='notes'  ? `<button class="btn btn-primary btn-sm" onclick="whAddSupNote('${sup.id}')">+ Note</button>` : ''}
-      ${whSubTab==='credits'? `<button class="btn btn-primary btn-sm" onclick="whAddCredit('${sup.id}')">+ Credit</button>` : ''}
-    </div>
+  <div style="${S.back}" onclick="whActiveSection='ops';whActiveId=null;renderUnifiedWorkOps(document.getElementById('work-page-body'))">← Suppliers</div>
+  <div style="${S.header}">
+    <div style="${S.title}">📦 ${esc(sup.name)}</div>
+    <div style="display:flex;gap:8px;">${headerActionBtn}</div>
   </div>
 
-  <div class="work-stats-strip">
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Orders</div><div class="work-stat-chip-val">${sup.orders.length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Open</div><div class="work-stat-chip-val" style="${sup.orders.filter(o=>!o.done).length?'color:#c49a72':''}">${sup.orders.filter(o=>!o.done).length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Notes</div><div class="work-stat-chip-val">${sup.notes.length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Credits</div><div class="work-stat-chip-val">${sup.credits.length}</div></div>
+  <div style="${S.statsStrip}">
+    <div style="${S.chip}"><div style="${S.chipLabel}">Orders</div><div style="${S.chipVal}">${sup.orders.length}</div></div>
+    <div style="${S.chip}"><div style="${S.chipLabel}">Open</div><div style="${openCount?S.chipValAccent:S.chipVal}">${openCount}</div></div>
+    <div style="${S.chip}"><div style="${S.chipLabel}">Notes</div><div style="${S.chipVal}">${sup.notes.length}</div></div>
+    <div style="${S.chip}"><div style="${S.chipLabel}">Credits</div><div style="${S.chipVal}">${sup.credits.length}</div></div>
   </div>
 
-  <div class="wh-tabs">
-    <button class="wh-tab${whSubTab==='orders'?' active':''}" onclick="whSubTab='orders';whGoSupplier('${sup.id}')">Orders (${sup.orders.length})</button>
-    <button class="wh-tab${whSubTab==='notes'?' active':''}"  onclick="whSubTab='notes';whGoSupplier('${sup.id}')">Notes (${sup.notes.length})</button>
-    <button class="wh-tab${whSubTab==='credits'?' active':''}" onclick="whSubTab='credits';whGoSupplier('${sup.id}')">Credits (${sup.credits.length})</button>
+  <div style="${S.tabBar}">
+    ${tabBtn('orders',  `Orders (${sup.orders.length})`)}
+    ${tabBtn('notes',   `Notes (${sup.notes.length})`)}
+    ${tabBtn('credits', `Credits (${sup.credits.length})`)}
   </div>
 
-  ${whSubTab === 'orders' ? `
-    ${sup.orders.length ? sup.orders.slice().reverse().map((o,ri) => {
-      const idx = sup.orders.length-1-ri;
-      return `<div class="wh-entry-row">
-        <div class="wh-entry-dot ${statusDot(o.status)}"></div>
-        <div style="flex:1;min-width:0">
-          <div class="wh-entry-title">${o.title}</div>
-          <div class="wh-entry-meta">${o.ref?'Ref: '+o.ref+' · ':''}${o.date||''}</div>
-        </div>
-        <select class="form-select" style="font-size:10px;padding:3px 7px;max-width:110px" onchange="whUpdateOrder('${sup.id}',${idx},this.value)">
-          ${['pending','ordered','received','issue'].map(s=>`<option value="${s}"${o.status===s?' selected':''}>${s}</option>`).join('')}
-        </select>
-        <button class="t-act danger" onclick="whDelOrder('${sup.id}',${idx})">✕</button>
-      </div>`;
-    }).join('') : '<div class="empty-state" style="padding:24px 0"><div style="font-size:12px">No orders yet</div></div>'}
-  ` : ''}
-
-  ${whSubTab === 'notes' ? `
-    ${sup.notes.slice().reverse().map((n,ri) => {
-      const idx = sup.notes.length-1-ri;
-      return `<div class="wh-entry-row">
-        <span style="font-size:16px">📝</span>
-        <div style="flex:1;font-size:13px;color:#e8d8c4">${n.text||n}</div>
-        <div class="wh-entry-meta">${n.date||''}</div>
-        <button class="t-act danger" onclick="whDelSupNote('${sup.id}',${idx})">✕</button>
-      </div>`;
-    }).join('')}
-    <div class="wh-inline-form" style="margin-top:10px">
-      <input class="wh-inline-input" id="sup-note-inp-${sup.id}" placeholder="Add a note…" onkeydown="if(event.key==='Enter')whAddSupNote('${sup.id}')"/>
-      <button class="btn btn-secondary btn-sm" onclick="whAddSupNote('${sup.id}')">Add</button>
-    </div>
-  ` : ''}
-
-  ${whSubTab === 'credits' ? `
-    ${sup.credits.map((cr,i) => `<div class="wh-entry-row">
-      <span style="font-size:16px">💳</span>
-      <div style="flex:1"><div class="wh-entry-title">${cr.title}</div><div class="wh-entry-meta">${cr.amount||''} · ${cr.date||''}</div></div>
-      <button class="t-act danger" onclick="whDelCredit('${sup.id}',${i})">✕</button>
-    </div>`).join('')}
-    ${!sup.credits.length ? '<div style="color:#8a7262;font-size:13px;padding:12px 0">No credit notes</div>' : ''}
-  ` : ''}`;
+  ${bodyHtml}`;
 }
 
 // ── ECOMMERCE TAB ─────────────────────────────────────────────
