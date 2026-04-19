@@ -3655,9 +3655,9 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
       <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Day of week</label>
       <select id="wm-day"
         style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
-        <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
-        <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
-        <option value="0">Sunday</option>
+        <option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option>
+        <option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option>
+        <option value="6">Sunday</option>
       </select>
     </div>
     <div style="display:flex;gap:12px;margin-bottom:12px;">
@@ -3669,6 +3669,20 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
       <div style="flex:1;">
         <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">End</label>
         <input type="time" id="wm-end"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Category</label>
+        <select id="wm-category"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
+          <option value="work">Work</option><option value="personal">Personal</option><option value="college">College</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Location</label>
+        <input type="text" id="wm-location" placeholder="Optional"
           style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
       </div>
     </div>
@@ -3689,6 +3703,44 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
       <button type="button" onclick="closeModal('modal-weekly-meeting')"
         style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
       <button type="button" onclick="saveWeeklyMeeting()"
+        style="background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY HABIT MODAL -->
+<div class="modal-overlay" id="modal-daily-habit">
+  <div class="modal" style="max-width:420px;background:#2b1d12;border:1px solid #4a3020;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div id="dh-modal-title" style="font-size:18px;font-weight:600;color:#e8d8c4;">Add Daily Habit</div>
+      <button type="button" onclick="closeModal('modal-daily-habit')"
+        style="background:transparent;border:none;color:#8a7262;font-size:18px;cursor:pointer;">&times;</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Habit title</label>
+      <input type="text" id="dh-title" placeholder="e.g. Drink water, Meditate…"
+        style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:18px;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Default time</label>
+        <input type="time" id="dh-time"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Category</label>
+        <select id="dh-category"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
+          <option value="personal">Personal</option><option value="work">Work</option><option value="college">College</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" id="dh-delete-btn" onclick="deleteDailyHabit()"
+        style="display:none;background:transparent;border:1px solid #4a3020;color:#b53535;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;margin-right:auto;">Delete</button>
+      <button type="button" onclick="closeModal('modal-daily-habit')"
+        style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button type="button" onclick="saveDailyHabit()"
         style="background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Save</button>
     </div>
   </div>
@@ -5306,6 +5358,8 @@ function ensureNewData() {
   if (!D.dailyReflections) D.dailyReflections = {};
   if (!D.qcItems) D.qcItems = [];
   if (!D.weeklyMeetings) D.weeklyMeetings = [];
+  if (!D.dailyHabits) D.dailyHabits = [];
+  if (!D.habitLogs) D.habitLogs = {};
 }
 
 // ═══════════════════════════════════════════════════
@@ -7594,7 +7648,7 @@ function renderAgenda() {
   const el = document.getElementById('agenda-body'); if (!el) return;
   ensureNewData();
   const ds = _agendaDate;
-  const dayOfWeek = new Date(ds + 'T00:00:00').getDay();
+  const dayOfWeek = _dsWeekdayMon(ds);
 
   // Update header label
   const lbl = document.getElementById('agenda-date-label');
@@ -7794,20 +7848,28 @@ function wmPickColor(color, el) {
   });
 }
 
+// Weekday convention: day 0..6 where 0=Monday (per spec).
+// Convert JS Date.getDay() (0=Sunday) to Mon-first index.
+function _jsDayToMon(jsDay) { return (jsDay + 6) % 7; }
+function _dsWeekdayMon(ds) { return _jsDayToMon(new Date(ds + 'T00:00:00').getDay()); }
+
 function openMeetingModal(id) {
   ensureNewData();
   _agendaEditMeetingId = null;
   const title = document.getElementById('meeting-modal-title');
   const delBtn = document.getElementById('wm-delete-btn');
+  const refDate = (typeof currentDailyDate === 'string' && curPage === 'daily') ? currentDailyDate : (typeof _agendaDate === 'string' ? _agendaDate : today());
 
   if (id) {
     const m = (D.weeklyMeetings || []).find(x => x.id === id);
     if (m) {
       _agendaEditMeetingId = id;
-      document.getElementById('wm-title').value = m.title || '';
-      document.getElementById('wm-day').value   = String(m.day != null ? m.day : 1);
-      document.getElementById('wm-start').value = m.time || '';
-      document.getElementById('wm-end').value   = m.endTime || '';
+      document.getElementById('wm-title').value    = m.title || '';
+      document.getElementById('wm-day').value      = String(m.day != null ? m.day : 0);
+      document.getElementById('wm-start').value    = m.time || '';
+      document.getElementById('wm-end').value      = m.endTime || '';
+      document.getElementById('wm-category').value = m.category || 'work';
+      document.getElementById('wm-location').value = m.location || '';
       wmPickColor(m.color || '#c49a72');
       if (title) title.textContent = 'Edit Weekly Meeting';
       if (delBtn) delBtn.style.display = 'inline-block';
@@ -7817,35 +7879,44 @@ function openMeetingModal(id) {
   }
 
   // New meeting defaults
-  document.getElementById('wm-title').value = '';
-  document.getElementById('wm-day').value   = String(new Date(_agendaDate + 'T00:00:00').getDay() || 1);
-  document.getElementById('wm-start').value = '';
-  document.getElementById('wm-end').value   = '';
+  document.getElementById('wm-title').value    = '';
+  document.getElementById('wm-day').value      = String(_dsWeekdayMon(refDate));
+  document.getElementById('wm-start').value    = '';
+  document.getElementById('wm-end').value      = '';
+  document.getElementById('wm-category').value = 'work';
+  document.getElementById('wm-location').value = '';
   wmPickColor('#c49a72');
   if (title) title.textContent = 'Add Weekly Meeting';
   if (delBtn) delBtn.style.display = 'none';
   openModal('modal-weekly-meeting');
 }
 
+function _afterMeetingMutation() {
+  if (curPage === 'agenda' && typeof renderAgenda === 'function') renderAgenda();
+  else if (curPage === 'daily' && typeof renderDailyPage === 'function') renderDailyPage();
+}
+
 function saveWeeklyMeeting() {
   ensureNewData();
-  const title = document.getElementById('wm-title').value.trim();
-  const day   = parseInt(document.getElementById('wm-day').value, 10);
-  const time  = document.getElementById('wm-start').value;
-  const endTime = document.getElementById('wm-end').value;
+  const title    = document.getElementById('wm-title').value.trim();
+  const day      = parseInt(document.getElementById('wm-day').value, 10);
+  const time     = document.getElementById('wm-start').value;
+  const endTime  = document.getElementById('wm-end').value;
+  const category = document.getElementById('wm-category').value;
+  const location = document.getElementById('wm-location').value.trim();
   if (!title) { toast('Title is required'); return; }
   if (isNaN(day)) { toast('Pick a day'); return; }
 
   if (_agendaEditMeetingId) {
     const m = D.weeklyMeetings.find(x => x.id === _agendaEditMeetingId);
-    if (m) { m.title = title; m.day = day; m.time = time; m.endTime = endTime; m.color = _agendaMeetingColor; }
+    if (m) { m.title = title; m.day = day; m.time = time; m.endTime = endTime; m.color = _agendaMeetingColor; m.category = category; m.location = location; }
   } else {
-    D.weeklyMeetings.push({ id: genId(), title, day, time, endTime, color: _agendaMeetingColor });
+    D.weeklyMeetings.push({ id: genId(), title, day, time, endTime, color: _agendaMeetingColor, category, location });
   }
   save();
   closeModal('modal-weekly-meeting');
   _agendaEditMeetingId = null;
-  renderAgenda();
+  _afterMeetingMutation();
   toast('Meeting saved');
 }
 
@@ -7855,7 +7926,7 @@ function deleteWeeklyMeeting() {
   save();
   closeModal('modal-weekly-meeting');
   _agendaEditMeetingId = null;
-  renderAgenda();
+  _afterMeetingMutation();
   toast('Meeting deleted');
 }
 
