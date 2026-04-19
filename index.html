@@ -2421,6 +2421,20 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   border-radius: 8px;
 }
 #work-page-body input::placeholder { color: #8a7262 !important; }
+
+/* AGENDA layout (no colors — those stay inline) */
+.ag-grid { display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:18px; }
+.ag-inbox { max-height: calc(100vh - 220px); overflow-y: auto; }
+.ag-schedule { max-height: calc(100vh - 220px); overflow-y: auto; position:relative; }
+.ag-slot { position:relative; }
+.ag-slot.drag-over { outline: 2px dashed #c49a72; outline-offset: -2px; }
+.ag-item { cursor: grab; user-select: none; }
+.ag-item:active { cursor: grabbing; }
+.ag-item.drag-ghost { opacity: 0.35; }
+@media (max-width: 900px) {
+  .ag-grid { grid-template-columns: 1fr; }
+  .ag-schedule, .ag-inbox { max-height: none; }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 </head>
@@ -3012,22 +3026,19 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <div class="page-header">
       <div>
         <div class="page-title">Agenda</div>
-        <div class="page-subtitle">Your week at a glance</div>
+        <div class="page-subtitle" id="agenda-subtitle">Daily schedule</div>
       </div>
-      <div class="header-actions">
-        <select class="btn btn-ghost btn-sm" id="agenda-range" onchange="renderAgenda()" style="padding:6px 11px">
-          <option value="7">Next 7 days</option>
-          <option value="14">Next 14 days</option>
-          <option value="30">Next 30 days</option>
-        </select>
+      <div class="header-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" onclick="agendaNav(-1)"
+          style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:6px 12px;font-size:14px;line-height:1;cursor:pointer;font-family:inherit;">&larr;</button>
+        <button type="button" onclick="agendaGoToday()"
+          style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Today</button>
+        <button type="button" onclick="agendaNav(1)"
+          style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:6px 12px;font-size:14px;line-height:1;cursor:pointer;font-family:inherit;">&rarr;</button>
+        <span id="agenda-date-label" style="font-size:13px;color:#e8d8c4;font-weight:500;padding:0 10px;min-width:180px;text-align:center;"></span>
+        <button type="button" onclick="openMeetingModal()"
+          style="background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">+ Meeting</button>
       </div>
-    </div>
-    <div class="filter-bar">
-      <span class="filter-chip active" data-af="all" onclick="setAgendaFilter('all',this)">All</span>
-      <span class="filter-chip" data-af="work" onclick="setAgendaFilter('work',this)">Work</span>
-      <span class="filter-chip" data-af="personal" onclick="setAgendaFilter('personal',this)">Personal</span>
-      <span class="filter-chip" data-af="college" onclick="setAgendaFilter('college',this)">College</span>
-      <span class="filter-chip" data-af="reminders" onclick="setAgendaFilter('reminders',this)">Reminders</span>
     </div>
     <div id="agenda-body" style="padding:18px 38px 50px"></div>
   </div>
@@ -3627,6 +3638,62 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
       <button class="btn btn-danger btn-sm" id="cd-delete-btn" style="display:none" onclick="deleteCountdownEdit()">Delete</button>
     </div>
   </div>
+<!-- WEEKLY MEETING MODAL -->
+<div class="modal-overlay" id="modal-weekly-meeting">
+  <div class="modal" style="max-width:440px;background:#2b1d12;border:1px solid #4a3020;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div id="meeting-modal-title" style="font-size:18px;font-weight:600;color:#e8d8c4;">Add Weekly Meeting</div>
+      <button type="button" onclick="closeModal('modal-weekly-meeting')"
+        style="background:transparent;border:none;color:#8a7262;font-size:18px;cursor:pointer;">&times;</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Title</label>
+      <input type="text" id="wm-title" placeholder="Meeting title…"
+        style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Day of week</label>
+      <select id="wm-day"
+        style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+        <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+        <option value="0">Sunday</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Start</label>
+        <input type="time" id="wm-start"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">End</label>
+        <input type="time" id="wm-end"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+      </div>
+    </div>
+    <div style="margin-bottom:18px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Colour</label>
+      <div id="wm-color-picker" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span data-color="#c49a72" onclick="wmPickColor('#c49a72',this)" style="width:28px;height:28px;border-radius:50%;background:#c49a72;cursor:pointer;border:2px solid #c49a72;"></span>
+        <span data-color="#5d8a6a" onclick="wmPickColor('#5d8a6a',this)" style="width:28px;height:28px;border-radius:50%;background:#5d8a6a;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#4a7fb5" onclick="wmPickColor('#4a7fb5',this)" style="width:28px;height:28px;border-radius:50%;background:#4a7fb5;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#b8900a" onclick="wmPickColor('#b8900a',this)" style="width:28px;height:28px;border-radius:50%;background:#b8900a;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#b53535" onclick="wmPickColor('#b53535',this)" style="width:28px;height:28px;border-radius:50%;background:#b53535;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#8a7262" onclick="wmPickColor('#8a7262',this)" style="width:28px;height:28px;border-radius:50%;background:#8a7262;cursor:pointer;border:2px solid transparent;"></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" id="wm-delete-btn" onclick="deleteWeeklyMeeting()"
+        style="display:none;background:transparent;border:1px solid #4a3020;color:#b53535;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;margin-right:auto;">Delete</button>
+      <button type="button" onclick="closeModal('modal-weekly-meeting')"
+        style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button type="button" onclick="saveWeeklyMeeting()"
+        style="background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:600px">
     <div id="confirm-content"></div>
@@ -5238,6 +5305,7 @@ function ensureNewData() {
   if (!D.weeklyReviews) D.weeklyReviews = {};
   if (!D.dailyReflections) D.dailyReflections = {};
   if (!D.qcItems) D.qcItems = [];
+  if (!D.weeklyMeetings) D.weeklyMeetings = [];
 }
 
 // ═══════════════════════════════════════════════════
@@ -7475,76 +7543,320 @@ function positionDragGhost(dc, ghost) {
 // ════════════════════════════════════════════════════════
 //  FEATURE: 6 — AGENDA VIEW
 // ════════════════════════════════════════════════════════
-let _agendaFilter = 'all';
 
-function setAgendaFilter(f, el) {
-  _agendaFilter = f;
-  document.querySelectorAll('#page-agenda .filter-chip').forEach(c => c.classList.remove('active'));
-  if (el) el.classList.add('active');
+// ══════════════════════════════════════════════════════════
+//  AGENDA — daily schedule + unscheduled inbox + drag/drop
+// ══════════════════════════════════════════════════════════
+let _agendaDate = new Date().toISOString().slice(0,10);
+let _agendaEditMeetingId = null;
+let _agendaMeetingColor  = '#c49a72';
+
+const AG_HOUR_START = 7;
+const AG_HOUR_END   = 22;   // last row starts at 21:00 and covers 21-22
+const AG_CAT_COLOR = { work:'#c49a72', personal:'#5d8a6a', college:'#4a7fb5', reminder:'#8a7262', meeting:'#c49a72' };
+
+function _agEscAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function _agShiftDate(ds, days) {
+  const d = new Date(ds + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+}
+
+function _agFmtDateLabel(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  const todStr = new Date().toISOString().slice(0,10);
+  const tomStr = _agShiftDate(todStr, 1);
+  const yesStr = _agShiftDate(todStr, -1);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const mnths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const base = dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + mnths[d.getMonth()];
+  if (ds === todStr) return 'Today · ' + base;
+  if (ds === tomStr) return 'Tomorrow · ' + base;
+  if (ds === yesStr) return 'Yesterday · ' + base;
+  return base;
+}
+
+function agendaNav(dir) {
+  _agendaDate = _agShiftDate(_agendaDate, dir);
+  renderAgenda();
+}
+function agendaGoToday() {
+  _agendaDate = new Date().toISOString().slice(0,10);
   renderAgenda();
 }
 
 function renderAgenda() {
   const el = document.getElementById('agenda-body'); if (!el) return;
-  const days = parseInt(document.getElementById('agenda-range')?.value || 7);
-  const tod = new Date(); tod.setHours(0,0,0,0);
+  ensureNewData();
+  const ds = _agendaDate;
+  const dayOfWeek = new Date(ds + 'T00:00:00').getDay();
 
-  const allItems = [];
-  for (let i = 0; i < days; i++) {
-    const d = new Date(tod); d.setDate(tod.getDate() + i);
-    const ds = d.toISOString().slice(0,10);
-    D.tasks.filter(t => t.dueDate === ds && t.status === 'incomplete').forEach(t => {
-      if (_agendaFilter !== 'all' && _agendaFilter !== t.cat) return;
-      allItems.push({date:ds, time:t.dueTime||'', title:t.title, cat:t.cat, type:'task', id:t.id, priority:t.priority});
-    });
-    D.reminders.filter(r => r.date === ds && r.status === 'pending').forEach(r => {
-      if (_agendaFilter !== 'all' && _agendaFilter !== 'reminders') return;
-      allItems.push({date:ds, time:r.time||'', title:r.title, cat:'reminder', type:'reminder', id:r.id});
-    });
-  }
+  // Update header label
+  const lbl = document.getElementById('agenda-date-label');
+  if (lbl) lbl.textContent = _agFmtDateLabel(ds);
 
-  if (!allItems.length) {
-    el.innerHTML = `<div style="text-align:center;padding:50px;color:#8a7262;">
-      <div style="font-size:32px;margin-bottom:12px;">🗓️</div>
-      <div style="font-size:14px;">Nothing scheduled for the next ${days} days</div>
-    </div>`;
-    return;
-  }
+  // ── Collect items ────────────────────────────────────────
+  const dayTasks = D.tasks.filter(t => t.dueDate === ds && t.status === 'incomplete');
+  const dayRems  = D.reminders.filter(r => r.date === ds && r.status === 'pending');
+  const dayMeets = (D.weeklyMeetings || []).filter(m => m.day === dayOfWeek);
 
-  const byDate = {};
-  allItems.forEach(item => { (byDate[item.date] = byDate[item.date] || []).push(item); });
-
-  const todStr = tod.toISOString().slice(0,10);
-  const mnths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const priDot = p => ({urgent:'🔴',high:'🟠',normal:'',low:'🔵'}[p]||'');
-  const catColor = cat => ({work:'#c49a72',personal:'#5d8a6a',college:'#4a7fb5',reminder:'#8a7262',countdown:'#c49a72'}[cat]||'#8a7262');
-  const catLabel = cat => ({work:'WORK',personal:'PERSONAL',college:'COLLEGE',reminder:'REMINDER',countdown:'COUNTDOWN'}[cat]||cat.toUpperCase());
-  const borderCol = cat => ({work:'#c49a72',personal:'#5d8a6a',college:'#4a7fb5',reminder:'#8a7262'}[cat]||'#4a3020');
-
-  let html = '';
-  Object.keys(byDate).sort().forEach(ds => {
-    const d = new Date(ds+'T00:00:00');
-    const isToday = ds === todStr;
-    const isTomorrow = ds === new Date(Date.now()+86400000).toISOString().slice(0,10);
-    const label = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : dayNames[d.getDay()]+', '+d.getDate()+' '+mnths[d.getMonth()];
-    const items = byDate[ds].sort((a,b) => (a.time||'99:99') > (b.time||'99:99') ? 1 : -1);
-
-    html += `<div style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="font-size:${isToday?'16':'14'}px;font-weight:${isToday?'600':'400'};color:${isToday?'#c49a72':'#e8d8c4'};">${label}</span>
-        <div style="flex:1;height:1px;background:#4a3020;"></div>
-        <span style="font-size:11px;color:#8a7262;">${items.length} item${items.length!==1?'s':''}</span>
-      </div>
-      ${items.map(item => `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${borderCol(item.cat)};border-radius:10px;margin-bottom:8px;cursor:pointer;" onclick="${item.type==='task'?`openTaskDetail('${item.id}')`:''}" >
-        <span style="font-size:12px;color:#8a7262;min-width:50px;flex-shrink:0;">${item.time?item.time.slice(0,5):'All day'}</span>
-        <span style="font-size:13px;color:#e8d8c4;flex:1;">${priDot(item.priority)} ${item.title}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(196,154,114,0.1);color:${catColor(item.cat)};letter-spacing:1px;">${catLabel(item.cat)}</span>
-      </div>`).join('')}
-    </div>`;
+  const scheduled = [];
+  const unscheduled = [];
+  dayTasks.forEach(t => {
+    const item = { type:'task', id:t.id, title:t.title, time:t.dueTime||'', endTime:'', cat:t.cat, color: AG_CAT_COLOR[t.cat] || '#8a7262' };
+    (t.dueTime ? scheduled : unscheduled).push(item);
+  });
+  dayRems.forEach(r => {
+    const item = { type:'reminder', id:r.id, title:r.title, time:r.time||'', endTime:'', cat:'reminder', color: AG_CAT_COLOR.reminder };
+    (r.time ? scheduled : unscheduled).push(item);
+  });
+  dayMeets.forEach(m => {
+    scheduled.push({ type:'meeting', id:m.id, title:m.title, time:m.time||'', endTime:m.endTime||'', cat:'meeting', color: m.color || '#c49a72' });
   });
 
-  el.innerHTML = html;
+  // Bucket scheduled items by hour
+  const byHour = {};
+  scheduled.forEach(it => {
+    const h = it.time ? parseInt(it.time.split(':')[0], 10) : null;
+    if (h == null || isNaN(h)) return;
+    const slot = Math.min(AG_HOUR_END - 1, Math.max(AG_HOUR_START, h));
+    (byHour[slot] = byHour[slot] || []).push(it);
+  });
+
+  // ── Left panel: time grid ────────────────────────────────
+  const nowStr = new Date().toISOString().slice(0,10);
+  const isTodayView = ds === nowStr;
+  const now = new Date();
+
+  const rows = [];
+  for (let h = AG_HOUR_START; h < AG_HOUR_END; h++) {
+    const hourLabel = (h === 12) ? '12pm' : (h > 12 ? (h - 12) + 'pm' : h + 'am');
+    const items = (byHour[h] || []).sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+    const slotTime = String(h).padStart(2,'0') + ':00';
+
+    const itemsHtml = items.map(it => {
+      const timeTxt = it.time ? (it.endTime ? it.time.slice(0,5) + ' – ' + it.endTime.slice(0,5) : it.time.slice(0,5)) : '';
+      const clickHandler = it.type === 'task'
+        ? `openTaskDetail('${_agEscAttr(it.id)}')`
+        : it.type === 'meeting'
+          ? `openMeetingModal('${_agEscAttr(it.id)}')`
+          : '';
+      const draggable = it.type === 'meeting' ? 'false' : 'true';
+      return `<div class="ag-item" draggable="${draggable}"
+          ondragstart="agendaDragStart(event,'${it.type}','${_agEscAttr(it.id)}')"
+          ondragend="agendaDragEnd(event)"
+          onclick="${clickHandler}"
+          style="display:flex;align-items:center;gap:8px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${it.color};border-radius:8px;padding:6px 10px;margin-bottom:4px;">
+          <span style="font-size:10px;color:#8a7262;min-width:90px;flex-shrink:0;">${timeTxt || '—'}</span>
+          <span style="font-size:12px;color:#e8d8c4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_agEscAttr(it.title)}</span>
+          ${it.type==='meeting' ? '<span style="font-size:9px;color:#8a7262;letter-spacing:1px;">WEEKLY</span>' : ''}
+        </div>`;
+    }).join('');
+
+    const nowLine = isTodayView && now.getHours() === h
+      ? `<div style="position:absolute;left:0;right:0;top:${(now.getMinutes()/60)*100}%;height:2px;background:#c0392b;pointer-events:none;"><div style="position:absolute;left:-4px;top:-3px;width:8px;height:8px;background:#c0392b;border-radius:50%;"></div></div>`
+      : '';
+
+    rows.push(`<div class="ag-slot" data-slot-time="${slotTime}"
+        ondragover="agendaDragOver(event,this)"
+        ondragleave="agendaDragLeave(event,this)"
+        ondrop="agendaDrop(event,'${slotTime}')"
+        onclick="agendaSlotClick(event,'${slotTime}')"
+        style="display:grid;grid-template-columns:60px 1fr;gap:10px;min-height:60px;padding:6px 10px;border-bottom:1px solid #3a2415;cursor:pointer;">
+        <div style="font-size:11px;color:#8a7262;padding-top:4px;">${hourLabel}</div>
+        <div style="position:relative;min-height:48px;">${itemsHtml}${nowLine}</div>
+      </div>`);
+  }
+
+  // ── Right panel: unscheduled inbox ───────────────────────
+  const inboxItemsHtml = unscheduled.map(it => `<div class="ag-item" draggable="true"
+      ondragstart="agendaDragStart(event,'${it.type}','${_agEscAttr(it.id)}')"
+      ondragend="agendaDragEnd(event)"
+      onclick="${it.type==='task' ? `openTaskDetail('${_agEscAttr(it.id)}')` : ''}"
+      style="display:flex;align-items:center;gap:8px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${it.color};border-radius:8px;padding:8px 12px;margin-bottom:6px;">
+      <span style="font-size:12px;color:#e8d8c4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_agEscAttr(it.title)}</span>
+      <span style="font-size:9px;color:#8a7262;letter-spacing:1px;text-transform:uppercase;">${it.cat}</span>
+    </div>`).join('');
+
+  const inboxEmpty = unscheduled.length
+    ? ''
+    : `<div style="text-align:center;padding:24px 6px;color:#8a7262;font-size:12px;">Nothing unscheduled</div>`;
+
+  const inboxPanel = `<div class="ag-inbox" style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:16px;"
+      ondragover="agendaDragOver(event,this)"
+      ondragleave="agendaDragLeave(event,this)"
+      ondrop="agendaDrop(event,'')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:600;color:#e8d8c4;letter-spacing:0.5px;text-transform:uppercase;">Unscheduled</div>
+        <span style="font-size:10px;color:#8a7262;background:#3a2415;padding:2px 8px;border-radius:20px;">${unscheduled.length}</span>
+      </div>
+      ${inboxItemsHtml}${inboxEmpty}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #3a2415;">
+        <input type="text" id="ag-quickadd-inbox" placeholder="Quick add task for ${_agFmtDateLabel(ds).split(' · ')[0]}…"
+          onkeydown="if(event.key==='Enter'&&this.value.trim()){agendaQuickAdd(this.value.trim(),'');this.value='';}"
+          style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 12px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/>
+      </div>
+    </div>`;
+
+  const schedulePanel = `<div class="ag-schedule" style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:6px 0;">
+      ${rows.join('')}
+    </div>`;
+
+  el.innerHTML = `<div class="ag-grid">${schedulePanel}${inboxPanel}</div>`;
+}
+
+// ── Drag & drop ─────────────────────────────────────────────
+let _agDrag = null;
+function agendaDragStart(e, type, id) {
+  _agDrag = { type, id };
+  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', type + ':' + id); } catch(_) {}
+  e.currentTarget.classList.add('drag-ghost');
+}
+function agendaDragEnd(e) {
+  _agDrag = null;
+  e.currentTarget.classList.remove('drag-ghost');
+  document.querySelectorAll('.ag-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+}
+function agendaDragOver(e, el) {
+  if (!_agDrag) return;
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch(_) {}
+  el.classList.add('drag-over');
+}
+function agendaDragLeave(e, el) {
+  if (el.contains(e.relatedTarget)) return;
+  el.classList.remove('drag-over');
+}
+function agendaDrop(e, slotTime) {
+  e.preventDefault();
+  document.querySelectorAll('.ag-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+  let info = _agDrag;
+  if (!info) {
+    try {
+      const raw = e.dataTransfer.getData('text/plain') || '';
+      const [type, id] = raw.split(':');
+      if (type && id) info = { type, id };
+    } catch(_) {}
+  }
+  if (!info) return;
+
+  if (info.type === 'task') {
+    const t = D.tasks.find(x => x.id === info.id);
+    if (!t) return;
+    t.dueDate = _agendaDate;
+    t.dueTime = slotTime || '';
+  } else if (info.type === 'reminder') {
+    const r = D.reminders.find(x => x.id === info.id);
+    if (!r) return;
+    r.date = _agendaDate;
+    r.time = slotTime || '';
+  } else {
+    return;
+  }
+  _agDrag = null;
+  save();
+  renderAgenda();
+}
+
+// ── Slot click → quick add task at that time ────────────────
+function agendaSlotClick(e, slotTime) {
+  // Ignore clicks that originate on an item inside the slot
+  if (e.target.closest('.ag-item')) return;
+  const title = prompt('Quick add for ' + slotTime + ':');
+  if (!title || !title.trim()) return;
+  agendaQuickAdd(title.trim(), slotTime);
+}
+
+function agendaQuickAdd(title, slotTime) {
+  D.tasks.push({
+    id: genId(), title, desc: '', cat: 'personal',
+    dueDate: _agendaDate, dueTime: slotTime || '',
+    priority: 'normal', status: 'incomplete',
+    notes: [], reminderDate: '', reminderTime: '', repeat: '',
+    created: Date.now(),
+    history: [{ ts: Date.now(), action: 'Created from Agenda' }],
+    dailyDate: ''
+  });
+  save();
+  renderAgenda();
+}
+
+// ── Weekly meeting modal ────────────────────────────────────
+function wmPickColor(color, el) {
+  _agendaMeetingColor = color;
+  document.querySelectorAll('#wm-color-picker span').forEach(s => {
+    s.style.border = '2px solid ' + (s.dataset.color === color ? color : 'transparent');
+  });
+}
+
+function openMeetingModal(id) {
+  ensureNewData();
+  _agendaEditMeetingId = null;
+  const title = document.getElementById('meeting-modal-title');
+  const delBtn = document.getElementById('wm-delete-btn');
+
+  if (id) {
+    const m = (D.weeklyMeetings || []).find(x => x.id === id);
+    if (m) {
+      _agendaEditMeetingId = id;
+      document.getElementById('wm-title').value = m.title || '';
+      document.getElementById('wm-day').value   = String(m.day != null ? m.day : 1);
+      document.getElementById('wm-start').value = m.time || '';
+      document.getElementById('wm-end').value   = m.endTime || '';
+      wmPickColor(m.color || '#c49a72');
+      if (title) title.textContent = 'Edit Weekly Meeting';
+      if (delBtn) delBtn.style.display = 'inline-block';
+      openModal('modal-weekly-meeting');
+      return;
+    }
+  }
+
+  // New meeting defaults
+  document.getElementById('wm-title').value = '';
+  document.getElementById('wm-day').value   = String(new Date(_agendaDate + 'T00:00:00').getDay() || 1);
+  document.getElementById('wm-start').value = '';
+  document.getElementById('wm-end').value   = '';
+  wmPickColor('#c49a72');
+  if (title) title.textContent = 'Add Weekly Meeting';
+  if (delBtn) delBtn.style.display = 'none';
+  openModal('modal-weekly-meeting');
+}
+
+function saveWeeklyMeeting() {
+  ensureNewData();
+  const title = document.getElementById('wm-title').value.trim();
+  const day   = parseInt(document.getElementById('wm-day').value, 10);
+  const time  = document.getElementById('wm-start').value;
+  const endTime = document.getElementById('wm-end').value;
+  if (!title) { toast('Title is required'); return; }
+  if (isNaN(day)) { toast('Pick a day'); return; }
+
+  if (_agendaEditMeetingId) {
+    const m = D.weeklyMeetings.find(x => x.id === _agendaEditMeetingId);
+    if (m) { m.title = title; m.day = day; m.time = time; m.endTime = endTime; m.color = _agendaMeetingColor; }
+  } else {
+    D.weeklyMeetings.push({ id: genId(), title, day, time, endTime, color: _agendaMeetingColor });
+  }
+  save();
+  closeModal('modal-weekly-meeting');
+  _agendaEditMeetingId = null;
+  renderAgenda();
+  toast('Meeting saved');
+}
+
+function deleteWeeklyMeeting() {
+  if (!_agendaEditMeetingId) return;
+  D.weeklyMeetings = (D.weeklyMeetings || []).filter(m => m.id !== _agendaEditMeetingId);
+  save();
+  closeModal('modal-weekly-meeting');
+  _agendaEditMeetingId = null;
+  renderAgenda();
+  toast('Meeting deleted');
 }
 
 
