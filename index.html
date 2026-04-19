@@ -2421,6 +2421,20 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   border-radius: 8px;
 }
 #work-page-body input::placeholder { color: #8a7262 !important; }
+
+/* AGENDA layout (no colors — those stay inline) */
+.ag-grid { display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:18px; }
+.ag-inbox { max-height: calc(100vh - 220px); overflow-y: auto; }
+.ag-schedule { max-height: calc(100vh - 220px); overflow-y: auto; position:relative; }
+.ag-slot { position:relative; }
+.ag-slot.drag-over { outline: 2px dashed #c49a72; outline-offset: -2px; }
+.ag-item { cursor: grab; user-select: none; }
+.ag-item:active { cursor: grabbing; }
+.ag-item.drag-ghost { opacity: 0.35; }
+@media (max-width: 900px) {
+  .ag-grid { grid-template-columns: 1fr; }
+  .ag-schedule, .ag-inbox { max-height: none; }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 </head>
@@ -3012,22 +3026,19 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <div class="page-header">
       <div>
         <div class="page-title">Agenda</div>
-        <div class="page-subtitle">Your week at a glance</div>
+        <div class="page-subtitle" id="agenda-subtitle">Daily schedule</div>
       </div>
-      <div class="header-actions">
-        <select class="btn btn-ghost btn-sm" id="agenda-range" onchange="renderAgenda()" style="padding:6px 11px">
-          <option value="7">Next 7 days</option>
-          <option value="14">Next 14 days</option>
-          <option value="30">Next 30 days</option>
-        </select>
+      <div class="header-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" onclick="agendaNav(-1)"
+          style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:6px 12px;font-size:14px;line-height:1;cursor:pointer;font-family:inherit;">&larr;</button>
+        <button type="button" onclick="agendaGoToday()"
+          style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Today</button>
+        <button type="button" onclick="agendaNav(1)"
+          style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:6px 12px;font-size:14px;line-height:1;cursor:pointer;font-family:inherit;">&rarr;</button>
+        <span id="agenda-date-label" style="font-size:13px;color:#e8d8c4;font-weight:500;padding:0 10px;min-width:180px;text-align:center;"></span>
+        <button type="button" onclick="openMeetingModal()"
+          style="background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">+ Meeting</button>
       </div>
-    </div>
-    <div class="filter-bar">
-      <span class="filter-chip active" data-af="all" onclick="setAgendaFilter('all',this)">All</span>
-      <span class="filter-chip" data-af="work" onclick="setAgendaFilter('work',this)">Work</span>
-      <span class="filter-chip" data-af="personal" onclick="setAgendaFilter('personal',this)">Personal</span>
-      <span class="filter-chip" data-af="college" onclick="setAgendaFilter('college',this)">College</span>
-      <span class="filter-chip" data-af="reminders" onclick="setAgendaFilter('reminders',this)">Reminders</span>
     </div>
     <div id="agenda-body" style="padding:18px 38px 50px"></div>
   </div>
@@ -3075,18 +3086,18 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         <button class="btn btn-primary btn-sm" onclick="openAddTask()">+ Task</button>
       </div>
     </div>
-    <div class="filter-bar">
-      <span class="filter-chip active" data-tf="all"         onclick="setTodoFilter('all',this)">All</span>
-      <span class="filter-chip" data-tf="work"               onclick="setTodoFilter('work',this)">Work</span>
-      <span class="filter-chip" data-tf="operations"         onclick="setTodoFilter('operations',this)">Operations</span>
-      <span class="filter-chip" data-tf="ecommerce"          onclick="setTodoFilter('ecommerce',this)">eCommerce</span>
-      <span class="filter-chip" data-tf="staff"              onclick="setTodoFilter('staff',this)">Staff</span>
-      <span class="filter-chip" data-tf="freelance"          onclick="setTodoFilter('freelance',this)">Freelance</span>
-      <span class="filter-chip fc-personal" data-tf="personal" onclick="setTodoFilter('personal',this)">Personal</span>
-      <span class="filter-chip fc-college"  data-tf="college"  onclick="setTodoFilter('college',this)">College</span>
-      <span class="filter-sep"></span>
-      <span class="filter-chip" data-tf="urgent"             onclick="setTodoFilter('urgent',this)">🔴 Urgent</span>
-      <span class="filter-chip" data-tf="overdue"            onclick="setTodoFilter('overdue',this)">Overdue</span>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:14px 38px 12px;border-bottom:1px solid #4a3020;background:#341f13;">
+      <span data-tf="all"        onclick="setTodoFilter('all',this)"        style="display:inline-block;font-size:11px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;background:#c49a72;border:1px solid #c49a72;color:#1a0f08;letter-spacing:0.3px;user-select:none;">All</span>
+      <span data-tf="work"       onclick="setTodoFilter('work',this)"       style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Work</span>
+      <span data-tf="operations" onclick="setTodoFilter('operations',this)" style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Operations</span>
+      <span data-tf="ecommerce"  onclick="setTodoFilter('ecommerce',this)"  style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">eCommerce</span>
+      <span data-tf="staff"      onclick="setTodoFilter('staff',this)"      style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Staff</span>
+      <span data-tf="freelance"  onclick="setTodoFilter('freelance',this)"  style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Freelance</span>
+      <span data-tf="personal"   onclick="setTodoFilter('personal',this)"   style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Personal</span>
+      <span data-tf="college"    onclick="setTodoFilter('college',this)"    style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">College</span>
+      <span style="width:1px;height:20px;background:#4a3020;margin:0 4px;display:inline-block;"></span>
+      <span data-tf="urgent"     onclick="setTodoFilter('urgent',this)"     style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">🔴 Urgent</span>
+      <span data-tf="overdue"    onclick="setTodoFilter('overdue',this)"    style="display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;">Overdue</span>
     </div>
     <div id="todo-board-body" style="padding:20px 38px 60px"></div>
   </div>
@@ -3627,6 +3638,62 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
       <button class="btn btn-danger btn-sm" id="cd-delete-btn" style="display:none" onclick="deleteCountdownEdit()">Delete</button>
     </div>
   </div>
+<!-- WEEKLY MEETING MODAL -->
+<div class="modal-overlay" id="modal-weekly-meeting">
+  <div class="modal" style="max-width:440px;background:#2b1d12;border:1px solid #4a3020;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div id="meeting-modal-title" style="font-size:18px;font-weight:600;color:#e8d8c4;">Add Weekly Meeting</div>
+      <button type="button" onclick="closeModal('modal-weekly-meeting')"
+        style="background:transparent;border:none;color:#8a7262;font-size:18px;cursor:pointer;">&times;</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Title</label>
+      <input type="text" id="wm-title" placeholder="Meeting title…"
+        style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Day of week</label>
+      <select id="wm-day"
+        style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;cursor:pointer;">
+        <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+        <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+        <option value="0">Sunday</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Start</label>
+        <input type="time" id="wm-start"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">End</label>
+        <input type="time" id="wm-end"
+          style="width:100%;box-sizing:border-box;background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;"/>
+      </div>
+    </div>
+    <div style="margin-bottom:18px;">
+      <label style="display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;margin-bottom:5px;">Colour</label>
+      <div id="wm-color-picker" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span data-color="#c49a72" onclick="wmPickColor('#c49a72',this)" style="width:28px;height:28px;border-radius:50%;background:#c49a72;cursor:pointer;border:2px solid #c49a72;"></span>
+        <span data-color="#5d8a6a" onclick="wmPickColor('#5d8a6a',this)" style="width:28px;height:28px;border-radius:50%;background:#5d8a6a;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#4a7fb5" onclick="wmPickColor('#4a7fb5',this)" style="width:28px;height:28px;border-radius:50%;background:#4a7fb5;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#b8900a" onclick="wmPickColor('#b8900a',this)" style="width:28px;height:28px;border-radius:50%;background:#b8900a;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#b53535" onclick="wmPickColor('#b53535',this)" style="width:28px;height:28px;border-radius:50%;background:#b53535;cursor:pointer;border:2px solid transparent;"></span>
+        <span data-color="#8a7262" onclick="wmPickColor('#8a7262',this)" style="width:28px;height:28px;border-radius:50%;background:#8a7262;cursor:pointer;border:2px solid transparent;"></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button type="button" id="wm-delete-btn" onclick="deleteWeeklyMeeting()"
+        style="display:none;background:transparent;border:1px solid #4a3020;color:#b53535;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;margin-right:auto;">Delete</button>
+      <button type="button" onclick="closeModal('modal-weekly-meeting')"
+        style="background:#321e12;border:1px solid #4a3020;color:#e8d8c4;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button type="button" onclick="saveWeeklyMeeting()"
+        style="background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:600px">
     <div id="confirm-content"></div>
@@ -5238,6 +5305,7 @@ function ensureNewData() {
   if (!D.weeklyReviews) D.weeklyReviews = {};
   if (!D.dailyReflections) D.dailyReflections = {};
   if (!D.qcItems) D.qcItems = [];
+  if (!D.weeklyMeetings) D.weeklyMeetings = [];
 }
 
 // ═══════════════════════════════════════════════════
@@ -7475,76 +7543,320 @@ function positionDragGhost(dc, ghost) {
 // ════════════════════════════════════════════════════════
 //  FEATURE: 6 — AGENDA VIEW
 // ════════════════════════════════════════════════════════
-let _agendaFilter = 'all';
 
-function setAgendaFilter(f, el) {
-  _agendaFilter = f;
-  document.querySelectorAll('#page-agenda .filter-chip').forEach(c => c.classList.remove('active'));
-  if (el) el.classList.add('active');
+// ══════════════════════════════════════════════════════════
+//  AGENDA — daily schedule + unscheduled inbox + drag/drop
+// ══════════════════════════════════════════════════════════
+let _agendaDate = new Date().toISOString().slice(0,10);
+let _agendaEditMeetingId = null;
+let _agendaMeetingColor  = '#c49a72';
+
+const AG_HOUR_START = 7;
+const AG_HOUR_END   = 22;   // last row starts at 21:00 and covers 21-22
+const AG_CAT_COLOR = { work:'#c49a72', personal:'#5d8a6a', college:'#4a7fb5', reminder:'#8a7262', meeting:'#c49a72' };
+
+function _agEscAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function _agShiftDate(ds, days) {
+  const d = new Date(ds + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+}
+
+function _agFmtDateLabel(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  const todStr = new Date().toISOString().slice(0,10);
+  const tomStr = _agShiftDate(todStr, 1);
+  const yesStr = _agShiftDate(todStr, -1);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const mnths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const base = dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + mnths[d.getMonth()];
+  if (ds === todStr) return 'Today · ' + base;
+  if (ds === tomStr) return 'Tomorrow · ' + base;
+  if (ds === yesStr) return 'Yesterday · ' + base;
+  return base;
+}
+
+function agendaNav(dir) {
+  _agendaDate = _agShiftDate(_agendaDate, dir);
+  renderAgenda();
+}
+function agendaGoToday() {
+  _agendaDate = new Date().toISOString().slice(0,10);
   renderAgenda();
 }
 
 function renderAgenda() {
   const el = document.getElementById('agenda-body'); if (!el) return;
-  const days = parseInt(document.getElementById('agenda-range')?.value || 7);
-  const tod = new Date(); tod.setHours(0,0,0,0);
+  ensureNewData();
+  const ds = _agendaDate;
+  const dayOfWeek = new Date(ds + 'T00:00:00').getDay();
 
-  const allItems = [];
-  for (let i = 0; i < days; i++) {
-    const d = new Date(tod); d.setDate(tod.getDate() + i);
-    const ds = d.toISOString().slice(0,10);
-    D.tasks.filter(t => t.dueDate === ds && t.status === 'incomplete').forEach(t => {
-      if (_agendaFilter !== 'all' && _agendaFilter !== t.cat) return;
-      allItems.push({date:ds, time:t.dueTime||'', title:t.title, cat:t.cat, type:'task', id:t.id, priority:t.priority});
-    });
-    D.reminders.filter(r => r.date === ds && r.status === 'pending').forEach(r => {
-      if (_agendaFilter !== 'all' && _agendaFilter !== 'reminders') return;
-      allItems.push({date:ds, time:r.time||'', title:r.title, cat:'reminder', type:'reminder', id:r.id});
-    });
-  }
+  // Update header label
+  const lbl = document.getElementById('agenda-date-label');
+  if (lbl) lbl.textContent = _agFmtDateLabel(ds);
 
-  if (!allItems.length) {
-    el.innerHTML = `<div style="text-align:center;padding:50px;color:#8a7262;">
-      <div style="font-size:32px;margin-bottom:12px;">🗓️</div>
-      <div style="font-size:14px;">Nothing scheduled for the next ${days} days</div>
-    </div>`;
-    return;
-  }
+  // ── Collect items ────────────────────────────────────────
+  const dayTasks = D.tasks.filter(t => t.dueDate === ds && t.status === 'incomplete');
+  const dayRems  = D.reminders.filter(r => r.date === ds && r.status === 'pending');
+  const dayMeets = (D.weeklyMeetings || []).filter(m => m.day === dayOfWeek);
 
-  const byDate = {};
-  allItems.forEach(item => { (byDate[item.date] = byDate[item.date] || []).push(item); });
-
-  const todStr = tod.toISOString().slice(0,10);
-  const mnths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const priDot = p => ({urgent:'🔴',high:'🟠',normal:'',low:'🔵'}[p]||'');
-  const catColor = cat => ({work:'#c49a72',personal:'#5d8a6a',college:'#4a7fb5',reminder:'#8a7262',countdown:'#c49a72'}[cat]||'#8a7262');
-  const catLabel = cat => ({work:'WORK',personal:'PERSONAL',college:'COLLEGE',reminder:'REMINDER',countdown:'COUNTDOWN'}[cat]||cat.toUpperCase());
-  const borderCol = cat => ({work:'#c49a72',personal:'#5d8a6a',college:'#4a7fb5',reminder:'#8a7262'}[cat]||'#4a3020');
-
-  let html = '';
-  Object.keys(byDate).sort().forEach(ds => {
-    const d = new Date(ds+'T00:00:00');
-    const isToday = ds === todStr;
-    const isTomorrow = ds === new Date(Date.now()+86400000).toISOString().slice(0,10);
-    const label = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : dayNames[d.getDay()]+', '+d.getDate()+' '+mnths[d.getMonth()];
-    const items = byDate[ds].sort((a,b) => (a.time||'99:99') > (b.time||'99:99') ? 1 : -1);
-
-    html += `<div style="margin-bottom:24px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <span style="font-size:${isToday?'16':'14'}px;font-weight:${isToday?'600':'400'};color:${isToday?'#c49a72':'#e8d8c4'};">${label}</span>
-        <div style="flex:1;height:1px;background:#4a3020;"></div>
-        <span style="font-size:11px;color:#8a7262;">${items.length} item${items.length!==1?'s':''}</span>
-      </div>
-      ${items.map(item => `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${borderCol(item.cat)};border-radius:10px;margin-bottom:8px;cursor:pointer;" onclick="${item.type==='task'?`openTaskDetail('${item.id}')`:''}" >
-        <span style="font-size:12px;color:#8a7262;min-width:50px;flex-shrink:0;">${item.time?item.time.slice(0,5):'All day'}</span>
-        <span style="font-size:13px;color:#e8d8c4;flex:1;">${priDot(item.priority)} ${item.title}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(196,154,114,0.1);color:${catColor(item.cat)};letter-spacing:1px;">${catLabel(item.cat)}</span>
-      </div>`).join('')}
-    </div>`;
+  const scheduled = [];
+  const unscheduled = [];
+  dayTasks.forEach(t => {
+    const item = { type:'task', id:t.id, title:t.title, time:t.dueTime||'', endTime:'', cat:t.cat, color: AG_CAT_COLOR[t.cat] || '#8a7262' };
+    (t.dueTime ? scheduled : unscheduled).push(item);
+  });
+  dayRems.forEach(r => {
+    const item = { type:'reminder', id:r.id, title:r.title, time:r.time||'', endTime:'', cat:'reminder', color: AG_CAT_COLOR.reminder };
+    (r.time ? scheduled : unscheduled).push(item);
+  });
+  dayMeets.forEach(m => {
+    scheduled.push({ type:'meeting', id:m.id, title:m.title, time:m.time||'', endTime:m.endTime||'', cat:'meeting', color: m.color || '#c49a72' });
   });
 
-  el.innerHTML = html;
+  // Bucket scheduled items by hour
+  const byHour = {};
+  scheduled.forEach(it => {
+    const h = it.time ? parseInt(it.time.split(':')[0], 10) : null;
+    if (h == null || isNaN(h)) return;
+    const slot = Math.min(AG_HOUR_END - 1, Math.max(AG_HOUR_START, h));
+    (byHour[slot] = byHour[slot] || []).push(it);
+  });
+
+  // ── Left panel: time grid ────────────────────────────────
+  const nowStr = new Date().toISOString().slice(0,10);
+  const isTodayView = ds === nowStr;
+  const now = new Date();
+
+  const rows = [];
+  for (let h = AG_HOUR_START; h < AG_HOUR_END; h++) {
+    const hourLabel = (h === 12) ? '12pm' : (h > 12 ? (h - 12) + 'pm' : h + 'am');
+    const items = (byHour[h] || []).sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+    const slotTime = String(h).padStart(2,'0') + ':00';
+
+    const itemsHtml = items.map(it => {
+      const timeTxt = it.time ? (it.endTime ? it.time.slice(0,5) + ' – ' + it.endTime.slice(0,5) : it.time.slice(0,5)) : '';
+      const clickHandler = it.type === 'task'
+        ? `openTaskDetail('${_agEscAttr(it.id)}')`
+        : it.type === 'meeting'
+          ? `openMeetingModal('${_agEscAttr(it.id)}')`
+          : '';
+      const draggable = it.type === 'meeting' ? 'false' : 'true';
+      return `<div class="ag-item" draggable="${draggable}"
+          ondragstart="agendaDragStart(event,'${it.type}','${_agEscAttr(it.id)}')"
+          ondragend="agendaDragEnd(event)"
+          onclick="${clickHandler}"
+          style="display:flex;align-items:center;gap:8px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${it.color};border-radius:8px;padding:6px 10px;margin-bottom:4px;">
+          <span style="font-size:10px;color:#8a7262;min-width:90px;flex-shrink:0;">${timeTxt || '—'}</span>
+          <span style="font-size:12px;color:#e8d8c4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_agEscAttr(it.title)}</span>
+          ${it.type==='meeting' ? '<span style="font-size:9px;color:#8a7262;letter-spacing:1px;">WEEKLY</span>' : ''}
+        </div>`;
+    }).join('');
+
+    const nowLine = isTodayView && now.getHours() === h
+      ? `<div style="position:absolute;left:0;right:0;top:${(now.getMinutes()/60)*100}%;height:2px;background:#c0392b;pointer-events:none;"><div style="position:absolute;left:-4px;top:-3px;width:8px;height:8px;background:#c0392b;border-radius:50%;"></div></div>`
+      : '';
+
+    rows.push(`<div class="ag-slot" data-slot-time="${slotTime}"
+        ondragover="agendaDragOver(event,this)"
+        ondragleave="agendaDragLeave(event,this)"
+        ondrop="agendaDrop(event,'${slotTime}')"
+        onclick="agendaSlotClick(event,'${slotTime}')"
+        style="display:grid;grid-template-columns:60px 1fr;gap:10px;min-height:60px;padding:6px 10px;border-bottom:1px solid #3a2415;cursor:pointer;">
+        <div style="font-size:11px;color:#8a7262;padding-top:4px;">${hourLabel}</div>
+        <div style="position:relative;min-height:48px;">${itemsHtml}${nowLine}</div>
+      </div>`);
+  }
+
+  // ── Right panel: unscheduled inbox ───────────────────────
+  const inboxItemsHtml = unscheduled.map(it => `<div class="ag-item" draggable="true"
+      ondragstart="agendaDragStart(event,'${it.type}','${_agEscAttr(it.id)}')"
+      ondragend="agendaDragEnd(event)"
+      onclick="${it.type==='task' ? `openTaskDetail('${_agEscAttr(it.id)}')` : ''}"
+      style="display:flex;align-items:center;gap:8px;background:#321e12;border:1px solid #4a3020;border-left:3px solid ${it.color};border-radius:8px;padding:8px 12px;margin-bottom:6px;">
+      <span style="font-size:12px;color:#e8d8c4;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_agEscAttr(it.title)}</span>
+      <span style="font-size:9px;color:#8a7262;letter-spacing:1px;text-transform:uppercase;">${it.cat}</span>
+    </div>`).join('');
+
+  const inboxEmpty = unscheduled.length
+    ? ''
+    : `<div style="text-align:center;padding:24px 6px;color:#8a7262;font-size:12px;">Nothing unscheduled</div>`;
+
+  const inboxPanel = `<div class="ag-inbox" style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:16px;"
+      ondragover="agendaDragOver(event,this)"
+      ondragleave="agendaDragLeave(event,this)"
+      ondrop="agendaDrop(event,'')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:600;color:#e8d8c4;letter-spacing:0.5px;text-transform:uppercase;">Unscheduled</div>
+        <span style="font-size:10px;color:#8a7262;background:#3a2415;padding:2px 8px;border-radius:20px;">${unscheduled.length}</span>
+      </div>
+      ${inboxItemsHtml}${inboxEmpty}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #3a2415;">
+        <input type="text" id="ag-quickadd-inbox" placeholder="Quick add task for ${_agFmtDateLabel(ds).split(' · ')[0]}…"
+          onkeydown="if(event.key==='Enter'&&this.value.trim()){agendaQuickAdd(this.value.trim(),'');this.value='';}"
+          style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 12px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/>
+      </div>
+    </div>`;
+
+  const schedulePanel = `<div class="ag-schedule" style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:6px 0;">
+      ${rows.join('')}
+    </div>`;
+
+  el.innerHTML = `<div class="ag-grid">${schedulePanel}${inboxPanel}</div>`;
+}
+
+// ── Drag & drop ─────────────────────────────────────────────
+let _agDrag = null;
+function agendaDragStart(e, type, id) {
+  _agDrag = { type, id };
+  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', type + ':' + id); } catch(_) {}
+  e.currentTarget.classList.add('drag-ghost');
+}
+function agendaDragEnd(e) {
+  _agDrag = null;
+  e.currentTarget.classList.remove('drag-ghost');
+  document.querySelectorAll('.ag-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+}
+function agendaDragOver(e, el) {
+  if (!_agDrag) return;
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch(_) {}
+  el.classList.add('drag-over');
+}
+function agendaDragLeave(e, el) {
+  if (el.contains(e.relatedTarget)) return;
+  el.classList.remove('drag-over');
+}
+function agendaDrop(e, slotTime) {
+  e.preventDefault();
+  document.querySelectorAll('.ag-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+  let info = _agDrag;
+  if (!info) {
+    try {
+      const raw = e.dataTransfer.getData('text/plain') || '';
+      const [type, id] = raw.split(':');
+      if (type && id) info = { type, id };
+    } catch(_) {}
+  }
+  if (!info) return;
+
+  if (info.type === 'task') {
+    const t = D.tasks.find(x => x.id === info.id);
+    if (!t) return;
+    t.dueDate = _agendaDate;
+    t.dueTime = slotTime || '';
+  } else if (info.type === 'reminder') {
+    const r = D.reminders.find(x => x.id === info.id);
+    if (!r) return;
+    r.date = _agendaDate;
+    r.time = slotTime || '';
+  } else {
+    return;
+  }
+  _agDrag = null;
+  save();
+  renderAgenda();
+}
+
+// ── Slot click → quick add task at that time ────────────────
+function agendaSlotClick(e, slotTime) {
+  // Ignore clicks that originate on an item inside the slot
+  if (e.target.closest('.ag-item')) return;
+  const title = prompt('Quick add for ' + slotTime + ':');
+  if (!title || !title.trim()) return;
+  agendaQuickAdd(title.trim(), slotTime);
+}
+
+function agendaQuickAdd(title, slotTime) {
+  D.tasks.push({
+    id: genId(), title, desc: '', cat: 'personal',
+    dueDate: _agendaDate, dueTime: slotTime || '',
+    priority: 'normal', status: 'incomplete',
+    notes: [], reminderDate: '', reminderTime: '', repeat: '',
+    created: Date.now(),
+    history: [{ ts: Date.now(), action: 'Created from Agenda' }],
+    dailyDate: ''
+  });
+  save();
+  renderAgenda();
+}
+
+// ── Weekly meeting modal ────────────────────────────────────
+function wmPickColor(color, el) {
+  _agendaMeetingColor = color;
+  document.querySelectorAll('#wm-color-picker span').forEach(s => {
+    s.style.border = '2px solid ' + (s.dataset.color === color ? color : 'transparent');
+  });
+}
+
+function openMeetingModal(id) {
+  ensureNewData();
+  _agendaEditMeetingId = null;
+  const title = document.getElementById('meeting-modal-title');
+  const delBtn = document.getElementById('wm-delete-btn');
+
+  if (id) {
+    const m = (D.weeklyMeetings || []).find(x => x.id === id);
+    if (m) {
+      _agendaEditMeetingId = id;
+      document.getElementById('wm-title').value = m.title || '';
+      document.getElementById('wm-day').value   = String(m.day != null ? m.day : 1);
+      document.getElementById('wm-start').value = m.time || '';
+      document.getElementById('wm-end').value   = m.endTime || '';
+      wmPickColor(m.color || '#c49a72');
+      if (title) title.textContent = 'Edit Weekly Meeting';
+      if (delBtn) delBtn.style.display = 'inline-block';
+      openModal('modal-weekly-meeting');
+      return;
+    }
+  }
+
+  // New meeting defaults
+  document.getElementById('wm-title').value = '';
+  document.getElementById('wm-day').value   = String(new Date(_agendaDate + 'T00:00:00').getDay() || 1);
+  document.getElementById('wm-start').value = '';
+  document.getElementById('wm-end').value   = '';
+  wmPickColor('#c49a72');
+  if (title) title.textContent = 'Add Weekly Meeting';
+  if (delBtn) delBtn.style.display = 'none';
+  openModal('modal-weekly-meeting');
+}
+
+function saveWeeklyMeeting() {
+  ensureNewData();
+  const title = document.getElementById('wm-title').value.trim();
+  const day   = parseInt(document.getElementById('wm-day').value, 10);
+  const time  = document.getElementById('wm-start').value;
+  const endTime = document.getElementById('wm-end').value;
+  if (!title) { toast('Title is required'); return; }
+  if (isNaN(day)) { toast('Pick a day'); return; }
+
+  if (_agendaEditMeetingId) {
+    const m = D.weeklyMeetings.find(x => x.id === _agendaEditMeetingId);
+    if (m) { m.title = title; m.day = day; m.time = time; m.endTime = endTime; m.color = _agendaMeetingColor; }
+  } else {
+    D.weeklyMeetings.push({ id: genId(), title, day, time, endTime, color: _agendaMeetingColor });
+  }
+  save();
+  closeModal('modal-weekly-meeting');
+  _agendaEditMeetingId = null;
+  renderAgenda();
+  toast('Meeting saved');
+}
+
+function deleteWeeklyMeeting() {
+  if (!_agendaEditMeetingId) return;
+  D.weeklyMeetings = (D.weeklyMeetings || []).filter(m => m.id !== _agendaEditMeetingId);
+  save();
+  closeModal('modal-weekly-meeting');
+  _agendaEditMeetingId = null;
+  renderAgenda();
+  toast('Meeting deleted');
 }
 
 
@@ -9626,8 +9938,9 @@ function renderWorkOverview() {
             <div class="dash-task-pri pri-dot-${t.priority||'normal'}"></div>
           </div>`).join('')}
         <div style="margin-top:10px">
-          <input class="hub-add-input" placeholder="Quick add work task…"
-            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderWorkOverview();}"/>
+          <input type="text" placeholder="Quick add work task…"
+            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderWorkOverview();}"
+            style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/>
         </div>
       </div>
 
@@ -9801,7 +10114,7 @@ function renderUnifiedWorkTasks(body) {
   html += '</div></div>';
 
   // Quick add
-  html += `<div style="margin-top:16px;"><input class="hub-add-input" placeholder="Quick add work task…" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderUnifiedWorkBody();}"/></div>`;
+  html += `<div style="margin-top:16px;"><input type="text" placeholder="Quick add work task…" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('work',this.value);this.value='';renderUnifiedWorkBody();}" style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/></div>`;
 
   html += '</div>';
   body.innerHTML = html;
@@ -9886,73 +10199,117 @@ function whRenderSupplierInline(wh, supId) {
   const sup = wh.suppliers.find(s => s.id === supId);
   if (!sup) return '';
 
-  const statusDot = s => ({pending:'wh-dot-pending',ordered:'wh-dot-ordered',received:'wh-dot-received',issue:'wh-dot-issue'}[s]||'wh-dot-pending');
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+  const dotColor = s => ({pending:'#c49a72', ordered:'#b8900a', received:'#5d8a6a', issue:'#b53535'}[s] || '#c49a72');
+
+  const openCount = sup.orders.filter(o => !o.done).length;
+
+  const S = {
+    back: 'display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8a7262;cursor:pointer;margin-bottom:14px;user-select:none;',
+    header: 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;',
+    title: 'font-size:16px;font-weight:600;color:#e8d8c4;',
+    addBtn: 'background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;',
+    statsStrip: 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;',
+    chip: 'background:#321e12;border:1px solid #4a3020;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;',
+    chipLabel: 'font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7262;',
+    chipVal: 'font-size:22px;font-weight:700;color:#e8d8c4;line-height:1.1;',
+    chipValAccent: 'font-size:22px;font-weight:700;color:#c49a72;line-height:1.1;',
+    tabBar: 'display:flex;gap:0;border-bottom:1px solid #4a3020;margin-bottom:14px;',
+    tabInactive: 'padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:#8a7262;border-bottom:2px solid transparent;letter-spacing:0.4px;font-family:inherit;',
+    tabActive:   'padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#e8d8c4;border-bottom:2px solid #c49a72;letter-spacing:0.4px;font-family:inherit;',
+    row: 'display:flex;align-items:center;gap:10px;background:#321e12;border:1px solid #4a3020;border-radius:10px;padding:10px 12px;margin-bottom:8px;',
+    entryTitle: 'font-size:13px;color:#e8d8c4;font-weight:500;',
+    entryMeta:  'font-size:11px;color:#8a7262;margin-top:2px;',
+    select: 'background:#3a2415;border:1px solid #4a3020;color:#e8d8c4;border-radius:6px;font-size:11px;padding:4px 8px;max-width:120px;font-family:inherit;cursor:pointer;outline:none;',
+    del: 'background:transparent;border:1px solid #4a3020;color:#b53535;border-radius:6px;padding:4px 8px;font-size:12px;line-height:1;cursor:pointer;font-family:inherit;',
+    empty: 'text-align:center;padding:24px 0;color:#8a7262;font-size:12px;',
+    addRow: 'display:flex;gap:8px;margin-top:12px;',
+    input: 'flex:1;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;font-family:inherit;',
+    addSmall: 'background:#c49a72;border:1px solid #c49a72;color:#1a0f08;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;',
+  };
+
+  const headerActionBtn =
+    whSubTab === 'orders'  ? `<button type="button" style="${S.addBtn}" onclick="whAddOrder('${esc(sup.id)}')">+ Order</button>` :
+    whSubTab === 'notes'   ? `<button type="button" style="${S.addBtn}" onclick="whAddSupNote('${esc(sup.id)}')">+ Note</button>` :
+    whSubTab === 'credits' ? `<button type="button" style="${S.addBtn}" onclick="whAddCredit('${esc(sup.id)}')">+ Credit</button>` : '';
+
+  const tabBtn = (id, label) => `<button type="button" style="${whSubTab===id?S.tabActive:S.tabInactive}" onclick="whSubTab='${id}';whGoSupplier('${esc(sup.id)}')">${label}</button>`;
+
+  let bodyHtml = '';
+  if (whSubTab === 'orders') {
+    if (sup.orders.length) {
+      bodyHtml = sup.orders.slice().reverse().map((o, ri) => {
+        const idx = sup.orders.length - 1 - ri;
+        const opts = ['pending','ordered','received','issue']
+          .map(s => `<option value="${s}"${o.status===s?' selected':''}>${s}</option>`).join('');
+        return `<div style="${S.row}">
+          <div style="width:10px;height:10px;border-radius:50%;background:${dotColor(o.status)};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="${S.entryTitle}">${esc(o.title)}</div>
+            <div style="${S.entryMeta}">${o.ref?'Ref: '+esc(o.ref)+' · ':''}${esc(o.date||'')}</div>
+          </div>
+          <select style="${S.select}" onchange="whUpdateOrder('${esc(sup.id)}',${idx},this.value)">${opts}</select>
+          <button type="button" style="${S.del}" onclick="whDelOrder('${esc(sup.id)}',${idx})">✕</button>
+        </div>`;
+      }).join('');
+    } else {
+      bodyHtml = `<div style="${S.empty}">No orders yet</div>`;
+    }
+  } else if (whSubTab === 'notes') {
+    const noteRows = sup.notes.slice().reverse().map((n, ri) => {
+      const idx = sup.notes.length - 1 - ri;
+      const text = typeof n === 'string' ? n : (n.text || '');
+      const date = typeof n === 'object' && n ? (n.date || '') : '';
+      return `<div style="${S.row}">
+        <span style="font-size:16px;flex-shrink:0;">📝</span>
+        <div style="flex:1;font-size:13px;color:#e8d8c4;min-width:0;">${esc(text)}</div>
+        <div style="${S.entryMeta}">${esc(date)}</div>
+        <button type="button" style="${S.del}" onclick="whDelSupNote('${esc(sup.id)}',${idx})">✕</button>
+      </div>`;
+    }).join('');
+    bodyHtml = `${noteRows || `<div style="${S.empty}">No notes yet</div>`}
+      <div style="${S.addRow}">
+        <input type="text" id="sup-note-inp-${esc(sup.id)}" placeholder="Add a note…"
+          style="${S.input}"
+          onkeydown="if(event.key==='Enter')whAddSupNote('${esc(sup.id)}')" />
+        <button type="button" style="${S.addSmall}" onclick="whAddSupNote('${esc(sup.id)}')">Add</button>
+      </div>`;
+  } else if (whSubTab === 'credits') {
+    const creditRows = sup.credits.map((cr, i) => `<div style="${S.row}">
+      <span style="font-size:16px;flex-shrink:0;">💳</span>
+      <div style="flex:1;min-width:0;">
+        <div style="${S.entryTitle}">${esc(cr.title)}</div>
+        <div style="${S.entryMeta}">${esc(cr.amount||'')}${cr.amount&&cr.date?' · ':''}${esc(cr.date||'')}</div>
+      </div>
+      <button type="button" style="${S.del}" onclick="whDelCredit('${esc(sup.id)}',${i})">✕</button>
+    </div>`).join('');
+    bodyHtml = creditRows || `<div style="${S.empty}">No credit notes</div>`;
+  }
 
   return `
-  <div class="wh-back-btn" onclick="whActiveSection='ops';whActiveId=null;renderUnifiedWorkOps(document.getElementById('work-page-body'))">← Suppliers</div>
-  <div class="wh-section-header">
-    <div class="wh-section-title">📦 ${sup.name}</div>
-    <div style="display:flex;gap:8px">
-      ${whSubTab==='orders' ? `<button class="btn btn-primary btn-sm" onclick="whAddOrder('${sup.id}')">+ Order</button>` : ''}
-      ${whSubTab==='notes'  ? `<button class="btn btn-primary btn-sm" onclick="whAddSupNote('${sup.id}')">+ Note</button>` : ''}
-      ${whSubTab==='credits'? `<button class="btn btn-primary btn-sm" onclick="whAddCredit('${sup.id}')">+ Credit</button>` : ''}
-    </div>
+  <div style="${S.back}" onclick="whActiveSection='ops';whActiveId=null;renderUnifiedWorkOps(document.getElementById('work-page-body'))">← Suppliers</div>
+  <div style="${S.header}">
+    <div style="${S.title}">📦 ${esc(sup.name)}</div>
+    <div style="display:flex;gap:8px;">${headerActionBtn}</div>
   </div>
 
-  <div class="work-stats-strip">
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Orders</div><div class="work-stat-chip-val">${sup.orders.length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Open</div><div class="work-stat-chip-val" style="${sup.orders.filter(o=>!o.done).length?'color:#c49a72':''}">${sup.orders.filter(o=>!o.done).length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Notes</div><div class="work-stat-chip-val">${sup.notes.length}</div></div>
-    <div class="work-stat-chip"><div class="work-stat-chip-label">Credits</div><div class="work-stat-chip-val">${sup.credits.length}</div></div>
+  <div style="${S.statsStrip}">
+    <div style="${S.chip}"><div style="${S.chipLabel}">Orders</div><div style="${S.chipVal}">${sup.orders.length}</div></div>
+    <div style="${S.chip}"><div style="${S.chipLabel}">Open</div><div style="${openCount?S.chipValAccent:S.chipVal}">${openCount}</div></div>
+    <div style="${S.chip}"><div style="${S.chipLabel}">Notes</div><div style="${S.chipVal}">${sup.notes.length}</div></div>
+    <div style="${S.chip}"><div style="${S.chipLabel}">Credits</div><div style="${S.chipVal}">${sup.credits.length}</div></div>
   </div>
 
-  <div class="wh-tabs">
-    <button class="wh-tab${whSubTab==='orders'?' active':''}" onclick="whSubTab='orders';whGoSupplier('${sup.id}')">Orders (${sup.orders.length})</button>
-    <button class="wh-tab${whSubTab==='notes'?' active':''}"  onclick="whSubTab='notes';whGoSupplier('${sup.id}')">Notes (${sup.notes.length})</button>
-    <button class="wh-tab${whSubTab==='credits'?' active':''}" onclick="whSubTab='credits';whGoSupplier('${sup.id}')">Credits (${sup.credits.length})</button>
+  <div style="${S.tabBar}">
+    ${tabBtn('orders',  `Orders (${sup.orders.length})`)}
+    ${tabBtn('notes',   `Notes (${sup.notes.length})`)}
+    ${tabBtn('credits', `Credits (${sup.credits.length})`)}
   </div>
 
-  ${whSubTab === 'orders' ? `
-    ${sup.orders.length ? sup.orders.slice().reverse().map((o,ri) => {
-      const idx = sup.orders.length-1-ri;
-      return `<div class="wh-entry-row">
-        <div class="wh-entry-dot ${statusDot(o.status)}"></div>
-        <div style="flex:1;min-width:0">
-          <div class="wh-entry-title">${o.title}</div>
-          <div class="wh-entry-meta">${o.ref?'Ref: '+o.ref+' · ':''}${o.date||''}</div>
-        </div>
-        <select class="form-select" style="font-size:10px;padding:3px 7px;max-width:110px" onchange="whUpdateOrder('${sup.id}',${idx},this.value)">
-          ${['pending','ordered','received','issue'].map(s=>`<option value="${s}"${o.status===s?' selected':''}>${s}</option>`).join('')}
-        </select>
-        <button class="t-act danger" onclick="whDelOrder('${sup.id}',${idx})">✕</button>
-      </div>`;
-    }).join('') : '<div class="empty-state" style="padding:24px 0"><div style="font-size:12px">No orders yet</div></div>'}
-  ` : ''}
-
-  ${whSubTab === 'notes' ? `
-    ${sup.notes.slice().reverse().map((n,ri) => {
-      const idx = sup.notes.length-1-ri;
-      return `<div class="wh-entry-row">
-        <span style="font-size:16px">📝</span>
-        <div style="flex:1;font-size:13px;color:#e8d8c4">${n.text||n}</div>
-        <div class="wh-entry-meta">${n.date||''}</div>
-        <button class="t-act danger" onclick="whDelSupNote('${sup.id}',${idx})">✕</button>
-      </div>`;
-    }).join('')}
-    <div class="wh-inline-form" style="margin-top:10px">
-      <input class="wh-inline-input" id="sup-note-inp-${sup.id}" placeholder="Add a note…" onkeydown="if(event.key==='Enter')whAddSupNote('${sup.id}')"/>
-      <button class="btn btn-secondary btn-sm" onclick="whAddSupNote('${sup.id}')">Add</button>
-    </div>
-  ` : ''}
-
-  ${whSubTab === 'credits' ? `
-    ${sup.credits.map((cr,i) => `<div class="wh-entry-row">
-      <span style="font-size:16px">💳</span>
-      <div style="flex:1"><div class="wh-entry-title">${cr.title}</div><div class="wh-entry-meta">${cr.amount||''} · ${cr.date||''}</div></div>
-      <button class="t-act danger" onclick="whDelCredit('${sup.id}',${i})">✕</button>
-    </div>`).join('')}
-    ${!sup.credits.length ? '<div style="color:#8a7262;font-size:13px;padding:12px 0">No credit notes</div>' : ''}
-  ` : ''}`;
+  ${bodyHtml}`;
 }
 
 // ── ECOMMERCE TAB ─────────────────────────────────────────────
@@ -10325,10 +10682,14 @@ function addTodoDeptTask(deptId, title) {
 }
 
 // ── Filter state ──────────────────────────────────────────
+const _TODO_CHIP_INACTIVE = 'display:inline-block;font-size:11px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;background:#321e12;border:1px solid #4a3020;color:#8a7262;letter-spacing:0.3px;user-select:none;';
+const _TODO_CHIP_ACTIVE   = 'display:inline-block;font-size:11px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;background:#c49a72;border:1px solid #c49a72;color:#1a0f08;letter-spacing:0.3px;user-select:none;';
+
 function setTodoFilter(f, el) {
   _todoFilter = f;
-  document.querySelectorAll('#page-todo-board .filter-chip').forEach(c => c.classList.remove('active'));
-  if (el) el.classList.add('active');
+  document.querySelectorAll('#page-todo-board [data-tf]').forEach(c => {
+    c.style.cssText = (c.dataset.tf === f) ? _TODO_CHIP_ACTIVE : _TODO_CHIP_INACTIVE;
+  });
   renderTodoBoard();
 }
 function toggleTodoView() {
@@ -10375,33 +10736,53 @@ function renderTodoBoard() {
 
 // ── Board: all depts as columns ───────────────────────────
 function renderTodoBoardAll(body) {
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
   const deptHtml = TODO_DEPTS.map(dept => {
     const allTasks = getTodoTasks(dept.id);
     const tasks    = allTasks.filter(t => t.status === 'incomplete');
-    const done     = allTasks.filter(t => t.status === 'complete').length;
     const overdue  = tasks.filter(t => isOverdue(t.dueDate, t.dueTime));
+    const navPage  = dept.page || 'work';
 
-    return `<div style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#e8d8c4;">
-          <span>${dept.icon}</span> ${dept.label}
+    const headerRight = [
+      overdue.length
+        ? `<span style="font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(181,53,53,0.12);color:#c0392b;white-space:nowrap;">⚠ ${overdue.length} overdue</span>`
+        : '',
+      `<span style="font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;background:#3a2415;color:#8a7262;">${tasks.length}</span>`,
+      `<button type="button" onclick="goTo('${esc(navPage)}',null)" style="background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:4px 10px;font-size:12px;line-height:1;cursor:pointer;color:#c49a72;font-family:inherit;">&rarr;</button>`,
+    ].join('');
+
+    const taskRows = tasks.slice(0,5).map(t => {
+      const isOd = isOverdue(t.dueDate, t.dueTime);
+      const dueHtml = t.dueDate
+        ? `<span style="font-size:10px;color:${isOd ? '#c0392b' : '#8a7262'};white-space:nowrap;">${esc(fmtDateShort(t.dueDate))}</span>`
+        : '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #3a2415;">
+        <div onclick="toggleTask('${esc(t.id)}')" style="width:16px;height:16px;border-radius:50%;border:2px solid #4a3020;flex-shrink:0;cursor:pointer;background:transparent;"></div>
+        <span onclick="openTaskDetail('${esc(t.id)}')" style="flex:1;font-size:13px;color:#e8d8c4;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(t.title)}</span>
+        ${dueHtml}
+      </div>`;
+    }).join('');
+
+    const empty = tasks.length ? '' :
+      `<div style="text-align:center;padding:14px 0;color:#8a7262;font-size:12px;">Nothing here yet</div>`;
+
+    return `<div style="background:#321e12;border:1px solid #4a3020;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#e8d8c4;min-width:0;">
+          <span style="flex-shrink:0;">${dept.icon || '📋'}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(dept.label)}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${overdue.length ? `<span style="font-size:9px;color:#c0392b;font-weight:700;background:rgba(181,53,53,.12);padding:2px 8px;border-radius:10px;">⚠ ${overdue.length} overdue</span>` : ''}
-          <span style="font-size:12px;color:#8a7262;background:#3a2415;padding:2px 8px;border-radius:20px;">${tasks.length}</span>
-          <button style="background:#3a2415;border:1px solid #4a3020;color:#c49a72;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;" onclick="goTo('${dept.page||'work'}',null)">&rarr;</button>
-        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">${headerRight}</div>
       </div>
-      ${tasks.slice(0,5).map(t => `
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #3a2415;">
-          <div style="width:16px;height:16px;border-radius:50%;border:2px solid #4a3020;flex-shrink:0;cursor:pointer;" onclick="toggleTask('${t.id}')"></div>
-          <span style="font-size:13px;color:#e8d8c4;flex:1;cursor:pointer;" onclick="openTaskDetail('${t.id}')">${t.title}</span>
-          ${t.dueDate ? `<span style="font-size:10px;color:${isOverdue(t.dueDate,t.dueTime)?'#c0392b':'#8a7262'};">${fmtDateShort(t.dueDate)}</span>` : ''}
-        </div>`).join('')}
-      ${!tasks.length ? `<div style="text-align:center;padding:12px 0;color:#8a7262;font-size:12px;">Nothing here yet</div>` : ''}
-      <div style="margin-top:10px;">
-        <input style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;" placeholder="Add to ${dept.label}…"
-          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${dept.id}',this.value);this.value='';}"/>
+      ${taskRows}
+      ${empty}
+      <div style="margin-top:12px;">
+        <input type="text" placeholder="Add to ${esc(dept.label)}…"
+          onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${esc(dept.id)}',this.value);this.value='';}"
+          style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:8px 12px;color:#e8d8c4;font-size:12px;outline:none;font-family:inherit;" />
       </div>
     </div>`;
   }).join('');
@@ -10440,9 +10821,10 @@ function renderTodoBoardFiltered(body, tasks, filterId) {
         </div>` : ''}
         ${incomplete.map(t => renderTodoItemFull(t, deptCfg.badge)).join('')}
         <div style="margin-top:12px">
-          <input class="hub-add-input" id="todo-add-${filterId}"
+          <input type="text" id="todo-add-${filterId}"
             placeholder="Add a task…"
-            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${filterId}',this.value.trim());this.value='';}" />
+            onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${filterId}',this.value.trim());this.value='';}"
+            style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;" />
         </div>
       </div>
       ${complete.length ? `<div style="margin-top:16px">
@@ -10590,11 +10972,11 @@ function renderHubTodoStrip(deptId, containerId) {
     </div>
     ${tasks.slice(0,6).map(t => renderTodoItem(t, cfg.badge)).join('')}
     ${!tasks.length ? '<div style="font-size:12px;color:#8a7262;padding:6px 0">No open tasks</div>' : ''}
-    <div style="margin-top:8px;display:flex;gap:7px">
-      <input class="hub-add-input" id="hub-todo-${deptId}"
+    <div style="margin-top:8px">
+      <input type="text" id="hub-todo-${deptId}"
         placeholder="Add task…"
-        onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${deptId}',this.value);this.value='';renderHubTodoStrip('${deptId}','${containerId}');}"/>
-      <button class="btn btn-secondary btn-sm" onclick="addTodoDeptTask('${deptId}',document.getElementById('hub-todo-${deptId}').value);document.getElementById('hub-todo-${deptId}').value='';renderHubTodoStrip('${deptId}','${containerId}')">Add</button>
+        onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoDeptTask('${deptId}',this.value);this.value='';renderHubTodoStrip('${deptId}','${containerId}');}"
+        style="width:100%;box-sizing:border-box;background:#3a2415;border:1px solid #4a3020;border-radius:8px;padding:9px 14px;color:#e8d8c4;font-size:12px;font-family:inherit;outline:none;"/>
     </div>
   </div>`;
 }
