@@ -2435,6 +2435,24 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   .ag-grid { grid-template-columns: 1fr; }
   .ag-schedule, .ag-inbox { max-height: none; }
 }
+
+/* DAILY PAGE layout (no colors — those stay inline) */
+.dp-grid { display:grid; grid-template-columns: 1fr 340px; gap:18px; align-items:flex-start; }
+.dp-schedule-wrap, .dp-bank { max-height: calc(100vh - 260px); overflow-y: auto; }
+.dp-schedule { position: relative; }
+.dp-schedule.drag-over { outline: 2px dashed #c49a72; outline-offset: -2px; }
+.dp-bank.drag-over { outline: 2px dashed #c49a72; outline-offset: -2px; }
+.dp-item, .dp-bank-item { cursor: grab; user-select: none; }
+.dp-item:active, .dp-bank-item:active { cursor: grabbing; }
+.dp-item.drag-ghost, .dp-bank-item.drag-ghost { opacity: 0.35; }
+.dp-resize { cursor: ns-resize; }
+.dp-section-body { overflow: hidden; transition: max-height 140ms ease; }
+.dp-section-body.collapsed { max-height: 0 !important; }
+@media (max-width: 900px) {
+  .dp-grid { grid-template-columns: 1fr; }
+  .dp-schedule-wrap, .dp-bank { max-height: none; }
+  .dp-bank { order: -1; }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 </head>
@@ -2660,6 +2678,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
           <button class="btn btn-ghost btn-sm" onclick="navDay(1)">&#8594;</button>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openAddTask(currentDailyDate)">+ Task</button>
+        <button class="btn btn-ghost btn-sm" onclick="openMeetingModal()">+ Meeting</button>
       </div>
     </div>
     <div id="daily-v2-body" style="padding:0 38px 60px"></div>
