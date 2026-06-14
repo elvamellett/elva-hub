@@ -2661,6 +2661,26 @@ async function sendElva(target){
 }
 
 // ── GOOGLE CALENDAR SYNC ──
+// Check for OAuth callback immediately on script load (before anything else)
+(async function checkOAuthOnLoad(){
+  if(!window.location.search.includes('code=')) return;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if(!code) return;
+  window.history.replaceState({}, '', window.location.pathname);
+  try{
+    const proxyUrl = 'https://elva-gcal-proxy.elvamellett05.workers.dev';
+    const redirectUrl = 'https://elvamellett.github.io/elva-hub/';
+    const res = await fetch(`${proxyUrl}/oauth/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUrl)}`);
+    const data = await res.json();
+    if(data.access_token){
+      localStorage.setItem('elva_gcal_token', data.access_token);
+      if(data.refresh_token) localStorage.setItem('elva_gcal_refresh', data.refresh_token);
+      // Flag so we know to show success after full init
+      window._gcalJustConnected = true;
+    }
+  } catch(e){ console.error('GCal early callback error:', e); }
+})();
 
 function gcalConnect(){
   const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar');
@@ -3576,8 +3596,12 @@ function feelEmoji2(f){return {productive:'🚀',hectic:'🌪',slow:'🌿',mixed
 // ── INIT ──
 loadElvaStorage(); // load chat from localStorage instantly
 (async () => {
-  // Handle Google Calendar OAuth callback if redirected back
-  if(window.location.search.includes('code=')) await gcalHandleCallback();
+  // Handle Google Calendar OAuth — token already saved by early handler above
+  if(window._gcalJustConnected){
+    gcalToken = localStorage.getItem('elva_gcal_token');
+    toast('✓ Google Calendar connected!');
+    window._gcalJustConnected = false;
+  }
 
   // Load cached GCal events from localStorage
   const cached = localStorage.getItem('elva_gcal_events');
