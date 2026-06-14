@@ -547,7 +547,7 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
 <body>
 
 <!-- LOCK SCREEN -->
-<div id="lock-screen" style="display:none;position:fixed;inset:0;background:#DCD4C1;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Jost',sans-serif">
+<div id="lock-screen" style="position:fixed;inset:0;background:#DCD4C1;z-index:99999;flex-direction:column;align-items:center;justify-content:center;font-family:'Jost',sans-serif;display:flex">
   <div style="text-align:center;margin-bottom:32px">
     <div style="font-size:38px;font-family:'Libre Baskerville',serif;font-style:italic;color:#3a3228;font-weight:400;letter-spacing:-0.5px">Elva Mellett</div>
     <div style="font-size:10px;color:#818263;letter-spacing:3px;text-transform:uppercase;margin-top:6px">Operating System</div>
@@ -563,7 +563,6 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
 </div>
 
 <script>
-  // Lock screen — runs before anything else
   (function(){
     const PASS = 'elva123';
     const KEY = 'elva_hub_unlocked';
@@ -571,7 +570,6 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
     if(sessionStorage.getItem(KEY) === '1'){
       lockEl.style.display = 'none';
     } else {
-      lockEl.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       setTimeout(()=>{ const inp=document.getElementById('lock-input'); if(inp)inp.focus(); }, 100);
     }
