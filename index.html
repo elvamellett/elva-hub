@@ -1707,7 +1707,7 @@ async function genNotes(fi){
   let content='';try{content=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(f.file)});}catch(e){content='[Binary file]';}
   const m=mods[activeModIdx];
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Help Elva take notes from her lecture.\nModule: ${m.name}. Lecturer: ${m.lecturer}.\nFile: ${f.name}\nContent: ${content.slice(0,3000)}\n\nReturn ONLY valid JSON:\n{"summary":"one paragraph","points":["short bullet"],"definitions":[{"term":"","def":""}],"formulas":[""],"examFlags":[""]}`}]})});
+    const res=await fetch(`${GCAL_PROXY}/anthropic`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Help Elva take notes from her lecture.\nModule: ${m.name}. Lecturer: ${m.lecturer}.\nFile: ${f.name}\nContent: ${content.slice(0,3000)}\n\nReturn ONLY valid JSON:\n{"summary":"one paragraph","points":["short bullet"],"definitions":[{"term":"","def":""}],"formulas":[""],"examFlags":[""]}`}]})});
     const data=await res.json();const notes=JSON.parse(data.content[0].text.replace(/\`\`\`json|\`\`\`/g,'').trim());
     mods[activeModIdx].aiNotes=notes;if(notes.formulas)mods[activeModIdx].formulas=[...new Set([...mods[activeModIdx].formulas,...notes.formulas])];
     outEl.innerHTML=renderAIN(notes);toast('Notes generated!');
@@ -1718,7 +1718,7 @@ async function sendQA(){
   if(!qaCtx[activeModIdx])qaCtx[activeModIdx]=[];qaCtx[activeModIdx].push({role:'user',content:q});renderModDetail();
   const m=mods[activeModIdx];
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:`Help Elva prepare for ${m.name} exam. Context: ${m.lecturer}. Notes: ${m.notes||'none'}. Formulas: ${m.formulas.join(', ')||'none'}. Be concise, use bullet points.`,messages:qaCtx[activeModIdx].map(x=>({role:x.role,content:x.content}))})});
+    const res=await fetch(`${GCAL_PROXY}/anthropic`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:`Help Elva prepare for ${m.name} exam. Context: ${m.lecturer}. Notes: ${m.notes||'none'}. Formulas: ${m.formulas.join(', ')||'none'}. Be concise, use bullet points.`,messages:qaCtx[activeModIdx].map(x=>({role:x.role,content:x.content}))})});
     const data=await res.json();qaCtx[activeModIdx].push({role:'assistant',content:data.content[0].text});
   }catch(e){qaCtx[activeModIdx].push({role:'assistant',content:'Could not connect — please try again.'});}
   renderModDetail();const h=document.getElementById('qa-h-'+activeModIdx);if(h)h.scrollTop=h.scrollHeight;
@@ -2103,7 +2103,7 @@ Write a warm, brief, practical morning briefing for Elva. Include:
 Keep it under 120 words. Be warm and personal, not corporate. Use her name.`;
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch(`${GCAL_PROXY}/anthropic`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})
@@ -2612,7 +2612,7 @@ async function sendElva(target){
   }
 
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch(`${GCAL_PROXY}/anthropic`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
