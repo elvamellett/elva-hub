@@ -2684,17 +2684,50 @@ async function sendElva(target){
 
 function gcalConnect(){
   const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar');
-  const state = encodeURIComponent(Math.random().toString(36).slice(2));
-  localStorage.setItem('gcal_oauth_state', state);
   const url = `https://accounts.google.com/o/oauth2/v2/auth`
     + `?client_id=${GCAL_CLIENT_ID}`
     + `&redirect_uri=${encodeURIComponent(GCAL_REDIRECT)}`
     + `&response_type=code`
     + `&scope=${scope}`
     + `&access_type=offline`
-    + `&prompt=consent`
-    + `&state=${state}`;
-  window.location.href = url;
+    + `&prompt=consent`;
+
+  // Open in popup so main page stays loaded
+  const popup = window.open(url, 'gcal_oauth', 'width=500,height=650,left=200,top=100');
+
+  // Poll for the code in the popup URL
+  const poll = setInterval(async () => {
+    try {
+      if(!popup || popup.closed){
+        clearInterval(poll);
+        return;
+      }
+      const popupUrl = popup.location.href;
+      if(popupUrl.includes('elvamellett.github.io') && popupUrl.includes('code=')){
+        clearInterval(poll);
+        const params = new URLSearchParams(new URL(popupUrl).search);
+        const code = params.get('code');
+        popup.close();
+        if(!code) return;
+        toast('Connecting Google Calendar...');
+        const res = await fetch(`${GCAL_PROXY}/oauth/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(GCAL_REDIRECT)}`);
+        const data = await res.json();
+        if(data.access_token){
+          gcalToken = data.access_token;
+          localStorage.setItem('elva_gcal_token', gcalToken);
+          if(data.refresh_token) localStorage.setItem('elva_gcal_refresh', data.refresh_token);
+          toast('✓ Google Calendar connected!');
+          updateGcalUI();
+          gcalSync();
+        } else {
+          console.error('Token error:', data);
+          toast('Connection failed — try again');
+        }
+      }
+    } catch(e) {
+      // Cross-origin error means popup is still on Google — keep polling
+    }
+  }, 500);
 }
 
 async function gcalHandleCallback(){
