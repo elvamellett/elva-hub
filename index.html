@@ -2680,13 +2680,9 @@ function gcalConnect(){
 async function gcalHandleCallback(){
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
-  const state = params.get('state');
   if(!code) return;
   // Clear URL params without reload
   window.history.replaceState({}, '', window.location.pathname);
-  if(state !== localStorage.getItem('gcal_oauth_state')){
-    toast('Google auth failed — state mismatch'); return;
-  }
   toast('Connecting Google Calendar...');
   try{
     const res = await fetch(`${GCAL_PROXY}/oauth/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(GCAL_REDIRECT)}`);
@@ -2699,9 +2695,11 @@ async function gcalHandleCallback(){
       updateGcalUI();
       gcalSync();
     } else {
+      console.error('GCal token error:', data);
       toast('Google auth failed — try again');
     }
   } catch(e){
+    console.error('GCal callback error:', e);
     toast('Could not connect — check Worker is deployed');
   }
 }
