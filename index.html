@@ -2661,157 +2661,50 @@ async function sendElva(target){
 }
 
 // ── GOOGLE CALENDAR SYNC ──
-// Check for OAuth callback immediately on script load (before anything else)
-(async function checkOAuthOnLoad(){
-  if(!window.location.search.includes('code=')) return;
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if(!code) return;
-  window.history.replaceState({}, '', window.location.pathname);
-  try{
-    const proxyUrl = 'https://elva-gcal-proxy.elvamellett05.workers.dev';
-    const redirectUrl = 'https://elvamellett.github.io/elva-hub/';
-    const res = await fetch(`${proxyUrl}/oauth/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUrl)}`);
-    const data = await res.json();
-    if(data.access_token){
-      localStorage.setItem('elva_gcal_token', data.access_token);
-      if(data.refresh_token) localStorage.setItem('elva_gcal_refresh', data.refresh_token);
-      // Flag so we know to show success after full init
-      window._gcalJustConnected = true;
-    }
-  } catch(e){ console.error('GCal early callback error:', e); }
-})();
+// ── GOOGLE CALENDAR (API KEY) ──
 
 function gcalConnect(){
-  const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar');
-  const url = `https://accounts.google.com/o/oauth2/v2/auth`
-    + `?client_id=${GCAL_CLIENT_ID}`
-    + `&redirect_uri=${encodeURIComponent(GCAL_REDIRECT)}`
-    + `&response_type=code`
-    + `&scope=${scope}`
-    + `&access_type=offline`
-    + `&prompt=consent`;
-
-  // Open in popup so main page stays loaded
-  const popup = window.open(url, 'gcal_oauth', 'width=500,height=650,left=200,top=100');
-
-  // Poll for the code in the popup URL
-  const poll = setInterval(async () => {
-    try {
-      if(!popup || popup.closed){
-        clearInterval(poll);
-        return;
-      }
-      const popupUrl = popup.location.href;
-      if(popupUrl.includes('elvamellett.github.io') && popupUrl.includes('code=')){
-        clearInterval(poll);
-        const params = new URLSearchParams(new URL(popupUrl).search);
-        const code = params.get('code');
-        popup.close();
-        if(!code) return;
-        toast('Connecting Google Calendar...');
-        const res = await fetch(`${GCAL_PROXY}/oauth/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(GCAL_REDIRECT)}`);
-        const data = await res.json();
-        if(data.access_token){
-          gcalToken = data.access_token;
-          localStorage.setItem('elva_gcal_token', gcalToken);
-          if(data.refresh_token) localStorage.setItem('elva_gcal_refresh', data.refresh_token);
-          toast('✓ Google Calendar connected!');
-          updateGcalUI();
-          gcalSync();
-        } else {
-          console.error('Token error:', data);
-          toast('Connection failed — try again');
-        }
-      }
-    } catch(e) {
-      // Cross-origin error means popup is still on Google — keep polling
-    }
-  }, 500);
+  gcalEnabled = true;
+  localStorage.setItem('elva_gcal_enabled','true');
+  updateGcalUI();
+  gcalSync();
 }
 
-async function gcalHandleCallback(){
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if(!code) return;
-  // Clear URL params without reload
-  window.history.replaceState({}, '', window.location.pathname);
-  toast('Connecting Google Calendar...');
-  try{
-    const res = await fetch(`${GCAL_PROXY}/oauth/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(GCAL_REDIRECT)}`);
-    const data = await res.json();
-    if(data.access_token){
-      gcalToken = data.access_token;
-      localStorage.setItem('elva_gcal_token', gcalToken);
-      if(data.refresh_token) localStorage.setItem('elva_gcal_refresh', data.refresh_token);
-      toast('✓ Google Calendar connected!');
-      updateGcalUI();
-      gcalSync();
-    } else {
-      console.error('GCal token error:', data);
-      toast('Google auth failed — try again');
-    }
-  } catch(e){
-    console.error('GCal callback error:', e);
-    toast('Could not connect — check Worker is deployed');
-  }
-}
-
-async function gcalRefreshToken(){
-  const refresh = localStorage.getItem('elva_gcal_refresh');
-  if(!refresh) return false;
-  try{
-    const res = await fetch(`${GCAL_PROXY}/oauth/refresh`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({refresh_token: refresh})
-    });
-    const data = await res.json();
-    if(data.access_token){
-      gcalToken = data.access_token;
-      localStorage.setItem('elva_gcal_token', gcalToken);
-      return true;
-    }
-  } catch(e){}
-  return false;
-}
-
-async function gcalFetch(url, options={}){
-  if(!gcalToken) return null;
-  let res = await fetch(`${GCAL_PROXY}/gcal?url=${encodeURIComponent(url)}`, {
-    ...options,
-    headers: { ...options.headers, 'Authorization': `Bearer ${gcalToken}`, 'Content-Type':'application/json' }
-  });
-  if(res.status === 401){
-    const refreshed = await gcalRefreshToken();
-    if(!refreshed) { gcalDisconnect(); return null; }
-    res = await fetch(`${GCAL_PROXY}/gcal?url=${encodeURIComponent(url)}`, {
-      ...options,
-      headers: { ...options.headers, 'Authorization': `Bearer ${gcalToken}`, 'Content-Type':'application/json' }
-    });
-  }
-  if(!res.ok) return null;
-  return res.json();
+function gcalDisconnect(){
+  gcalEnabled = false;
+  gcalEvents = [];
+  localStorage.removeItem('elva_gcal_enabled');
+  localStorage.removeItem('elva_gcal_events');
+  localStorage.removeItem('elva_gcal_last_sync');
+  updateGcalUI();
+  syncCalendar();
+  toast('Google Calendar disconnected');
 }
 
 async function gcalSync(){
-  if(!gcalToken){ toast('Connect Google Calendar first'); return; }
+  if(!gcalEnabled){ toast('Enable Google Calendar first'); return; }
   toast('Syncing Google Calendar...');
   try{
-    // Fetch events for next 60 days
     const now = new Date();
     const then = new Date(now); then.setDate(now.getDate()+60);
-    const calUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events`
-      + `?timeMin=${now.toISOString()}&timeMax=${then.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=100`;
-    const data = await gcalFetch(calUrl);
-    if(!data || !data.items){ toast('Sync failed — try reconnecting'); return; }
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(GCAL_CALENDAR_ID)}/events`
+      + `?key=${GCAL_API_KEY}`
+      + `&timeMin=${now.toISOString()}`
+      + `&timeMax=${then.toISOString()}`
+      + `&singleEvents=true&orderBy=startTime&maxResults=100`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!data.items){ 
+      console.error('GCal error:', data);
+      toast('Sync failed — check calendar is public or API key is correct'); 
+      return; 
+    }
     gcalEvents = data.items.map(e=>({
       id: e.id,
       title: e.summary || '(no title)',
       start: e.start?.dateTime || e.start?.date || '',
       end: e.end?.dateTime || e.end?.date || '',
       allDay: !e.start?.dateTime,
-      description: e.description || '',
       source: 'gcal'
     }));
     localStorage.setItem('elva_gcal_events', JSON.stringify(gcalEvents));
@@ -2820,44 +2713,9 @@ async function gcalSync(){
     syncCalendar();
     toast(`✓ Synced ${gcalEvents.length} events from Google Calendar`);
   } catch(e){
+    console.error('GCal sync error:', e);
     toast('Sync error — check connection');
   }
-}
-
-async function gcalAddEvent(title, dateStr, timeStr, endTimeStr){
-  if(!gcalToken) return;
-  const start = timeStr
-    ? { dateTime: `${dateStr}T${timeStr}:00`, timeZone: 'Europe/Dublin' }
-    : { date: dateStr };
-  const end = endTimeStr
-    ? { dateTime: `${dateStr}T${endTimeStr}:00`, timeZone: 'Europe/Dublin' }
-    : timeStr
-      ? { dateTime: `${dateStr}T${padTime(timeStr, 60)}:00`, timeZone: 'Europe/Dublin' }
-      : { date: dateStr };
-  const event = { summary: title, start, end };
-  const calUrl = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-  try{
-    await gcalFetch(calUrl, { method:'POST', body: JSON.stringify(event) });
-    setTimeout(()=>gcalSync(), 1000); // re-sync after adding
-  } catch(e){ console.warn('GCal add failed', e); }
-}
-
-function padTime(timeStr, addMins){
-  const [h,m] = timeStr.split(':').map(Number);
-  const total = h*60 + m + addMins;
-  return `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
-}
-
-function gcalDisconnect(){
-  gcalToken = null;
-  gcalEvents = [];
-  localStorage.removeItem('elva_gcal_token');
-  localStorage.removeItem('elva_gcal_refresh');
-  localStorage.removeItem('elva_gcal_events');
-  localStorage.removeItem('elva_gcal_last_sync');
-  updateGcalUI();
-  syncCalendar();
-  toast('Google Calendar disconnected');
 }
 
 function updateGcalUI(){
@@ -2866,7 +2724,7 @@ function updateGcalUI(){
   const syncInfo = document.getElementById('gcal-sync-info');
   const lastSync = document.getElementById('gcal-last-sync');
   if(!badge) return;
-  if(gcalToken){
+  if(gcalEnabled){
     badge.innerHTML = '<span style="font-size:10px;background:#C2C395;color:#FFFAF2;padding:3px 10px;border-radius:10px;font-weight:700">✓ CONNECTED</span>';
     if(connectArea) connectArea.style.display = 'none';
     if(syncInfo) syncInfo.style.display = '';
@@ -2880,12 +2738,17 @@ function updateGcalUI(){
 }
 
 // ── HUB PERSISTENCE — SUPABASE ──
+
 const SUPABASE_URL = 'https://kktedaihlunwigehyshw.supabase.co';
 const GCAL_PROXY = 'https://elva-gcal-proxy.elvamellett05.workers.dev';
-const GCAL_CLIENT_ID = '491495774914-4f0g97ss70qquc8ruceia0jj067sndb2.apps.googleusercontent.com';
-const GCAL_REDIRECT = 'https://elvamellett.github.io/elva-hub/';
-let gcalToken = localStorage.getItem('elva_gcal_token') || null;
-let gcalEvents = []; // cached Google Calendar events
+const GCAL_API_KEY = 'AIzaSyB8ffaVszmRR9qaw4B-e6w-_GT0bik2jmY';
+const GCAL_CALENDAR_ID = 'elvamellett05@gmail.com';
+let gcalEnabled = localStorage.getItem('elva_gcal_enabled') === 'true';
+let gcalEvents = [];
+// Keep these for backwards compat
+const GCAL_CLIENT_ID = '';
+const GCAL_REDIRECT = '';
+let gcalToken = null;
 const SUPABASE_KEY = 'sb_publishable_TPewUUg5OxxUmiqy7pTHpA_M19GL1vn';
 const HUB_STORAGE_KEY = 'elva_hub_data_v1'; // localStorage fallback
 
@@ -3629,19 +3492,12 @@ function feelEmoji2(f){return {productive:'🚀',hectic:'🌪',slow:'🌿',mixed
 // ── INIT ──
 loadElvaStorage(); // load chat from localStorage instantly
 (async () => {
-  // Handle Google Calendar OAuth — token already saved by early handler above
-  if(window._gcalJustConnected){
-    gcalToken = localStorage.getItem('elva_gcal_token');
-    toast('✓ Google Calendar connected!');
-    window._gcalJustConnected = false;
-  }
-
   // Load cached GCal events from localStorage
   const cached = localStorage.getItem('elva_gcal_events');
   if(cached) try{ gcalEvents = JSON.parse(cached); } catch(e){}
 
-  await loadHub();         // load hub data from Supabase (or localStorage fallback)
-  checkReminderPromotions(); // auto-promote reminders whose date has arrived
+  await loadHub();
+  checkReminderPromotions();
   renderBank();
   renderWeek();
   renderBoard('workColsInline');
@@ -3651,9 +3507,8 @@ loadElvaStorage(); // load chat from localStorage instantly
   renderElvaMessages('page');
   renderElvaMemoryPanel();
   updateGcalUI();
-  // Auto-sync GCal in background if connected
-  if(gcalToken) setTimeout(()=>gcalSync(), 2000);
-  // Then load Elva chat from Supabase (may override localStorage version)
+  // Auto-sync GCal in background if enabled
+  if(gcalEnabled) setTimeout(()=>gcalSync(), 2000);
   await loadElvaFromSupabase();
 })();
 </script>
