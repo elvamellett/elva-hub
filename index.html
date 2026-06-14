@@ -545,6 +545,51 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
 </style>
 </head>
 <body>
+
+<!-- LOCK SCREEN -->
+<div id="lock-screen" style="display:none;position:fixed;inset:0;background:#DCD4C1;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Jost',sans-serif">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-size:38px;font-family:'Libre Baskerville',serif;font-style:italic;color:#3a3228;font-weight:400;letter-spacing:-0.5px">Elva Mellett</div>
+    <div style="font-size:10px;color:#818263;letter-spacing:3px;text-transform:uppercase;margin-top:6px">Operating System</div>
+  </div>
+  <div style="background:#FFFAF2;border:1px solid #E0D8CC;border-radius:20px;padding:32px 36px;width:320px;box-shadow:0 8px 32px rgba(58,50,40,0.08)">
+    <div style="font-size:13px;color:#818263;text-align:center;margin-bottom:20px">Enter your password to continue</div>
+    <input type="password" id="lock-input" placeholder="Password" onkeydown="if(event.key==='Enter')unlock()"
+      style="width:100%;padding:12px 16px;border:1px solid #C8BFB0;border-radius:12px;font-size:14px;font-family:'Jost',sans-serif;color:#3a3228;background:#F6EAD4;outline:none;box-sizing:border-box;margin-bottom:12px">
+    <div id="lock-error" style="font-size:11px;color:#c0392b;text-align:center;margin-bottom:10px;display:none">Incorrect password — try again</div>
+    <button onclick="unlock()" style="width:100%;padding:12px;background:#DDBAAE;color:#FFFAF2;border:none;border-radius:12px;font-size:13px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:0.5px">Unlock</button>
+  </div>
+  <div style="font-size:10px;color:#C8BFB0;margin-top:24px;letter-spacing:1px">PERSONAL · PRIVATE · SECURE</div>
+</div>
+
+<script>
+  // Lock screen — runs before anything else
+  (function(){
+    const PASS = 'elva123';
+    const KEY = 'elva_hub_unlocked';
+    const lockEl = document.getElementById('lock-screen');
+    if(sessionStorage.getItem(KEY) === '1'){
+      lockEl.style.display = 'none';
+    } else {
+      lockEl.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      setTimeout(()=>{ const inp=document.getElementById('lock-input'); if(inp)inp.focus(); }, 100);
+    }
+    window.unlock = function(){
+      const val = document.getElementById('lock-input').value;
+      const err = document.getElementById('lock-error');
+      if(val === PASS){
+        sessionStorage.setItem(KEY,'1');
+        lockEl.style.display = 'none';
+        document.body.style.overflow = '';
+      } else {
+        err.style.display = 'block';
+        document.getElementById('lock-input').value = '';
+        document.getElementById('lock-input').focus();
+      }
+    };
+  })();
+</script>
 <div style="padding:16px;max-width:1440px;margin:0 auto">
 
 <div class="topbar">
