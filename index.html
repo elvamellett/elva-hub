@@ -75,6 +75,32 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
 .bt-del{background:transparent;border:1px solid #E8C8BE;color:#c09080;border-radius:4px;width:20px;height:20px;cursor:pointer;font-size:11px;flex-shrink:0;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
 .bt-del:hover{background:#DDBAAE;color:#FFFAF2;border-color:#DDBAAE}
 
+.bank-task.urgent-task{border-color:#F0C090;background:#FFFBF5}
+.bank-task.urgent-task:hover{border-color:#e8792a}
+
+.tev-drag-handle{font-size:14px;color:#C8BFB0;cursor:grab;padding:0 4px 0 0;flex-shrink:0;user-select:none}
+.tev-drag-handle:active{cursor:grabbing}
+.timeline-event.dragging{opacity:0.4;background:#EFD7CF}
+.timeline-event.drag-over{border-top:2px solid #DDBAAE}
+
+/* ── DELEGATED ── */
+.delegated-card{background:#FFFAF2;border:1px solid #E0D8CC;border-radius:12px;padding:14px;margin-bottom:8px;transition:all 0.15s}
+.delegated-card:hover{border-color:#DDBAAE}
+.delegated-card.complete{opacity:0.5;background:#F6F4F2}
+.delegated-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.delegated-task{font-size:13px;font-weight:600;color:#3a3228;font-family:'Jost',sans-serif}
+.delegated-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.delegated-pill{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;font-family:'Jost',sans-serif}
+.delegated-to{background:#EFD7CF;color:#9a5040}
+.delegated-date{background:#F6EAD4;color:#818263}
+.delegated-due{background:#FFF0E0;color:#a06030}
+.delegated-chased{background:#E8F5E9;color:#2e7d32}
+.delegated-actions{display:flex;gap:6px;flex-wrap:wrap}
+.delegated-status-pending{font-size:10px;padding:2px 8px;border-radius:8px;background:#FFF0E0;color:#a06030;border:1px solid #F0C090;font-weight:600}
+.delegated-status-chased{font-size:10px;padding:2px 8px;border-radius:8px;background:#E8F5E9;color:#2e7d32;border:1px solid #A5D6A7;font-weight:600}
+.delegated-status-complete{font-size:10px;padding:2px 8px;border-radius:8px;background:#E3F0FF;color:#1565c0;border:1px solid #90CAF9;font-weight:600}
+.delegated-empty{font-size:12px;color:#C8BFB0;font-style:italic;padding:20px;text-align:center}
+
 /* ── MESSAGES ── */
 .msg-folder{margin-bottom:14px}
 .msg-folder-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#EFD7CF;border:1px solid #DDBAAE;border-radius:10px;cursor:pointer;transition:all 0.15s;margin-bottom:6px}
@@ -329,13 +355,13 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
 .cal-cell-num{font-size:12px;font-weight:600;color:#3a3228;margin-bottom:3px;font-family:'Jost',sans-serif}
 .cal-cell.today-cell .cal-cell-num{color:#FFFAF2;background:#DDBAAE;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
 .cal-event-pill{font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-family:'Jost',sans-serif;cursor:pointer}
-.cal-ev-work{background:#EFD7CF;color:#9a5040}
-.cal-ev-college{background:#F0EBE4;color:#6F6660}
+.cal-ev-work{background:#FFE4EE;color:#c2185b;border-left:3px solid #e91e8c}
+.cal-ev-college{background:#E3F0FF;color:#1565c0;border-left:3px solid #1e88e5}
 .cal-ev-personal{background:#C2C39522;color:#818263;border:1px solid #C2C395}
-.cal-ev-gym{background:#DDD4C822;color:#6F6660}
-.cal-ev-darcybow{background:#F6EAD4;color:#818263}
+.cal-ev-gym{background:#F3E8FF;color:#7b1fa2;border-left:3px solid #ab47bc}
+.cal-ev-darcybow{background:#E8F5E9;color:#2e7d32;border-left:3px solid #43a047}
 .cal-ev-meeting{background:#DDBAAE;color:#FFFAF2}
-.cal-ev-gcal{background:#E8F0FE;color:#4285F4;border:1px solid #BBCFF8}
+.cal-ev-gcal{background:#E8F0FE;color:#1a73e8;border-left:3px solid #4285F4}
 .cal-more{font-size:9px;color:#C8BFB0;padding:1px 4px}
 
 /* Week grid */
@@ -600,6 +626,7 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
     <div class="tab" onclick="showPage('college',this)">STUDY</div>
     <div class="tab" onclick="showPage('work',this)">ODL</div>
     <div class="tab" onclick="showPage('completed',this)">DONE</div>
+    <div class="tab" onclick="showPage('delegated',this)">📋 DELEGATED</div>
     <div class="tab" onclick="showPage('archive',this)">GROW</div>
     <div class="tab" onclick="showPage('elva',this)">ELVA</div>
     <div class="tab" onclick="showPage('settings',this)">⚙ Settings</div>
@@ -638,6 +665,14 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
     </div>
 
     <div class="briefing-right">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header">
+          <span class="card-title">📝 Quick Notes</span>
+        </div>
+        <textarea id="quick-notes-area" placeholder="Jot anything down..." oninput="quickNotesChange()" style="width:100%;min-height:90px;resize:vertical;background:#F6EAD4;border:1px solid #E0D8CC;border-radius:10px;padding:10px 12px;font-size:12px;font-family:'Jost',sans-serif;color:#3a3228;outline:none;box-sizing:border-box;line-height:1.6"></textarea>
+        <div id="quick-notes-saved" style="font-size:10px;color:#C8BFB0;margin-top:6px;text-align:right;font-family:'Jost',sans-serif"></div>
+      </div>
+
       <div class="card" style="margin-bottom:14px">
         <div class="card-header">
           <span class="card-title">Overdue</span>
@@ -882,6 +917,37 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
   </div>
 </div>
 
+<!-- DELEGATED PAGE -->
+<div class="page" id="page-delegated">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 Delegated Tasks</span>
+      <button class="btn btn-sm" onclick="openM('delegated')">+ Delegate Task</button>
+    </div>
+    <p class="hint">Tasks you've handed off. Chase them up, mark complete, keep track.</p>
+    <div id="delegated-list"></div>
+  </div>
+</div>
+
+<!-- DELEGATE TASK MODAL -->
+<div class="modal-bg" id="modal-delegated">
+  <div class="modal">
+    <h3>Delegate a Task</h3>
+    <label>Task description</label>
+    <input type="text" id="dl-task" placeholder="What was delegated?">
+    <label>Delegated to</label>
+    <input type="text" id="dl-to" placeholder="Who is responsible?">
+    <label>Date delegated</label>
+    <input type="date" id="dl-date" style="margin-bottom:14px">
+    <label>Expected completion <span style="color:#C8BFB0;font-weight:400">(optional)</span></label>
+    <input type="date" id="dl-due" style="margin-bottom:14px">
+    <div class="modal-btns">
+      <button class="mbtn-cancel" onclick="closeM('delegated')">Cancel</button>
+      <button class="mbtn-save" onclick="saveDelegated()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- CALENDAR PAGE -->
 <div class="page" id="page-calendar">
   <div class="cal-page-header">
@@ -1090,6 +1156,11 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
       <p style="font-size:11px;color:#818263;margin-bottom:14px;line-height:1.5">This task will sit in your Reminders until the date arrives, then automatically move to your active To-Do list.</p>
     </div>
 
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:#FFF8F0;border:1px solid #F0D8C0;border-radius:10px">
+      <input type="checkbox" id="t-urgent" style="width:16px;height:16px;accent-color:#e8792a;cursor:pointer">
+      <label for="t-urgent" style="font-size:12px;color:#a06030;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif">⚡ Urgent today</label>
+    </div>
+
     <div class="modal-btns">
       <button class="mbtn-cancel" onclick="closeM('task')">Cancel</button>
       <button class="mbtn-save" onclick="saveTask()">Save Task</button>
@@ -1192,8 +1263,19 @@ html,body{background:#DCD4C1;min-height:100vh;color:#3a3228}
 let nid=300, wkOff=0, dragTask=null, dragSrc=null;
 let dayArchive = {}; // keyed by 'YYYY-MM-DD', stores daily snapshots
 let msgFolders = [
-  {id:'f1', name:'Group Chat'},
-  {id:'f2', name:'Sarah'},
+  {id:'f1', name:'One Dame Lane'},
+  {id:'f2', name:'ODL Shop ✨'},
+  {id:'f3', name:'Lyndsey'},
+  {id:'f4', name:'Dave'},
+  {id:'f5', name:'Jason'},
+  {id:'f6', name:'Amy'},
+  {id:'f7', name:'Ana'},
+  {id:'f8', name:'Sally'},
+  {id:'f9', name:'Sophie'},
+  {id:'f10', name:'Muireann'},
+  {id:'f11', name:'Ava'},
+  {id:'f12', name:'Michelle'},
+  {id:'f13', name:'Leila'},
 ];
 let msgDrafts = []; // {id, folderId, body, date, time, sent, createdAt}
 let editingMsgId = null;
@@ -1277,7 +1359,8 @@ function showPage(name,el){
   if(name==='settings')renderSettings();
   if(name==='work'){renderBoard('workColsFull');renderMsgBoard();}
   if(name==='completed')renderCompleted();
-  if(name==='briefing')renderBriefing();
+  if(name==='delegated')renderDelegated();
+  if(name==='briefing'){renderBriefing();loadQuickNotes();}
   if(name==='planner')renderPlanner();
   if(name==='calendar')renderCalPage();
   if(name==='archive')renderArchive();
@@ -1289,6 +1372,7 @@ function openM(id){
   if(id==='task') document.getElementById('t-cat').innerHTML=state.cats.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
   if(id==='workTask'){document.getElementById('wt-dept').innerHTML=state.depts.map(d=>`<option value="${d.id}">${d.label}</option>`).join('');popWTSec();}
   if(id==='msgDraft'||id==='msgEdit') populateMsgFolderSelects();
+  if(id==='delegated'){ const d=document.getElementById('dl-date'); if(d)d.value=dk(new Date()); }
   document.getElementById('modal-'+id).classList.add('open');
   const inp=document.querySelector('#modal-'+id+' input');if(inp)setTimeout(()=>inp.focus(),50);
 }
@@ -1388,10 +1472,12 @@ function bankTaskRow(t, today){
   const isOverdue = t.due && t.due < today;
   const isDueSoon = t.due && t.due >= today && t.due <= dk(new Date(Date.now()+3*86400000));
   const dueLabel = t.due ? `<span class="bt-due${isOverdue?' overdue':''}">${isOverdue?'⚠ overdue':isDueSoon?'due '+fmtDate(t.due):'due '+fmtDate(t.due)}</span>` : '';
-  return `<div class="bank-task" draggable="true"
+  const urgentBadge = t.urgent ? `<span style="font-size:10px;background:#FFF0E0;color:#e8792a;border:1px solid #F0C090;border-radius:6px;padding:1px 6px;font-weight:700;flex-shrink:0">⚡ Urgent</span>` : '';
+  return `<div class="bank-task${t.urgent?' urgent-task':''}" draggable="true"
     ondragstart="dS(event,'bank',${t.id})" ondragend="dE()">
     <div class="bt-dot" style="background:${c.col};border:1px solid ${c.txt}44"></div>
     <span class="bt-name">${t.name}</span>
+    ${urgentBadge}
     ${dueLabel}
     <div class="bt-actions">
       <button class="bt-tick" onclick="completeTask(${t.id})" title="Mark done">✓</button>
@@ -1466,6 +1552,7 @@ function saveTask(){
   const name=document.getElementById('t-name').value.trim();if(!name)return;
   const due = document.getElementById('t-due').value || null;
   const available = document.getElementById('t-available').value || null;
+  const urgent = document.getElementById('t-urgent')?.checked || false;
   const type = currentTaskType;
 
   tasks.push({
@@ -1473,16 +1560,18 @@ function saveTask(){
     cat:document.getElementById('t-cat').value,
     sub:document.getElementById('t-sub').value.trim(),
     dept:null, sec:null, done:false, source:'bank',
-    type, // 'todo' or 'reminder'
-    due,  // YYYY-MM-DD or null
-    available, // YYYY-MM-DD or null (reminders only)
+    type,
+    due,
+    available,
+    urgent,
   });
 
   document.getElementById('t-name').value='';
   document.getElementById('t-sub').value='';
   document.getElementById('t-due').value='';
   document.getElementById('t-available').value='';
-  setTaskType('todo'); // reset to todo for next time
+  if(document.getElementById('t-urgent')) document.getElementById('t-urgent').checked=false;
+  setTaskType('todo');
   closeM('task');renderBank();autoSave();
   toast(type==='reminder' ? '🕐 Reminder added' : 'Task added');
 }
@@ -2312,7 +2401,8 @@ function renderPlanner(){
             <div class="timeline-event tev-task ${ev.done?'tev-done':''}" draggable="true"
               ondragstart="planDragStart(event,'planner-${h}',${ev.id})"
               ondragend="planDragEnd()">
-              <span class="tev-name">${ev.name}</span>
+              <span class="tev-drag-handle" title="Drag to reorder">⠿</span>
+              <span class="tev-name">${ev.name}${ev.urgent?' ⚡':''}</span>
               <div class="tev-actions">
                 ${!ev.done
                   ?`<button class="tev-tick" onclick="plannerCompleteTask('${dateStr}',${ev.id})" title="Done">✓</button>
@@ -2901,8 +2991,11 @@ async function loadHub(){
 // Prevents hammering Supabase on every keystroke
 function autoSave(){
   if(saveDebounceTimer) clearTimeout(saveDebounceTimer);
-  saveDebounceTimer = setTimeout(()=>{ saveHub(); }, 1500);
-  // Keep calendar in sync if it's the active page
+  saveDebounceTimer = setTimeout(async ()=>{
+    console.log('💾 Saving... tasks count:', tasks.length);
+    await saveHub();
+    console.log('💾 Save complete. tasks count:', tasks.length);
+  }, 1500);
   syncCalendar();
 }
 
@@ -3136,7 +3229,105 @@ function calAddAtHour(h, dateStr){
   openM('task');
 }
 
-// ── MESSAGES ──
+// ── QUICK NOTES ──
+let quickNotesTimer = null;
+function quickNotesChange(){
+  if(quickNotesTimer) clearTimeout(quickNotesTimer);
+  quickNotesTimer = setTimeout(()=>{
+    const val = document.getElementById('quick-notes-area')?.value || '';
+    localStorage.setItem('elva_quick_notes', val);
+    const ts = new Date().toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'});
+    const el = document.getElementById('quick-notes-saved');
+    if(el) el.textContent = 'Saved at '+ts;
+  }, 500);
+}
+function loadQuickNotes(){
+  const val = localStorage.getItem('elva_quick_notes') || '';
+  const el = document.getElementById('quick-notes-area');
+  if(el) el.value = val;
+}
+
+// ── DELEGATED TASKS ──
+let delegatedTasks = JSON.parse(localStorage.getItem('elva_delegated')||'[]');
+
+function saveDelegated(){
+  const task = document.getElementById('dl-task').value.trim();
+  const to = document.getElementById('dl-to').value.trim();
+  if(!task || !to) return;
+  const date = document.getElementById('dl-date').value || dk(new Date());
+  const due = document.getElementById('dl-due').value || null;
+  delegatedTasks.push({
+    id: nid++,
+    task, to, date, due,
+    status: 'pending', // pending | chased | complete
+    chased: null,
+    completedAt: null,
+    createdAt: new Date().toISOString()
+  });
+  ['dl-task','dl-to','dl-date','dl-due'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('dl-date').value = dk(new Date());
+  localStorage.setItem('elva_delegated', JSON.stringify(delegatedTasks));
+  closeM('delegated');
+  renderDelegated();
+  toast('Task delegated 📋');
+}
+
+function chaseTask(id){
+  const t = delegatedTasks.find(x=>x.id===id); if(!t) return;
+  t.status = 'chased';
+  t.chased = dk(new Date());
+  localStorage.setItem('elva_delegated', JSON.stringify(delegatedTasks));
+  renderDelegated();
+  toast('Chased 📬 — logged today');
+}
+
+function completeDelegated(id){
+  const t = delegatedTasks.find(x=>x.id===id); if(!t) return;
+  t.status = 'complete';
+  t.completedAt = dk(new Date());
+  localStorage.setItem('elva_delegated', JSON.stringify(delegatedTasks));
+  renderDelegated();
+  toast('✓ Marked complete');
+}
+
+function deleteDelegated(id){
+  delegatedTasks = delegatedTasks.filter(x=>x.id!==id);
+  localStorage.setItem('elva_delegated', JSON.stringify(delegatedTasks));
+  renderDelegated();
+}
+
+function renderDelegated(){
+  const el = document.getElementById('delegated-list'); if(!el) return;
+  const active = delegatedTasks.filter(t=>t.status!=='complete');
+  const done = delegatedTasks.filter(t=>t.status==='complete');
+  const all = [...active, ...done];
+
+  if(!all.length){ el.innerHTML = '<div class="delegated-empty">No delegated tasks yet — click + Delegate Task to add one.</div>'; return; }
+
+  const statusClass = {pending:'delegated-status-pending',chased:'delegated-status-chased',complete:'delegated-status-complete'};
+  const statusLabel = {pending:'⏳ Pending',chased:'📬 Chased',complete:'✓ Complete'};
+
+  el.innerHTML = all.map(t=>`
+    <div class="delegated-card${t.status==='complete'?' complete':''}">
+      <div class="delegated-header">
+        <div class="delegated-task">${t.task}</div>
+        <span class="${statusClass[t.status]}">${statusLabel[t.status]}</span>
+      </div>
+      <div class="delegated-meta">
+        <span class="delegated-pill delegated-to">👤 ${t.to}</span>
+        <span class="delegated-pill delegated-date">📅 Delegated ${fmtDate(t.date)}</span>
+        ${t.due?`<span class="delegated-pill delegated-due">⏰ Due ${fmtDate(t.due)}</span>`:''}
+        ${t.chased?`<span class="delegated-pill delegated-chased">📬 Chased ${fmtDate(t.chased)}</span>`:''}
+      </div>
+      ${t.status!=='complete'?`<div class="delegated-actions">
+        <button class="btn btn-sm btn-ghost" onclick="chaseTask(${t.id})">📬 Chase</button>
+        <button class="btn btn-sm" onclick="completeDelegated(${t.id})" style="background:#C2C395;color:#FFFAF2;border-color:#C2C395">✓ Complete</button>
+        <button class="btn btn-sm btn-ghost" onclick="deleteDelegated(${t.id})" style="color:#c09080">✕</button>
+      </div>`:`<div class="delegated-actions"><button class="btn btn-sm btn-ghost" onclick="deleteDelegated(${t.id})" style="color:#c09080">Remove</button></div>`}
+    </div>`).join('');
+}
+
+// ── MESSAGES ── (existing code continues below)
 let msgFolderCollapsed = {};
 
 function saveMsgFolder(){
@@ -3550,6 +3741,7 @@ loadElvaStorage(); // load chat from localStorage instantly
   renderModGrid();
   selMod(0);
   renderBriefing();
+  loadQuickNotes();
   renderElvaMessages('page');
   renderElvaMemoryPanel();
   updateGcalUI();
