@@ -2806,6 +2806,7 @@ let saveDebounceTimer = null;
 
 async function saveHub(){
   const data = {
+    id: 'main',
     tasks,
     state,
     mods: mods.map(m=>({...m})),
@@ -2821,24 +2822,26 @@ async function saveHub(){
     updated_at: new Date().toISOString()
   };
 
-  // Always save to localStorage as instant fallback
-  try{ localStorage.setItem(HUB_STORAGE_KEY, JSON.stringify({
-    tasks, state, mods, completedLog, recurringMeetings,
-    occurrenceOverrides, plannerEvents, weekTasks, dayArchive,
-    msgFolders, msgDrafts, nid
-  })); } catch(e){}
-
-  // Save to Supabase
+  // Always save to localStorage first
   try{
-    await fetch(`${SUPABASE_URL}/rest/v1/hub_state?id=eq.main`, {
-      method: 'PATCH',
-      headers: sbHeaders,
+    localStorage.setItem(HUB_STORAGE_KEY, JSON.stringify({
+      tasks, state, mods, completedLog, recurringMeetings,
+      occurrenceOverrides, plannerEvents, weekTasks, dayArchive,
+      msgFolders, msgDrafts, nid
+    }));
+  } catch(e){ console.warn('localStorage save failed', e); }
+
+  // Upsert to Supabase (works whether row exists or not)
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/hub_state`, {
+      method: 'POST',
+      headers: { ...sbHeaders, 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify(data)
     });
-  } catch(e){
-    console.warn('Supabase save failed, localStorage backup used', e);
-  }
+    if(!res.ok){ const err = await res.text(); console.warn('Supabase save failed:', err); }
+  } catch(e){ console.warn('Supabase save error, localStorage used', e); }
 }
+
 
 async function loadHub(){
   // Try Supabase first
