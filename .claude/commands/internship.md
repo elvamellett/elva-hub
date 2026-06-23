@@ -14,6 +14,9 @@ Run the internship-search workflow defined in `internship-search/CLAUDE.md`.
 3. Commit and push the new files to the current branch.
 4. Report back a short summary: how many found, how many passed, the standout roles, and
    the file paths.
+5. Send a phone notification (PushNotification) with a one-line summary, e.g.
+   "Internship run: 2 passed, 1 watchlist. Top: Komodo (Sept 2026)." This is the delivery
+   step for scheduled/unattended runs, so it reaches you even when you're not watching.
 
 Optional focus for this run (e.g. specific start months or locations): $ARGUMENTS
 If no focus is given, run the standard full weekly search.
