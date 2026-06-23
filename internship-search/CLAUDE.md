@@ -105,5 +105,7 @@ internship-search/
 - **Dates:** filenames use `YYYY-MM-DD`. Use the actual run date.
 - **File slugs:** kebab-case `company-role`, e.g. `longchamp-ecommerce-intern`.
 - **Status values:** `found` → `applied` → `interview` → `rejected` / `offer`.
+  Plus `watchlist` — a strong-fit role that failed a hard filter (usually timing); track
+  it as a next-cycle target rather than dropping it entirely.
 - **Single source of truth:** if profile facts change, edit `profile/profile.md` (and
   `filters.md`), then this file's summary — never let them drift apart.

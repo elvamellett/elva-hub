@@ -30,3 +30,5 @@ same role).
 - **interview** — interview scheduled or in progress.
 - **rejected** — closed, unsuccessful.
 - **offer** — offer received.
+- **watchlist** — strong-fit role that failed a hard filter (usually timing/start date);
+  not actionable now, but a target to re-apply for in the next cycle.
