@@ -32,7 +32,7 @@
 
 ## Inputs & data sources
 
-- Brand-in-a-box: voice, tagline, palette (Ink Navy #0E1B2A, Volt #C2F03C, Chalk #F6F7F2, Slate #8A94A3, Court Teal #0B6E6E), fonts (Space Grotesk / Inter), volt-yellow ball motif.
+- Brand-in-a-box: voice, tagline, palette (Ink Navy #0E1B2A, Electric Blue #2E6BFF, Chalk #EDEAE2, Slate #5B6675, Deep Sky #1C3A5E), fonts (Space Grotesk / Inter), pulse/heartbeat-line motif (the O is a pulse-disc; no ball/racket).
 - Shared content calendar + data layer (planned/published posts, performance history).
 - Content Engine asset library and request queue.
 - Product catalog, inventory, margins, promo schedule.
@@ -92,7 +92,7 @@
 - No unverifiable, medical, or performance claims; no fake scarcity or urgency.
 - No reuse of UGC/creator/paid-partnership content without secured rights and disclosure.
 - Respect platform terms and rate limits; no bought followers/engagement, no spam.
-- Stay on palette, fonts, and the volt-yellow ball motif.
+- Stay on palette, fonts, and the pulse/heartbeat-line motif (the O is a pulse-disc; no ball/racket).
 - All numbers are assumptions to validate; log every publish/edit to the audit log; honor the kill switch.
 
 ## KPIs

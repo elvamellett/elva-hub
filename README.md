@@ -38,7 +38,7 @@ demand is proven. Lowest-risk path for your capital.
 | [`klaviyo-retention-plan.md`](./klaviyo-retention-plan.md) | **Your edge** — every core flow + the padel replenishment engine, in detail |
 | [`ad-testing-framework.md`](./ad-testing-framework.md) | Creative testing tuned to a **€500–1k/mo** budget: kill/scale rules, metrics |
 | [`brand-pack.md`](./brand-pack.md) | **Brand identity**: name options + recommendation, logos, palette, type, voice |
-| [`brand/logos/`](./brand/logos/) | Real editable **SVG logos** — PULSO primary, dark (with pulse motif), P monogram, wordmark |
+| [`brand/logos/`](./brand/logos/) | **Final logo assets (v1.0)** — PULSO wordmark + pulse-disc, mark in navy/blue/white, IG avatar |
 | [`content-engine.md`](./content-engine.md) | AI system that **creates, schedules & publishes** ad + social content (with approval gates) |
 | [`ai-agent-team.md`](./ai-agent-team.md) | Overview: an **AI agent per department** that continuously *operates* the playbooks |
 | [`agents/`](./agents/) | **Detailed, buildable spec per agent** (social, paid ads, email, finance, web-dev, CS, sourcing, research, orchestrator) |

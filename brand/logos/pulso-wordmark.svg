@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 150" width="470" height="150" role="img" aria-label="PULSO wordmark">
-  <title>PULSO — compact wordmark (ball as the O)</title>
-  <text x="20" y="112" font-family="'Space Grotesk','Inter',Arial,sans-serif" font-size="104" font-weight="700" fill="#0E1B2A" letter-spacing="2">PULS</text>
-  <g>
-    <circle cx="342" cy="76" r="52" fill="#C2F03C"/>
-    <path d="M306 34 C337 58 337 94 306 118" fill="none" stroke="#0E1B2A" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
-    <path d="M378 34 C347 58 347 94 378 118" fill="none" stroke="#0E1B2A" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
-  </g>
-</svg>

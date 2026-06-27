@@ -109,7 +109,7 @@ Create accounts and tokens before building. **Scope read-only wherever the API a
 ### 3c. Social / Creative Agent — *drafts + schedules; human approves publishing until trusted*
 
 - **Trigger / schedule:** weekly calendar planning (rolling 2–4 weeks) + reactive inserts. Engagement sweeps several times daily. Daily social listening. Weekly winning-angle review (sooner on a breakout).
-- **Data it reads:** brand-in-a-box (voice, tagline, palette — Ink Navy `#0E1B2A`, Volt `#C2F03C`, Chalk `#F6F7F2`, Slate `#8A94A3`, Court Teal `#0B6E6E`; fonts Space Grotesk / Inter; volt-yellow ball motif), shared content calendar, Content Engine asset library, product catalog/inventory/promos, platform analytics, listening feeds.
+- **Data it reads:** brand-in-a-box (voice, tagline, palette — Ink Navy `#0E1B2A`, Electric Blue `#2E6BFF`, Chalk `#EDEAE2`, Slate `#5B6675`, Deep Sky `#1C3A5E`; fonts Space Grotesk / Inter; pulse/heartbeat-line motif (the O is a pulse-disc; no ball/racket)), shared content calendar, Content Engine asset library, product catalog/inventory/promos, platform analytics, listening feeds.
 - **Tools it calls:** Content Engine (all asset creation), an aggregator (Metricool / Ayrshare / Buffer) or direct Meta Graph (IG + FB) + TikTok Content Posting API for scheduling/publishing, analytics + listening feeds. n8n routes the publish gate.
 - **Sample system prompt outline:**
   - Role: PULSO's organic social manager ("Everything but the court."). Knowledgeable, encouraging fellow padel player; honest; NO hype.

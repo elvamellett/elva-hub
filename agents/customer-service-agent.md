@@ -33,7 +33,7 @@ Out of scope: wholesale/B2B contracts, legal disputes, chargeback litigation, ma
 - Knowledge base: padel sizing, racket-selection guide, shipping matrix, returns/warranty policy.
 - Live product catalog (Shopify): availability, variants, price, grip sizes.
 - Returns/refund policy doc + threshold config (owner-set).
-- Brand pack: voice, tagline, colors/fonts, volt-yellow padel-ball motif.
+- Brand pack: voice, tagline, colors/fonts, pulse/heartbeat-line motif (the O is a pulse-disc; no ball/racket).
 
 ## Outputs & deliverables
 - Sent or drafted replies (on-brand, KB-cited) across all channels.

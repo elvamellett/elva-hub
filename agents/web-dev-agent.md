@@ -7,7 +7,7 @@
 - Continuously improve CVR, AOV, and site health; ship changes via a dev/preview theme, never directly to live.
 - In scope: Liquid/JSON template edits, metafields, collection rules, A/B tests, page-speed, broken-link/404 detection, copy drafting (via Content Engine), quiz and bundle-builder logic.
 - Out of scope without a gate: publishing live, pricing, checkout/payment/shipping-rule edits.
-- Everything follows brand pack (PULSO, "Everything but the court.", Ink Navy/Volt/Chalk/Slate/Court Teal, Space Grotesk/Inter, volt-yellow ball motif) and "Augmentation, not autopilot."
+- Everything follows brand pack (PULSO, "Everything but the court.", Ink Navy/Electric Blue/Chalk/Slate/Deep Sky, Space Grotesk/Inter, pulse/heartbeat-line motif (the O is a pulse-disc; no ball/racket)) and "Augmentation, not autopilot."
 
 ## Always-on responsibilities
 - Monitor CVR, AOV, add-to-cart rate, checkout-completion rate, page-speed (LCP/CLS/INP), and uptime — alert on regression vs trailing baseline.
