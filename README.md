@@ -42,6 +42,13 @@ demand is proven. Lowest-risk path for your capital.
 | [`content-engine.md`](./content-engine.md) | AI system that **creates, schedules & publishes** ad + social content (with approval gates) |
 | [`ai-agent-team.md`](./ai-agent-team.md) | Overview: an **AI agent per department** that continuously *operates* the playbooks |
 | [`agents/`](./agents/) | **Detailed, buildable spec per agent** (social, paid ads, email, finance, web-dev, CS, sourcing, research, orchestrator) |
+| [`brand/design-brief.md`](./brand/design-brief.md) | Paste-ready **design brief** to hand the logo/identity to a design tool (keep navy, no ball) |
+| [`product-catalogue-starter.md`](./product-catalogue-starter.md) | Launch **SKUs, bundles & pricing** aligned to the ~€70 AOV model |
+| [`copy/homepage-and-quiz.md`](./copy/homepage-and-quiz.md) | Ready **homepage copy** + the "find your racket" quiz logic |
+| [`copy/email-flows-copy.md`](./copy/email-flows-copy.md) | **Ready-to-send copy** for all 6 day-one Klaviyo flows (20 emails) |
+| [`copy/ad-creative-batch-1.md`](./copy/ad-creative-batch-1.md) | First **ad creative batch**: hooks, primary text, UGC scripts, first-test plan |
+| [`copy/social-content-starter.md`](./copy/social-content-starter.md) | Profile setup + **14-day organic content calendar** with captions |
+| [`build-guide-phase1-agents.md`](./build-guide-phase1-agents.md) | **How to actually build** the Phase-1 agents (Finance, Email, Social) |
 
 ---
 

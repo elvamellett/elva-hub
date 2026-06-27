@@ -1,5 +1,11 @@
 # Brand Pack — Padel Ecommerce
 
+> 🎨 **Visual identity is being redesigned.** The logo + accent colour here are **interim** — the literal
+> padel-ball motif is being dropped. The real logo/palette is being created from
+> [`brand/design-brief.md`](./brand/design-brief.md) (keeps **navy**, **no ball**). The **strategy below
+> stays valid**: name (PULSO), meaning, positioning, voice, and taglines. When the new logo lands, the logo
+> files, palette accent, and type will be swapped in here and propagated across the store/content/agents.
+
 A complete starting brand identity: the chosen name, logos (real SVG files in
 [`brand/logos/`](./brand/logos/)), colour, typography, voice, and imagery guidelines. Built to be **edited** —
 tweak the palette or voice and the rest of the system (agents, content engine, store) follows.
