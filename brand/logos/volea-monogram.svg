@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="VOLEA monogram">
+  <title>VOLEA — V monogram (avatar / app icon)</title>
+  <rect x="0" y="0" width="240" height="240" rx="52" fill="#0E1B2A"/>
+  <!-- V formed as a stroke -->
+  <path d="M64 66 L120 168 L176 66" fill="none" stroke="#C2F03C" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- ball accent at the apex -->
+  <circle cx="120" cy="168" r="13" fill="#F6F7F2"/>
+</svg>

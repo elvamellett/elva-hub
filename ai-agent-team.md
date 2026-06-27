@@ -235,4 +235,8 @@ Each agent **operates** a playbook you've already written:
 Build the playbooks first (they exist now), then assign agents to run them — start with Phase 1, supervise
 closely, and expand as trust and cash allow.
 
+**Detailed, buildable specs** for each agent live in [`agents/`](./agents/) (one file per department, with
+workflows, APIs, gates, and KPIs). The shared content pipeline they rely on is [`content-engine.md`](./content-engine.md),
+and the identity they all follow is [`brand-pack.md`](./brand-pack.md).
+
 *All capabilities, costs, and timelines here are assumptions to validate. Keep humans on the irreversible decisions.*

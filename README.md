@@ -37,7 +37,11 @@ demand is proven. Lowest-risk path for your capital.
 | [`shopify-store-buildout.md`](./shopify-store-buildout.md) | Step-by-step store **setup & CRO checklist**, padel-specific |
 | [`klaviyo-retention-plan.md`](./klaviyo-retention-plan.md) | **Your edge** — every core flow + the padel replenishment engine, in detail |
 | [`ad-testing-framework.md`](./ad-testing-framework.md) | Creative testing tuned to a **€500–1k/mo** budget: kill/scale rules, metrics |
-| [`ai-agent-team.md`](./ai-agent-team.md) | An **AI agent per department** that continuously *operates* the playbooks — with human-in-the-loop gates |
+| [`brand-pack.md`](./brand-pack.md) | **Brand identity**: name options + recommendation, logos, palette, type, voice |
+| [`brand/logos/`](./brand/logos/) | Real editable **SVG logo** concepts (VOLEA primary, dark, monogram + alt) |
+| [`content-engine.md`](./content-engine.md) | AI system that **creates, schedules & publishes** ad + social content (with approval gates) |
+| [`ai-agent-team.md`](./ai-agent-team.md) | Overview: an **AI agent per department** that continuously *operates* the playbooks |
+| [`agents/`](./agents/) | **Detailed, buildable spec per agent** (social, paid ads, email, finance, web-dev, CS, sourcing, research, orchestrator) |
 
 ---
 
@@ -50,27 +54,32 @@ demand is proven. Lowest-risk path for your capital.
 3. Use [`niche-validation-checklist.md`](./niche-validation-checklist.md) — confirm padel (or score a
    sub-segment / new idea) objectively before committing.
 
-**Phase 2 — Source & build (Weeks 2–4)**
-4. [`supplier-sourcing.md`](./supplier-sourcing.md) — line up EU fast-shipping stock + POD; quote a first
+**Phase 2 — Brand, source & build (Weeks 2–4)**
+4. [`brand-pack.md`](./brand-pack.md) + [`brand/logos/`](./brand/logos/) — lock the name, logo, palette and
+   voice (clear the domain + trademark first). Everything downstream inherits this.
+5. [`supplier-sourcing.md`](./supplier-sourcing.md) — line up EU fast-shipping stock + POD; quote a first
    private-label item. **Order samples.**
-5. [`shopify-store-buildout.md`](./shopify-store-buildout.md) — build the store: hero offer + starter bundle +
+6. [`shopify-store-buildout.md`](./shopify-store-buildout.md) — build the store: hero offer + starter bundle +
    3–5 accessories/consumables. Don't over-build.
 
 **Phase 3 — Retention before traffic (do NOT skip)**
-6. [`klaviyo-retention-plan.md`](./klaviyo-retention-plan.md) — build the day-one flows (welcome, abandoned
+7. [`klaviyo-retention-plan.md`](./klaviyo-retention-plan.md) — build the day-one flows (welcome, abandoned
    cart, browse abandon, post-purchase, **replenishment**) **before** you run a single ad. This is where the
    business actually becomes profitable.
 
-**Phase 4 — Test, learn, scale (Month 1+)**
-7. [`ad-testing-framework.md`](./ad-testing-framework.md) — spend the test budget with discipline: clear
+**Phase 4 — Create, test, learn, scale (Month 1+)**
+8. [`content-engine.md`](./content-engine.md) — stand up the AI content pipeline that creates, brand-checks,
+   schedules and publishes ad + social creative (with approval gates).
+9. [`ad-testing-framework.md`](./ad-testing-framework.md) — spend the test budget with discipline: clear
    hypotheses, fast kills, patient scaling.
-8. Feed real numbers (AOV, CVR, CAC, return rate, reorder rate) back into the model and iterate everything.
+10. Feed real numbers (AOV, CVR, CAC, return rate, reorder rate) back into the model and iterate everything.
 
 **Phase 5 — Automate with an AI agent team (run alongside Phases 1–4)**
-9. [`ai-agent-team.md`](./ai-agent-team.md) — assign an AI agent to each department to *operate* the playbooks
-   above continuously (monitor, draft, analyse, alert). **Build the playbooks first**, then automate them.
-   Start with the Phase-1 agents (Finance, Creative, Retention), keep human-in-the-loop gates on anything that
-   spends money or signs a supplier, and expand only as trust and cash allow. This is augmentation, not autopilot.
+11. [`ai-agent-team.md`](./ai-agent-team.md) (overview) + [`agents/`](./agents/) (detailed specs) — assign an
+   AI agent to each department to *operate* the playbooks above continuously (monitor, draft, analyse, alert).
+   **Build the playbooks first**, then automate them. Start with the Phase-1 agents (Finance, Email/Retention,
+   Social/Creative), keep human-in-the-loop gates on anything that spends money or signs a supplier, and expand
+   only as trust and cash allow. This is augmentation, not autopilot.
 
 ---
 
