@@ -97,7 +97,7 @@ API** — but **inside hard guardrails**:
 Store these as templates; fill the variables. All inherit the Brand-in-a-box system prompt.
 
 **Ad hook generator**
-> "You are VOLEA's copywriter (voice: knowledgeable, encouraging fellow padel player; no hype; no unverifiable
+> "You are PULSO's copywriter (voice: knowledgeable, encouraging fellow padel player; no hype; no unverifiable
 > claims). Product: {product}. Audience: {beginner/improver/regular/gifter}. Write 10 scroll-stopping ad hooks
 > (≤8 words) using angle {problem-solution / beginner-enabler / community / gifting}. No medical claims."
 
@@ -106,7 +106,7 @@ Store these as templates; fill the variables. All inherit the Brand-in-a-box sys
 > product as solution shown on court → soft CTA. Authentic player tone. Include on-screen text + B-roll notes."
 
 **Social caption + hashtags**
-> "Write an Instagram caption for {post topic} in VOLEA's voice. 1 short hook line, 2–3 value lines, 1 CTA, 5–8
+> "Write an Instagram caption for {post topic} in PULSO's voice. 1 short hook line, 2–3 value lines, 1 CTA, 5–8
 > relevant padel hashtags (mix broad + niche). No emojis-spam."
 
 **Email subject lines** → feeds Email agent (see `klaviyo-retention-plan.md`).
