@@ -37,6 +37,7 @@ demand is proven. Lowest-risk path for your capital.
 | [`shopify-store-buildout.md`](./shopify-store-buildout.md) | Step-by-step store **setup & CRO checklist**, padel-specific |
 | [`klaviyo-retention-plan.md`](./klaviyo-retention-plan.md) | **Your edge** — every core flow + the padel replenishment engine, in detail |
 | [`ad-testing-framework.md`](./ad-testing-framework.md) | Creative testing tuned to a **€500–1k/mo** budget: kill/scale rules, metrics |
+| [`ai-agent-team.md`](./ai-agent-team.md) | An **AI agent per department** that continuously *operates* the playbooks — with human-in-the-loop gates |
 
 ---
 
@@ -65,6 +66,12 @@ demand is proven. Lowest-risk path for your capital.
    hypotheses, fast kills, patient scaling.
 8. Feed real numbers (AOV, CVR, CAC, return rate, reorder rate) back into the model and iterate everything.
 
+**Phase 5 — Automate with an AI agent team (run alongside Phases 1–4)**
+9. [`ai-agent-team.md`](./ai-agent-team.md) — assign an AI agent to each department to *operate* the playbooks
+   above continuously (monitor, draft, analyse, alert). **Build the playbooks first**, then automate them.
+   Start with the Phase-1 agents (Finance, Creative, Retention), keep human-in-the-loop gates on anything that
+   spends money or signs a supplier, and expand only as trust and cash allow. This is augmentation, not autopilot.
+
 ---
 
 ## How it all connects
@@ -81,6 +88,9 @@ demand is proven. Lowest-risk path for your capital.
 ```
 The model is the hub. **Ad testing sets your CAC; Klaviyo retention sets your repeat revenue.** Together they
 decide net margin — and therefore how much revenue you need to hit €10k net.
+
+Wrapping around all of it, [`ai-agent-team.md`](./ai-agent-team.md) assigns an AI agent to each department to
+*operate* these playbooks continuously — you stay the executive on every decision that spends money or commits the brand.
 
 ---
 
