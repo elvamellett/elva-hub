@@ -31,12 +31,42 @@ export async function getProducts(): Promise<Product[]> {
   return mockProducts;
 }
 
+async function googleToken(): Promise<string | null> {
+  if (!config.authConfigured) return null;
+  try {
+    const { auth } = await import("@/auth");
+    const session = await auth();
+    return session?.accessToken ?? null;
+  } catch (e) {
+    console.error("auth() failed:", e);
+    return null;
+  }
+}
+
 export async function getThreads(): Promise<EmailThread[]> {
-  return mockThreads; // v1: Gmail live path documented in README
+  const token = await googleToken();
+  if (token) {
+    try {
+      const { getGmailThreads } = await import("@/lib/integrations/google");
+      return await getGmailThreads(token);
+    } catch (e) {
+      console.error("Gmail failed, using mock:", e);
+    }
+  }
+  return mockThreads;
 }
 
 export async function getDriveFiles(): Promise<DriveFile[]> {
-  return mockDriveFiles; // v1: Drive live path documented in README
+  const token = await googleToken();
+  if (token) {
+    try {
+      const { getDriveFilesLive } = await import("@/lib/integrations/google");
+      return await getDriveFilesLive(token);
+    } catch (e) {
+      console.error("Drive failed, using mock:", e);
+    }
+  }
+  return mockDriveFiles;
 }
 
 export function isToday(iso: string): boolean {

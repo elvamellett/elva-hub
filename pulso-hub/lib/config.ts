@@ -11,8 +11,8 @@ export const config = {
     },
   },
   google: {
-    clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    clientId: process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID ?? "",
+    clientSecret: process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET ?? "",
     get connected() {
       return Boolean(this.clientId && this.clientSecret);
     },
@@ -29,6 +29,12 @@ export const config = {
       return Boolean(this.key);
     },
   },
+  // Owner login (Auth.js + Google). When false, the hub runs open in demo mode.
+  get authConfigured() {
+    return Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_SECRET);
+  },
+  // Optional: restrict the Assets view to one Drive folder.
+  driveFolderId: process.env.DRIVE_FOLDER_ID ?? "",
 };
 
 // Force mocks everywhere with USE_MOCKS=true (default true if nothing connected).
