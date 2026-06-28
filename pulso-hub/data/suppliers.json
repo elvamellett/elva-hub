@@ -1,0 +1,14 @@
+[
+  { "id": "lovepadel", "name": "LovePadel.ie", "kind": "EU distributor", "region": "Ireland", "email": "b2b@lovepadel.ie", "confidence": "verified", "status": "contacted", "leadTimeDays": 4, "notes": "Local (Dublin). Awaiting price list." },
+  { "id": "stockpadel", "name": "Stock Padel", "kind": "EU distributor", "region": "Spain", "email": "info@stockpadel.com", "confidence": "verified", "status": "contacted", "leadTimeDays": 5, "notes": "No MOQ. Needs B2B registration." },
+  { "id": "padelproshop", "name": "Padel ProShop", "kind": "EU distributor", "region": "Spain", "email": "info@padelproshop.com", "confidence": "verified", "status": "to-contact", "leadTimeDays": 6 },
+  { "id": "bigbuy", "name": "BigBuy", "kind": "EU distributor", "region": "Spain", "email": "", "contactUrl": "https://www.bigbuy.eu/en/contact", "confidence": "register", "status": "to-contact", "leadTimeDays": 2, "notes": "Dropshipping, 24-48h EU. Self-serve signup." },
+  { "id": "topcarbon", "name": "Top Carbon Sports", "kind": "Factory (OEM)", "region": "China", "email": "gavinlee@topcarbonsports.com", "confidence": "verified", "status": "quoted", "leadTimeDays": 35, "notes": "MOQ 50 from ~$34/unit. Samples $60." },
+  { "id": "sparkshot", "name": "Spark Shot", "kind": "Factory (OEM)", "region": "China", "email": "sales@sparkshot.com", "confidence": "verified", "status": "contacted", "leadTimeDays": 35 },
+  { "id": "amasport", "name": "AMA Sport", "kind": "Factory (OEM)", "region": "China", "email": "contact@amasport.com", "confidence": "verified", "status": "to-contact", "leadTimeDays": 40, "notes": "Balls + rackets, custom logo." },
+  { "id": "sportcom", "name": "SPORTCOM", "kind": "Factory (OEM)", "region": "Pakistan", "email": "info@sportcompadel.com", "confidence": "verified", "status": "to-contact", "leadTimeDays": 30, "notes": "OEM carbon rackets, low MOQ." },
+  { "id": "aidor", "name": "Aidor", "kind": "Factory (OEM)", "region": "China", "email": "", "contactUrl": "https://aidor.net/padel-racket-manufacturer/", "confidence": "guess/form", "status": "to-contact", "notes": "ISO/BSCI. Contact form." },
+  { "id": "nexpadel", "name": "NEX Padel", "kind": "Factory (OEM)", "region": "China", "email": "", "contactUrl": "https://nexpadel.com/", "confidence": "guess/form", "status": "to-contact", "notes": "OEM/ODM 100-10,000 units." },
+  { "id": "padelico", "name": "Padelico", "kind": "Factory (OEM)", "region": "China", "email": "", "contactUrl": "https://padelico.com/padel-racket/", "confidence": "guess/form", "status": "to-contact", "notes": "Private-label + FBA prep." },
+  { "id": "printful", "name": "Printful", "kind": "POD", "region": "EU", "email": "", "contactUrl": "https://www.printful.com/", "confidence": "register", "status": "to-contact", "notes": "Apparel POD, self-serve." }
+]

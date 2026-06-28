@@ -1,0 +1,38 @@
+PADEL FINANCIAL MODEL — flat CSV export (open in Excel/Google Sheets),,,,
+All numbers are ASSUMPTIONS to validate. The .xlsx version has LIVE formulas — prefer it for editing.,,,,
+
+Line item,Conservative,Realistic,Optimistic,Formula / note
+— INPUTS —,,,,
+AOV (€),60.00,70.00,82.00,blended cart
+COGS (% of revenue),42.0%,38.0%,36.0%,product + inbound shipping
+Return rate (%),7.0%,5.0%,4.0%,
+Return loss factor (%),60.0%,60.0%,60.0%,of returned order value
+Payment fee (% of revenue),2.5%,2.5%,2.5%,
+Payment fee (fixed €/order),0.30,0.30,0.30,
+CPM (€),16.00,15.00,14.00,"Meta EU, validate"
+CTR (%),1.6%,1.7%,1.7%,
+CVR landing→purchase (%),3.0%,2.4%,2.1%,cold traffic
+Returning revenue share (%),28.0%,33.0%,35.0%,no ad cost — retention
+Fixed monthly costs (€),350,350,350,apps/tools
+Target NET profit (€/mo),"10,000","10,000","10,000",goal
+
+— DERIVED UNIT ECONOMICS —,,,,
+CPC (€),1.00,0.88,0.82,CPM/1000/CTR
+CAC — per new customer (€),33.33,36.76,39.22,CPC/CVR
+First-order ROAS,1.80,1.90,2.09,AOV/CAC
+Gross contribution margin cm0,51.3%,56.5%,59.1%,before ads & fixed
+First-order BREAK-EVEN ROAS,1.95,1.77,1.69,1/cm0
+Ad spend (% of revenue / MER),40.0%,35.2%,31.1%,(1-retshare)/ROAS1
+Blended ROAS,2.50,2.84,3.22,ROAS1/(1-retshare)
+
+— WHAT IT TAKES TO HIT €10k NET / MONTH —,,,,
+Net margin % (before fixed),10.8%,20.9%,27.6%,
+Revenue needed (€/mo),"95,833","49,563","37,434",(target+fixed)/netpre
+Net margin % (actual),10.4%,20.2%,26.7%,target/revenue
+Orders / month,"1,597",708,457,revenue/AOV
+Orders / day,53.24,23.60,15.22,
+Ad spend / month (€),"38,333","17,441","11,637",working capital
+New customers / month,"1,150",474,297,adspend/CAC
+Returning revenue / month (€),"26,833","16,356","13,102",
+Gross profit / month (€),"48,683","27,791","21,987",
+NET profit check (€),"10,000","10,000","10,000","≈ €10,000"

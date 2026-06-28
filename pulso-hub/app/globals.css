@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  /* PULSO brand palette */
+  --color-ink: #0e1b2a;
+  --color-blue: #2e6bff;
+  --color-chalk: #edeae2;
+  --color-slate: #5b6675;
+  --color-sky: #1c3a5e;
+  --color-paper: #f6f5f1;
+  --color-line: #e3e0d8;
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cdcabf;
+  border-radius: 999px;
+}
+
+/* --- Agent Office animations --- */
+@keyframes agent-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.agent-bob { animation: agent-bob 3.2s ease-in-out infinite; }
+
+@keyframes agent-pulse {
+  0% { box-shadow: 0 0 0 0 var(--pulse-color, #1fb877); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.agent-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: agent-blink 1.8s ease-in-out infinite;
+}
+@keyframes agent-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@keyframes agent-dots {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.agent-dot { animation: agent-dots 1.4s ease-in-out infinite; }
+.agent-dot-2 { animation-delay: 0.18s; }
+.agent-dot-3 { animation-delay: 0.36s; }
+
+@keyframes agent-think {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.agent-think { transform-box: fill-box; transform-origin: center; animation: agent-think 1.6s ease-in-out infinite; }
+
+.agent-ellipsis { animation: agent-blink 1.4s steps(1) infinite; }
+
+@keyframes agent-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.agent-slide { animation: agent-slide-in 0.22s ease-out; }
+@keyframes agent-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.agent-fade { animation: agent-fade-in 0.2s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-bob, .agent-pulse, .agent-dot, .agent-think, .agent-ellipsis, .agent-slide, .agent-fade {
+    animation: none;
+  }
+}
