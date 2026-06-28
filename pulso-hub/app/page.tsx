@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { Users, Lock, ArrowRight } from "lucide-react";
 import { getKpis, getOrders, getProducts, getThreads, getAgents } from "@/lib/data";
+import { getAlerts } from "@/lib/alerts";
 import { PageHeader, StatCard, Card, Badge, Table, Th, Td } from "@/components/ui";
+import { AlertsBanner } from "@/components/alerts-banner";
 import { eur, shortDate } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
 
 export default async function Overview() {
-  const [kpis, orders, products, threads, agents] = await Promise.all([
+  const [kpis, orders, products, threads, agents, alerts] = await Promise.all([
     getKpis(),
     getOrders(),
     getProducts(),
     getThreads(),
     getAgents(),
+    getAlerts(),
   ]);
   const recent = orders.slice(0, 5);
   const low = products.filter((p) => p.stock <= p.reorderPoint);
@@ -31,6 +34,8 @@ export default async function Overview() {
         <StatCard label="Suppliers to chase" value={String(kpis.suppliersToFollowUp)} />
         <StatCard label="Unread supplier mail" value={String(kpis.unreadEmails)} />
       </div>
+
+      <AlertsBanner alerts={alerts} />
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
         <Link

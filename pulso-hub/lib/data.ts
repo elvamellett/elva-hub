@@ -102,7 +102,25 @@ export async function getEmailMetrics(): Promise<EmailMetrics> {
 }
 
 export async function getContentMetrics(): Promise<ContentMetrics> {
-  // Content/social rolls up from Social + Content agents (no single API); mock for now.
+  // IG/FB follower counts + engagement come live from Meta when connected; TikTok,
+  // UGC, winning angles and the calendar stay manual (no server token for TikTok).
+  if (!useMocks && config.meta.connected) {
+    try {
+      const { getMetaContentInsights } = await import("@/lib/integrations/meta");
+      const live = await getMetaContentInsights();
+      const platforms = mockContentMetrics.platforms.map((p) => {
+        const hit = live.platforms.find((l) => l.name === p.name);
+        return hit ? { ...p, followers: hit.followers } : p;
+      });
+      return {
+        ...mockContentMetrics,
+        platforms,
+        engagementRate: live.engagementRate ?? mockContentMetrics.engagementRate,
+      };
+    } catch (e) {
+      console.error("Meta content insights failed, using mock:", e);
+    }
+  }
   return mockContentMetrics;
 }
 

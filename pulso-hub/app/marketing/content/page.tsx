@@ -14,6 +14,7 @@ export default async function ContentPage() {
     <div>
       <PageHeader title="Content & social" subtitle="The organic engine — cadence, engagement and the UGC pipeline." action={<DemoBadge />} />
       <MarketingTabs />
+      <p className="mb-5 -mt-2 text-xs text-slate">Instagram &amp; Facebook follower/engagement go live with the Meta connection. TikTok and UGC tracking stay manual until a TikTok token is added.</p>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Posts this week" value={`${c.postsThisWeek}/${c.cadenceTarget}`} hint="cadence target" />

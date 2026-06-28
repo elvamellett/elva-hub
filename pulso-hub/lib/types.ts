@@ -152,6 +152,15 @@ export type ContentMetrics = {
   upcoming: { when: string; platform: string; title: string }[];
 };
 
+export type Alert = {
+  id: string;
+  severity: "info" | "warn" | "critical";
+  area: "Inventory" | "Ads" | "Finance" | "Email";
+  title: string;
+  detail: string;
+  href: string;
+};
+
 export type MarketingKpis = {
   currency: string;
   netMarginPct: number;

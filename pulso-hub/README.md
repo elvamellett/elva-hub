@@ -17,10 +17,23 @@ Built with **Next.js 16 (App Router) + React 19 + Tailwind v4**, themed in the P
   email to open its Gmail threads.
 - **Inbox** — recent supplier/customer email (read-only; Gmail).
 - **Assets** — brand assets/docs (read-only; Google Drive).
-- **Marketing** — scaffolded "coming soon" (v2).
+- **Marketing** — see v2 below.
 
 Everything across external systems is **read-only**; the only thing the hub writes is your own supplier
 status/notes.
+
+## What's in v2 (Agents + Marketing)
+- **Agent Office** (`/ops/agents`) — your 11-agent team as clickable characters working in department rooms.
+  Click an agent for what it's doing, its task queue, KPIs, pending approval, and a **View blueprint** lightbox
+  (the agent's Excalidraw flow + a download link). *Representative preview until the agents are deployed.*
+- **Approvals** (`/ops/approvals`) — one queue of every decision an agent is actively waiting on, with
+  Approve/Hold (enabled once agents are live) and a sidebar count.
+- **Alerts** — the Overview surfaces "needs attention" (low stock, ad sets below break-even, runway, email
+  deliverability), derived from live data, each linking to the relevant page.
+- **Marketing dashboard** — **Ad performance** (Meta: spend/ROAS/CAC, spend-vs-revenue, campaign scale/kill
+  flags), **Email** (Klaviyo: flows, campaigns, deliverability), **Content & social** (cadence, engagement,
+  top posts, UGC), and **Financials** (net margin, blended ROAS, MER, runway, and **progress to €10k net** from
+  the financial model). Charts are dependency-free SVG. Mock data now; live when Meta/Klaviyo are connected.
 
 ## Run locally
 ```bash
@@ -35,7 +48,8 @@ Copy `.env.example` → `.env.local` and fill what you want:
 |---|---|---|
 | **Shopify** (orders, inventory) | `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_ADMIN_TOKEN` | Shopify admin → Apps → **Develop apps** → create app → Admin API scopes `read_products, read_orders, read_inventory, read_fulfillments` → install → copy the `shpat_…` token |
 | **Owner login + Google** (Gmail + Drive) | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`, `OWNER_EMAIL` | See **Authentication** below |
-| **Meta / Klaviyo** (v2) | `META_ACCESS_TOKEN`, `KLAVIYO_API_KEY` | Wired in v2 |
+| **Meta Ads** (ad performance, IG/FB content) | `META_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID`, opt. `META_CURRENCY`, `META_IG_USER_ID`, `META_FB_PAGE_ID` | Meta Business Settings → **System Users** → generate a token with `ads_read`; ad-account id (digits only) is in Ads Manager. IG/FB ids enable live follower + engagement on Content. |
+| **Klaviyo** (email) | `KLAVIYO_API_KEY` | Klaviyo → Settings → **API Keys** → create a **read-scoped Private API Key** |
 
 Set `USE_MOCKS=false` once Shopify is configured to use live data (it auto-switches when the token is present).
 
@@ -74,5 +88,8 @@ Setup:
 
 ## Roadmap
 - **v1.1 ✓ (done)** — Auth.js (Google login, owner allowlist) + live Gmail/Drive reads.
-- **v2** — Marketing dashboard (Meta Ads + Klaviyo + content + financial KPIs), background sync (Vercel Cron),
-  low-stock/CAC alerts, and optional write-actions (fulfil, email, pause ads) behind approval gates.
+- **v2 ✓ (done)** — Agent Office, Approvals inbox, Alerts, and the Marketing dashboard (Meta Ads + Klaviyo +
+  content + financial KPIs) with dependency-free charts and the blueprint lightbox.
+- **v3 (next)** — background sync (Vercel Cron) so live data refreshes automatically, live agent telemetry
+  feeding the Office/Approvals, TikTok + UGC sources, and optional write-actions (fulfil, email, pause ads)
+  behind the approval gates.

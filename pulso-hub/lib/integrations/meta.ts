@@ -60,3 +60,49 @@ type MetaRow = {
   actions?: { action_type: string; value: string }[];
   action_values?: { action_type: string; value: string }[];
 };
+
+// Live IG/FB follower counts + recent engagement — the parts the Meta Graph API
+// can actually provide for content. TikTok + UGC stay manual (no server token here).
+// Returns the platform/engagement subset that lib/data.ts merges over the mock baseline.
+export async function getMetaContentInsights(): Promise<{
+  platforms: { name: string; followers: number }[];
+  engagementRate: number | null;
+}> {
+  const token = config.meta.token;
+  const igUser = process.env.META_IG_USER_ID ?? "";
+  const fbPage = process.env.META_FB_PAGE_ID ?? "";
+  if (!token) throw new Error("Meta not configured (META_ACCESS_TOKEN)");
+
+  const platforms: { name: string; followers: number }[] = [];
+  let engagementRate: number | null = null;
+
+  if (igUser) {
+    const res = await fetch(`${API}/${igUser}?fields=followers_count,media_count&access_token=${token}`, { cache: "no-store" });
+    if (res.ok) {
+      const j = (await res.json()) as { followers_count?: number };
+      if (typeof j.followers_count === "number") platforms.push({ name: "Instagram", followers: j.followers_count });
+    }
+    // Recent-media engagement (likes+comments / reach) on the latest posts.
+    const m = await fetch(`${API}/${igUser}/media?fields=like_count,comments_count,insights.metric(reach)&limit=12&access_token=${token}`, { cache: "no-store" });
+    if (m.ok) {
+      const mj = (await m.json()) as { data?: { like_count?: number; comments_count?: number; insights?: { data?: { values?: { value?: number }[] }[] } }[] };
+      const rows = mj.data ?? [];
+      let eng = 0, reach = 0;
+      for (const r of rows) {
+        eng += (r.like_count ?? 0) + (r.comments_count ?? 0);
+        reach += r.insights?.data?.[0]?.values?.[0]?.value ?? 0;
+      }
+      if (reach > 0) engagementRate = eng / reach;
+    }
+  }
+
+  if (fbPage) {
+    const res = await fetch(`${API}/${fbPage}?fields=fan_count&access_token=${token}`, { cache: "no-store" });
+    if (res.ok) {
+      const j = (await res.json()) as { fan_count?: number };
+      if (typeof j.fan_count === "number") platforms.push({ name: "Facebook", followers: j.fan_count });
+    }
+  }
+
+  return { platforms, engagementRate };
+}
