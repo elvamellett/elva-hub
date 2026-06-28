@@ -5,15 +5,19 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Boxes, Truck, Mail, FolderOpen,
-  Megaphone, Send, Sparkles, LineChart, Settings, Activity, Users,
+  Megaphone, Send, Sparkles, LineChart, Settings, Activity, Users, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { mockAgents } from "@/lib/mock/agents";
 
-type Item = { href: string; label: string; icon: React.ElementType; soon?: boolean };
+type Item = { href: string; label: string; icon: React.ElementType; soon?: boolean; count?: number };
+
+const pendingApprovals = mockAgents.filter((a) => a.status === "gate").length;
 
 const ops: Item[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/ops/agents", label: "Agent Office", icon: Users },
+  { href: "/ops/approvals", label: "Approvals", icon: ShieldCheck, count: pendingApprovals },
   { href: "/ops/orders", label: "Orders", icon: ShoppingCart },
   { href: "/ops/inventory", label: "Inventory", icon: Boxes },
   { href: "/ops/suppliers", label: "Suppliers", icon: Truck },
@@ -22,10 +26,10 @@ const ops: Item[] = [
 ];
 
 const marketing: Item[] = [
-  { href: "/marketing/ads", label: "Ad performance", icon: Megaphone, soon: true },
-  { href: "/marketing/email", label: "Email (Klaviyo)", icon: Send, soon: true },
-  { href: "/marketing/content", label: "Content & social", icon: Sparkles, soon: true },
-  { href: "/marketing/financials", label: "Financials", icon: LineChart, soon: true },
+  { href: "/marketing/ads", label: "Ad performance", icon: Megaphone },
+  { href: "/marketing/email", label: "Email (Klaviyo)", icon: Send },
+  { href: "/marketing/content", label: "Content & social", icon: Sparkles },
+  { href: "/marketing/financials", label: "Financials", icon: LineChart },
 ];
 
 function NavLink({ item, active }: { item: Item; active: boolean }) {
@@ -40,6 +44,9 @@ function NavLink({ item, active }: { item: Item; active: boolean }) {
       <item.icon className="h-4 w-4 shrink-0" />
       <span className="flex-1">{item.label}</span>
       {item.soon && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-chalk/70">soon</span>}
+      {item.count ? (
+        <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", active ? "bg-white/20 text-white" : "bg-amber-400/90 text-ink")}>{item.count}</span>
+      ) : null}
     </Link>
   );
 }

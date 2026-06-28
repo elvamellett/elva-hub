@@ -387,7 +387,7 @@ export const mockAgents: Agent[] = [
       "Send budget targets to Paid Ads",
       "Flag reorder cash to Sourcing",
     ],
-    gate: "Reads and reports only — every spend decision stays with you. No gates on its reporting.",
+    // No approval gate — Finance reads & reports only; every spend decision stays with the owner.
     tools: ["financial-model.xlsx", "Shopify", "Meta Marketing API", "Klaviyo", "Stripe (read-only)"],
     kpis: [
       { label: "Net margin", value: "18.6%" },

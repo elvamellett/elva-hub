@@ -1,35 +1,48 @@
-import { PageHeader, Card } from "@/components/ui";
-import { Megaphone, Send, Sparkles, LineChart } from "lucide-react";
+import Link from "next/link";
+import { Megaphone, Send, Sparkles, LineChart, ArrowRight } from "lucide-react";
+import { PageHeader, StatCard, Card } from "@/components/ui";
+import { MarketingTabs, DemoBadge } from "@/components/marketing-tabs";
+import { getAdMetrics, getEmailMetrics, getMarketingKpis } from "@/lib/data";
+import { eur } from "@/lib/cn";
 
-const planned = [
-  { icon: Megaphone, title: "Ad performance (Meta)", desc: "Daily spend, ROAS, CPP/CAC vs target, blended MER — tied to the financial model." },
-  { icon: Send, title: "Email (Klaviyo)", desc: "Flow + campaign revenue, list growth, email revenue share, reorder rate." },
-  { icon: Sparkles, title: "Content & social", desc: "Content calendar status, top posts, UGC pipeline." },
-  { icon: LineChart, title: "Financials", desc: "Net profit run-rate, cash runway, and progress toward €10k net — live from the model." },
-];
+export const dynamic = "force-dynamic";
 
-export default function MarketingPage() {
+export default async function MarketingPage() {
+  const [ads, email, kpis] = await Promise.all([getAdMetrics(), getEmailMetrics(), getMarketingKpis()]);
+
+  const sections = [
+    { href: "/marketing/ads", icon: Megaphone, title: "Ad performance", desc: `Blended ROAS ${ads.totals.roas.toFixed(2)} · CAC ${eur(ads.totals.cac, ads.currency)}` },
+    { href: "/marketing/email", icon: Send, title: "Email (Klaviyo)", desc: `${Math.round(email.revenueShare * 100)}% of revenue · reorder ${Math.round(email.reorderRate * 100)}%` },
+    { href: "/marketing/content", icon: Sparkles, title: "Content & social", desc: "Cadence, engagement & UGC pipeline" },
+    { href: "/marketing/financials", icon: LineChart, title: "Financials", desc: `Net margin ${Math.round(kpis.netMarginPct * 100)}% · progress to €10k net` },
+  ];
+
   return (
     <div>
-      <PageHeader title="Marketing" subtitle="The marketing dashboard is coming in v2." />
-      <div className="mb-6 rounded-2xl border border-blue/20 bg-blue/5 px-5 py-4 text-sm text-ink">
-        v1 ships the <strong>Operations</strong> dashboard. The <strong>Marketing</strong> dashboard below is scaffolded next:
-        connect Meta Ads + Klaviyo and these views light up.
+      <PageHeader title="Marketing" subtitle="Demand, retention and the numbers behind the €10k net goal." action={<DemoBadge />} />
+      <MarketingTabs />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Blended ROAS" value={ads.totals.roas.toFixed(2)} hint={`break-even ${kpis.breakEvenRoas.toFixed(2)}`} />
+        <StatCard label="CAC" value={eur(ads.totals.cac, ads.currency)} hint="target ≈ €37" />
+        <StatCard label="Email rev share" value={`${Math.round(email.revenueShare * 100)}%`} hint="target 25–35%" />
+        <StatCard label="MER" value={`${Math.round(kpis.merPct * 100)}%`} hint="marketing efficiency ratio" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {planned.map((p) => (
-          <Card key={p.title} className="flex gap-4 p-5">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ink text-white">
-              <p.icon className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-semibold">{p.title}</p>
-              <p className="mt-1 text-sm text-slate">{p.desc}</p>
-              <span className="mt-2 inline-block rounded bg-chalk px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate">
-                Coming in v2
-              </span>
-            </div>
-          </Card>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {sections.map((s) => (
+          <Link key={s.href} href={s.href}>
+            <Card className="flex items-center gap-4 p-5 transition hover:border-blue/40 hover:shadow-md">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ink text-white">
+                <s.icon className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-ink">{s.title}</p>
+                <p className="mt-0.5 text-sm text-slate">{s.desc}</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate" />
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

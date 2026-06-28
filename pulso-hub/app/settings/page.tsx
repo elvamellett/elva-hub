@@ -10,9 +10,9 @@ const integrations = [
   { key: "google", name: "Google (Gmail + Drive)", scope: "Inbox + assets (read-only) + owner login", connected: config.google.connected,
     env: ["AUTH_GOOGLE_ID", "AUTH_GOOGLE_SECRET", "AUTH_SECRET"], v: 1 },
   { key: "meta", name: "Meta Ads", scope: "Spend, ROAS, CAC (marketing dashboard)", connected: config.meta.connected,
-    env: ["META_ACCESS_TOKEN"], v: 2 },
+    env: ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"], v: 1 },
   { key: "klaviyo", name: "Klaviyo", scope: "Email performance (marketing dashboard)", connected: config.klaviyo.connected,
-    env: ["KLAVIYO_API_KEY"], v: 2 },
+    env: ["KLAVIYO_API_KEY"], v: 1 },
 ];
 
 export default function SettingsPage() {

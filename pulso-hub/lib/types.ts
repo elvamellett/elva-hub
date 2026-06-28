@@ -101,3 +101,70 @@ export type Agent = {
   blueprint: string; // blueprints/<file>.excalidraw
   spec: string; // agents/<file>.md
 };
+
+// --- Marketing dashboard (v2) ---------------------------------------------
+
+export type DayPoint = { date: string; spend: number; revenue: number; clicks: number; impressions: number; purchases: number };
+
+export type AdCampaign = {
+  id: string;
+  name: string;
+  status: "active" | "paused";
+  spend: number;
+  revenue: number;
+  roas: number;
+  cpa: number; // cost per acquisition
+  flag?: "scale" | "kill"; // agent recommendation
+};
+
+export type AdMetrics = {
+  currency: string;
+  series: DayPoint[]; // last ~14 days
+  totals: { spend: number; revenue: number; roas: number; cac: number; ctr: number; cpc: number; impressions: number; clicks: number; purchases: number };
+  campaigns: AdCampaign[];
+};
+
+export type EmailFlow = { name: string; status: "live" | "draft"; revenue: number; openRate: number; clickRate: number; note?: string };
+
+export type EmailMetrics = {
+  currency: string;
+  revenueShare: number; // 0-1 of total revenue from email
+  totalRevenue: number;
+  openRate: number;
+  clickRate: number;
+  listSize: number;
+  growth30d: number;
+  reorderRate: number;
+  deliverability: { spamRate: number; bounceRate: number; unsubRate: number };
+  flows: EmailFlow[];
+  campaigns: { id: string; name: string; sentDate: string; recipients: number; revenue: number; openRate: number }[];
+};
+
+export type ContentMetrics = {
+  postsThisWeek: number;
+  cadenceTarget: number;
+  engagementRate: number;
+  followerGrowth30d: number;
+  ugcSourced: number;
+  platforms: { name: string; followers: number; growth30d: number; postsThisWeek: number }[];
+  topPosts: { id: string; platform: string; caption: string; engagementRate: number; reach: number }[];
+  winningAngles: string[];
+  upcoming: { when: string; platform: string; title: string }[];
+};
+
+export type MarketingKpis = {
+  currency: string;
+  netMarginPct: number;
+  aov: number;
+  cac: number;
+  breakEvenRoas: number;
+  blendedRoas: number;
+  merPct: number;
+  revenueThisMonth: number;
+  revenueTarget: number;
+  netProfitThisMonth: number;
+  netProfitTarget: number;
+  ordersPerDayNeeded: number;
+  runwayWeeks: number;
+  netProfitTrend: number[]; // recent months, for a sparkline
+};

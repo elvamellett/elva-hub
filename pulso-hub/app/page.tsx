@@ -32,21 +32,34 @@ export default async function Overview() {
         <StatCard label="Unread supplier mail" value={String(kpis.unreadEmails)} />
       </div>
 
-      <Link
-        href="/ops/agents"
-        className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-line bg-ink px-5 py-4 text-chalk shadow-sm transition hover:bg-ink/90"
-      >
-        <span className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue/20 text-blue"><Users className="h-5 w-5" /></span>
-          <span>
-            <span className="block text-sm font-semibold text-white">Agent Office</span>
-            <span className="block text-xs text-chalk/70">{working} agents at work{needYou > 0 ? " · " : ""}{needYou > 0 && (
-              <span className="inline-flex items-center gap-1 text-amber-300"><Lock className="inline h-3 w-3" /> {needYou} need you</span>
-            )}</span>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/ops/agents"
+          className="flex flex-1 items-center justify-between gap-4 rounded-2xl border border-line bg-ink px-5 py-4 text-chalk shadow-sm transition hover:bg-ink/90"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue/20 text-blue"><Users className="h-5 w-5" /></span>
+            <span>
+              <span className="block text-sm font-semibold text-white">Agent Office</span>
+              <span className="block text-xs text-chalk/70">{working} agents at work</span>
+            </span>
           </span>
-        </span>
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue">Open <ArrowRight className="h-3.5 w-3.5" /></span>
-      </Link>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-blue">Open <ArrowRight className="h-3.5 w-3.5" /></span>
+        </Link>
+        <Link
+          href="/ops/approvals"
+          className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm transition hover:bg-amber-100 sm:w-64"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-200 text-amber-700"><Lock className="h-4 w-4" /></span>
+            <span>
+              <span className="block text-sm font-semibold text-amber-800">{needYou} need you</span>
+              <span className="block text-xs text-amber-700/80">Approvals waiting</span>
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 text-amber-700" />
+        </Link>
+      </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

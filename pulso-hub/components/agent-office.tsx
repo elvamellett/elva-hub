@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { X, Lock, FileText, Workflow, Wrench, ListTodo, Activity as ActivityIcon } from "lucide-react";
+import Image from "next/image";
+import { X, Lock, FileText, Workflow, Wrench, ListTodo, Activity as ActivityIcon, Download, Maximize2 } from "lucide-react";
 import type { Agent, Department } from "@/lib/types";
 import { deptMeta, statusMeta } from "@/lib/agents-meta";
 import { AgentAvatar } from "@/components/agent-avatar";
@@ -144,6 +145,7 @@ function AgentDrawer({ agent, onClose }: { agent: Agent; onClose: () => void }) 
   const m = deptMeta[agent.department];
   const s = statusMeta[agent.status];
   const Icon = m.icon;
+  const [showBlueprint, setShowBlueprint] = useState(false);
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm agent-fade" onClick={onClose} />
@@ -239,12 +241,58 @@ function AgentDrawer({ agent, onClose }: { agent: Agent; onClose: () => void }) 
           </Section>
 
           {/* refs */}
-          <div className="flex flex-wrap gap-2 border-t border-line pt-4 text-xs text-slate">
-            <span className="inline-flex items-center gap-1.5"><Workflow className="h-3.5 w-3.5" /> Blueprint: <code className="rounded bg-paper px-1 text-ink/70">{agent.blueprint}</code></span>
-            <span className="inline-flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> Spec: <code className="rounded bg-paper px-1 text-ink/70">{agent.spec}</code></span>
+          <div className="space-y-2 border-t border-line pt-4">
+            <button
+              onClick={() => setShowBlueprint(true)}
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-line bg-paper px-3 py-2.5 text-left text-sm transition hover:border-blue/40 hover:bg-white"
+            >
+              <span className="inline-flex items-center gap-2 font-medium text-ink">
+                <Workflow className="h-4 w-4" style={{ color: m.color }} /> View blueprint
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate">{agent.blueprint} <Maximize2 className="h-3.5 w-3.5" /></span>
+            </button>
+            <p className="flex items-center gap-1.5 px-1 text-xs text-slate">
+              <FileText className="h-3.5 w-3.5" /> Spec: <code className="rounded bg-paper px-1 text-ink/70">{agent.spec}</code>
+            </p>
           </div>
         </div>
       </aside>
+
+      {showBlueprint && (
+        <BlueprintLightbox
+          name={agent.blueprint}
+          title={`${deptMeta[agent.department].label} · ${agent.name}`}
+          onClose={() => setShowBlueprint(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function BlueprintLightbox({ name, title, onClose }: { name: string; title: string; onClose: () => void }) {
+  const base = name.replace(/\.excalidraw$/, "");
+  const png = `/blueprints/bp-${base}.png`;
+  const src = `/blueprints/${name}`;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-ink/80 backdrop-blur-sm agent-fade" onClick={onClose}>
+      <div className="flex items-center justify-between gap-4 px-5 py-4 text-chalk" onClick={(e) => e.stopPropagation()}>
+        <p className="flex items-center gap-2 text-sm font-semibold"><Workflow className="h-4 w-4 text-blue" /> {title} — blueprint</p>
+        <div className="flex items-center gap-2">
+          <a href={src} download className="inline-flex items-center gap-1.5 rounded-lg border border-chalk/30 px-3 py-1.5 text-xs font-medium text-chalk hover:bg-white/10">
+            <Download className="h-3.5 w-3.5" /> Download .excalidraw
+          </a>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-chalk hover:bg-white/10" aria-label="Close"><X className="h-4 w-4" /></button>
+        </div>
+      </div>
+      <div className="flex flex-1 items-center justify-center overflow-auto px-5 pb-6" onClick={(e) => e.stopPropagation()}>
+        <Image src={png} alt={`${title} blueprint`} width={2200} height={1400} className="h-auto max-h-full w-auto max-w-full rounded-xl border border-white/10 shadow-2xl" />
+      </div>
+      <p className="pb-4 text-center text-xs text-chalk/60">Edit it at excalidraw.com — Menu → Open → the downloaded file. Press Esc to close.</p>
     </div>
   );
 }

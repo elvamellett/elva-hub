@@ -2,7 +2,8 @@ import "server-only";
 import { config, useMocks } from "@/lib/config";
 import { mockOrders, mockProducts, mockThreads, mockDriveFiles } from "@/lib/mock/data";
 import { mockAgents } from "@/lib/mock/agents";
-import type { Order, Product, EmailThread, DriveFile, Kpis, Agent } from "@/lib/types";
+import { mockAdMetrics, mockEmailMetrics, mockContentMetrics, mockMarketingKpis } from "@/lib/mock/marketing";
+import type { Order, Product, EmailThread, DriveFile, Kpis, Agent, AdMetrics, EmailMetrics, ContentMetrics, MarketingKpis } from "@/lib/types";
 
 // Facade: returns live data when an integration is connected, otherwise mock data.
 // Live Shopify is wired; Gmail/Drive live calls require the Google OAuth session
@@ -74,6 +75,41 @@ export async function getAgents(): Promise<Agent[]> {
   // Representative agent team today. When the agents are actually deployed and
   // reporting into the hub, swap this for the live status source (same shape).
   return mockAgents;
+}
+
+export async function getAdMetrics(): Promise<AdMetrics> {
+  if (!useMocks && config.meta.connected) {
+    try {
+      const { getMetaAdMetrics } = await import("@/lib/integrations/meta");
+      return await getMetaAdMetrics();
+    } catch (e) {
+      console.error("Meta ads failed, using mock:", e);
+    }
+  }
+  return mockAdMetrics;
+}
+
+export async function getEmailMetrics(): Promise<EmailMetrics> {
+  if (!useMocks && config.klaviyo.connected) {
+    try {
+      const { getKlaviyoMetrics } = await import("@/lib/integrations/klaviyo");
+      return await getKlaviyoMetrics();
+    } catch (e) {
+      console.error("Klaviyo failed, using mock:", e);
+    }
+  }
+  return mockEmailMetrics;
+}
+
+export async function getContentMetrics(): Promise<ContentMetrics> {
+  // Content/social rolls up from Social + Content agents (no single API); mock for now.
+  return mockContentMetrics;
+}
+
+export async function getMarketingKpis(): Promise<MarketingKpis> {
+  // Financial KPIs mirror financial-model.xlsx (realistic scenario). When Shopify +
+  // Meta + Klaviyo are all live, compute these from real revenue/spend/email data.
+  return mockMarketingKpis;
 }
 
 export function isToday(iso: string): boolean {
