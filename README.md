@@ -49,6 +49,11 @@ demand is proven. Lowest-risk path for your capital.
 | [`copy/ad-creative-batch-1.md`](./copy/ad-creative-batch-1.md) | First **ad creative batch**: hooks, primary text, UGC scripts, first-test plan |
 | [`copy/social-content-starter.md`](./copy/social-content-starter.md) | Profile setup + **14-day organic content calendar** with captions |
 | [`build-guide-phase1-agents.md`](./build-guide-phase1-agents.md) | **How to actually build** the Phase-1 agents (Finance, Email, Social) |
+| [`shopify-products-import.csv`](./shopify-products-import.csv) | **One-upload product import** — all SKUs/variants/prices/descriptions (imports as drafts) |
+| [`copy/product-descriptions.md`](./copy/product-descriptions.md) | On-brand description for **every SKU** (source for the CSV + product pages) |
+| [`copy/store-pages.md`](./copy/store-pages.md) | Ready page copy — About, FAQ, Shipping, Returns, Privacy, Terms, Imprint, Contact |
+| [`supplier-outreach-kit.md`](./supplier-outreach-kit.md) | **Ready-to-send** RFQ / sample / follow-up / negotiation emails + reply vetting |
+| [`launch-checklist.md`](./launch-checklist.md) | **0→launch checklist** + 30/60/90-day timeline + go-live gates + tracking setup |
 
 ---
 
