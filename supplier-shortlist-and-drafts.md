@@ -156,4 +156,99 @@ PULSO · pulso.ie
 2. **Send the 2 manufacturer RFQs** (AMA Sport, SPORTCOM) to get private-label quotes + samples in motion — but **don't commit MOQ cash** until a product validates (see `supplier-outreach-kit.md` and `supplier-sourcing.md`).
 3. Track replies against the vetting checklist in `supplier-outreach-kit.md`. **Always sample before bulk.**
 
+---
+
+## Expanded net — more factories & distributors
+
+### China racket factories — private-label / OEM
+| Factory | Email / contact | Notes | Confidence |
+|---|---|---|---|
+| **Top Carbon Sports** | `gavinlee@topcarbonsports.com` (WhatsApp +86 13410452313) | Shenzhen; EVA core + Toray carbon frame | ✅ Verified |
+| **Spark Shot** | `sales@sparkshot.com` | Nanjing; high-end carbon since 2018 | ✅ Verified |
+| AMA Sport | `contact@amasport.com` | balls + rackets, custom logo — *Draft 4* | ✅ Verified |
+| SPORTCOM | `info@sportcompadel.com` | OEM carbon rackets, low MOQ — *Draft 5* | ✅ Verified |
+| Aidor | aidor.net (form; try `info@aidor.net`) | ISO9001/14001/BSCI, near Shenzhen | ⚠️ Guess/form |
+| NEX Padel | nexpadel.com (form/WhatsApp; try `info@nexpadel.com`) | Jiaxing; OEM/ODM 100–10,000 units | ⚠️ Guess/form |
+| Bewe Sport | bewesport.com (form; try `info@bewesport.com`) | custom rackets, factory pricelist | ⚠️ Guess/form |
+| Padelico | padelico.com (inquiry form) | private-label + Amazon-FBA prep | ⚠️ Form |
+| Zhejiang Odear | Alibaba (odeartennis) | balls + rackets | ⚠️ Alibaba msg |
+| Shandong Rarlon | padelracket.en.made-in-china.com | carbon rackets/paddles | ⚠️ Platform |
+| High Gain Composites | hgcomposites.com | 20+ yrs racket production | ⚠️ Form |
+
+### EU distributors — branded stock (expanded)
+| Distributor | Email / contact | Notes | Confidence |
+|---|---|---|---|
+| LovePadel.ie | `b2b@lovepadel.ie` | Dublin — *Draft 1* | ✅ Verified |
+| Stock Padel | `info@stockpadel.com` | no MOQ — *Draft 2* | ✅ Verified |
+| Padel ProShop | `info@padelproshop.com` | *Draft 3* | ✅ Verified |
+| Padel5 | tiendapadel5.com (try `info@tiendapadel5.com`) | Spain, 10+ yrs wholesale | ⚠️ Guess/form |
+| TiendaPadelPoint | tiendapadelpoint.com/en/b2b-padel-en (try `info@tiendapadelpoint.com`) | B2B catalogue, top brands | ⚠️ Guess/form |
+| Hispanica Padel B2B | b2bhispanicapadel.com (B2B-only portal — register) | professionals only | ⚠️ Register |
+| Time2Padel | time2padel.com (contact page) | specialist retailer | ⚠️ Form |
+| Total Padel | totalpadel.com (contact page) | global shipping | ⚠️ Form |
+| Express Padel (UK) | expresspadel.co.uk/pages/b2b-sign-up-form | next-day UK trade | ⚠️ Form |
+| Tennis Warehouse Europe | tenniswarehouse-europe.com | large catalogue | ℹ️ Retail |
+| International Padel Shop | internationalpadelshop.com | big EU shop | ℹ️ Retail |
+| BigBuy | bigbuy.eu/en/contact (register) | EU dropshipping, 24–48h | ℹ️ Register |
+
+> For the **form-only** suppliers, paste the relevant RFQ body (Draft 4/5/6/7 for factories; Draft 1/2/3 for
+> distributors) into their contact form. Same message, different channel.
+
+**Sources (factories/distributors):** [Top Carbon Sports](https://www.topcarbonsports.com/product/Padel-Tennis-Racket.html) ·
+[Spark Shot](https://www.sparkshot.com/) · [Aidor](https://aidor.net/padel-racket-manufacturer/) ·
+[NEX Padel](https://nexpadel.com/) · [Bewe](https://www.bewesport.com/padel-racket/) ·
+[Padelico](https://padelico.com/padel-racket/) · [Padel5](https://tiendapadel5.com/en/padel-wholesale-warehouse/) ·
+[TiendaPadelPoint B2B](https://www.tiendapadelpoint.com/en/padel-wholesale-b2b-trust-en) ·
+[Hispanica Padel B2B](https://www.b2bhispanicapadel.com/en_GB) · [Express Padel B2B](https://www.expresspadel.co.uk/pages/b2b-sign-up-form)
+
+---
+
+## Draft 6 — Top Carbon Sports (private-label rackets)  ·  To: `gavinlee@topcarbonsports.com`
+**Subject:** Private-label padel rackets — RFQ (PULSO, EU brand)
+
+Hi Gavin,
+
+I'm building PULSO (pulso.ie), a new EU padel brand, and I'd like to explore manufacturing our own private-label rackets with you. We're planning two models to start:
+- A round / control racket for beginners and improvers (forgiving sweet spot, EVA core)
+- A teardrop / all-round racket for improvers
+
+Could you share:
+- Unit price at MOQ 50 / 100 / 250 / 500
+- Minimum order quantity and production lead time
+- Customisation: shape, EVA core, carbon/fibreglass surface, grip, full-colour graphics + logo, packaging
+- Sample policy (cost + timing) — we'd want a sample before any bulk order
+- Shipping options to Ireland/EU and payment terms (Trade Assurance / escrow if available)
+
+We're starting with a small first run and plan to scale. Happy to talk on WhatsApp or a call.
+
+Thanks,
+Elva
+PULSO · pulso.ie
+
+---
+
+## Draft 7 — Spark Shot (private-label rackets)  ·  To: `sales@sparkshot.com`
+**Subject:** Private-label padel rackets — RFQ (PULSO, EU brand)
+
+Hello Spark Shot team,
+
+I'm developing PULSO (pulso.ie), a new EU padel brand, and I'm interested in producing our own private-label carbon rackets with you. To start we're looking at two models:
+- A round / control racket (beginner–improver, forgiving sweet spot, EVA core)
+- A teardrop / all-round racket (improver)
+
+Please could you share:
+- Unit price at MOQ 50 / 100 / 250 / 500
+- MOQ per model and production lead time
+- Customisation: carbon layup options, shape, grip, full-colour graphics + logo, packaging
+- Sample policy (cost + timing) — sample required before bulk
+- Shipping to Ireland/EU and payment terms
+
+We're starting focused and aim to grow into a long-term partnership. Looking forward to your reply.
+
+Thanks,
+Elva
+PULSO · pulso.ie
+
+---
+
 *All emails/contacts are assumptions to verify before sending. No messages have been sent.*
