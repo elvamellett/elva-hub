@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Boxes, Truck, Mail, FolderOpen,
-  Megaphone, Send, Sparkles, LineChart, Settings, Activity,
+  Megaphone, Send, Sparkles, LineChart, Settings, Activity, Users,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -13,6 +13,7 @@ type Item = { href: string; label: string; icon: React.ElementType; soon?: boole
 
 const ops: Item[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/ops/agents", label: "Agent Office", icon: Users },
   { href: "/ops/orders", label: "Orders", icon: ShoppingCart },
   { href: "/ops/inventory", label: "Inventory", icon: Boxes },
   { href: "/ops/suppliers", label: "Suppliers", icon: Truck },

@@ -1,7 +1,8 @@
 import "server-only";
 import { config, useMocks } from "@/lib/config";
 import { mockOrders, mockProducts, mockThreads, mockDriveFiles } from "@/lib/mock/data";
-import type { Order, Product, EmailThread, DriveFile, Kpis } from "@/lib/types";
+import { mockAgents } from "@/lib/mock/agents";
+import type { Order, Product, EmailThread, DriveFile, Kpis, Agent } from "@/lib/types";
 
 // Facade: returns live data when an integration is connected, otherwise mock data.
 // Live Shopify is wired; Gmail/Drive live calls require the Google OAuth session
@@ -67,6 +68,12 @@ export async function getDriveFiles(): Promise<DriveFile[]> {
     }
   }
   return mockDriveFiles;
+}
+
+export async function getAgents(): Promise<Agent[]> {
+  // Representative agent team today. When the agents are actually deployed and
+  // reporting into the hub, swap this for the live status source (same shape).
+  return mockAgents;
 }
 
 export function isToday(iso: string): boolean {

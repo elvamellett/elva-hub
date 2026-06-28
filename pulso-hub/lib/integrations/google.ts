@@ -25,7 +25,14 @@ export async function getGmailThreads(token: string, max = 15): Promise<EmailThr
     }),
   );
 
-  return details.filter(Boolean).map((d: any) => {
+  type GmailDetail = {
+    id: string;
+    snippet?: string;
+    internalDate?: string;
+    labelIds?: string[];
+    payload?: { headers?: { name: string; value: string }[] };
+  };
+  return (details.filter(Boolean) as GmailDetail[]).map((d) => {
     const headers: { name: string; value: string }[] = d.payload?.headers ?? [];
     const h = (n: string) => headers.find((x) => x.name === n)?.value ?? "";
     return {

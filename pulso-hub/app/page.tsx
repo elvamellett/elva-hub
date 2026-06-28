@@ -1,19 +1,23 @@
 import Link from "next/link";
-import { getKpis, getOrders, getProducts, getThreads } from "@/lib/data";
+import { Users, Lock, ArrowRight } from "lucide-react";
+import { getKpis, getOrders, getProducts, getThreads, getAgents } from "@/lib/data";
 import { PageHeader, StatCard, Card, Badge, Table, Th, Td } from "@/components/ui";
 import { eur, shortDate } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
 
 export default async function Overview() {
-  const [kpis, orders, products, threads] = await Promise.all([
+  const [kpis, orders, products, threads, agents] = await Promise.all([
     getKpis(),
     getOrders(),
     getProducts(),
     getThreads(),
+    getAgents(),
   ]);
   const recent = orders.slice(0, 5);
   const low = products.filter((p) => p.stock <= p.reorderPoint);
+  const working = agents.filter((a) => a.status === "active" || a.status === "thinking").length;
+  const needYou = agents.filter((a) => a.status === "gate").length;
 
   return (
     <div>
@@ -27,6 +31,22 @@ export default async function Overview() {
         <StatCard label="Suppliers to chase" value={String(kpis.suppliersToFollowUp)} />
         <StatCard label="Unread supplier mail" value={String(kpis.unreadEmails)} />
       </div>
+
+      <Link
+        href="/ops/agents"
+        className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-line bg-ink px-5 py-4 text-chalk shadow-sm transition hover:bg-ink/90"
+      >
+        <span className="flex items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue/20 text-blue"><Users className="h-5 w-5" /></span>
+          <span>
+            <span className="block text-sm font-semibold text-white">Agent Office</span>
+            <span className="block text-xs text-chalk/70">{working} agents at work{needYou > 0 ? " · " : ""}{needYou > 0 && (
+              <span className="inline-flex items-center gap-1 text-amber-300"><Lock className="inline h-3 w-3" /> {needYou} need you</span>
+            )}</span>
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue">Open <ArrowRight className="h-3.5 w-3.5" /></span>
+      </Link>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
