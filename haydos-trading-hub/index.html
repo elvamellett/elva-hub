@@ -401,11 +401,19 @@ select option{background:var(--surface);color:var(--text)}
     <!-- RIGHT: no-trade log + screenshot -->
     <div>
       <div class="card">
-        <div class="ct">Screenshot</div>
+        <div class="ct">Trade screenshot</div>
         <div class="ss-strip" id="log-ss-strip"><div style="font-size:12px;color:var(--subtle)">No screenshot attached.</div></div>
         <label class="ss-upload-btn" style="margin-top:0"> Attach screenshot<input type="file" id="log-ss-input" accept="image/*" style="display:none" onchange="attachLogScreenshot(event)">
         </label>
         <div id="log-ss-preview" style="margin-top:.75rem"></div>
+      </div>
+      <div class="card">
+        <div class="ct">Outlook screenshot</div>
+        <div class="ss-strip" id="log-oss-strip"><div style="font-size:12px;color:var(--subtle)">No screenshot attached.</div></div>
+        <label class="ss-upload-btn" style="margin-top:0"> Attach screenshot<input type="file" id="log-oss-input" accept="image/*" style="display:none" onchange="attachLogOutlookScreenshot(event)">
+        </label>
+        <div id="log-oss-preview" style="margin-top:.75rem"></div>
+        <div><label>Outlook notes</label><textarea id="t-outlook-notes" style="min-height:48px" placeholder="What was the outlook / picture for this trade?"></textarea></div>
       </div>
       <div class="card">
         <div class="ct">Did not trade today?</div>
@@ -526,11 +534,19 @@ select option{background:var(--surface);color:var(--text)}
       </div>
       <div>
         <div class="card">
-          <div class="ct">Screenshot</div>
+          <div class="ct">Trade screenshot</div>
           <div class="ss-strip" id="cal-log-ss-strip"><div style="font-size:12px;color:var(--subtle)">No screenshot attached.</div></div>
           <label class="ss-upload-btn" style="margin-top:0"> Attach screenshot<input type="file" id="cal-log-ss-input" accept="image/*" style="display:none" onchange="attachCalScreenshot(event)">
           </label>
           <div id="cal-log-ss-preview" style="margin-top:.75rem"></div>
+        </div>
+        <div class="card">
+          <div class="ct">Outlook screenshot</div>
+          <div class="ss-strip" id="cal-log-oss-strip"><div style="font-size:12px;color:var(--subtle)">No screenshot attached.</div></div>
+          <label class="ss-upload-btn" style="margin-top:0"> Attach screenshot<input type="file" id="cal-log-oss-input" accept="image/*" style="display:none" onchange="attachCalOutlookScreenshot(event)">
+          </label>
+          <div id="cal-log-oss-preview" style="margin-top:.75rem"></div>
+          <div><label>Outlook notes</label><textarea id="cal-t-outlook-notes" style="min-height:48px" placeholder="What was the outlook / picture for this trade?"></textarea></div>
         </div>
         <div class="card">
           <div class="ct">Did not trade today?</div>
@@ -682,6 +698,7 @@ select option{background:var(--surface);color:var(--text)}
     <div><label>Draw on Liquidity</label><input type="text" id="edit-dol"></div>
     <div><label>Notes</label><textarea id="edit-notes"></textarea></div>
     <div><label>Reflection</label><textarea id="edit-reflection"></textarea></div>
+    <div><label>Outlook notes</label><textarea id="edit-outlook-notes"></textarea></div>
     <div class="btn-row">
       <button class="btn pri" onclick="saveEditTrade()">Save changes</button>
       <button class="btn" onclick="closeEditModal()">Cancel</button>
@@ -728,6 +745,7 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let activeDateStr = '';
 let pendingScreenshot = null;
+let pendingOutlookScreenshot = null;
 
 function loadStored(key){
   try{ return JSON.parse(localStorage.getItem(key)||'null'); }
@@ -850,12 +868,15 @@ function show(page, el){
 function clearTradeForm(){
   document.getElementById('t-date').value = todayStr;
   document.getElementById('t-time').value = String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
-  ['t-pnl','t-risk','t-rr','t-conf','t-emotion','t-notes','t-dol','t-reflection'].forEach(id=>document.getElementById(id).value='');
+  ['t-pnl','t-risk','t-rr','t-conf','t-emotion','t-notes','t-dol','t-reflection','t-outlook-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('t-outcome').selectedIndex=0;
   document.getElementById('t-takeagain').value='Yes';
   pendingScreenshot=null;
   document.getElementById('log-ss-strip').innerHTML='<div style="font-size:12px;color:var(--subtle)">No screenshot attached.</div>';
   document.getElementById('log-ss-preview').innerHTML='';
+  pendingOutlookScreenshot=null;
+  document.getElementById('log-oss-strip').innerHTML='<div style="font-size:12px;color:var(--subtle)">No screenshot attached.</div>';
+  document.getElementById('log-oss-preview').innerHTML='';
 }
 
 function attachLogScreenshot(e){
@@ -864,6 +885,16 @@ function attachLogScreenshot(e){
     pendingScreenshot=dataUrl;
     document.getElementById('log-ss-strip').innerHTML='';
     document.getElementById('log-ss-preview').innerHTML=`<img src="${dataUrl}" style="width:100%;border-radius:var(--radius);border:1px solid var(--border);margin-top:4px">`;
+  });
+  e.target.value='';
+}
+
+function attachLogOutlookScreenshot(e){
+  const file=e.target.files[0]; if(!file) return;
+  compressImageFile(file,function(dataUrl){
+    pendingOutlookScreenshot=dataUrl;
+    document.getElementById('log-oss-strip').innerHTML='';
+    document.getElementById('log-oss-preview').innerHTML=`<img src="${dataUrl}" style="width:100%;border-radius:var(--radius);border:1px solid var(--border);margin-top:4px">`;
   });
   e.target.value='';
 }
@@ -887,7 +918,9 @@ function saveTrade(){
     takeAgain:document.getElementById('t-takeagain').value,
     dol:document.getElementById('t-dol').value,
     reflection:document.getElementById('t-reflection').value,
-    screenshot:pendingScreenshot
+    screenshot:pendingScreenshot,
+    outlookScreenshot:pendingOutlookScreenshot,
+    outlookNotes:document.getElementById('t-outlook-notes').value
   };
   trades.unshift(t); persist(); renderDash();
   clearTradeForm();
@@ -922,11 +955,13 @@ function showTradeDetail(id){
     ['Risk',t.risk?'$'+t.risk:'—'],['RR',t.rr||'—'],
     ['Confluences',t.confluences||'—'],['Emotions',t.emotion||'—'],['Notes',t.notes||'—'],
     ['Take again?',`<span class="badge ${(t.takeAgain||'').toLowerCase()}">${t.takeAgain||'—'}</span>`],
-    ['Reflection',t.reflection||'—']
+    ['Reflection',t.reflection||'—'],
+    ['Outlook notes',t.outlookNotes||'—']
   ];
   document.getElementById('detail-body').innerHTML=
     rows.map(([l,v])=>`<div class="detail-row"><span class="detail-lbl">${l}</span><span style="text-align:right;max-width:65%">${v}</span></div>`).join('')
-    +(t.screenshot?`<div style="margin-top:1rem"><img src="${t.screenshot}" style="width:100%;border-radius:var(--radius);border:1px solid var(--border)"></div>`:'');
+    +(t.screenshot?`<div style="margin-top:1rem"><div style="font-size:10px;color:#7d8590;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Trade screenshot</div><img src="${t.screenshot}" style="width:100%;border-radius:var(--radius);border:1px solid var(--border)"></div>`:'')
+    +(t.outlookScreenshot?`<div style="margin-top:1rem"><div style="font-size:10px;color:#7d8590;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Outlook screenshot</div><img src="${t.outlookScreenshot}" style="width:100%;border-radius:var(--radius);border:1px solid var(--border)"></div>`:'');
   document.getElementById('detail-overlay').classList.add('open');
 }
 document.getElementById('detail-overlay').onclick=function(e){if(e.target===this)this.classList.remove('open');};
@@ -1039,7 +1074,9 @@ function renderDayPanel(ds){
       ${t.dol?'<div style="font-size:12px;margin-bottom:6px"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600">Draw on Liquidity</span><div style="margin-top:2px">'+t.dol+'</div></div>':''}
       ${t.notes?'<div style="font-size:12px;margin-bottom:6px"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600">Notes</span><div style="margin-top:2px;color:var(--muted);font-style:italic">'+t.notes+'</div></div>':''}
       ${t.reflection?'<div style="font-size:12px;margin-bottom:6px"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600">Reflection</span><div style="margin-top:2px;color:var(--blue)">'+t.reflection+'</div></div>':''}
-      ${t.screenshot?'<img src="'+t.screenshot+'" style="width:100%;border-radius:6px;margin-top:6px;border:1px solid var(--border)">':''}
+      ${t.outlookNotes?'<div style="font-size:12px;margin-bottom:6px"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600">Outlook notes</span><div style="margin-top:2px">'+t.outlookNotes+'</div></div>':''}
+      ${t.screenshot?'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:6px">Trade screenshot</div><img src="'+t.screenshot+'" style="width:100%;border-radius:6px;margin-top:4px;border:1px solid var(--border)">':''}
+      ${t.outlookScreenshot?'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:6px">Outlook screenshot</div><img src="'+t.outlookScreenshot+'" style="width:100%;border-radius:6px;margin-top:4px;border:1px solid var(--border)">':''}
     </div>`).join('');
   }
   tEl.innerHTML=html;
@@ -1074,9 +1111,10 @@ function uploadDayScreenshots(e){
 function renderDayScreenshots(ds){
   const list=document.getElementById('day-ss-list');
   const tradeSS=trades.filter(t=>t.date===ds&&t.screenshot).map(t=>({src:t.screenshot,label:t.pair||'Trade'}));
+  const outlookSS=trades.filter(t=>t.date===ds&&t.outlookScreenshot).map(t=>({src:t.outlookScreenshot,label:'Outlook'}));
   const dj=journals.find(j=>j.date===ds);
   const jSS=(dj&&dj.screenshots||[]).map(s=>({src:s,label:'Chart'}));
-  const all=[...tradeSS,...jSS];
+  const all=[...tradeSS,...outlookSS,...jSS];
   if(!all.length){list.innerHTML='<div style="font-size:12px;color:var(--subtle)">No screenshots yet.</div>';return;}
   list.innerHTML=all.map(s=>`<div class="ss-thumb"><img src="${s.src}" onclick="expandImg('${encodeURIComponent(s.src)}','${s.label}')" title="Click to expand"><div class="ss-thumb-lbl">${s.label}</div></div>`).join('');
 }
@@ -1991,6 +2029,8 @@ function migrateOversizedScreenshots(){
   trades.forEach(t=>{
     if(t.screenshot&&t.screenshot.length>LIMIT)
       jobs.push(done=>compressDataUrl(t.screenshot,d=>{t.screenshot=d;done();}));
+    if(t.outlookScreenshot&&t.outlookScreenshot.length>LIMIT)
+      jobs.push(done=>compressDataUrl(t.outlookScreenshot,d=>{t.outlookScreenshot=d;done();}));
   });
   journals.forEach(j=>{
     (j.screenshots||[]).forEach((s,i)=>{
@@ -2044,6 +2084,7 @@ async function aiCoach(){
 
 // ── CALENDAR EMBEDDED FORM ────────────────────────────────
 let calPendingScreenshot=null;
+let calPendingOutlookScreenshot=null;
 
 function initCalTradeForm(){
   document.getElementById('cal-t-date').value=todayStr;
@@ -2056,12 +2097,15 @@ function clearCalTradeForm(){
   document.getElementById('cal-t-date').value=todayStr;
   const now=new Date();
   document.getElementById('cal-t-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  ['cal-t-pnl','cal-t-risk','cal-t-rr','cal-t-conf','cal-t-emotion','cal-t-notes','cal-t-dol','cal-t-reflection'].forEach(id=>document.getElementById(id).value='');
+  ['cal-t-pnl','cal-t-risk','cal-t-rr','cal-t-conf','cal-t-emotion','cal-t-notes','cal-t-dol','cal-t-reflection','cal-t-outlook-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cal-t-outcome').selectedIndex=0;
   document.getElementById('cal-t-takeagain').value='Yes';
   calPendingScreenshot=null;
   document.getElementById('cal-log-ss-strip').innerHTML='<div style="font-size:12px;color:var(--muted)">No screenshot attached.</div>';
   document.getElementById('cal-log-ss-preview').innerHTML='';
+  calPendingOutlookScreenshot=null;
+  document.getElementById('cal-log-oss-strip').innerHTML='<div style="font-size:12px;color:var(--muted)">No screenshot attached.</div>';
+  document.getElementById('cal-log-oss-preview').innerHTML='';
 }
 
 function attachCalScreenshot(e){
@@ -2070,6 +2114,16 @@ function attachCalScreenshot(e){
     calPendingScreenshot=dataUrl;
     document.getElementById('cal-log-ss-strip').innerHTML='';
     document.getElementById('cal-log-ss-preview').innerHTML='<img src="'+dataUrl+'" style="width:100%;border-radius:var(--radius);border:1px solid var(--border);margin-top:4px">';
+  });
+  e.target.value='';
+}
+
+function attachCalOutlookScreenshot(e){
+  const file=e.target.files[0]; if(!file) return;
+  compressImageFile(file,function(dataUrl){
+    calPendingOutlookScreenshot=dataUrl;
+    document.getElementById('cal-log-oss-strip').innerHTML='';
+    document.getElementById('cal-log-oss-preview').innerHTML='<img src="'+dataUrl+'" style="width:100%;border-radius:var(--radius);border:1px solid var(--border);margin-top:4px">';
   });
   e.target.value='';
 }
@@ -2093,7 +2147,9 @@ function saveCalTrade(){
     dol:document.getElementById('cal-t-dol').value,
     takeAgain:document.getElementById('cal-t-takeagain').value,
     reflection:document.getElementById('cal-t-reflection').value,
-    screenshot:calPendingScreenshot
+    screenshot:calPendingScreenshot,
+    outlookScreenshot:calPendingOutlookScreenshot,
+    outlookNotes:document.getElementById('cal-t-outlook-notes').value
   };
   trades.unshift(t); persist(); renderDash(); renderCalendar();
   if(activeDateStr===date) renderDayPanel(date);
@@ -2142,6 +2198,7 @@ function openEditTrade(id){
   document.getElementById('edit-dol').value=t.dol||'';
   document.getElementById('edit-notes').value=t.notes||'';
   document.getElementById('edit-reflection').value=t.reflection||'';
+  document.getElementById('edit-outlook-notes').value=t.outlookNotes||'';
   document.getElementById('edit-save-msg').style.display='none';
   document.getElementById('edit-modal').classList.add('open');
 }
@@ -2171,6 +2228,7 @@ function saveEditTrade(){
     dol:document.getElementById('edit-dol').value,
     notes:document.getElementById('edit-notes').value,
     reflection:document.getElementById('edit-reflection').value,
+    outlookNotes:document.getElementById('edit-outlook-notes').value,
   };
   persist();
   renderDash();
