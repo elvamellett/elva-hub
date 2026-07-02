@@ -269,6 +269,11 @@ select option{background:var(--surface);color:var(--text)}
       <div class="toggle-track" id="theme-track"><div class="toggle-thumb"></div></div>
       <span id="theme-label">Dark mode</span>
     </div>
+    <div style="margin-top:.6rem;display:flex;gap:6px">
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="exportBackup()" title="Download all data as a backup file">Backup</button>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="document.getElementById('restore-file').click()" title="Restore data from a backup file">Restore</button>
+      <input type="file" id="restore-file" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
+    </div>
     <div style="margin-top:.5rem;font-size:11px;color:var(--muted)" id="sb-date"></div>
   </div>
 </aside>
@@ -711,25 +716,62 @@ function toggleTheme(){
   applyTheme(current==='dark'?'light':'dark');
 }
 // ── END THEME ──────────────────────────────────────────────
-function loadStored(key){
-  try{ return JSON.parse(localStorage.getItem(key)||'[]')||[]; }
-  catch(e){ return []; }
-}
-let trades = loadStored('nq_trades');
-let journals = loadStored('nq_journals');
-let noTrades = loadStored('nq_notrades');
+// Data lives in IndexedDB (effectively unlimited) rather than localStorage,
+// whose ~5MB quota fills up fast once screenshots are attached. Older
+// localStorage data is migrated across automatically on first load.
+let trades = [];
+let journals = [];
+let noTrades = [];
+let idb = null;
 let logView = 'gallery';
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let activeDateStr = '';
 let pendingScreenshot = null;
 
+function loadStored(key){
+  try{ return JSON.parse(localStorage.getItem(key)||'null'); }
+  catch(e){ return null; }
+}
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('haydos-hub',1);
+    req.onupgradeneeded=()=>{ req.result.createObjectStore('kv'); };
+    req.onsuccess=()=>res(req.result);
+    req.onerror=()=>rej(req.error);
+  });
+}
+function idbGet(key){
+  return new Promise((res,rej)=>{
+    const req=idb.transaction('kv').objectStore('kv').get(key);
+    req.onsuccess=()=>res(req.result===undefined?null:req.result);
+    req.onerror=()=>rej(req.error);
+  });
+}
+function idbSet(key,val){
+  return new Promise((res,rej)=>{
+    const tx=idb.transaction('kv','readwrite');
+    tx.objectStore('kv').put(val,key);
+    tx.oncomplete=()=>res();
+    tx.onerror=()=>rej(tx.error);
+  });
+}
+
 function persist(){
+  try{ localStorage.setItem('nq_seeded','1'); }catch(e){}
+  if(idb){
+    Promise.all([
+      idbSet('nq_trades',trades),
+      idbSet('nq_journals',journals),
+      idbSet('nq_notrades',noTrades)
+    ]).then(hideStorageWarning).catch(showStorageWarning);
+    return true;
+  }
+  // IndexedDB unavailable (private mode etc) — fall back to localStorage
   try{
     localStorage.setItem('nq_trades', JSON.stringify(trades));
     localStorage.setItem('nq_journals', JSON.stringify(journals));
     localStorage.setItem('nq_notrades', JSON.stringify(noTrades));
-    localStorage.setItem('nq_seeded','1');
     hideStorageWarning();
     return true;
   }catch(err){
@@ -746,7 +788,7 @@ function showStorageWarning(){
     el.style.cssText='position:fixed;bottom:16px;right:16px;z-index:9999;max-width:380px;background:#3d1d1f;border:1px solid #f85149;color:#ffb3ad;padding:12px 16px;border-radius:8px;font-size:13px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.5)';
     document.body.appendChild(el);
   }
-  el.innerHTML='<strong style="color:#f85149">Storage full — latest changes NOT saved.</strong><br>Your browser storage limit has been reached, so the last change could not be saved and will be lost if you refresh. Delete a few screenshots or old trades to free up space, then save again.';
+  el.innerHTML='<strong style="color:#f85149">Save failed — latest changes NOT saved.</strong><br>Your browser blocked saving (storage may be full), so the last change will be lost if you refresh. Use the Backup button in the sidebar to save your data to a file, free up space, then save again.';
   el.style.display='block';
 }
 function hideStorageWarning(){
@@ -1881,6 +1923,7 @@ function shiftMonthView(dir){
 // Only ever seed on a genuine first run. Once anything has been saved the
 // nq_seeded flag is set, so demo data can never overwrite or resurrect over
 // real entries (e.g. after a failed save or if all trades are deleted).
+function seedIfFirstRun(){
 if(!trades.length&&!journals.length&&!localStorage.getItem('nq_seeded')){
   trades=[
     // ── June 2026 ──
@@ -1937,11 +1980,12 @@ if(!trades.length&&!journals.length&&!localStorage.getItem('nq_seeded')){
   ];
   persist();
 }
+}
 
 // One-time cleanup: full-resolution screenshots saved by older versions can
-// fill the localStorage quota, which makes every later save fail silently.
+// fill the storage quota, which makes every later save fail silently.
 // Recompress anything oversized already in storage, then re-save.
-(function migrateOversizedScreenshots(){
+function migrateOversizedScreenshots(){
   const LIMIT=400000; // ~300KB of image per base64 string
   const jobs=[];
   trades.forEach(t=>{
@@ -1957,7 +2001,7 @@ if(!trades.length&&!journals.length&&!localStorage.getItem('nq_seeded')){
   if(!jobs.length)return;
   let done=0;
   jobs.forEach(job=>job(()=>{ done++; if(done===jobs.length)persist(); }));
-})();
+}
 
 
 // ── MOOD ──────────────────────────────────────────────────
@@ -2146,6 +2190,60 @@ function deleteTrade(id, ds){
   if(activeDateStr) renderDayPanel(activeDateStr);
 }
 // ── END EDIT / DELETE ─────────────────────────────────────
+
+// ── BACKUP / RESTORE ──────────────────────────────────────
+function exportBackup(){
+  const payload={app:'haydos-trading-hub',version:1,exportedAt:new Date().toISOString(),trades,journals,noTrades};
+  const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='haydos-backup-'+todayStr+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importBackup(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!Array.isArray(data.trades)||!Array.isArray(data.journals)||!Array.isArray(data.noTrades)) throw new Error('invalid');
+      const when=data.exportedAt?new Date(data.exportedAt).toLocaleString():'unknown date';
+      if(!confirm('Restore backup from '+when+'?\nThis replaces ALL current data with '+data.trades.length+' trades, '+data.journals.length+' journals and '+data.noTrades.length+' no-trade days.')) return;
+      trades=data.trades; journals=data.journals; noTrades=data.noTrades;
+      persist();
+      renderDash(); renderCalendar();
+      if(activeDateStr) renderDayPanel(activeDateStr);
+      alert('Backup restored: '+trades.length+' trades.');
+    }catch(err){
+      alert('Could not read that file. Make sure it is a Haydos Trading Hub backup (.json).');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ── INIT ──────────────────────────────────────────────────
+// Load data (async, from IndexedDB), then seed/migrate and render the
+// dashboard. Rendering here also fixes the dashboard showing zeros on
+// refresh until a nav item was clicked.
+(async function initData(){
+  try{ idb=await openDB(); }catch(e){ idb=null; }
+  let t=null,j=null,n=null;
+  if(idb){
+    try{ [t,j,n]=await Promise.all([idbGet('nq_trades'),idbGet('nq_journals'),idbGet('nq_notrades')]); }
+    catch(e){}
+  }
+  if(t===null&&j===null&&n===null){
+    // nothing in IndexedDB yet — pick up data saved by the old localStorage version
+    t=loadStored('nq_trades'); j=loadStored('nq_journals'); n=loadStored('nq_notrades');
+  }
+  trades=t||[]; journals=j||[]; noTrades=n||[];
+  seedIfFirstRun();
+  migrateOversizedScreenshots();
+  persist();
+  renderDash();
+})();
 
 // Apply saved theme on load
 (function(){const t=localStorage.getItem('tz_theme')||'dark';if(t==='light')applyTheme('light');})();
