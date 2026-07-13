@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packages — The Suede Studio</title>
+<meta name="description" content="Three ways to work with The Suede Studio: The Swatch (audit &amp; roadmap), The Capsule (3–4 week rebuild), and The Atelier (we run your ecommerce, month to month). Shopify only. Enquire for pricing.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23623412'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='30' font-weight='bold' fill='%23BFD5EB' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<!-- To use real Pragmatica: license the woff2 files, place them next to this file,
+     and uncomment this block. 'Pragmatica' is already first in - -font below, so it
+     takes over automatically; the Google Fonts <link> above can then be removed.
+<style>
+@font-face{font-family:'Pragmatica';src:url('pragmatica-book.woff2') format('woff2');font-weight:400;font-style:normal}
+@font-face{font-family:'Pragmatica';src:url('pragmatica-bold.woff2') format('woff2');font-weight:700;font-style:normal}
+@font-face{font-family:'Pragmatica';src:url('pragmatica-extrabold.woff2') format('woff2');font-weight:800;font-style:normal}
+</style> -->
+<style>
+:root{
+  /* ============ THE SUEDE STUDIO — BRAND TOKENS ============
+     Canonical values live in brand.html. Edit there first,
+     then mirror here. One block controls the whole page. */
+
+  --suede:      #623412;   /* PANTONE 732 C */
+  --suede-dark: #46240A;
+  --suede-deep: #2E1604;
+  --suede-soft: #8A5B36;
+
+  --ice:        #BFD5EB;   /* PANTONE 13-4202 TCX "Ice Water" */
+  --ice-light:  #EAF1F8;
+
+  --cream:      #FAF7F3;
+  --ink:        #2B1D10;
+  --line:       #E6DCD2;
+  --line-dark:  rgba(191,213,235,.22);
+
+  --font: 'Pragmatica','Archivo',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --maxw: 1160px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--cream);color:var(--ink);font-size:16.5px;line-height:1.7;font-weight:400;-webkit-font-smoothing:antialiased}
+::selection{background:var(--ice);color:var(--suede-deep)}
+h1,h2,h3{text-transform:uppercase;font-weight:800;letter-spacing:.07em;color:var(--suede-dark);line-height:1.12}
+h1{font-size:clamp(2.2rem,6vw,4rem)}
+h2{font-size:clamp(1.7rem,3.6vw,2.5rem)}
+h3{font-size:.95rem;letter-spacing:.12em}
+p{max-width:62ch}
+a{color:var(--suede);text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.label{text-transform:uppercase;font-weight:700;font-size:.66rem;letter-spacing:.28em;color:var(--suede-soft)}
+.wordmark{text-transform:uppercase;font-weight:800;letter-spacing:.18em;color:var(--suede-dark)}
+.btn{display:inline-block;padding:17px 38px;border-radius:0;text-transform:uppercase;font-weight:700;font-size:.68rem;letter-spacing:.26em;transition:all .25s ease;border:1px solid var(--suede);cursor:pointer}
+.btn-solid{background:var(--suede);color:var(--cream)}
+.btn-solid:hover{background:var(--suede-deep);border-color:var(--suede-deep)}
+.btn-ghost{background:transparent;color:var(--suede)}
+.btn-ghost:hover{background:var(--suede);color:var(--cream)}
+.btn-ice{background:var(--ice);border-color:var(--ice);color:var(--suede-deep)}
+.btn-ice:hover{background:transparent;color:var(--ice)}
+.btn-cream{background:transparent;border-color:rgba(250,247,243,.5);color:var(--cream)}
+.btn-cream:hover{background:var(--cream);color:var(--suede-deep);border-color:var(--cream)}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(250,247,243,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);transition:box-shadow .3s ease}
+header.scrolled{box-shadow:0 6px 24px rgba(46,22,4,.07)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:76px}
+.nav .wordmark{font-size:.88rem}
+.nav-links{display:flex;gap:36px;list-style:none;align-items:center}
+.nav-links a:not(.btn){text-transform:uppercase;font-weight:700;font-size:.64rem;letter-spacing:.22em;color:var(--suede-dark);padding-bottom:3px;background:linear-gradient(var(--suede) 0 0) bottom left/0 1px no-repeat;transition:background-size .3s ease}
+.nav-links a:not(.btn):hover,.nav-links a.active{background-size:100% 1px}
+.nav-links .btn{padding:11px 24px}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:8px}
+.burger span{display:block;width:22px;height:2px;background:var(--suede-dark);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
+.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* page hero */
+.phero{background:var(--suede-deep);padding:26px}
+.phero-frame{border:1px solid var(--line-dark);padding:96px 28px;text-align:center}
+.phero .label{color:var(--ice);display:block;margin-bottom:26px}
+.phero h1{color:var(--cream);letter-spacing:.14em}
+.phero p{color:var(--ice-light);margin:26px auto 0;max-width:46ch;font-size:1.05rem}
+
+/* ticker */
+.ticker{background:var(--ice);overflow:hidden;padding:15px 0;border-bottom:1px solid var(--line)}
+.ticker-track{display:flex;width:max-content;animation:tick 30s linear infinite}
+.ticker span{text-transform:uppercase;font-weight:700;font-size:.68rem;letter-spacing:.3em;color:var(--suede-deep);padding:0 34px;white-space:nowrap}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+/* chooser */
+.chooser{padding:100px 0}
+.chooser-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line)}
+.choice{padding:44px 38px;border-right:1px solid var(--line);transition:background .3s ease}
+.choice:last-child{border-right:none}
+.choice:hover{background:#fff}
+.choice p{font-size:1.02rem;color:var(--suede-dark);font-weight:500;margin-bottom:22px;max-width:none}
+.choice a{text-transform:uppercase;font-weight:700;font-size:.66rem;letter-spacing:.26em;color:var(--suede);padding-bottom:4px;background:linear-gradient(var(--suede) 0 0) bottom left/0 1px no-repeat;transition:background-size .3s ease}
+.choice a:hover{background-size:100% 1px}
+.chooser .section-head{text-align:center;margin-bottom:56px}
+.chooser .section-head .label{display:block;margin-bottom:16px}
+
+/* package detail sections */
+.pkg-section{padding:110px 0;border-top:1px solid var(--line)}
+.pkg-head{margin-bottom:56px}
+.pkg-head .label{display:block;margin-bottom:16px}
+.pkg-head .promise{margin-top:18px;font-size:1.1rem;color:var(--suede-soft);max-width:48ch}
+.pkg-cols{display:grid;grid-template-columns:1.2fr .8fr;gap:70px}
+.inc h3{margin-bottom:24px}
+.inc ul{list-style:none;display:grid;gap:14px}
+.inc li{font-size:.95rem;padding-left:28px;position:relative}
+.inc li::before{content:"—";position:absolute;left:0;color:var(--ice);font-weight:700}
+.inc li strong{font-weight:700;color:var(--suede-dark)}
+.side{border-left:1px solid var(--line);padding-left:44px;display:flex;flex-direction:column;gap:30px}
+.side .fact .label{display:block;margin-bottom:8px}
+.side .fact p{font-size:.94rem;max-width:none}
+.side .ctas{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.side .ctas .btn{text-align:center}
+
+/* atelier feature section */
+.pkg-section.atelier{background:var(--suede-deep);color:var(--ice-light);border-top:none;padding:130px 0}
+.atelier .pkg-head .label{color:var(--ice)}
+.atelier h2{color:var(--cream)}
+.atelier .pkg-head .promise{color:var(--ice)}
+.atelier .inc h3{color:var(--cream)}
+.atelier .inc li{color:var(--ice-light)}
+.atelier .inc li strong{color:var(--cream)}
+.atelier .side{border-left-color:var(--line-dark)}
+.atelier .side .fact .label{color:var(--ice)}
+.atelier .side .fact p{color:var(--ice-light)}
+.atelier .sig{display:inline-block;background:var(--ice);color:var(--suede-deep);font-size:.6rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;padding:8px 16px;margin-bottom:26px}
+
+/* pricing philosophy */
+.pricing{padding:110px 0;border-top:1px solid var(--line);text-align:center}
+.pricing .label{display:block;margin-bottom:20px}
+.pricing p.big{font-size:clamp(1.2rem,2.4vw,1.6rem);line-height:1.55;max-width:38ch;margin:0 auto;color:var(--suede-dark);font-weight:500}
+.pricing .small{margin:30px auto 0;font-size:.92rem;color:var(--suede-soft);max-width:52ch}
+
+/* contact band */
+.contact{background:var(--suede-deep);color:var(--ice-light);padding:26px}
+.contact-frame{border:1px solid var(--line-dark);padding:96px 28px;text-align:center}
+.contact .label{color:var(--ice)}
+.contact h2{color:var(--cream);margin-top:18px}
+.contact .lede{margin:22px auto 44px;color:var(--ice);font-size:1.02rem;max-width:44ch}
+.contact .alt{margin-top:36px;font-size:.88rem;color:var(--ice);max-width:none}
+.contact .alt a{color:var(--cream);font-weight:700}
+.contact .alt a:hover{color:var(--ice)}
+
+/* footer */
+footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
+.foot{border-top:1px solid var(--line-dark);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;padding-top:30px;max-width:calc(var(--maxw) + 56px);margin:0 auto}
+.foot .wordmark{color:var(--cream);font-size:.8rem}
+.foot nav{display:flex;gap:28px}
+.foot nav a{color:var(--ice);text-transform:uppercase;font-size:.6rem;font-weight:700;letter-spacing:.22em}
+.foot nav a:hover{color:var(--cream)}
+.foot .copy{font-size:.7rem;color:var(--ice);width:100%;margin-top:8px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,.61,.36,1),transform .8s cubic-bezier(.22,.61,.36,1)}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+  .ticker-track{animation:none}
+}
+
+/* responsive */
+@media(max-width:980px){
+  .chooser-grid{grid-template-columns:1fr}
+  .choice{border-right:none;border-bottom:1px solid var(--line)}
+  .choice:last-child{border-bottom:none}
+  .pkg-cols{grid-template-columns:1fr;gap:44px}
+  .side{border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:38px}
+  .atelier .side{border-top-color:var(--line-dark)}
+}
+@media(max-width:760px){
+  .pkg-section,.chooser,.pricing{padding:72px 0}
+  .phero-frame{padding:72px 20px}
+  .burger{display:block}
+  .nav-links{position:fixed;inset:76px 0 auto 0;background:var(--cream);flex-direction:column;gap:0;padding:10px 0 26px;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rgba(46,22,4,.1);transform:translateY(-130%);transition:transform .3s ease;z-index:40}
+  .nav-links.open{transform:none}
+  .nav-links li{width:100%;text-align:center}
+  .nav-links a:not(.btn){display:block;padding:15px 0;background:none}
+  .nav-links .btn{margin:12px auto 0;display:inline-block;padding:13px 28px}
+}
+</style>
+</head>
+<body>
+
+<header id="top">
+  <div class="wrap nav">
+    <a href="index.html" class="wordmark">The Suede Studio</a>
+    <button class="burger" id="burger" aria-label="menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="packages.html" class="active">Packages</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#process">Process</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="index.html#contact" class="btn btn-solid">Enquire</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ================= PAGE HERO ================= -->
+<div class="phero">
+  <div class="phero-frame">
+    <span class="label">packages</span>
+    <h1>Three ways in</h1>
+    <p>no rate card, no surprises — every price is quoted in writing after a free discovery call, because a five-product candle shop and a 400-product boutique aren't the same job.</p>
+  </div>
+</div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>the swatch. see clearly.</span><span>—</span>
+    <span>the capsule. rebuilt properly.</span><span>—</span>
+    <span>the atelier. taken over.</span><span>—</span>
+    <span>enquire for pricing.</span><span>—</span>
+    <span>the swatch. see clearly.</span><span>—</span>
+    <span>the capsule. rebuilt properly.</span><span>—</span>
+    <span>the atelier. taken over.</span><span>—</span>
+    <span>enquire for pricing.</span><span>—</span>
+  </div>
+</div>
+
+<!-- ================= CHOOSER ================= -->
+<section class="chooser">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="label">start here</span>
+      <h2>Which sounds like you?</h2>
+    </div>
+    <div class="chooser-grid reveal">
+      <div class="choice">
+        <p>"something's not working and i honestly don't know what."</p>
+        <a href="#swatch">The Swatch ↓</a>
+      </div>
+      <div class="choice">
+        <p>"i need this rebuilt properly — once, and done."</p>
+        <a href="#capsule">The Capsule ↓</a>
+      </div>
+      <div class="choice">
+        <p>"take it all off my plate. i want my evenings back."</p>
+        <a href="#atelier">The Atelier ↓</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE SWATCH ================= -->
+<section id="swatch" class="pkg-section">
+  <div class="wrap">
+    <div class="pkg-head reveal">
+      <span class="label">01 — the starting point</span>
+      <h2>The Swatch</h2>
+      <p class="promise">the sample. one honest, expert once-over of your whole online business — and a written roadmap of exactly what to fix, in what order.</p>
+    </div>
+    <div class="pkg-cols reveal">
+      <div class="inc">
+        <h3>What's included</h3>
+        <ul>
+          <li><strong>90-minute consult</strong> — video or in person, both of us, no hard sell</li>
+          <li><strong>store audit</strong> — product pages, checkout flow, shipping setup, email capture, the quiet leaks</li>
+          <li><strong>content audit</strong> — your profile, your grid, your last 30 posts: what's working and what isn't</li>
+          <li><strong>automation map</strong> — the repetitive work in your week that ai could take off your hands</li>
+          <li><strong>the roadmap</strong> — your top 10 fixes, prioritised, with instructions you can follow yourself (or hand straight back to us)</li>
+          <li><strong>2 weeks of follow-up</strong> — email us your questions while you work through it</li>
+        </ul>
+      </div>
+      <div class="side">
+        <div class="fact">
+          <span class="label">timeline</span>
+          <p>delivered within one week of your consult.</p>
+        </div>
+        <div class="fact">
+          <span class="label">best for</span>
+          <p>owners who want clarity before commitment — and businesses that want to see how we think before handing anything over.</p>
+        </div>
+        <div class="fact">
+          <span class="label">pricing</span>
+          <p>fixed quote after your discovery call — in writing, within 3 days.</p>
+        </div>
+        <div class="ctas">
+          <a class="btn btn-solid" href="YOUR-GOOGLE-FORM-LINK">Start the questionnaire</a>
+          <a class="btn btn-ghost" href="mailto:hello@thesuedestudio.com?subject=Enquiry%20%E2%80%94%20The%20Swatch">Enquire by email</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE CAPSULE ================= -->
+<section id="capsule" class="pkg-section">
+  <div class="wrap">
+    <div class="pkg-head reveal">
+      <span class="label">02 — the transformation</span>
+      <h2>The Capsule</h2>
+      <p class="promise">the project. a 3–4 week rebuild that takes your ecommerce from "set up in a panic" to "done properly" — store, brand, content system and your first automations.</p>
+    </div>
+    <div class="pkg-cols reveal">
+      <div class="inc">
+        <h3>What's included</h3>
+        <ul>
+          <li><strong>shopify, done right</strong> — full store setup, refresh, or migration onto shopify: theme, product pages, collections, checkout, shipping, email capture, launch checklist</li>
+          <li><strong>brand &amp; content system</strong> — starter kit (wordmark direction, colours, fonts, tone of voice), content pillars, and your first month's calendar with six posts made</li>
+          <li><strong>your first automations</strong> — product-description workflow, customer-service draft replies and a weekly sales summary, installed with human-approval steps</li>
+          <li><strong>the handover</strong> — a written doc, a one-hour training call, and 30 days of email support</li>
+        </ul>
+      </div>
+      <div class="side">
+        <div class="fact">
+          <span class="label">timeline</span>
+          <p>3–4 weeks from kickoff, with a short update from us every week. we'll always quote an honest start date.</p>
+        </div>
+        <div class="fact">
+          <span class="label">best for</span>
+          <p>businesses that need the big fix once — and the natural step before handing us the keys with the atelier.</p>
+        </div>
+        <div class="fact">
+          <span class="label">pricing</span>
+          <p>scoped to your store and quoted in writing. store-only or brand-only versions quote lighter. 50% deposit to begin.</p>
+        </div>
+        <div class="ctas">
+          <a class="btn btn-solid" href="YOUR-GOOGLE-FORM-LINK">Start the questionnaire</a>
+          <a class="btn btn-ghost" href="mailto:hello@thesuedestudio.com?subject=Enquiry%20%E2%80%94%20The%20Capsule">Enquire by email</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE ATELIER ================= -->
+<section id="atelier" class="pkg-section atelier">
+  <div class="wrap">
+    <div class="pkg-head reveal">
+      <span class="sig">our signature</span>
+      <span class="label">03 — the takeover</span>
+      <h2>The Atelier</h2>
+      <p class="promise">the retainer. you hand us the keys, and your ecommerce simply… runs. the store managed, the content made, the busywork automated — month after month.</p>
+    </div>
+    <div class="pkg-cols reveal">
+      <div class="inc">
+        <h3>What's included, monthly</h3>
+        <ul>
+          <li><strong>store management</strong> — products, collections, promotions, apps, and one improvement sprint every month</li>
+          <li><strong>content, made</strong> — 8–12 pieces a month: reels, carousels and story templates, planned, written and scheduled</li>
+          <li><strong>ai operations, maintained</strong> — your automations monitored and tuned, drafts flowing every morning, new busywork automated as it appears</li>
+          <li><strong>the rhythm</strong> — a 30-minute planning call each month, a one-line update each week, and a one-page report: what we did, what it moved, what's next</li>
+        </ul>
+      </div>
+      <div class="side">
+        <div class="fact">
+          <span class="label">commitment</span>
+          <p>3-month minimum, then monthly. starts on the 1st of the month after your proposal is signed.</p>
+        </div>
+        <div class="fact">
+          <span class="label">best for</span>
+          <p>owners who are done being their own ecommerce department. we keep atelier places deliberately limited so every client gets a studio, not a queue.</p>
+        </div>
+        <div class="fact">
+          <span class="label">pricing</span>
+          <p>a flat monthly rate, quoted after your discovery call and fixed in writing.</p>
+        </div>
+        <div class="ctas">
+          <a class="btn btn-ice" href="YOUR-GOOGLE-FORM-LINK">Start the questionnaire</a>
+          <a class="btn btn-cream" href="mailto:hello@thesuedestudio.com?subject=Enquiry%20%E2%80%94%20The%20Atelier">Enquire by email</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRICING PHILOSOPHY ================= -->
+<section class="pricing">
+  <div class="wrap reveal">
+    <span class="label">on pricing</span>
+    <p class="big">we don't publish prices, because we don't believe in pretending every business is the same size.</p>
+    <p class="small">fill in the questionnaire, take the free 20-minute call, and you'll have a fixed price in writing within 3 days — valid for 30 days, no chasing, no surprises. every project starts with a 50% deposit; the atelier starts with the first month upfront.</p>
+  </div>
+</section>
+
+<!-- ================= CONTACT BAND ================= -->
+<section class="contact">
+  <div class="contact-frame">
+    <span class="label">ready?</span>
+    <h2>Start with the questionnaire</h2>
+    <p class="lede">ten minutes about your business. we read every answer — both of us — and come back within one business day.</p>
+    <a href="YOUR-GOOGLE-FORM-LINK" class="btn btn-ice">Start the questionnaire</a>
+    <p class="alt">prefer to just talk? <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a> · <a href="tel:+353830499445">+353 83 049 9445</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="foot">
+    <a href="index.html" class="wordmark">The Suede Studio</a>
+    <nav>
+      <a href="index.html#services">Services</a>
+      <a href="packages.html">Packages</a>
+      <a href="index.html#about">About</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <span class="copy">© 2026 the suede studio · dublin, ireland</span>
+  </div>
+</footer>
+
+<script>
+// mobile nav
+const burger = document.getElementById('burger');
+const navLinks = document.getElementById('navLinks');
+burger.addEventListener('click', () => {
+  const open = navLinks.classList.toggle('open');
+  burger.classList.toggle('open', open);
+  burger.setAttribute('aria-expanded', open);
+});
+navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  navLinks.classList.remove('open');
+  burger.classList.remove('open');
+  burger.setAttribute('aria-expanded', 'false');
+}));
+
+// header shadow on scroll
+const header = document.querySelector('header');
+addEventListener('scroll', () => header.classList.toggle('scrolled', scrollY > 8), {passive: true});
+
+// fade-up reveals
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+} else {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold: .12});
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+}
+</script>
+
+</body>
+</html>
