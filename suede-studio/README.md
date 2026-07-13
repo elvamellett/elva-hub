@@ -13,6 +13,8 @@ The complete starter kit for **The Suede Studio** — the AI-powered ecommerce s
 | `client-strategy-blueprint.md` | **The per-client strategy blueprint** — master template covering all nine pillars of a client's business; copy per client, fill from their questionnaire, delete the 🔒 internal boxes, send. The questionnaire→blueprint map, scoping worksheet and package tailoring guide are in its appendix |
 | `content-plan.md` | **Our own marketing plan** — 5 content pillars, realistic weekly cadence, a 4-week launch calendar, hashtags and metrics |
 | `business-plan.md` | **The internal business plan** — positioning, personas, packages with internal pricing, the equal-time partnership model, ops pipeline, 90-day roadmap, Ireland legal/money checklist. *Internal only — never send to clients* |
+| `proposal-template.md` | **The one-page proposal** — copy per client, price from the blueprint's scoping worksheet, send within 3 days of the discovery call |
+| `partnership-agreement.md` | **The founders' one-pager** — the 50/50 split, the 6-hour rule, roles, exit terms. Fill in, sign two copies. *Not legal advice* |
 
 ## How to view the website
 

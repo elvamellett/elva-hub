@@ -133,7 +133,7 @@ A shared spreadsheet, ~30 seconds to update: date · hours · what. Reviewed in 
 ### Money between us
 - **50/50 profit split**, matching the equal-time commitment. Reviewed quarterly against the ledger — if the time model changes, the split conversation happens *then*, openly, not resentfully in a year.
 - Simple treasury to start: business bank account, expenses reimbursed first, then a quarterly distribution once there's a cushion (suggest keeping €500–€1,000 float).
-- Write the partnership terms down (one page is enough): the split, the time model, who owns the brand/IP if someone leaves, and how either person can exit cleanly. Do this while it feels unnecessary — that's exactly when it's cheap to do. See §8.
+- Write the partnership terms down (one page is enough): the split, the time model, who owns the brand/IP if someone leaves, and how either person can exit cleanly. Do this while it feels unnecessary — that's exactly when it's cheap to do. A ready-to-sign template is in `partnership-agreement.md`; see also §8.
 
 ---
 
@@ -146,7 +146,7 @@ One pipeline, one shared sheet, no tools we don't need.
 3. **Questionnaire lands in the sheet** → account owner reads it *before* the call, so the call starts at "we've read everything, let's talk about what matters."
 4. **Discovery call** (20 min, account owner + notes): dig into what the questionnaire surfaced — what's broken, what they've tried, budget sense, timeline. Never quote live.
 5. **Start the client's strategy blueprint** (copy of `client-strategy-blueprint.md`) — fill the snapshot and pillar findings from the questionnaire + call; price via its internal scoping worksheet.
-6. **Proposal within 3 days** — one page (template it after the first one): what we heard, recommended package, timeline, price, what we need from you. Valid 30 days.
+6. **Proposal within 3 days** — one page, from `proposal-template.md`: what we heard, recommended package, timeline, price, what we need from you. Valid 30 days.
 7. **50% deposit** received → work is scheduled at the next joint session.
 8. **Delivery** per package; account owner sends a weekly one-liner update to the client ("this week we did X, next week Y") — 5 minutes that prevents 90% of client anxiety.
 9. **Final invoice** on delivery (payment terms: 7 days).
@@ -188,7 +188,7 @@ Tooling to start: shared Google Sheet (pipeline + ledger), Google Calendar, Canv
 *High level only — not legal or tax advice. Verify current figures and rules on cro.ie and revenue.ie, and consider one session with an accountant before the first Capsule.*
 
 - [ ] **Register the business name** — "The Suede Studio" with the CRO (form RBN1 for sole trader/RBN1A for partnership, filed online via CORE, ~€20). Required before trading under the name.
-- [ ] **Choose a structure.** Simplest start: registered **partnership** (or two sole traders with a revenue-sharing agreement). Either way, sign a short written partnership agreement covering: 50/50 split, the 6-hr time model, who owns the brand/IP, and exit terms. A limited company can come later if revenue justifies it.
+- [ ] **Choose a structure.** Simplest start: registered **partnership** (or two sole traders with a revenue-sharing agreement). Either way, sign the one-page partnership agreement (`partnership-agreement.md`) covering the 50/50 split, the 6-hr time model, brand/IP ownership, and exit terms. A limited company can come later if revenue justifies it.
 - [ ] **Register for income tax self-assessment** with Revenue (ROS) — self-assessed income means a **Form 11** return annually (file by 31 October). Set aside ~30% of profit for tax from the very first invoice.
 - [ ] **VAT:** registration is only mandatory above the services turnover threshold — *check the current figure on revenue.ie* (it was in the €40k region for services). Below it, don't register voluntarily at the start; it adds admin.
 - [ ] **Separate business bank account** — even a simple one. Never mix personal and studio money.
