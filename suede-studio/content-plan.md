@@ -2,6 +2,8 @@
 
 *Our own marketing. Instagram-first, TikTok second. Built around one 2-hour weekly batch session, because we both have day jobs.*
 
+*The client-facing version of this pillar method lives in `client-strategy-blueprint.md` §3 — pick 3–4 tailored pillars per client there.*
+
 ---
 
 ## 1. Channels & why

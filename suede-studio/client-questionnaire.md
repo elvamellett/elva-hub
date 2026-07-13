@@ -2,6 +2,8 @@
 
 *The intake form every prospective client fills out before their discovery call. Build it as a free Google Form (instructions at the bottom), link it from the website, and read every answer before the call so the call starts at "we've read everything — let's talk about what matters."*
 
+*Every answer flows straight into the client's **strategy blueprint** (`client-strategy-blueprint.md`) — the question-by-question map is in that file's internal appendix.*
+
 ---
 
 ## Form intro text

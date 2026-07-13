@@ -10,6 +10,7 @@ The complete starter kit for **The Suede Studio** — the AI-powered ecommerce s
 | `packages.html` | **The packages page** — The Swatch, The Capsule, and The Atelier in full detail |
 | `brand.html` | **The brand pack** — wordmark, colours (Pantone 732 C + Ice Water 13-4202 TCX), typography, tone of voice, do/don'ts, Instagram grid system. Print it to PDF for sharing |
 | `client-questionnaire.md` | **The client intake questionnaire** — all 45 questions, ready to paste into a free Google Form, with setup instructions at the bottom |
+| `client-strategy-blueprint.md` | **The per-client strategy blueprint** — master template covering all nine pillars of a client's business; copy per client, fill from their questionnaire, delete the 🔒 internal boxes, send. The questionnaire→blueprint map, scoping worksheet and package tailoring guide are in its appendix |
 | `content-plan.md` | **Our own marketing plan** — 5 content pillars, realistic weekly cadence, a 4-week launch calendar, hashtags and metrics |
 | `business-plan.md` | **The internal business plan** — positioning, personas, packages with internal pricing, the equal-time partnership model, ops pipeline, 90-day roadmap, Ireland legal/money checklist. *Internal only — never send to clients* |
 

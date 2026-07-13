@@ -58,6 +58,8 @@ Public materials (website, Instagram, proposals before the call) show package na
 
 The ladder now points at the takeover: **Swatch (see) → Capsule (build) → Atelier (we run it)**. The Atelier is the hero offer; the other two exist to feed it.
 
+Every engagement is built on the **client strategy blueprint** (`client-strategy-blueprint.md`) — the per-client, all-pillars strategy template that the questionnaire feeds. The Swatch delivers its snapshot + findings + 90-day roadmap; a Capsule or Atelier client gets the full tailored blueprint at kickoff, and the Atelier's monthly report reuses its scoreboard.
+
 ### THE SWATCH — *the starting point. see everything clearly.*
 One-off engagement: 90-minute consult + a three-lens audit of the client's business, delivered as a written roadmap they can run with (or hand back to us).
 - 90-min video or in-person consult
@@ -143,11 +145,12 @@ One pipeline, one shared sheet, no tools we don't need.
 2. **Reply within 1 business day** — this alone beats half the market. Send the **client questionnaire** (Google Form — full question set in `client-questionnaire.md`) and arrange the **free 20-minute discovery call**.
 3. **Questionnaire lands in the sheet** → account owner reads it *before* the call, so the call starts at "we've read everything, let's talk about what matters."
 4. **Discovery call** (20 min, account owner + notes): dig into what the questionnaire surfaced — what's broken, what they've tried, budget sense, timeline. Never quote live.
-5. **Proposal within 3 days** — one page (template it after the first one): what we heard, recommended package, timeline, price, what we need from you. Valid 30 days.
-6. **50% deposit** received → work is scheduled at the next joint session.
-7. **Delivery** per package; account owner sends a weekly one-liner update to the client ("this week we did X, next week Y") — 5 minutes that prevents 90% of client anxiety.
-8. **Final invoice** on delivery (payment terms: 7 days).
-9. **Close the loop:** testimonial ask + "who else do you know…" referral ask + permission to post the work. Every completed job feeds the content plan's *glow-up* pillar.
+5. **Start the client's strategy blueprint** (copy of `client-strategy-blueprint.md`) — fill the snapshot and pillar findings from the questionnaire + call; price via its internal scoping worksheet.
+6. **Proposal within 3 days** — one page (template it after the first one): what we heard, recommended package, timeline, price, what we need from you. Valid 30 days.
+7. **50% deposit** received → work is scheduled at the next joint session.
+8. **Delivery** per package; account owner sends a weekly one-liner update to the client ("this week we did X, next week Y") — 5 minutes that prevents 90% of client anxiety.
+9. **Final invoice** on delivery (payment terms: 7 days).
+10. **Close the loop:** testimonial ask + "who else do you know…" referral ask + permission to post the work. Every completed job feeds the content plan's *glow-up* pillar.
 
 Tooling to start: shared Google Sheet (pipeline + ledger), Google Calendar, Canva (Laura), Shopify partner account (Elva — free dev stores for client builds), invoices from a template (or free tier of an invoicing app). Total software cost at launch: ~€0.
 
