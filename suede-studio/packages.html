@@ -85,13 +85,6 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .scroll-hint::after{content:"↓";color:var(--tan);font-size:1rem;animation:bob 1.6s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(5px)}}
 
-/* ticker */
-.ticker{background:var(--espresso-deep);overflow:hidden;padding:15px 0}
-.ticker-track{display:flex;width:max-content;animation:tick 26s linear infinite}
-.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);padding:0 30px;white-space:nowrap}
-.ticker span.dot{color:var(--tan)}
-@keyframes tick{to{transform:translateX(-50%)}}
-
 /* stacking cards */
 .stack{padding:90px 0 110px;background:var(--cream)}
 .stack-item{position:sticky;top:100px;margin:0 auto 60px;max-width:var(--maxw);padding:0 28px}
@@ -175,7 +168,6 @@ footer nav a:hover{color:var(--tan)}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .rv{opacity:1;transform:none;transition:none}
-  .ticker-track{animation:none}
   .scroll-hint::after{animation:none}
   .card{transform:none!important}
   body::after{display:none}
@@ -247,19 +239,6 @@ footer nav a:hover{color:var(--tan)}
     <h1>Silver. Gold.<br>Platinum.</h1>
     <p>no rate card, no surprises — every price is quoted in writing after a free discovery call, because a five-product candle shop and a 400-product boutique aren't the same job.</p>
     <span class="scroll-hint">scroll through</span>
-  </div>
-</div>
-
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track">
-    <span>silver. one lane, once-off.</span><span class="dot">✦</span>
-    <span>gold. both lanes, once-off.</span><span class="dot">✦</span>
-    <span>platinum. the takeover.</span><span class="dot">✦</span>
-    <span>enquire for pricing.</span><span class="dot">✦</span>
-    <span>silver. one lane, once-off.</span><span class="dot">✦</span>
-    <span>gold. both lanes, once-off.</span><span class="dot">✦</span>
-    <span>platinum. the takeover.</span><span class="dot">✦</span>
-    <span>enquire for pricing.</span><span class="dot">✦</span>
   </div>
 </div>
 

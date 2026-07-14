@@ -98,13 +98,6 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .hero-arrow{position:absolute;right:40px;bottom:26px;font-size:2rem;color:var(--cream);animation:bob 1.8s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(8px)}}
 
-/* ---------- ticker ---------- */
-.ticker{background:var(--espresso-deep);overflow:hidden;padding:15px 0}
-.ticker-track{display:flex;width:max-content;animation:tick 26s linear infinite}
-.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);padding:0 30px;white-space:nowrap}
-.ticker span.dot{color:var(--tan)}
-@keyframes tick{to{transform:translateX(-50%)}}
-
 /* ---------- intro (cream block) ---------- */
 .intro{background:var(--cream);padding:130px 0;position:relative;overflow:hidden}
 .intro-logo{position:absolute;right:-70px;top:50%;transform:translateY(-50%);width:320px;opacity:.4;pointer-events:none;will-change:transform}
@@ -161,36 +154,31 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .ai-note{margin-top:60px;font-size:.92rem;color:#B9AFA6;max-width:62ch;border-top:1px solid var(--line-dark);padding-top:28px}
 .ai-note strong{color:var(--cream);text-transform:uppercase;letter-spacing:.14em;font-size:.8rem}
 
-/* ---------- packages: swing tags on the rail ---------- */
-.packages{background:var(--white)}
-.rail{position:relative;padding-top:34px}
-.rail::before{content:"";position:absolute;top:0;left:1%;right:1%;height:3px;background:var(--ink);border-radius:3px}
-.rail::after{content:"";position:absolute;top:-7px;left:0;width:14px;height:14px;border-radius:50%;background:var(--ink)}
-.rail .cap-r{position:absolute;top:-7px;right:0;width:14px;height:14px;border-radius:50%;background:var(--ink)}
-.tags{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;align-items:start}
-.ptag{position:relative;display:block;background:var(--cream);border:1.5px solid var(--ink);border-radius:16px;padding:52px 32px 36px;transform-origin:50% -34px;transition:transform .5s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease}
-.ptag::before{content:"";position:absolute;top:-34px;left:50%;width:1.5px;height:36px;background:var(--ink)}
-.ptag::after{content:"";position:absolute;top:16px;left:50%;transform:translateX(-50%);width:15px;height:15px;border:1.5px solid var(--ink);border-radius:50%;background:var(--white)}
-.ptag .stitch{position:absolute;inset:9px;border:1.5px dashed rgba(20,16,13,.3);border-radius:10px;pointer-events:none}
-.ptag:nth-child(1){transform:rotate(-2.4deg)}
-.ptag:nth-child(2){transform:rotate(1.6deg);margin-top:22px}
-.ptag:nth-child(3){transform:rotate(-1.2deg)}
-.ptag:hover{transform:rotate(0);box-shadow:0 26px 54px rgba(20,16,13,.16);z-index:2}
-.ptag .idx{font-size:.64rem;font-weight:700;letter-spacing:.3em;color:var(--espresso);text-transform:uppercase}
-.ptag h3{font-size:clamp(1.9rem,3.4vw,2.6rem);margin:12px 0 4px}
-.ptag .tier{display:block;font-size:.6rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--soft);margin-bottom:18px}
-.ptag .promise{font-size:.92rem;color:var(--soft);max-width:none;margin-bottom:26px}
-.ptag .go{font-weight:700;font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink)}
-.ptag .go span{display:inline-block;transition:transform .25s ease}
-.ptag:hover .go span{transform:translateX(6px)}
-.ptag.featured{background:var(--ink);border-color:var(--ink)}
-.ptag.featured .stitch{border-color:rgba(250,247,243,.28)}
-.ptag.featured::after{background:var(--white)}
-.ptag.featured h3{color:var(--cream)}
-.ptag.featured .idx{color:var(--tan)}
-.ptag.featured .tier,.ptag.featured .promise{color:#B9AFA6}
-.ptag.featured .go{color:var(--cream)}
-.ptag .sig{display:inline-block;background:var(--cream);color:var(--ink);font-weight:700;font-size:.54rem;letter-spacing:.22em;text-transform:uppercase;padding:5px 12px;border-radius:100px;margin-left:10px;vertical-align:middle}
+/* ---------- packages teaser (packages-page card style) ---------- */
+.packages{background:var(--cream)}
+.tez{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch}
+.tez a{display:flex;flex-direction:column;border-radius:28px;padding:44px 38px;box-shadow:0 20px 48px rgba(20,16,13,.1);transition:transform .3s ease,box-shadow .3s ease}
+.tez a:hover{transform:translateY(-6px);box-shadow:0 30px 60px rgba(20,16,13,.16)}
+.tez .tier{font-size:.62rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;display:inline-block;width:fit-content;border-radius:100px;padding:8px 18px;border:1px solid;margin-bottom:20px}
+.tez h3{font-size:clamp(1.9rem,3.6vw,2.7rem)}
+.tez .promise{font-size:.93rem;margin:14px 0 30px;max-width:none}
+.tez .go{margin-top:auto;font-weight:700;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase}
+.tez .go span{display:inline-block;transition:transform .25s ease}
+.tez a:hover .go span{transform:translateX(6px)}
+.tez .silver{background:var(--white);border:1px solid var(--line)}
+.tez .silver .tier{color:var(--ink);border-color:var(--line)}
+.tez .silver .promise{color:var(--soft)}
+.tez .silver .go{color:var(--ink)}
+.tez .gold{background:var(--tan-block);border:1px solid var(--tan)}
+.tez .gold .tier{color:var(--ink);border-color:var(--tan)}
+.tez .gold .promise{color:#6E5B44}
+.tez .gold .go{color:var(--ink)}
+.tez .platinum{background:var(--ink);border:1px solid var(--ink)}
+.tez .platinum h3{color:var(--cream)}
+.tez .platinum .tier{color:var(--tan);border-color:rgba(214,188,150,.45)}
+.tez .platinum .promise{color:#B9AFA6}
+.tez .platinum .go{color:var(--cream)}
+.tez .platinum .sig{display:inline-block;width:fit-content;background:var(--cream);color:var(--ink);font-weight:700;font-size:.54rem;letter-spacing:.22em;text-transform:uppercase;padding:5px 12px;border-radius:100px;margin-bottom:12px}
 .pkg-note{text-align:center;margin-top:54px;font-size:.9rem;color:var(--soft);max-width:none}
 .pkg-note a{font-weight:700;border-bottom:2px solid var(--espresso)}
 
@@ -283,7 +271,6 @@ footer nav a:hover{color:var(--tan)}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .rv{opacity:1;transform:none;transition:none}
-  .ticker-track{animation:none}
   .hero-arrow{animation:none}
   body::after{display:none}
   .hero-collage,.hero-squiggle,.intro-logo,.ai-logo{transform:none!important}
@@ -293,8 +280,7 @@ footer nav a:hover{color:var(--tan)}
 @media(max-width:980px){
   section{padding:84px 0}
   .ai-grid{grid-template-columns:1fr}
-  .tags{grid-template-columns:1fr;gap:52px}
-  .ptag:nth-child(2){margin-top:0}
+  .tez{grid-template-columns:1fr}
 
   .steps{grid-template-columns:1fr 1fr;gap:38px 0}
   .strip-imgs{grid-template-columns:1fr 1fr;gap:34px}
@@ -373,20 +359,6 @@ footer nav a:hover{color:var(--tan)}
     </div>
   </div>
   <span class="hero-arrow" aria-hidden="true">↓</span>
-</div>
-
-<!-- ================= TICKER ================= -->
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track">
-    <span>the store. handled.</span><span class="dot">✦</span>
-    <span>the content. made.</span><span class="dot">✦</span>
-    <span>the busywork. automated.</span><span class="dot">✦</span>
-    <span>shopify. exclusively.</span><span class="dot">✦</span>
-    <span>the store. handled.</span><span class="dot">✦</span>
-    <span>the content. made.</span><span class="dot">✦</span>
-    <span>the busywork. automated.</span><span class="dot">✦</span>
-    <span>shopify. exclusively.</span><span class="dot">✦</span>
-  </div>
 </div>
 
 <!-- ================= INTRO (cream block) ================= -->
@@ -508,33 +480,26 @@ footer nav a:hover{color:var(--tan)}
       <h2>Silver. Gold.<br>Platinum.</h2>
       <p>every business is different — we quote after a free discovery call, not from a rate card.</p>
     </div>
-    <div class="rail rv"><span class="cap-r"></span>
-    <div class="tags">
-      <a class="ptag" href="packages.html#silver">
-        <span class="stitch"></span>
-        <span class="idx">01 — the tag</span>
+    <div class="tez rv">
+      <a class="silver" href="packages.html#silver">
+        <span class="tier">01 · once-off · one lane</span>
         <h3>Silver</h3>
-        <span class="tier">once-off · one lane</span>
         <p class="promise">just social or just ecom — one part of your business, fixed properly and handed back better.</p>
         <span class="go">Explore <span>→</span></span>
       </a>
-      <a class="ptag featured" href="packages.html#platinum">
-        <span class="stitch"></span>
-        <span class="idx">03 — the takeover<span class="sig">our signature</span></span>
-        <h3>Platinum</h3>
-        <span class="tier">retainer · social, ecom or both</span>
-        <p class="promise">handed over and simply… run — month after month, with ai working quietly in the background.</p>
-        <span class="go">Explore <span>→</span></span>
-      </a>
-      <a class="ptag" href="packages.html#gold">
-        <span class="stitch"></span>
-        <span class="idx">02 — the rebuild</span>
+      <a class="gold" href="packages.html#gold">
+        <span class="tier">02 · once-off · both lanes</span>
         <h3>Gold</h3>
-        <span class="tier">once-off · both lanes</span>
-        <p class="promise">social and ecom together — store, content system, brand and your first automations.</p>
+        <p class="promise">social and ecom together — the full rebuild: store, content system, brand and your first automations.</p>
         <span class="go">Explore <span>→</span></span>
       </a>
-    </div>
+      <a class="platinum" href="packages.html#platinum">
+        <span class="sig">our signature</span>
+        <span class="tier">03 · retainer · the takeover</span>
+        <h3>Platinum</h3>
+        <p class="promise">social, ecom or both — taken over and run for you, month after month, with ai in the background.</p>
+        <span class="go">Explore <span>→</span></span>
+      </a>
     </div>
     <p class="pkg-note rv">full details on the <a href="packages.html">packages page</a> — or skip ahead and <a href="YOUR-GOOGLE-FORM-LINK">start the questionnaire</a>.</p>
   </div>
