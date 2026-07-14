@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/logo-espresso.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Archivo:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Tokens mirror index.html — canonical usage rules in brand.html */
@@ -63,7 +63,8 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .nav-logo{display:flex;flex-direction:column;align-items:center;gap:2px}
 .nav-logo img{height:50px;transition:transform .4s ease}
 .nav-logo:hover img{transform:rotate(180deg)}
-.nav-logo .est{font-size:.54rem;letter-spacing:.3em;text-transform:uppercase;color:var(--tan);font-weight:600}
+/* wordmark under the squiggle — TT Firs Neue when licensed, Archivo until then */
+.nav-logo .wm{font-family:'TT Firs Neue','Archivo',var(--font);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream);font-weight:800;white-space:nowrap}
 .burger{display:none;background:none;border:none;cursor:pointer;padding:8px;justify-self:end}
 .burger span{display:block;width:22px;height:2px;background:var(--cream);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
 .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
@@ -215,7 +216,7 @@ footer nav a:hover{color:var(--tan)}
     </ul>
     <a href="index.html" class="nav-logo" aria-label="Suede Studio home">
       <img src="assets/logo-tan.png" alt="Suede Studio">
-      <span class="est">est. 2026</span>
+      <span class="wm">The Suede Studio</span>
     </a>
     <ul class="nav-side right">
       <li><a href="index.html#process">Process</a></li>
