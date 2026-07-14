@@ -91,7 +91,6 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .hero-collage{width:100%;border:6px solid rgba(250,247,243,.06);will-change:transform}
 .hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);width:34%;opacity:.9;will-change:transform;pointer-events:none}
 .hero-mark{position:absolute;top:42%;left:0;width:100%;transform:translateY(-50%);text-align:center;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.4rem,8.6vw,7.2rem);line-height:.95;color:var(--cream);text-shadow:0 6px 40px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap}
-.hero-sticker{position:absolute;top:8%;right:6%;background:var(--espresso-deep);color:var(--cream);border:1px solid rgba(250,247,243,.25);font-weight:700;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:10px 18px;border-radius:100px;transform:rotate(6deg);box-shadow:0 10px 24px rgba(0,0,0,.3)}
 .hero-bottom{position:relative;text-align:center;margin-top:54px;padding:0 28px}
 .hero-bottom .tag{color:var(--tan);max-width:46ch;margin:0 auto;font-size:clamp(1rem,1.9vw,1.2rem)}
 .hero-ctas{margin-top:34px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
@@ -202,11 +201,6 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .about-photo{position:relative;max-width:920px;margin:0 auto;border-radius:24px;overflow:hidden;border:1px solid var(--line);box-shadow:0 28px 60px rgba(20,16,13,.14)}
 .about-photo img{width:100%;aspect-ratio:16/10.5;object-fit:cover;object-position:center 16%;transition:transform .6s ease}
 .about-photo:hover img{transform:scale(1.03)}
-.pin{position:absolute;bottom:9%;background:var(--ink);color:var(--cream);font-weight:700;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;padding:10px 18px;border-radius:100px;box-shadow:0 10px 24px rgba(0,0,0,.3);transition:transform .3s ease}
-.pin.l{left:12%;transform:rotate(-3deg)}
-.pin.r{right:12%;transform:rotate(3deg)}
-.about-photo:hover .pin.l{transform:rotate(-3deg) translateY(-4px)}
-.about-photo:hover .pin.r{transform:rotate(3deg) translateY(-4px)}
 .about-line{margin:40px auto 0;max-width:54ch;color:var(--soft);font-size:1rem}
 .about-line b{color:var(--ink);font-weight:700}
 
@@ -305,9 +299,6 @@ footer nav a:hover{color:var(--tan)}
   .strip-imgs{grid-template-columns:1fr 1fr;gap:34px}
   .contact-grid{grid-template-columns:1fr;gap:44px}
   .bio-row{grid-template-columns:1fr;gap:16px;padding:40px 10px}
-  .pin{font-size:.52rem;padding:8px 12px}
-  .pin.l{left:6%}
-  .pin.r{right:6%}
   .hide-l,.hide-r{opacity:.45}
 }
 @media(max-width:760px){
@@ -326,8 +317,7 @@ footer nav a:hover{color:var(--tan)}
   .hero{padding:40px 0 80px}
   .hero-mark{font-size:clamp(1.5rem,8vw,2.6rem);letter-spacing:.04em}
   .hero-arrow{right:22px;bottom:16px}
-  .hero-sticker{top:4%;right:4%}
-}
+  }
 </style>
 </head>
 <body>
@@ -371,7 +361,6 @@ footer nav a:hover{color:var(--tan)}
   <div class="hero-stage">
     <img src="assets/collage.jpg" alt="Suede Studio moodboard collage" class="hero-collage" id="heroCollage">
     <img src="assets/logo-tan.png" alt="" class="hero-squiggle" id="heroSquiggle">
-    <span class="hero-sticker">the ai-powered ecommerce studio</span>
   </div>
   <h1 class="hero-mark" id="heroMark">The Suede Studio</h1>
   <div class="hero-bottom">
@@ -559,8 +548,6 @@ footer nav a:hover{color:var(--tan)}
     </div>
     <div class="about-photo rv zoom">
       <img src="assets/team.jpg" alt="Laura Callaghan and Elva Mallet — The Suede Studio" loading="lazy">
-      <span class="pin l">laura · content</span>
-      <span class="pin r">elva · ecom &amp; ai</span>
     </div>
     <p class="about-line rv">we both work in this world every single day — <b>laura</b> owns everything you see and hear, <b>elva</b> owns everything that sells and runs itself. the suede studio is where that experience goes to work for your business.</p>
   </div>
