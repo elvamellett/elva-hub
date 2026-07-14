@@ -41,13 +41,13 @@ img{max-width:100%;display:block}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
 .label{text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.28em;color:var(--espresso)}
 .btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:700;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
-.btn-ice{background:var(--tan);color:var(--ink);border-color:var(--tan)}
-.btn-ice:hover{background:#C4A87F;border-color:#C4A87F;transform:translateY(-2px)}
+.btn-ice{background:var(--espresso-deep);color:var(--cream);border-color:rgba(250,247,243,.28)}
+.btn-ice:hover{background:#000;border-color:rgba(250,247,243,.45);transform:translateY(-2px)}
 .btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
 .btn-ghost:hover{background:var(--ink);color:var(--white);transform:translateY(-2px)}
 .btn-cream{background:transparent;border-color:rgba(250,247,243,.55);color:var(--cream)}
 .btn-cream:hover{background:var(--cream);color:var(--ink);border-color:var(--cream)}
-#progress{position:fixed;top:0;left:0;height:3px;background:var(--tan);width:0;z-index:95}
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--espresso);width:0;z-index:95}
 
 /* grain */
 body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-events:none;z-index:80;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0 0.14 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
@@ -85,10 +85,10 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 @keyframes bob{50%{transform:translateY(5px)}}
 
 /* ticker */
-.ticker{background:var(--tan);overflow:hidden;padding:15px 0}
+.ticker{background:var(--espresso-deep);overflow:hidden;padding:15px 0}
 .ticker-track{display:flex;width:max-content;animation:tick 26s linear infinite}
-.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);padding:0 30px;white-space:nowrap}
-.ticker span.dot{color:var(--espresso)}
+.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);padding:0 30px;white-space:nowrap}
+.ticker span.dot{color:var(--tan)}
 @keyframes tick{to{transform:translateX(-50%)}}
 
 /* stacking cards */
@@ -114,19 +114,19 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .card.silver .tier{color:var(--espresso);border-color:var(--line)}
 .card.silver .promise,.card.silver .inc li,.card.silver .fact p{color:var(--soft)}
 .card.silver .inc h3,.card.silver .fact .label2{color:var(--espresso)}
-.card.silver .inc li::before{background:var(--tan)}
+.card.silver .inc li::before{background:var(--espresso)}
 .card.gold{background:var(--tan-block);border:1px solid var(--tan)}
 .card.gold .tier{color:var(--espresso);border-color:var(--tan)}
 .card.gold .promise,.card.gold .inc li,.card.gold .fact p{color:#6E5B44}
 .card.gold .inc h3,.card.gold .fact .label2{color:var(--espresso)}
-.card.gold .inc li::before{background:var(--tan)}
+.card.gold .inc li::before{background:var(--espresso)}
 .card.platinum{background:var(--ink)}
 .card.platinum h2{color:var(--cream)}
 .card.platinum .tier{color:var(--tan);border-color:rgba(214,188,150,.45)}
 .card.platinum .promise,.card.platinum .inc li,.card.platinum .fact p{color:#B9AFA6}
 .card.platinum .inc h3,.card.platinum .fact .label2{color:var(--tan)}
 .card.platinum .inc li::before{background:var(--tan)}
-.card.platinum .sig{display:inline-block;background:var(--tan);color:var(--ink);font-size:.6rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;padding:8px 16px;border-radius:100px;margin-bottom:16px;transform:rotate(-2deg)}
+.card.platinum .sig{display:inline-block;background:var(--cream);color:var(--ink);font-size:.6rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;padding:8px 16px;border-radius:100px;margin-bottom:16px;transform:rotate(-2deg)}
 
 /* chooser (ice block) */
 .chooser{padding:110px 0;background:var(--cream)}

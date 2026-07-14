@@ -52,8 +52,8 @@ body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-
 
 /* buttons */
 .btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:700;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
-.btn-ice{background:var(--tan);color:var(--ink);border-color:var(--tan)}
-.btn-ice:hover{background:#C4A87F;border-color:#C4A87F;transform:translateY(-2px)}
+.btn-ice{background:var(--espresso-deep);color:var(--cream);border-color:rgba(250,247,243,.28)}
+.btn-ice:hover{background:#000;border-color:rgba(250,247,243,.45);transform:translateY(-2px)}
 .btn-dark{background:var(--ink);color:var(--white);border-color:var(--ink)}
 .btn-dark:hover{background:#000;transform:translateY(-2px)}
 .btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
@@ -61,7 +61,7 @@ body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-
 .btn-cream{background:transparent;border-color:rgba(250,247,243,.55);color:var(--cream)}
 .btn-cream:hover{background:var(--cream);color:var(--ink);border-color:var(--cream)}
 
-#progress{position:fixed;top:0;left:0;height:3px;background:var(--tan);width:0;z-index:95}
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--espresso);width:0;z-index:95}
 
 /* ---------- header: nav either side of the logo, boxed like the deck ---------- */
 header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-filter:blur(10px)}
@@ -91,7 +91,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .hero-collage{width:100%;border:6px solid rgba(250,247,243,.06);will-change:transform}
 .hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);width:34%;opacity:.9;will-change:transform;pointer-events:none}
 .hero-mark{position:absolute;top:42%;left:0;width:100%;transform:translateY(-50%);text-align:center;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.4rem,8.6vw,7.2rem);line-height:.95;color:var(--cream);text-shadow:0 6px 40px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap}
-.hero-sticker{position:absolute;top:8%;right:6%;background:var(--tan);color:var(--ink);font-weight:700;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:10px 18px;border-radius:100px;transform:rotate(6deg);box-shadow:0 10px 24px rgba(0,0,0,.3)}
+.hero-sticker{position:absolute;top:8%;right:6%;background:var(--espresso-deep);color:var(--cream);border:1px solid rgba(250,247,243,.25);font-weight:700;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:10px 18px;border-radius:100px;transform:rotate(6deg);box-shadow:0 10px 24px rgba(0,0,0,.3)}
 .hero-bottom{position:relative;text-align:center;margin-top:54px;padding:0 28px}
 .hero-bottom .tag{color:var(--tan);max-width:46ch;margin:0 auto;font-size:clamp(1rem,1.9vw,1.2rem)}
 .hero-ctas{margin-top:34px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
@@ -99,10 +99,10 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 @keyframes bob{50%{transform:translateY(8px)}}
 
 /* ---------- ticker ---------- */
-.ticker{background:var(--tan);overflow:hidden;padding:15px 0;border-bottom:1px solid var(--line)}
+.ticker{background:var(--espresso-deep);overflow:hidden;padding:15px 0}
 .ticker-track{display:flex;width:max-content;animation:tick 26s linear infinite}
-.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);padding:0 30px;white-space:nowrap}
-.ticker span.dot{color:var(--espresso)}
+.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);padding:0 30px;white-space:nowrap}
+.ticker span.dot{color:var(--tan)}
 @keyframes tick{to{transform:translateX(-50%)}}
 
 /* ---------- intro (cream block) ---------- */
@@ -111,7 +111,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .intro .wrap{position:relative}
 .intro .label{display:block;margin-bottom:22px}
 .intro p.big{font-size:clamp(1.5rem,3.4vw,2.4rem);line-height:1.35;max-width:26ch;color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
-.intro p.big em{font-style:normal;color:var(--espresso);border-bottom:5px solid var(--tan)}
+.intro p.big em{font-style:normal;color:var(--espresso);border-bottom:5px solid var(--espresso)}
 .intro .sub{margin-top:22px;font-size:1rem}
 
 /* ---------- services (white block) ---------- */
@@ -123,7 +123,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .svc p{font-size:.94rem;margin-bottom:18px}
 .svc ul{list-style:none;display:grid;gap:8px}
 .svc li{font-size:.87rem;color:var(--soft);padding-left:22px;position:relative}
-.svc li::before{content:"";position:absolute;left:0;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--tan)}
+.svc li::before{content:"";position:absolute;left:0;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--espresso)}
 .svc .ghost{position:absolute;bottom:-26px;right:-6px;font-size:6rem;font-weight:800;color:var(--cream);-webkit-text-stroke:1.5px var(--line);line-height:1;pointer-events:none}
 
 /* ---------- photo strip (tan block) ---------- */
@@ -132,14 +132,15 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .strip .doodle.a{top:-60px;left:-40px;transform:rotate(24deg)}
 .strip .doodle.b{bottom:-70px;right:-30px;transform:rotate(-18deg)}
 .strip .doodle.c{top:30%;left:44%;width:180px;transform:rotate(64deg)}
-.strip-imgs{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:30px;align-items:center}
+.strip-imgs{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;align-items:start}
 .polaroid{background:#fff;padding:12px 12px 44px;box-shadow:0 18px 40px rgba(20,16,13,.14);position:relative;transition:transform .35s ease}
 .polaroid:nth-child(1){transform:rotate(-3deg)}
 .polaroid:nth-child(2){transform:rotate(1.5deg)}
-.polaroid:nth-child(3){transform:rotate(3.5deg)}
+.polaroid:nth-child(3){transform:rotate(2.5deg)}
+.polaroid:nth-child(4){transform:rotate(-2deg)}
 .polaroid:hover{transform:rotate(0) scale(1.03);z-index:2}
 .polaroid figure{overflow:hidden}
-.polaroid img{width:100%;aspect-ratio:3/3.6;object-fit:cover}
+.polaroid img{width:100%;aspect-ratio:3/3.7;object-fit:cover}
 .polaroid .cap{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-weight:700;font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--espresso)}
 .polaroid .tape{position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-4deg);width:92px;height:28px;background:rgba(214,188,150,.75)}
 
@@ -160,41 +161,46 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .ai-note{margin-top:60px;font-size:.92rem;color:#B9AFA6;max-width:62ch;border-top:1px solid var(--line-dark);padding-top:28px}
 .ai-note strong{color:var(--cream);text-transform:uppercase;letter-spacing:.14em;font-size:.8rem}
 
-/* ---------- packages (editorial rows) ---------- */
+/* ---------- packages (clean hairline columns) ---------- */
 .packages{background:var(--white)}
-.pkg-rows{border-top:1.5px solid var(--ink)}
-.pkg-row{display:grid;grid-template-columns:110px 1.1fr 1.6fr auto;gap:26px;align-items:center;padding:40px 10px;border-bottom:1.5px solid var(--ink);transition:background .3s ease,padding .3s ease;position:relative}
-.pkg-row:hover{background:var(--cream);padding-left:26px}
-.pkg-row .idx{font-size:.68rem;font-weight:700;letter-spacing:.3em;color:var(--espresso);text-transform:uppercase}
-.pkg-row h3{font-size:clamp(1.6rem,3.6vw,2.6rem);letter-spacing:.05em}
-.pkg-row .tier{display:block;font-size:.62rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--espresso);margin-top:6px}
-.pkg-row .promise{font-size:.94rem;color:var(--soft);max-width:none}
-.pkg-row .go{font-size:1.6rem;color:var(--ink);transition:transform .3s ease}
-.pkg-row:hover .go{transform:translateX(8px)}
-.pkg-row.featured{background:var(--ink)}
-.pkg-row.featured:hover{background:#000;padding-left:26px}
-.pkg-row.featured h3{color:var(--cream)}
-.pkg-row.featured .idx,.pkg-row.featured .tier{color:var(--tan)}
-.pkg-row.featured .promise{color:#B9AFA6}
-.pkg-row.featured .go{color:var(--tan)}
-.pkg-row.featured .sig{position:absolute;top:-12px;left:10px;background:var(--tan);color:var(--ink);font-weight:700;font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;padding:6px 14px;border-radius:100px;transform:rotate(-2deg)}
-.pkg-note{text-align:center;margin-top:44px;font-size:.9rem;color:var(--soft);max-width:none}
-.pkg-note a{font-weight:700;border-bottom:2px solid var(--tan)}
+.pkg-cols{display:grid;grid-template-columns:repeat(3,1fr);border-top:1.5px solid var(--ink);padding-top:54px}
+.pkg-col{padding:6px 44px 6px 34px;border-left:1px solid var(--line);display:flex;flex-direction:column;position:relative}
+.pkg-col:first-child{border-left:none;padding-left:0}
+.pkg-col .idx{font-size:.66rem;font-weight:700;letter-spacing:.3em;color:var(--espresso);text-transform:uppercase}
+.pkg-col h3{font-size:clamp(1.9rem,3.6vw,2.7rem);margin:14px 0 6px;transition:color .3s ease}
+.pkg-col:hover h3{color:var(--espresso)}
+.pkg-col .tier{font-size:.62rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--soft)}
+.pkg-col .promise{font-size:.93rem;color:var(--soft);margin:20px 0 30px;max-width:none}
+.pkg-col .go{margin-top:auto;font-weight:700;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);width:fit-content;padding-bottom:4px;background:linear-gradient(var(--espresso) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
+.pkg-col:hover .go{background-size:100% 1.5px}
+.pkg-col .go span{display:inline-block;transition:transform .25s ease}
+.pkg-col:hover .go span{transform:translateX(6px)}
+.pkg-col .tag{display:inline-block;width:fit-content;background:var(--espresso-deep);color:var(--cream);font-weight:700;font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;padding:6px 14px;border-radius:100px;margin-bottom:14px}
+.pkg-note{text-align:center;margin-top:54px;font-size:.9rem;color:var(--soft);max-width:none}
+.pkg-note a{font-weight:700;border-bottom:2px solid var(--espresso)}
 
 
-/* ---------- about (cream block) ---------- */
+/* ---------- about (duo image) + bios block ---------- */
 .about{background:var(--cream)}
-.founders-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px}
-.founder{background:var(--white);border:1px solid var(--line);border-radius:20px;overflow:hidden;position:relative;transition:transform .3s ease,box-shadow .3s ease}
-.founder:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(20,16,13,.1);border-color:var(--tan)}
-.founder figure{overflow:hidden;aspect-ratio:4/3.4}
-.founder img{width:100%;height:100%;object-fit:cover;object-position:center 22%;transition:transform .6s ease}
-.founder:hover img{transform:scale(1.05)}
-.founder .body{padding:34px 34px 38px}
-.founder h3{font-size:1.4rem}
-.founder .role{display:block;margin:10px 0 18px}
-.founder p{font-size:.93rem}
-.founder .chip{position:absolute;top:20px;left:20px;background:var(--tan);color:var(--ink);font-weight:700;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;padding:9px 16px;border-radius:100px;transform:rotate(-4deg);box-shadow:0 8px 20px rgba(20,16,13,.18)}
+.about-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:64px;align-items:center}
+.about-grid figure{overflow:hidden;border-radius:22px;border:1px solid var(--line);box-shadow:0 24px 54px rgba(20,16,13,.12)}
+.about-grid img{width:100%;aspect-ratio:4/4.7;object-fit:cover;object-position:center 20%;transition:transform .6s ease}
+.about-grid figure:hover img{transform:scale(1.04)}
+.about-grid .label{display:block;margin-bottom:14px}
+.about-grid p{margin-top:16px;font-size:1rem}
+.about-facts{margin-top:34px;display:grid;gap:14px}
+.about-facts .f{display:grid;grid-template-columns:24px 1fr;gap:12px;font-size:.9rem;color:var(--soft)}
+.about-facts .f b{color:var(--ink);font-weight:700}
+.about-facts .arw{color:var(--espresso);font-weight:800}
+
+.bios{background:var(--white)}
+.bio-rows{border-top:1.5px solid var(--ink)}
+.bio-row{display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:56px 10px;border-bottom:1.5px solid var(--ink);align-items:start;transition:background .3s ease,padding .3s ease}
+.bio-row:hover{background:var(--cream);padding-left:26px}
+.bio-row h3{font-size:clamp(1.6rem,3.2vw,2.4rem)}
+.bio-row .role{display:block;margin-top:10px}
+.bio-row p{font-size:.95rem;max-width:none}
+
 
 /* ---------- process (checkerboard tiles) ---------- */
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--ink)}
@@ -205,7 +211,8 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .step:nth-child(even) .num{color:var(--tan)}
 .step:hover{transform:scale(1.03);z-index:2;box-shadow:0 18px 44px rgba(20,16,13,.18)}
 .step .num{font-size:.72rem;font-weight:700;letter-spacing:.3em;color:var(--espresso);display:block;margin-bottom:18px}
-.step .glyph{font-size:1.5rem;color:var(--tan);display:block;margin-bottom:14px}
+.step .glyph{font-size:1.5rem;color:var(--espresso);display:block;margin-bottom:14px}
+.step:nth-child(even) .glyph{color:var(--tan)}
 .step h3{font-size:.88rem;margin-bottom:10px}
 .step p{font-size:.86rem;max-width:none}
 
@@ -278,18 +285,19 @@ footer nav a:hover{color:var(--tan)}
 @media(max-width:980px){
   section{padding:84px 0}
   .ai-grid{grid-template-columns:1fr}
-  .pkg-row{grid-template-columns:1fr;gap:10px;padding:32px 10px}
-  .pkg-row .go{display:none}
+  .pkg-cols{grid-template-columns:1fr;gap:44px;padding-top:44px}
+  .pkg-col{border-left:none;padding:0}
+
   .steps{grid-template-columns:1fr 1fr}
-  .strip-imgs{grid-template-columns:1fr 1fr}
-  .polaroid:nth-child(3){display:none}
-  .contact-grid{grid-template-columns:1fr;gap:44px}
+  .strip-imgs{grid-template-columns:1fr 1fr;gap:34px}
+  .contact-grid,.about-grid{grid-template-columns:1fr;gap:44px}
+  .bio-row{grid-template-columns:1fr;gap:16px;padding:40px 10px}
   .hide-l,.hide-r{opacity:.45}
 }
 @media(max-width:760px){
   section{padding:70px 0}
-  .svc-grid,.founders-grid,.steps,.strip-imgs{grid-template-columns:1fr}
-  .polaroid:nth-child(3){display:block}
+  .svc-grid,.steps{grid-template-columns:1fr}
+  .strip-imgs{grid-template-columns:1fr 1fr;gap:22px}
   .nav-box{grid-template-columns:auto 1fr auto;height:80px}
   .nav-side{display:none}
   .nav-logo{justify-self:center;grid-column:2}
@@ -449,9 +457,10 @@ footer nav a:hover{color:var(--tan)}
   <img src="assets/logo-espresso.png" alt="" class="doodle c">
   <div class="wrap">
     <div class="strip-imgs">
-      <div class="polaroid rv zoom"><span class="tape"></span><figure><img src="assets/studio-chair.jpg" alt="Behind the scenes at Suede Studio" loading="lazy"></figure><span class="cap">behind the studio</span></div>
-      <div class="polaroid rv zoom d1"><span class="tape"></span><figure><img src="assets/team.jpg" alt="Laura and Elva — Suede Studio" loading="lazy" style="object-position:center 30%"></figure><span class="cap">laura ✦ elva</span></div>
-      <div class="polaroid rv zoom d2"><span class="tape"></span><figure><img src="assets/studio-desk.jpg" alt="Studio workspace" loading="lazy"></figure><span class="cap">the quiet engine</span></div>
+      <div class="polaroid rv zoom"><span class="tape"></span><figure><img src="assets/studio-chair.jpg" alt="Behind the scenes at The Suede Studio" loading="lazy"></figure><span class="cap">behind the studio</span></div>
+      <div class="polaroid rv zoom d1"><span class="tape"></span><figure><img src="assets/laura.jpg" alt="Laura Callaghan" loading="lazy"></figure><span class="cap">laura · content</span></div>
+      <div class="polaroid rv zoom d2"><span class="tape"></span><figure><img src="assets/elva.jpg" alt="Elva Mallet" loading="lazy"></figure><span class="cap">elva · ecom &amp; ai</span></div>
+      <div class="polaroid rv zoom d3"><span class="tape"></span><figure><img src="assets/studio-desk.jpg" alt="Studio workspace" loading="lazy"></figure><span class="cap">the quiet engine</span></div>
     </div>
   </div>
 </div>
@@ -492,57 +501,73 @@ footer nav a:hover{color:var(--tan)}
       <h2>Silver. Gold.<br>Platinum.</h2>
       <p>every business is different — we quote after a free discovery call, not from a rate card.</p>
     </div>
-    <div class="pkg-rows rv">
-      <a class="pkg-row" href="packages.html#silver">
+    <div class="pkg-cols rv">
+      <a class="pkg-col" href="packages.html#silver">
         <span class="idx">01</span>
-        <div><h3>Silver</h3><span class="tier">once-off · one lane</span></div>
+        <h3>Silver</h3>
+        <span class="tier">once-off · one lane</span>
         <p class="promise">just social or just ecom — one part of your business, fixed properly and handed back better.</p>
-        <span class="go">→</span>
+        <span class="go">Explore <span>→</span></span>
       </a>
-      <a class="pkg-row" href="packages.html#gold">
+      <a class="pkg-col" href="packages.html#gold">
         <span class="idx">02</span>
-        <div><h3>Gold</h3><span class="tier">once-off · both lanes</span></div>
+        <h3>Gold</h3>
+        <span class="tier">once-off · both lanes</span>
         <p class="promise">social and ecom together — the full rebuild: store, content system, brand and your first automations.</p>
-        <span class="go">→</span>
+        <span class="go">Explore <span>→</span></span>
       </a>
-      <a class="pkg-row featured" href="packages.html#platinum">
-        <span class="sig">our signature</span>
+      <a class="pkg-col" href="packages.html#platinum">
+        <span class="tag">our signature</span>
         <span class="idx">03</span>
-        <div><h3>Platinum</h3><span class="tier">retainer · the takeover</span></div>
+        <h3>Platinum</h3>
+        <span class="tier">retainer · the takeover</span>
         <p class="promise">social, ecom or both — taken over and run for you, month after month, with ai in the background.</p>
-        <span class="go">→</span>
+        <span class="go">Explore <span>→</span></span>
       </a>
     </div>
     <p class="pkg-note rv">full details on the <a href="packages.html">packages page</a> — or skip ahead and <a href="YOUR-GOOGLE-FORM-LINK">start the questionnaire</a>.</p>
   </div>
 </section>
 
-<!-- ================= ABOUT (cream block) ================= -->
+<!-- ================= ABOUT (duo) ================= -->
 <section id="about" class="about">
   <div class="wrap">
-    <div class="section-head rv">
-      <span class="label">04 — about us</span>
-      <h2>Two Friends,<br>One Studio</h2>
-      <p>we both work in this world every day. the studio is where that experience goes to work for you.</p>
-    </div>
-    <div class="founders-grid">
-      <div class="founder rv left">
-        <span class="chip">content</span>
-        <figure><img src="assets/laura.jpg" alt="Laura Callaghan" loading="lazy"></figure>
-        <div class="body">
-          <h3>Laura Callaghan</h3>
-          <span class="label role">content creation · social management</span>
-          <p>social media is so much more than posting pretty content — it's about building a brand people remember. laura creates scroll-stopping content that reflects your business, connects with your audience and helps you grow, whether you're elevating your social presence or telling your story in a fresh way.</p>
+    <div class="about-grid">
+      <figure class="rv left"><img src="assets/team.jpg" alt="Laura Callaghan and Elva Mallet — The Suede Studio" loading="lazy"></figure>
+      <div class="rv right">
+        <span class="label">04 — about us</span>
+        <h2>Two Friends,<br>One Studio</h2>
+        <p>we both work in this world every single day — one of us running ecommerce, one of us making content. the suede studio is where that experience goes to work for your business.</p>
+        <div class="about-facts">
+          <div class="f"><span class="arw">↗</span><span><b>laura</b> owns everything you see and hear — content, socials, brand.</span></div>
+          <div class="f"><span class="arw">↗</span><span><b>elva</b> owns everything that sells and runs — the store, the ai, the ops.</span></div>
+          <div class="f"><span class="arw">↗</span><span><b>together</b> — one studio, one voice, and a business that finally runs itself.</span></div>
         </div>
       </div>
-      <div class="founder rv right">
-        <span class="chip">ecom &amp; ai</span>
-        <figure><img src="assets/elva.jpg" alt="Elva Mallet" loading="lazy"></figure>
-        <div class="body">
+    </div>
+  </div>
+</section>
+
+<!-- ================= BIOS (separate block) ================= -->
+<section class="bios">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">the founders</span>
+    </div>
+    <div class="bio-rows rv">
+      <div class="bio-row">
+        <div>
+          <h3>Laura Callaghan</h3>
+          <span class="label role">content creation · social management</span>
+        </div>
+        <p>social media is so much more than posting pretty content — it's about building a brand people remember. laura creates scroll-stopping content that reflects your business, connects with your audience and helps you grow, whether you're elevating your social presence or telling your story in a fresh way.</p>
+      </div>
+      <div class="bio-row">
+        <div>
           <h3>Elva Mallet</h3>
           <span class="label role">e-commerce management · ai</span>
-          <p>elva is passionate about all things e-commerce and loves bringing online stores to life — shopping experiences that feel effortless for customers, stores that are organised, engaging and built to convert. from the smallest update to full store optimisation and the ai that runs quietly underneath, she builds shops that keep customers coming back.</p>
         </div>
+        <p>elva is passionate about all things e-commerce and loves bringing online stores to life — shopping experiences that feel effortless for customers, stores that are organised, engaging and built to convert. from the smallest update to full store optimisation and the ai that runs quietly underneath, she builds shops that keep customers coming back.</p>
       </div>
     </div>
   </div>
