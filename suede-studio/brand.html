@@ -38,7 +38,7 @@ html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--cream);color:var(--ink);font-size:16px;line-height:1.65;font-weight:400;-webkit-font-smoothing:antialiased}
 
 /* ---------- typography rules (the law) ---------- */
-h1,h2,h3,.caps{font-weight:800;letter-spacing:-.015em;color:var(--suede-dark);line-height:1.15}
+h1,h2,h3,.caps{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--suede-dark);line-height:1.15}
 h1{font-size:clamp(2rem,5vw,3.2rem)}
 h2{font-size:clamp(1.3rem,3vw,1.8rem)}
 h3{font-size:1.02rem;letter-spacing:.09em}
@@ -269,15 +269,15 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
   <div class="wrap">
     <span class="label section-no">03 — typography</span>
     <h2>Caps speak. Lowercase explains.</h2>
-    <p class="lede">one family, two behaviours: big headings are chunky, bold and <strong>Title Case</strong> (like the deck — "About Us", "Packages"); body copy is lowercase, regular and smaller. small labels, buttons and the wordmark stay tracked-out caps.</p>
+    <p class="lede">one family, two behaviours: headings are chunky, bold and <strong>ALL CAPS</strong> — always; body copy is lowercase, regular and smaller. the contrast between the two <em>is</em> the typographic style.</p>
 
     <div class="spec">
       <div class="spec-row">
-        <span class="label">h1 · 800 · title case</span>
+        <span class="label">h1 · 800 · caps</span>
         <div class="caps h1x">Done Properly</div>
       </div>
       <div class="spec-row">
-        <span class="label">h2 · 700 · title case</span>
+        <span class="label">h2 · 800 · caps</span>
         <div class="caps h2x">Ecommerce &amp; Content</div>
       </div>
       <div class="spec-row">
@@ -290,7 +290,7 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
       </div>
     </div>
 
-<pre>h1, h2, h3      { font-weight: 700–800; letter-spacing: -.02em; }   /* Title Case, chunky */
+<pre>h1, h2, h3      { font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
 .wordmark       { text-transform: uppercase; font-weight: 800; letter-spacing: .18em; }
 body            { font-weight: 400; font-size: 16px; line-height: 1.7; }
 .label, button  { text-transform: uppercase; font-weight: 600; font-size: .66rem;
@@ -332,7 +332,7 @@ font-family: 'Poppins', -apple-system, 'Helvetica Neue', Arial, sans-serif;</pre
 
     <ul class="rules-list" style="margin-top:32px">
       <li>captions and body copy: lowercase, first person plural (“we”), short sentences.</li>
-      <li>big headings: chunky Title Case. buttons and labels: small tracked caps. confident, no exclamation marks needed.</li>
+      <li>headings: chunky ALL CAPS. buttons and labels: small tracked caps. body: lowercase. confident, no exclamation marks needed.</li>
       <li>the punch line device: short caps statements ending in full stops — “the store. handled.” “the busywork. automated.” — used in tickers, tiles and story covers.</li>
       <li>emoji: sparing — one, sometimes, where it earns its place. never strings of them.</li>
       <li>never promise “growth hacks”, “secrets” or overnight results. we sell done-properly.</li>
@@ -349,10 +349,10 @@ font-family: 'Poppins', -apple-system, 'Helvetica Neue', Arial, sans-serif;</pre
     <div class="grid3">
       <div class="dd good">
         <div class="tile" style="background:#fff">
-          <span style="font-weight:800;font-size:1rem;color:#171310;letter-spacing:-.02em">Chunky Title Case</span>
+          <span class="t-caps" style="color:#171310">Chunky caps heading</span>
           <span class="t-body" style="color:var(--ink)">black heading, lowercase body, loads of air.</span>
         </div>
-        <div class="verdict"><strong>do</strong> black title-case headings on white/cream.</div>
+        <div class="verdict"><strong>do</strong> big black caps headings on white/cream.</div>
       </div>
       <div class="dd good">
         <div class="tile" style="background:#fff">

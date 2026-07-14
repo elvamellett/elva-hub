@@ -14,163 +14,171 @@
   /* Tokens mirror index.html — canonical usage rules in brand.html */
   --espresso:      #46240A;
   --espresso-deep: #2E1604;
-  --ink:           #171310;
+  --ink:           #14100D;
   --soft:          #6E6257;
   --tan:           #D6BC96;
+  --tan-block:     #EFE3D2;
   --ice:           #BFD5EB;
   --ice-deep:      #A5C6E4;
+  --ice-block:     #E4EEF7;
   --cream:         #FAF7F3;
   --white:         #FFFFFF;
-  --line:          #ECE5DB;
+  --line:          #E8E0D5;
+  --line-dark:     rgba(250,247,243,.16);
   --font:'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
-  --maxw:1160px;
+  --maxw:1180px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--white);color:var(--ink);font-size:16px;line-height:1.75;font-weight:400;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--white);color:var(--ink);font-size:16px;line-height:1.75;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 ::selection{background:var(--ice);color:var(--ink)}
-h1,h2,h3{font-weight:700;color:var(--ink);line-height:1.12;letter-spacing:-.02em}
-h1{font-size:clamp(2.6rem,7vw,4.6rem);font-weight:800}
-h2{font-size:clamp(1.9rem,4vw,2.8rem)}
+h1,h2,h3{font-weight:800;color:var(--ink);line-height:1.1;text-transform:uppercase;letter-spacing:.04em}
+h1{font-size:clamp(2.6rem,8vw,5.6rem)}
+h2{font-size:clamp(1.9rem,4.2vw,3rem)}
 p{max-width:62ch;color:var(--soft)}
 a{color:var(--ink);text-decoration:none}
 img{max-width:100%;display:block}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
-.label{text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.26em;color:var(--espresso)}
-.btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:600;font-size:.8rem;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
+.label{text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.28em;color:var(--espresso)}
+.btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:700;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
 .btn-ice{background:var(--ice);color:var(--ink);border-color:var(--ice)}
 .btn-ice:hover{background:var(--ice-deep);border-color:var(--ice-deep);transform:translateY(-2px)}
 .btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
 .btn-ghost:hover{background:var(--ink);color:var(--white);transform:translateY(-2px)}
-.btn-cream{background:transparent;border-color:rgba(250,247,243,.5);color:var(--cream)}
+.btn-cream{background:transparent;border-color:rgba(250,247,243,.55);color:var(--cream)}
 .btn-cream:hover{background:var(--cream);color:var(--ink);border-color:var(--cream)}
-#progress{position:fixed;top:0;left:0;height:3px;background:var(--ice);width:0;z-index:90}
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--ice);width:0;z-index:95}
 
-/* header */
-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);transition:box-shadow .3s ease}
-header.scrolled{box-shadow:0 6px 24px rgba(23,19,16,.06)}
-.nav{display:flex;align-items:center;justify-content:space-between;height:74px;gap:20px}
-.brand{display:flex;align-items:center;gap:12px}
-.brand img{height:30px;width:auto}
-.brand .name{font-weight:700;font-size:.95rem;letter-spacing:.14em;text-transform:uppercase}
-.brand .est{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--soft);border-left:1px solid var(--line);padding-left:12px}
-.nav-links{display:flex;gap:30px;list-style:none;align-items:center}
-.nav-links a:not(.btn){font-weight:500;font-size:.82rem;color:var(--ink);padding-bottom:3px;background:linear-gradient(var(--espresso) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
-.nav-links a:not(.btn):hover,.nav-links a.active{background-size:100% 1.5px}
-.nav-links .btn{padding:10px 24px}
-.burger{display:none;background:none;border:none;cursor:pointer;padding:8px}
-.burger span{display:block;width:22px;height:2px;background:var(--ink);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
+/* grain */
+body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-events:none;z-index:80;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0 0.14 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* header — nav either side of the logo */
+header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-filter:blur(10px)}
+.nav-box{border:1px solid var(--line-dark);border-top:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:72px;padding:0 26px;gap:18px}
+.nav-side{display:flex;gap:28px;align-items:center;list-style:none}
+.nav-side.right{justify-content:flex-end}
+.nav-side a:not(.btn){text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.22em;color:var(--cream);padding-bottom:3px;background:linear-gradient(var(--ice) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
+.nav-side a:not(.btn):hover,.nav-side a.active{background-size:100% 1.5px}
+.nav-side .btn{padding:10px 22px}
+.nav-logo{display:flex;flex-direction:column;align-items:center;gap:2px}
+.nav-logo img{height:34px;transition:transform .4s ease}
+.nav-logo:hover img{transform:rotate(180deg)}
+.nav-logo .est{font-size:.5rem;letter-spacing:.3em;text-transform:uppercase;color:var(--tan);font-weight:600}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:8px;justify-self:end}
+.burger span{display:block;width:22px;height:2px;background:var(--cream);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
 .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
 .burger.open span:nth-child(2){opacity:0}
 .burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.m-menu{display:none}
 
-/* page hero */
-.phero{padding:110px 0 90px;text-align:center;position:relative;overflow:hidden}
-.phero-logo{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);width:min(280px,55vw);opacity:.14;pointer-events:none;will-change:transform}
+/* page hero — black deck block */
+.phero{background:var(--ink);color:var(--cream);padding:100px 0 90px;text-align:center;position:relative;overflow:hidden}
+.phide{position:absolute;top:0;bottom:0;width:clamp(70px,12vw,220px);background:url('assets/cowhide.jpg') center/cover;opacity:.5}
+.phide.l{left:0}.phide.r{right:0}
 .phero .wrap{position:relative}
-.phero .label{display:block;margin-bottom:22px}
-.phero p{margin:24px auto 0;max-width:52ch;font-size:1.02rem}
-.scroll-hint{margin-top:44px;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;font-weight:600;color:var(--soft);display:inline-flex;align-items:center;gap:10px}
-.scroll-hint::after{content:"↓";color:var(--espresso);animation:bob 1.6s ease-in-out infinite}
+.phero .label{color:var(--ice);display:block;margin-bottom:24px}
+.phero h1{color:var(--cream)}
+.phero p{color:#B9AFA6;margin:26px auto 0;max-width:52ch;font-size:1.02rem}
+.phero .squig{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;opacity:.16;pointer-events:none;will-change:transform}
+.scroll-hint{margin-top:40px;font-size:.66rem;letter-spacing:.26em;text-transform:uppercase;font-weight:700;color:var(--tan);display:inline-flex;align-items:center;gap:10px}
+.scroll-hint::after{content:"↓";color:var(--ice);font-size:1rem;animation:bob 1.6s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(5px)}}
 
 /* ticker */
-.ticker{background:var(--ink);overflow:hidden;padding:14px 0}
-.ticker-track{display:flex;width:max-content;animation:tick 28s linear infinite}
-.ticker span{font-weight:600;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);padding:0 30px;white-space:nowrap}
-.ticker span.dot{color:var(--ice)}
+.ticker{background:var(--ice);overflow:hidden;padding:15px 0}
+.ticker-track{display:flex;width:max-content;animation:tick 26s linear infinite}
+.ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);padding:0 30px;white-space:nowrap}
+.ticker span.dot{color:var(--espresso)}
 @keyframes tick{to{transform:translateX(-50%)}}
 
-/* ---------- stacking package cards ---------- */
-.stack{padding:90px 0 110px}
-.stack-item{position:sticky;top:104px;margin:0 auto 60px;max-width:var(--maxw);padding:0 28px}
+/* stacking cards */
+.stack{padding:90px 0 110px;background:var(--cream)}
+.stack-item{position:sticky;top:100px;margin:0 auto 60px;max-width:var(--maxw);padding:0 28px}
 .stack-item:last-child{margin-bottom:0}
-.card{border-radius:26px;padding:clamp(36px,5vw,64px);min-height:66vh;display:flex;flex-direction:column;will-change:transform;transform-origin:center top;box-shadow:0 24px 60px rgba(23,19,16,.10)}
-.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:34px}
-.card .tier{font-size:.66rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;display:inline-block;border-radius:100px;padding:8px 18px;border:1px solid}
-.card h2{font-size:clamp(2.4rem,6vw,4rem);font-weight:800}
-.card .promise{font-size:clamp(1rem,1.8vw,1.15rem);max-width:46ch;margin-top:10px}
+.card{border-radius:28px;padding:clamp(36px,5vw,64px);min-height:66vh;display:flex;flex-direction:column;will-change:transform;transform-origin:center top;box-shadow:0 26px 64px rgba(20,16,13,.13)}
+.card-head{margin-bottom:34px}
+.card .tier{font-size:.64rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;display:inline-block;border-radius:100px;padding:8px 18px;border:1px solid;margin-bottom:18px}
+.card h2{font-size:clamp(2.6rem,6.5vw,4.4rem)}
+.card .promise{font-size:clamp(1rem,1.8vw,1.15rem);max-width:46ch;margin-top:12px}
 .card-cols{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(28px,4vw,64px);margin-top:auto}
-.inc h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.2em;font-weight:600;margin-bottom:20px}
+.inc h3{font-size:.76rem;letter-spacing:.22em;margin-bottom:20px}
 .inc ul{list-style:none;display:grid;gap:12px}
 .inc li{font-size:.93rem;padding-left:24px;position:relative}
 .inc li::before{content:"";position:absolute;left:0;top:.6em;width:10px;height:10px;border-radius:50%}
 .facts{display:flex;flex-direction:column;gap:22px}
-.fact .label2{font-size:.64rem;text-transform:uppercase;letter-spacing:.22em;font-weight:600;display:block;margin-bottom:6px}
+.fact .label2{font-size:.62rem;text-transform:uppercase;letter-spacing:.24em;font-weight:700;display:block;margin-bottom:6px}
 .fact p{font-size:.9rem;max-width:none}
 .card .ctas{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
 
-/* silver — white */
 .card.silver{background:var(--white);border:1px solid var(--line)}
 .card.silver .tier{color:var(--espresso);border-color:var(--line)}
 .card.silver .promise,.card.silver .inc li,.card.silver .fact p{color:var(--soft)}
 .card.silver .inc h3,.card.silver .fact .label2{color:var(--espresso)}
 .card.silver .inc li::before{background:var(--ice)}
-/* gold — cream/tan */
-.card.gold{background:var(--cream);border:1px solid var(--tan)}
+.card.gold{background:var(--tan-block);border:1px solid var(--tan)}
 .card.gold .tier{color:var(--espresso);border-color:var(--tan)}
-.card.gold .promise,.card.gold .inc li,.card.gold .fact p{color:var(--soft)}
+.card.gold .promise,.card.gold .inc li,.card.gold .fact p{color:#6E5B44}
 .card.gold .inc h3,.card.gold .fact .label2{color:var(--espresso)}
 .card.gold .inc li::before{background:var(--tan)}
-/* platinum — black */
 .card.platinum{background:var(--ink)}
-.card.platinum h2{color:var(--white)}
+.card.platinum h2{color:var(--cream)}
 .card.platinum .tier{color:var(--ice);border-color:rgba(191,213,235,.4)}
 .card.platinum .promise,.card.platinum .inc li,.card.platinum .fact p{color:#B9AFA6}
 .card.platinum .inc h3,.card.platinum .fact .label2{color:var(--ice)}
 .card.platinum .inc li::before{background:var(--ice)}
-.card.platinum .sig{display:inline-block;background:var(--ice);color:var(--ink);font-size:.6rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;padding:8px 16px;border-radius:100px;margin-bottom:18px}
+.card.platinum .sig{display:inline-block;background:var(--ice);color:var(--ink);font-size:.6rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;padding:8px 16px;border-radius:100px;margin-bottom:16px;transform:rotate(-2deg)}
 
-/* ---------- chooser ---------- */
-.chooser{padding:110px 0;background:var(--cream)}
+/* chooser (ice block) */
+.chooser{padding:110px 0;background:var(--ice-block)}
 .section-head{margin-bottom:52px;text-align:center}
 .section-head .label{display:block;margin-bottom:14px}
 .chooser-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-.choice{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:38px 34px;transition:transform .3s ease,border-color .3s ease}
-.choice:hover{transform:translateY(-4px);border-color:var(--ice)}
-.choice p{font-size:1rem;color:var(--ink);font-weight:600;margin-bottom:18px;max-width:none;letter-spacing:-.01em}
-.choice a{font-weight:600;font-size:.82rem;color:var(--espresso)}
-.choice a span{display:inline-block;transition:transform .25s ease}
-.choice:hover a span{transform:translateY(3px)}
+.choice{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:38px 34px;transition:transform .3s ease,border-color .3s ease}
+.choice:hover{transform:translateY(-5px) rotate(-.4deg);border-color:var(--ice)}
+.choice p{font-size:1rem;color:var(--ink);font-weight:600;margin-bottom:18px;max-width:none}
+.choice a{font-weight:700;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--espresso)}
 
-/* ---------- pricing ---------- */
-.pricing{padding:110px 0;text-align:center}
+/* pricing (white) */
+.pricing{padding:110px 0;text-align:center;background:var(--white)}
 .pricing .label{display:block;margin-bottom:18px}
-.pricing p.big{font-size:clamp(1.3rem,2.6vw,1.8rem);line-height:1.5;max-width:34ch;margin:0 auto;color:var(--ink);font-weight:600;letter-spacing:-.01em}
+.pricing p.big{font-size:clamp(1.3rem,2.8vw,2rem);line-height:1.4;max-width:32ch;margin:0 auto;color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
 .pricing .small{margin:26px auto 0;font-size:.92rem;max-width:54ch}
 
-/* ---------- cta band ---------- */
-.cta-band{background:var(--ink);padding:100px 0;text-align:center;position:relative;overflow:hidden}
-.cta-logo{position:absolute;right:-60px;top:-60px;width:280px;opacity:.12;pointer-events:none}
+/* cta band (black) */
+.cta-band{background:var(--ink);padding:110px 0;text-align:center;position:relative;overflow:hidden}
+.cta-logo{position:absolute;right:-60px;top:-60px;width:300px;opacity:.13;pointer-events:none}
 .cta-band .wrap{position:relative}
 .cta-band .label{color:var(--ice);display:block;margin-bottom:16px}
-.cta-band h2{color:var(--white)}
+.cta-band h2{color:var(--cream)}
 .cta-band p{color:#B9AFA6;margin:20px auto 40px;max-width:44ch}
 .cta-band .alt{margin-top:32px;font-size:.88rem;color:#B9AFA6;max-width:none}
 .cta-band .alt a{color:var(--cream);font-weight:600;border-bottom:1.5px solid var(--ice)}
 
 /* footer */
 footer{background:var(--ink);color:#B9AFA6;padding:0 0 34px}
-.foot-top{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:36px 0;border-top:1px solid rgba(250,247,243,.12);border-bottom:1px solid rgba(250,247,243,.12);margin-bottom:26px}
+.foot-top{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:34px 0;border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);margin-bottom:26px}
 .foot-brand{display:flex;align-items:center;gap:14px}
 .foot-brand img{height:34px}
-.foot-brand span{color:var(--white);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.85rem}
+.foot-brand span{color:var(--cream);font-weight:800;letter-spacing:.18em;text-transform:uppercase;font-size:.85rem}
 footer nav{display:flex;gap:26px;flex-wrap:wrap}
-footer nav a{color:#B9AFA6;font-size:.82rem;font-weight:500}
+footer nav a{color:#B9AFA6;font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
 footer nav a:hover{color:var(--ice)}
 .foot-copy{font-size:.74rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
-/* reveal */
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.22,.61,.36,1),transform .8s cubic-bezier(.22,.61,.36,1)}
-.reveal.in{opacity:1;transform:none}
-.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}
+/* reveals */
+.rv{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.22,.61,.36,1),transform .9s cubic-bezier(.22,.61,.36,1)}
+.rv.left{transform:translateX(-44px)}
+.rv.right{transform:translateX(44px)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .reveal{opacity:1;transform:none;transition:none}
+  .rv{opacity:1;transform:none;transition:none}
   .ticker-track{animation:none}
   .scroll-hint::after{animation:none}
   .card{transform:none!important}
-  .phero-logo{transform:translate(-50%,-50%)!important}
+  body::after{display:none}
+  .phero .squig{transform:translateX(-50%)!important}
 }
 
 /* responsive */
@@ -183,13 +191,14 @@ footer nav a:hover{color:var(--ice)}
 }
 @media(max-width:760px){
   .chooser,.pricing{padding:70px 0}
-  .brand .est{display:none}
-  .burger{display:block}
-  .nav-links{position:fixed;inset:74px 0 auto 0;background:var(--white);flex-direction:column;gap:0;padding:10px 0 26px;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rgba(23,19,16,.08);transform:translateY(-130%);transition:transform .3s ease;z-index:40}
-  .nav-links.open{transform:none}
-  .nav-links li{width:100%;text-align:center}
-  .nav-links a:not(.btn){display:block;padding:15px 0;background:none}
-  .nav-links .btn{margin:12px auto 0;display:inline-block}
+  .nav-box{grid-template-columns:auto 1fr auto;height:66px}
+  .nav-side{display:none}
+  .nav-logo{justify-self:center;grid-column:2}
+  .burger{display:block;grid-column:3}
+  .m-menu{display:block;position:fixed;inset:66px 0 auto 0;background:var(--ink);border-bottom:1px solid var(--line-dark);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:translateY(-130%);transition:transform .3s ease;z-index:55;padding:10px 0 28px;list-style:none;text-align:center}
+  .m-menu.open{transform:none}
+  .m-menu a:not(.btn){display:block;padding:15px 0;color:var(--cream);text-transform:uppercase;font-weight:600;font-size:.72rem;letter-spacing:.22em}
+  .m-menu .btn{margin:14px auto 0;display:inline-block}
 }
 </style>
 </head>
@@ -197,30 +206,41 @@ footer nav a:hover{color:var(--ice)}
 
 <div id="progress"></div>
 
-<header id="top">
-  <div class="wrap nav">
-    <a href="index.html" class="brand">
-      <img src="assets/logo-espresso.png" alt="Suede Studio logo">
-      <span class="name">Suede Studio</span>
-      <span class="est">est. 2026</span>
-    </a>
-    <button class="burger" id="burger" aria-label="menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-    <ul class="nav-links" id="navLinks">
+<header>
+  <div class="nav-box">
+    <ul class="nav-side left">
       <li><a href="index.html#services">Services</a></li>
       <li><a href="packages.html" class="active">Packages</a></li>
       <li><a href="index.html#about">About</a></li>
+    </ul>
+    <a href="index.html" class="nav-logo" aria-label="Suede Studio home">
+      <img src="assets/logo-tan.png" alt="Suede Studio">
+      <span class="est">est. 2026</span>
+    </a>
+    <ul class="nav-side right">
       <li><a href="index.html#process">Process</a></li>
       <li><a href="index.html#faq">FAQ</a></li>
       <li><a href="index.html#contact" class="btn btn-ice">Enquire</a></li>
     </ul>
+    <button class="burger" id="burger" aria-label="menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
+  <ul class="m-menu" id="mMenu">
+    <li><a href="index.html#services">Services</a></li>
+    <li><a href="packages.html">Packages</a></li>
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#process">Process</a></li>
+    <li><a href="index.html#faq">FAQ</a></li>
+    <li><a href="index.html#contact" class="btn btn-ice">Enquire</a></li>
+  </ul>
 </header>
 
 <!-- ================= PAGE HERO ================= -->
 <div class="phero">
-  <img src="assets/logo-tan.png" alt="" class="phero-logo" id="pheroLogo">
+  <div class="phide l" aria-hidden="true"></div>
+  <div class="phide r" aria-hidden="true"></div>
+  <img src="assets/logo-tan.png" alt="" class="squig" id="pheroSquig">
   <div class="wrap">
     <span class="label">packages</span>
     <h1>Silver. Gold.<br>Platinum.</h1>
@@ -248,11 +268,9 @@ footer nav a:hover{color:var(--ice)}
   <div class="stack-item" id="silver">
     <div class="card silver">
       <div class="card-head">
-        <div>
-          <span class="tier">01 · once-off · one lane</span>
-          <h2>Silver</h2>
-          <p class="promise">just social <strong>or</strong> just ecom — one part of your business, fixed properly and handed back better than you thought it could be.</p>
-        </div>
+        <span class="tier">01 · once-off · one lane</span>
+        <h2>Silver</h2>
+        <p class="promise">just social <strong>or</strong> just ecom — one part of your business, fixed properly and handed back better than you thought it could be.</p>
       </div>
       <div class="card-cols">
         <div class="inc">
@@ -280,11 +298,9 @@ footer nav a:hover{color:var(--ice)}
   <div class="stack-item" id="gold">
     <div class="card gold">
       <div class="card-head">
-        <div>
-          <span class="tier">02 · once-off · both lanes</span>
-          <h2>Gold</h2>
-          <p class="promise">social <strong>and</strong> ecom together — the full once-off rebuild that takes your business from "set up in a panic" to "done properly".</p>
-        </div>
+        <span class="tier">02 · once-off · both lanes</span>
+        <h2>Gold</h2>
+        <p class="promise">social <strong>and</strong> ecom together — the full once-off rebuild that takes your business from "set up in a panic" to "done properly".</p>
       </div>
       <div class="card-cols">
         <div class="inc">
@@ -312,12 +328,10 @@ footer nav a:hover{color:var(--ice)}
   <div class="stack-item" id="platinum">
     <div class="card platinum">
       <div class="card-head">
-        <div>
-          <span class="sig">our signature</span><br>
-          <span class="tier">03 · retainer · the takeover</span>
-          <h2>Platinum</h2>
-          <p class="promise">social, ecom or both — handed over and simply… run. month after month, with ai working quietly in the background.</p>
-        </div>
+        <span class="sig">our signature</span><br>
+        <span class="tier">03 · retainer · the takeover</span>
+        <h2>Platinum</h2>
+        <p class="promise">social, ecom or both — handed over and simply… run. month after month, with ai working quietly in the background.</p>
       </div>
       <div class="card-cols">
         <div class="inc">
@@ -347,32 +361,32 @@ footer nav a:hover{color:var(--ice)}
 <!-- ================= CHOOSER ================= -->
 <section class="chooser">
   <div class="wrap">
-    <div class="section-head reveal">
+    <div class="section-head rv">
       <span class="label">not sure?</span>
       <h2>Which Sounds Like You?</h2>
     </div>
     <div class="chooser-grid">
-      <div class="choice reveal">
+      <div class="choice rv">
         <p>"one part of this is broken and i honestly don't know how to fix it."</p>
-        <a href="#silver">Silver <span>↑</span></a>
+        <a href="#silver">Silver ↑</a>
       </div>
-      <div class="choice reveal d1">
+      <div class="choice rv d1">
         <p>"i need the whole thing rebuilt properly — once, and done."</p>
-        <a href="#gold">Gold <span>↑</span></a>
+        <a href="#gold">Gold ↑</a>
       </div>
-      <div class="choice reveal d2">
+      <div class="choice rv d2">
         <p>"take it all off my plate. i want my evenings back."</p>
-        <a href="#platinum">Platinum <span>↑</span></a>
+        <a href="#platinum">Platinum ↑</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= PRICING PHILOSOPHY ================= -->
+<!-- ================= PRICING ================= -->
 <section class="pricing">
-  <div class="wrap reveal">
+  <div class="wrap rv">
     <span class="label">on pricing</span>
-    <p class="big">we don't publish prices, because we don't believe in pretending every business is the same size.</p>
+    <p class="big">We don't publish prices, because no two businesses are the same size.</p>
     <p class="small">fill in the questionnaire, take the free 20-minute call, and you'll have a fixed price in writing within 3 days — valid for 30 days, no chasing, no surprises. once-off projects start with a 50% deposit; platinum starts with the first month upfront.</p>
   </div>
 </section>
@@ -413,23 +427,21 @@ footer nav a:hover{color:var(--ice)}
 <script>
 // mobile nav
 const burger = document.getElementById('burger');
-const navLinks = document.getElementById('navLinks');
+const mMenu = document.getElementById('mMenu');
 burger.addEventListener('click', () => {
-  const open = navLinks.classList.toggle('open');
+  const open = mMenu.classList.toggle('open');
   burger.classList.toggle('open', open);
   burger.setAttribute('aria-expanded', open);
 });
-navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-  navLinks.classList.remove('open');
+mMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  mMenu.classList.remove('open');
   burger.classList.remove('open');
   burger.setAttribute('aria-expanded', 'false');
 }));
 
-// header shadow + progress + hero logo parallax
-const header = document.querySelector('header');
-const progress = document.getElementById('progress');
-const pheroLogo = document.getElementById('pheroLogo');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const progress = document.getElementById('progress');
+const pheroSquig = document.getElementById('pheroSquig');
 
 // stacking cards: scale earlier cards down as the next one arrives
 const items = [...document.querySelectorAll('.stack-item')];
@@ -441,27 +453,26 @@ function stackFx(){
     if (!next) { card.style.transform = ''; return; }
     const r = next.getBoundingClientRect();
     const overlap = Math.min(Math.max((innerHeight - r.top) / innerHeight, 0), 1);
-    card.style.transform = `scale(${1 - overlap * .05}) translateY(${overlap * -14}px)`;
+    card.style.transform = `scale(${1 - overlap * .05}) translateY(${overlap * -14}px) rotate(${overlap * -.6}deg)`;
     card.style.filter = `brightness(${1 - overlap * .06})`;
   });
 }
 addEventListener('scroll', () => {
-  header.classList.toggle('scrolled', scrollY > 8);
   const h = document.documentElement.scrollHeight - innerHeight;
   progress.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
-  if (!reduced) pheroLogo.style.transform = `translate(-50%,-50%) translateY(${scrollY * .16}px) rotate(${scrollY * .02}deg)`;
+  if (!reduced) pheroSquig.style.transform = `translateX(-50%) translateY(${scrollY * .2}px) rotate(${scrollY * .05}deg)`;
   stackFx();
 }, {passive: true});
 stackFx();
 
 // reveals
 if (reduced) {
-  document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+  document.querySelectorAll('.rv').forEach(el => el.classList.add('in'));
 } else {
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, {threshold: .12});
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
 }
 </script>
 
