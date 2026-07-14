@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Suede Studio — the AI-powered ecommerce studio</title>
+<title>The Suede Studio — the AI-powered ecommerce studio</title>
 <meta name="description" content="Suede Studio takes over ecommerce and social for small businesses on Shopify — the store, the content, the busywork — with AI built into your everyday operations. Dublin, Ireland.">
 <link rel="icon" href="assets/logo-espresso.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +33,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--white);color:var(--ink);font-size:16px;line-height:1.75;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-::selection{background:var(--ice);color:var(--ink)}
+::selection{background:var(--tan);color:var(--ink)}
 h1,h2,h3{font-weight:800;color:var(--ink);line-height:1.1;text-transform:uppercase;letter-spacing:.04em}
 h2{font-size:clamp(2rem,4.8vw,3.4rem)}
 h3{font-size:1.05rem;letter-spacing:.08em}
@@ -52,8 +52,8 @@ body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-
 
 /* buttons */
 .btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:700;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
-.btn-ice{background:var(--ice);color:var(--ink);border-color:var(--ice)}
-.btn-ice:hover{background:var(--ice-deep);border-color:var(--ice-deep);transform:translateY(-2px)}
+.btn-ice{background:var(--tan);color:var(--ink);border-color:var(--tan)}
+.btn-ice:hover{background:#C4A87F;border-color:#C4A87F;transform:translateY(-2px)}
 .btn-dark{background:var(--ink);color:var(--white);border-color:var(--ink)}
 .btn-dark:hover{background:#000;transform:translateY(-2px)}
 .btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
@@ -61,20 +61,20 @@ body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-
 .btn-cream{background:transparent;border-color:rgba(250,247,243,.55);color:var(--cream)}
 .btn-cream:hover{background:var(--cream);color:var(--ink);border-color:var(--cream)}
 
-#progress{position:fixed;top:0;left:0;height:3px;background:var(--ice);width:0;z-index:95}
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--tan);width:0;z-index:95}
 
 /* ---------- header: nav either side of the logo, boxed like the deck ---------- */
 header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-filter:blur(10px)}
-.nav-box{border:1px solid var(--line-dark);border-top:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:72px;padding:0 26px;gap:18px}
+.nav-box{border:1px solid var(--line-dark);border-top:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:94px;padding:0 30px;gap:18px}
 .nav-side{display:flex;gap:28px;align-items:center;list-style:none}
 .nav-side.right{justify-content:flex-end}
-.nav-side a:not(.btn){text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.22em;color:var(--cream);padding-bottom:3px;background:linear-gradient(var(--ice) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
+.nav-side a:not(.btn){text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.22em;color:var(--cream);padding-bottom:3px;background:linear-gradient(var(--tan) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
 .nav-side a:not(.btn):hover{background-size:100% 1.5px}
 .nav-side .btn{padding:10px 22px}
 .nav-logo{display:flex;flex-direction:column;align-items:center;gap:2px}
-.nav-logo img{height:34px;transition:transform .4s ease}
+.nav-logo img{height:50px;transition:transform .4s ease}
 .nav-logo:hover img{transform:rotate(180deg)}
-.nav-logo .est{font-size:.5rem;letter-spacing:.3em;text-transform:uppercase;color:var(--tan);font-weight:600}
+.nav-logo .est{font-size:.54rem;letter-spacing:.3em;text-transform:uppercase;color:var(--tan);font-weight:600}
 .burger{display:none;background:none;border:none;cursor:pointer;padding:8px;justify-self:end}
 .burger span{display:block;width:22px;height:2px;background:var(--cream);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
 .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
@@ -90,8 +90,8 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .hero-stage{position:relative;max-width:680px;margin:0 auto;padding:0 28px}
 .hero-collage{width:100%;border:6px solid rgba(250,247,243,.06);will-change:transform}
 .hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);width:34%;opacity:.9;will-change:transform;pointer-events:none}
-.hero-mark{position:absolute;top:42%;left:0;width:100%;transform:translateY(-50%);text-align:center;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(3rem,10.5vw,8.6rem);line-height:.95;color:var(--cream);text-shadow:0 6px 40px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap}
-.hero-sticker{position:absolute;top:8%;right:6%;background:var(--ice);color:var(--ink);font-weight:700;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:10px 18px;border-radius:100px;transform:rotate(6deg);box-shadow:0 10px 24px rgba(0,0,0,.3)}
+.hero-mark{position:absolute;top:42%;left:0;width:100%;transform:translateY(-50%);text-align:center;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.4rem,8.6vw,7.2rem);line-height:.95;color:var(--cream);text-shadow:0 6px 40px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap}
+.hero-sticker{position:absolute;top:8%;right:6%;background:var(--tan);color:var(--ink);font-weight:700;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:10px 18px;border-radius:100px;transform:rotate(6deg);box-shadow:0 10px 24px rgba(0,0,0,.3)}
 .hero-bottom{position:relative;text-align:center;margin-top:54px;padding:0 28px}
 .hero-bottom .tag{color:var(--tan);max-width:46ch;margin:0 auto;font-size:clamp(1rem,1.9vw,1.2rem)}
 .hero-ctas{margin-top:34px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
@@ -99,7 +99,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 @keyframes bob{50%{transform:translateY(8px)}}
 
 /* ---------- ticker ---------- */
-.ticker{background:var(--ice);overflow:hidden;padding:15px 0;border-bottom:1px solid var(--line)}
+.ticker{background:var(--tan);overflow:hidden;padding:15px 0;border-bottom:1px solid var(--line)}
 .ticker-track{display:flex;width:max-content;animation:tick 26s linear infinite}
 .ticker span{font-weight:700;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);padding:0 30px;white-space:nowrap}
 .ticker span.dot{color:var(--espresso)}
@@ -111,25 +111,20 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .intro .wrap{position:relative}
 .intro .label{display:block;margin-bottom:22px}
 .intro p.big{font-size:clamp(1.5rem,3.4vw,2.4rem);line-height:1.35;max-width:26ch;color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
-.intro p.big em{font-style:normal;color:var(--espresso);border-bottom:5px solid var(--ice)}
+.intro p.big em{font-style:normal;color:var(--espresso);border-bottom:5px solid var(--tan)}
 .intro .sub{margin-top:22px;font-size:1rem}
 
 /* ---------- services (white block) ---------- */
 .svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
 .svc{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:42px 38px;position:relative;overflow:hidden;transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease}
-.svc:hover{transform:translateY(-6px) rotate(-.4deg);box-shadow:0 24px 48px rgba(20,16,13,.09);border-color:var(--ice)}
+.svc:hover{transform:translateY(-6px) rotate(-.4deg);box-shadow:0 24px 48px rgba(20,16,13,.09);border-color:var(--tan)}
 .svc .num{font-size:.66rem;font-weight:700;letter-spacing:.24em;color:var(--espresso);text-transform:uppercase;display:inline-block;border:1px solid var(--line);border-radius:100px;padding:7px 15px;margin-bottom:24px}
 .svc h3{margin-bottom:12px}
 .svc p{font-size:.94rem;margin-bottom:18px}
 .svc ul{list-style:none;display:grid;gap:8px}
 .svc li{font-size:.87rem;color:var(--soft);padding-left:22px;position:relative}
-.svc li::before{content:"";position:absolute;left:0;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--ice)}
+.svc li::before{content:"";position:absolute;left:0;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--tan)}
 .svc .ghost{position:absolute;bottom:-26px;right:-6px;font-size:6rem;font-weight:800;color:var(--cream);-webkit-text-stroke:1.5px var(--line);line-height:1;pointer-events:none}
-
-/* ---------- outline scrub band ---------- */
-.scrub{padding:70px 0;overflow:hidden;background:var(--white);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.scrub-track{white-space:nowrap;font-weight:800;text-transform:uppercase;font-size:clamp(3.4rem,9vw,7.5rem);letter-spacing:.04em;line-height:1;color:transparent;-webkit-text-stroke:2px var(--ink);will-change:transform}
-.scrub-track em{font-style:normal;color:var(--ice);-webkit-text-stroke:0}
 
 /* ---------- photo strip (tan block) ---------- */
 .strip{background:var(--tan-block);padding:120px 0;overflow:hidden;position:relative}
@@ -153,42 +148,45 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .ai-logo{position:absolute;left:-70px;bottom:-90px;width:400px;opacity:.14;pointer-events:none;will-change:transform}
 .ai-hide{position:absolute;top:0;right:0;width:clamp(70px,10vw,180px);height:100%;background:url('assets/cowhide.jpg') center/cover;opacity:.28}
 .ai-band .wrap{position:relative}
-.ai-band .label{color:var(--ice);display:block;margin-bottom:16px}
+.ai-band .label{color:var(--tan);display:block;margin-bottom:16px}
 .ai-band h2{color:var(--cream)}
 .ai-band .lede{margin:18px 0 64px;color:#B9AFA6;font-size:1.04rem;max-width:52ch}
 .ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
 .ai-card{border:1px solid var(--line-dark);border-radius:20px;padding:34px 30px;transition:border-color .3s ease,transform .3s ease;background:rgba(250,247,243,.02)}
-.ai-card:hover{border-color:var(--ice);transform:translateY(-5px)}
+.ai-card:hover{border-color:var(--tan);transform:translateY(-5px)}
 .ai-card h3{color:var(--cream);font-size:.95rem;margin-bottom:14px}
-.ai-card h3 em{font-style:normal;color:var(--ice)}
+.ai-card h3 em{font-style:normal;color:var(--tan)}
 .ai-card p{font-size:.92rem;color:#B9AFA6;max-width:none}
 .ai-note{margin-top:60px;font-size:.92rem;color:#B9AFA6;max-width:62ch;border-top:1px solid var(--line-dark);padding-top:28px}
 .ai-note strong{color:var(--cream);text-transform:uppercase;letter-spacing:.14em;font-size:.8rem}
 
-/* ---------- packages teaser (ice block) ---------- */
-.packages{background:var(--ice-block)}
-.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:stretch}
-.pkg{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:44px 36px;display:flex;flex-direction:column;transition:transform .3s ease,box-shadow .3s ease}
-.pkg:hover{transform:translateY(-6px) rotate(.4deg);box-shadow:0 24px 48px rgba(20,16,13,.1)}
-.pkg .tier{font-size:.64rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--espresso);margin-bottom:14px}
-.pkg h3{font-size:1.9rem;margin-bottom:10px}
-.pkg .promise{font-size:.93rem;color:var(--soft);margin-bottom:30px}
-.pkg .go{margin-top:auto;font-weight:700;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
-.pkg .go span{display:inline-block;transition:transform .25s ease}
-.pkg:hover .go span{transform:translateX(6px)}
-.pkg.featured{background:var(--ink);border-color:var(--ink)}
-.pkg.featured .tier{color:var(--ice)}
-.pkg.featured h3{color:var(--cream)}
-.pkg.featured .promise{color:#B9AFA6}
-.pkg.featured .go{color:var(--ice)}
+/* ---------- packages (editorial rows) ---------- */
+.packages{background:var(--white)}
+.pkg-rows{border-top:1.5px solid var(--ink)}
+.pkg-row{display:grid;grid-template-columns:110px 1.1fr 1.6fr auto;gap:26px;align-items:center;padding:40px 10px;border-bottom:1.5px solid var(--ink);transition:background .3s ease,padding .3s ease;position:relative}
+.pkg-row:hover{background:var(--cream);padding-left:26px}
+.pkg-row .idx{font-size:.68rem;font-weight:700;letter-spacing:.3em;color:var(--espresso);text-transform:uppercase}
+.pkg-row h3{font-size:clamp(1.6rem,3.6vw,2.6rem);letter-spacing:.05em}
+.pkg-row .tier{display:block;font-size:.62rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--espresso);margin-top:6px}
+.pkg-row .promise{font-size:.94rem;color:var(--soft);max-width:none}
+.pkg-row .go{font-size:1.6rem;color:var(--ink);transition:transform .3s ease}
+.pkg-row:hover .go{transform:translateX(8px)}
+.pkg-row.featured{background:var(--ink)}
+.pkg-row.featured:hover{background:#000;padding-left:26px}
+.pkg-row.featured h3{color:var(--cream)}
+.pkg-row.featured .idx,.pkg-row.featured .tier{color:var(--tan)}
+.pkg-row.featured .promise{color:#B9AFA6}
+.pkg-row.featured .go{color:var(--tan)}
+.pkg-row.featured .sig{position:absolute;top:-12px;left:10px;background:var(--tan);color:var(--ink);font-weight:700;font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;padding:6px 14px;border-radius:100px;transform:rotate(-2deg)}
 .pkg-note{text-align:center;margin-top:44px;font-size:.9rem;color:var(--soft);max-width:none}
-.pkg-note a{font-weight:700;border-bottom:2px solid var(--ice)}
+.pkg-note a{font-weight:700;border-bottom:2px solid var(--tan)}
+
 
 /* ---------- about (cream block) ---------- */
 .about{background:var(--cream)}
 .founders-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px}
 .founder{background:var(--white);border:1px solid var(--line);border-radius:20px;overflow:hidden;position:relative;transition:transform .3s ease,box-shadow .3s ease}
-.founder:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(20,16,13,.1)}
+.founder:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(20,16,13,.1);border-color:var(--tan)}
 .founder figure{overflow:hidden;aspect-ratio:4/3.4}
 .founder img{width:100%;height:100%;object-fit:cover;object-position:center 22%;transition:transform .6s ease}
 .founder:hover img{transform:scale(1.05)}
@@ -196,7 +194,7 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .founder h3{font-size:1.4rem}
 .founder .role{display:block;margin:10px 0 18px}
 .founder p{font-size:.93rem}
-.founder .chip{position:absolute;top:20px;left:20px;background:var(--ice);color:var(--ink);font-weight:700;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;padding:9px 16px;border-radius:100px;transform:rotate(-4deg);box-shadow:0 8px 20px rgba(20,16,13,.18)}
+.founder .chip{position:absolute;top:20px;left:20px;background:var(--tan);color:var(--ink);font-weight:700;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;padding:9px 16px;border-radius:100px;transform:rotate(-4deg);box-shadow:0 8px 20px rgba(20,16,13,.18)}
 
 /* ---------- process (checkerboard tiles) ---------- */
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--ink)}
@@ -204,16 +202,16 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .step:nth-child(even){background:var(--ink)}
 .step:nth-child(even) h3{color:var(--cream)}
 .step:nth-child(even) p{color:#B9AFA6}
-.step:nth-child(even) .num{color:var(--ice)}
+.step:nth-child(even) .num{color:var(--tan)}
 .step:hover{transform:scale(1.03);z-index:2;box-shadow:0 18px 44px rgba(20,16,13,.18)}
 .step .num{font-size:.72rem;font-weight:700;letter-spacing:.3em;color:var(--espresso);display:block;margin-bottom:18px}
-.step .glyph{font-size:1.5rem;color:var(--ice);display:block;margin-bottom:14px}
+.step .glyph{font-size:1.5rem;color:var(--tan);display:block;margin-bottom:14px}
 .step h3{font-size:.88rem;margin-bottom:10px}
 .step p{font-size:.86rem;max-width:none}
 
 /* ---------- quote band (black) ---------- */
 .quote-band{background:var(--ink);color:var(--cream);padding:110px 0;text-align:center;position:relative;overflow:hidden}
-.quote-band .qm{font-size:5rem;line-height:.5;color:var(--ice);font-weight:800;display:block;margin-bottom:26px}
+.quote-band .qm{font-size:5rem;line-height:.5;color:var(--tan);font-weight:800;display:block;margin-bottom:26px}
 .quote-band p.q{font-size:clamp(1.3rem,3vw,2.1rem);font-weight:800;text-transform:uppercase;letter-spacing:.03em;line-height:1.35;max-width:26ch;margin:0 auto;color:var(--cream)}
 .quote-band p.q em{font-style:normal;color:var(--tan)}
 .quote-band .att{margin:30px auto 0;max-width:none}
@@ -235,15 +233,15 @@ details .a p{max-width:62ch}
 .contact-logo{position:absolute;right:-80px;top:-70px;width:340px;opacity:.12;pointer-events:none}
 .contact .wrap{position:relative}
 .contact-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center}
-.contact .label{color:var(--ice)}
+.contact .label{color:var(--tan)}
 .contact h2{color:var(--cream);margin:14px 0 10px}
 .contact .lede{font-size:1rem;margin-bottom:36px;color:#B9AFA6}
 .c-rows{display:grid;gap:24px;margin-bottom:40px}
 .c-row{display:grid;grid-template-columns:28px 1fr;gap:14px;align-items:start}
-.c-row .arw{color:var(--ice);font-weight:800;font-size:1.05rem;line-height:1.5}
+.c-row .arw{color:var(--tan);font-weight:800;font-size:1.05rem;line-height:1.5}
 .c-row .k{font-weight:800;font-size:.8rem;text-transform:uppercase;letter-spacing:.16em;color:var(--cream)}
 .c-row .v{font-size:.92rem;color:#B9AFA6}
-.c-row a{color:#D8CFC5;border-bottom:1.5px solid var(--ice)}
+.c-row a{color:#D8CFC5;border-bottom:1.5px solid var(--tan)}
 .c-row a:hover{color:var(--cream)}
 .contact figure{overflow:hidden;border-radius:6px;aspect-ratio:4/4.8;border:6px solid rgba(250,247,243,.07)}
 .contact img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
@@ -257,7 +255,7 @@ footer{background:var(--ink);color:#B9AFA6;padding:0 0 34px}
 .foot-brand span{color:var(--cream);font-weight:800;letter-spacing:.18em;text-transform:uppercase;font-size:.85rem}
 footer nav{display:flex;gap:26px;flex-wrap:wrap}
 footer nav a{color:#B9AFA6;font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
-footer nav a:hover{color:var(--ice)}
+footer nav a:hover{color:var(--tan)}
 .foot-copy{font-size:.74rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 /* ---------- scroll reveals ---------- */
@@ -273,13 +271,15 @@ footer nav a:hover{color:var(--ice)}
   .ticker-track{animation:none}
   .hero-arrow{animation:none}
   body::after{display:none}
-  .scrub-track,.hero-collage,.hero-squiggle,.intro-logo,.ai-logo{transform:none!important}
+  .hero-collage,.hero-squiggle,.intro-logo,.ai-logo{transform:none!important}
 }
 
 /* ---------- responsive ---------- */
 @media(max-width:980px){
   section{padding:84px 0}
-  .ai-grid,.pkg-grid{grid-template-columns:1fr}
+  .ai-grid{grid-template-columns:1fr}
+  .pkg-row{grid-template-columns:1fr;gap:10px;padding:32px 10px}
+  .pkg-row .go{display:none}
   .steps{grid-template-columns:1fr 1fr}
   .strip-imgs{grid-template-columns:1fr 1fr}
   .polaroid:nth-child(3){display:none}
@@ -290,16 +290,16 @@ footer nav a:hover{color:var(--ice)}
   section{padding:70px 0}
   .svc-grid,.founders-grid,.steps,.strip-imgs{grid-template-columns:1fr}
   .polaroid:nth-child(3){display:block}
-  .nav-box{grid-template-columns:auto 1fr auto;height:66px}
+  .nav-box{grid-template-columns:auto 1fr auto;height:80px}
   .nav-side{display:none}
   .nav-logo{justify-self:center;grid-column:2}
   .burger{display:block;grid-column:3}
-  .m-menu{display:block;position:fixed;inset:66px 0 auto 0;background:var(--ink);border-bottom:1px solid var(--line-dark);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:translateY(-130%);transition:transform .3s ease;z-index:55;padding:10px 0 28px;list-style:none;text-align:center}
+  .m-menu{display:block;position:fixed;inset:80px 0 auto 0;background:var(--ink);border-bottom:1px solid var(--line-dark);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:translateY(-130%);transition:transform .3s ease;z-index:55;padding:10px 0 28px;list-style:none;text-align:center}
   .m-menu.open{transform:none}
   .m-menu a:not(.btn){display:block;padding:15px 0;color:var(--cream);text-transform:uppercase;font-weight:600;font-size:.72rem;letter-spacing:.22em}
   .m-menu .btn{margin:14px auto 0;display:inline-block}
   .hero{padding:40px 0 80px}
-  .hero-mark{font-size:clamp(1.9rem,10.5vw,3.4rem);letter-spacing:.04em}
+  .hero-mark{font-size:clamp(1.5rem,8vw,2.6rem);letter-spacing:.04em}
   .hero-arrow{right:22px;bottom:16px}
   .hero-sticker{top:4%;right:4%}
 }
@@ -348,7 +348,7 @@ footer nav a:hover{color:var(--ice)}
     <img src="assets/logo-tan.png" alt="" class="hero-squiggle" id="heroSquiggle">
     <span class="hero-sticker">the ai-powered ecommerce studio</span>
   </div>
-  <h1 class="hero-mark" id="heroMark">Suede Studio</h1>
+  <h1 class="hero-mark" id="heroMark">The Suede Studio</h1>
   <div class="hero-bottom">
     <p class="tag">we take over your shopify store and your socials — the selling, the content, the busywork — so you can get back to the business you actually wanted to run.</p>
     <div class="hero-ctas">
@@ -385,7 +385,8 @@ footer nav a:hover{color:var(--ice)}
 </div>
 
 <!-- ================= SERVICES (white block) ================= -->
-<section id="services">
+<section id="services" style="overflow:hidden">
+  <img src="assets/logo-espresso.png" alt="" style="position:absolute;left:-90px;top:-70px;width:300px;opacity:.05;pointer-events:none">
   <div class="wrap">
     <div class="section-head rv">
       <span class="label">01 — what we take over</span>
@@ -441,11 +442,6 @@ footer nav a:hover{color:var(--ice)}
   </div>
 </section>
 
-<!-- ================= OUTLINE SCRUB BAND ================= -->
-<div class="scrub" aria-hidden="true">
-  <div class="scrub-track" id="scrubTrack">ecom <em>✦</em> content <em>✦</em> ai <em>✦</em> operations <em>✦</em> ecom <em>✦</em> content <em>✦</em> ai <em>✦</em> operations <em>✦</em>&nbsp;</div>
-</div>
-
 <!-- ================= PHOTO STRIP (tan block) ================= -->
 <div class="strip">
   <img src="assets/logo-espresso.png" alt="" class="doodle a">
@@ -496,25 +492,26 @@ footer nav a:hover{color:var(--ice)}
       <h2>Silver. Gold.<br>Platinum.</h2>
       <p>every business is different — we quote after a free discovery call, not from a rate card.</p>
     </div>
-    <div class="pkg-grid">
-      <div class="pkg rv left">
-        <span class="tier">once-off · one lane</span>
-        <h3>Silver</h3>
-        <p class="promise">just social or just ecom — a once-off, done properly. one part of your business, fixed and handed back better.</p>
-        <a class="go" href="packages.html#silver">Explore <span>→</span></a>
-      </div>
-      <div class="pkg rv d1">
-        <span class="tier">once-off · both lanes</span>
-        <h3>Gold</h3>
-        <p class="promise">social and ecom together — the full once-off rebuild: store, content system, brand and your first automations.</p>
-        <a class="go" href="packages.html#gold">Explore <span>→</span></a>
-      </div>
-      <div class="pkg featured rv right">
-        <span class="tier">retainer · the takeover</span>
-        <h3>Platinum</h3>
-        <p class="promise">social, ecom or both — taken over and run for you, month after month, with ai working in the background.</p>
-        <a class="go" href="packages.html#platinum">Explore <span>→</span></a>
-      </div>
+    <div class="pkg-rows rv">
+      <a class="pkg-row" href="packages.html#silver">
+        <span class="idx">01</span>
+        <div><h3>Silver</h3><span class="tier">once-off · one lane</span></div>
+        <p class="promise">just social or just ecom — one part of your business, fixed properly and handed back better.</p>
+        <span class="go">→</span>
+      </a>
+      <a class="pkg-row" href="packages.html#gold">
+        <span class="idx">02</span>
+        <div><h3>Gold</h3><span class="tier">once-off · both lanes</span></div>
+        <p class="promise">social and ecom together — the full rebuild: store, content system, brand and your first automations.</p>
+        <span class="go">→</span>
+      </a>
+      <a class="pkg-row featured" href="packages.html#platinum">
+        <span class="sig">our signature</span>
+        <span class="idx">03</span>
+        <div><h3>Platinum</h3><span class="tier">retainer · the takeover</span></div>
+        <p class="promise">social, ecom or both — taken over and run for you, month after month, with ai in the background.</p>
+        <span class="go">→</span>
+      </a>
     </div>
     <p class="pkg-note rv">full details on the <a href="packages.html">packages page</a> — or skip ahead and <a href="YOUR-GOOGLE-FORM-LINK">start the questionnaire</a>.</p>
   </div>
@@ -556,7 +553,7 @@ footer nav a:hover{color:var(--ice)}
   <div class="wrap rv">
     <span class="qm">“</span>
     <p class="q">The most powerful shops aren't the loudest. <em>They're the ones that run.</em></p>
-    <p class="att label" style="color:var(--ice)">— the suede studio</p>
+    <p class="att label" style="color:var(--tan)">— the suede studio</p>
   </div>
 </div>
 
@@ -597,7 +594,8 @@ footer nav a:hover{color:var(--ice)}
 </section>
 
 <!-- ================= FAQ (tan block) ================= -->
-<section id="faq" class="faq">
+<section id="faq" class="faq" style="overflow:hidden">
+  <img src="assets/logo-espresso.png" alt="" style="position:absolute;right:-80px;bottom:-90px;width:320px;opacity:.08;pointer-events:none;transform:rotate(18deg)">
   <div class="wrap">
     <div class="section-head rv">
       <span class="label">06 — faq</span>
@@ -671,7 +669,7 @@ footer nav a:hover{color:var(--ice)}
     <div class="foot-top">
       <div class="foot-brand">
         <img src="assets/logo-cream.png" alt="">
-        <span>Suede Studio</span>
+        <span>The Suede Studio</span>
       </div>
       <nav>
         <a href="#services">Services</a>
@@ -681,7 +679,7 @@ footer nav a:hover{color:var(--ice)}
       </nav>
     </div>
     <div class="foot-copy">
-      <span>© 2026 suede studio · dublin, ireland</span>
+      <span>© 2026 the suede studio · dublin, ireland</span>
       <span>est. 2026 · @the.suede.studio</span>
     </div>
   </div>
@@ -709,7 +707,6 @@ const heroSquiggle = document.getElementById('heroSquiggle');
 const heroMark = document.getElementById('heroMark');
 const introLogo = document.getElementById('introLogo');
 const aiLogo = document.getElementById('aiLogo');
-const scrubTrack = document.getElementById('scrubTrack');
 
 // scroll-driven effects (scrub)
 addEventListener('scroll', () => {
@@ -721,10 +718,6 @@ addEventListener('scroll', () => {
   heroSquiggle.style.transform = `translate(-50%,-52%) rotate(${y * .04}deg)`;
   heroMark.style.transform = `translateY(calc(-50% + ${y * .16}px))`;
   introLogo.style.transform = `translateY(-50%) rotate(${y * .015}deg)`;
-  const sr = scrubTrack.getBoundingClientRect();
-  if (sr.top < innerHeight && sr.bottom > 0) {
-    scrubTrack.style.transform = `translateX(${-(y * .35) % (scrubTrack.scrollWidth / 2)}px)`;
-  }
   const ar = aiLogo.parentElement.getBoundingClientRect();
   aiLogo.style.transform = `translateY(${ar.top * -.1}px) rotate(${ar.top * -.01}deg)`;
 }, {passive: true});
