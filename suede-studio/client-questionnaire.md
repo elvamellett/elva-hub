@@ -85,7 +85,7 @@
 ## Section 8 — Goals, budget & fit
 
 41. If we work together and it goes brilliantly — what does the business look like in 6 months? *(paragraph, required)*
-42. Which sounds most like what you need? *(multiple choice: a one-off expert once-over and a plan [THE SWATCH] · a proper rebuild, done for me [THE CAPSULE] · take it all off my plate, month to month [THE ATELIER] · honestly, tell me what I need)*
+42. Which sounds most like what you need? *(multiple choice: one part fixed properly, once — social or ecom [SILVER] · a proper rebuild, done for me [GOLD] · take it all off my plate, month to month [PLATINUM] · honestly, tell me what I need)*
 43. What monthly or project budget feels comfortable? *(multiple choice: under €500 · €500–€1,000 · €1,000–€2,500 · €2,500+ · prefer to discuss on the call)*
 44. When would you want to start? *(multiple choice: yesterday · within a month · within 3 months · just exploring for now)*
 45. Anything else we should know — about the business, the timing, or you? *(paragraph)*

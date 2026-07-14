@@ -7,7 +7,8 @@ The complete starter kit for **The Suede Studio** — the AI-powered ecommerce s
 | File | What it is |
 |---|---|
 | `index.html` | **The website homepage** — hero, services, AI section, packages teaser, founders, process, FAQ, contact |
-| `packages.html` | **The packages page** — The Swatch, The Capsule, and The Atelier in full detail |
+| `packages.html` | **The packages page** — Silver, Gold and Platinum as scroll-through stacking cards |
+| `assets/` | **Brand assets** — the S-squiggle logo in five colourways + founder/team photography extracted from the brand deck |
 | `brand.html` | **The brand pack** — wordmark, colours (Pantone 732 C + Ice Water 13-4202 TCX), typography, tone of voice, do/don'ts, Instagram grid system. Print it to PDF for sharing |
 | `client-questionnaire.md` | **The client intake questionnaire** — all 45 questions, ready to paste into a free Google Form, with setup instructions at the bottom |
 | `client-strategy-blueprint.md` | **The per-client strategy blueprint** — master template covering all nine pillars of a client's business; copy per client, fill from their questionnaire, delete the 🔒 internal boxes, send. The questionnaire→blueprint map, scoping worksheet and package tailoring guide are in its appendix |
@@ -28,7 +29,7 @@ No build step, no installs — open `index.html` in any browser. Everything (sty
 ## Two things to do before launch
 
 1. **Create the Google Form** from `client-questionnaire.md`, then find-and-replace `YOUR-GOOGLE-FORM-LINK` in `index.html` and `packages.html` with the real form URL (it appears in several buttons on each page).
-2. **Fonts:** the site currently renders in Archivo (free). When you license **Pragmatica**, drop the `.woff2` files into this folder and uncomment the `@font-face` block at the top of each HTML file — instructions are in the comment itself, and in `brand.html` §03.
+2. **Fonts:** the site renders in **Poppins** (free, Google Fonts) — the closest open match to the brand deck's chunky display face. If you later license the exact deck typeface, add it first in the `--font` stack in each HTML file's `:root` block.
 
 ## Editing the brand later
 

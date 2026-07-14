@@ -4,7 +4,7 @@
 >
 > One page. Sent within **3 days** of the discovery call, never quoted live on the call. Copy per client (`proposal-<client-name>.md`), fill the blanks from their strategy blueprint (the price comes from its scoping worksheet — never from gut feel on a good day), paste into Google Docs on the brand template, export to PDF.
 >
-> Rules from the business plan: fixed price, valid 30 days · 50% deposit before work starts (Atelier: first month upfront) · scope creep = a new proposal, not a favour · first 2–3 clients may be priced at the bottom of the range **in exchange for** a testimonial and case-study permission — if so, say it in the price line so the discount has a reason.
+> Rules from the business plan: fixed price, valid 30 days · 50% deposit before work starts (Platinum: first month upfront) · scope creep = a new proposal, not a favour · first 2–3 clients may be priced at the bottom of the range **in exchange for** a testimonial and case-study permission — if so, say it in the price line so the discount has a reason.
 
 ---
 
@@ -24,7 +24,7 @@ ______
 
 ## what we'll do
 
-**our recommendation: ☐ the swatch · ☐ the capsule · ☐ the atelier**
+**our recommendation: ☐ silver · ☐ gold · ☐ platinum**
 
 *(one sentence on why this package and not a bigger one — recommending honestly is the whole brand.)*
 

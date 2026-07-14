@@ -4,18 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Suede Studio — Brand Guidelines</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23623412'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='30' font-weight='bold' fill='%23BFD5EB' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="assets/logo-espresso.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
-<!-- To use real Pragmatica: license the woff2 files, place them next to this file,
-     and uncomment this block. 'Pragmatica' is already first in - -font below, so it
-     takes over automatically; the Google Fonts <link> above can then be removed.
-<style>
-@font-face{font-family:'Pragmatica';src:url('pragmatica-book.woff2') format('woff2');font-weight:400;font-style:normal}
-@font-face{font-family:'Pragmatica';src:url('pragmatica-bold.woff2') format('woff2');font-weight:700;font-style:normal}
-@font-face{font-family:'Pragmatica';src:url('pragmatica-extrabold.woff2') format('woff2');font-weight:800;font-style:normal}
-</style> -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   /* ============ THE SUEDE STUDIO — BRAND TOKENS ============
@@ -31,13 +23,14 @@
   /* PANTONE 13-4202 TCX "Ice Water" — pale ice blue. the air. */
   --ice:        #BFD5EB;   /* digital equivalent of the TCX swatch */
   --ice-light:  #EAF1F8;   /* section tint backgrounds */
+  --tan:        #D6BC96;   /* logo tan — subtle accents */
 
   /* supporting neutrals — never dominant, never branded */
   --cream:      #FAF7F3;   /* page background */
   --ink:        #2B1D10;   /* body text */
   --line:       #E6DCD2;   /* hairline borders */
 
-  --font: 'Pragmatica','Archivo',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --font: 'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
   --maxw: 1040px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -45,7 +38,7 @@ html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--cream);color:var(--ink);font-size:16px;line-height:1.65;font-weight:400;-webkit-font-smoothing:antialiased}
 
 /* ---------- typography rules (the law) ---------- */
-h1,h2,h3,.caps{text-transform:uppercase;font-weight:800;letter-spacing:.06em;color:var(--suede-dark);line-height:1.15}
+h1,h2,h3,.caps{font-weight:800;letter-spacing:-.015em;color:var(--suede-dark);line-height:1.15}
 h1{font-size:clamp(2rem,5vw,3.2rem)}
 h2{font-size:clamp(1.3rem,3vw,1.8rem)}
 h3{font-size:1.02rem;letter-spacing:.09em}
@@ -131,7 +124,7 @@ pre{background:var(--suede-dark);color:var(--ice-light);padding:22px;border-radi
 .ig{max-width:520px;margin:36px auto 0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fff;padding:10px}
 .ig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .ig-tile{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;text-align:center;border-radius:3px}
-.ig-tile.quote{background:var(--suede);color:var(--ice)}
+.ig-tile.quote{background:#171310;color:var(--ice)}
 .ig-tile.quote .q{text-transform:uppercase;font-weight:800;letter-spacing:.06em;font-size:.72rem;line-height:1.35}
 .ig-tile.cover{background:var(--ice);color:var(--suede-dark)}
 .ig-tile.cover .q{text-transform:uppercase;font-weight:800;letter-spacing:.08em;font-size:.7rem}
@@ -159,9 +152,10 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
 <!-- ================= COVER ================= -->
 <div class="cover">
   <div class="wrap">
-    <span class="sub">brand guidelines · v1 · 2026</span>
+    <span class="sub">brand guidelines · v2 · 2026</span>
     <div class="rule"></div>
-    <h1>The Suede<br>Studio</h1>
+    <img src="assets/logo-cream.png" alt="Suede Studio monogram" style="width:74px;margin-bottom:22px">
+    <h1>Suede<br>Studio</h1>
     <p>the ai-powered ecommerce studio — we take over your shopify store, your content, and your busywork.<br>
     this document is the brand. when in doubt, come back here.</p>
   </div>
@@ -170,33 +164,33 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
 <!-- ================= 01 WORDMARK ================= -->
 <section id="wordmark">
   <div class="wrap">
-    <span class="label section-no">01 — wordmark</span>
-    <h2>Two lockups. No logo needed.</h2>
-    <p class="lede">the wordmark is typography, not an image — it can never pixelate, and it always matches the brand font.</p>
+    <span class="label section-no">01 — the mark</span>
+    <h2>The squiggle &amp; the wordmark</h2>
+    <p class="lede">one monogram — the double-S squiggle — plus a caps wordmark. together or apart, always with room to breathe.</p>
 
     <div class="grid2">
       <div class="mark-card">
-        <div class="wordmark mark-inline">The Suede Studio</div>
-        <p class="mark-note label">inline — nav, footer, email signatures</p>
+        <img src="assets/logo-espresso.png" alt="Suede Studio squiggle — espresso" style="height:110px;margin:0 auto 8px">
+        <p class="mark-note label">the squiggle — espresso, on light backgrounds</p>
       </div>
-      <div class="mark-card on-suede">
-        <div class="wordmark mark-stacked">The Suede<div class="mini-rule"></div>Studio</div>
-        <p class="mark-note label" style="color:var(--ice)">stacked — hero, covers, title slides</p>
+      <div class="mark-card on-suede" style="background:var(--suede-deep);border-color:var(--suede-deep)">
+        <img src="assets/logo-tan.png" alt="Suede Studio squiggle — tan" style="height:110px;margin:0 auto 8px">
+        <p class="mark-note label" style="color:var(--ice)">the squiggle — tan or cream, on dark</p>
       </div>
     </div>
 
     <div class="grid2">
       <div class="mark-card">
-        <div class="monogram">S</div>
-        <p class="mark-note label">monogram — favicon, profile pictures, watermark</p>
+        <img src="assets/logo-espresso.png" alt="" style="height:34px;display:inline-block;vertical-align:middle;margin-right:12px"><span class="wordmark mark-inline" style="vertical-align:middle">Suede Studio</span>
+        <p class="mark-note label">lockup — squiggle + caps wordmark (nav, footer, covers)</p>
       </div>
       <div>
         <ul class="rules-list">
-          <li><strong>clear space:</strong> leave at least the height of the “S” empty around every side of the wordmark.</li>
-          <li><strong>minimum size:</strong> if the inline lockup drops below ~120px wide, use the monogram instead.</li>
-          <li><strong>always caps, always tracked:</strong> letter-spacing 0.18em. never title case, never condensed manually.</li>
-          <li><strong>colours:</strong> brown on cream, or cream on brown with the ice rule. nothing else.</li>
-          <li><strong>never:</strong> stretch it, add a drop shadow, set it in another font, or place it over a busy photo.</li>
+          <li><strong>clear space:</strong> leave at least half the squiggle's height empty around every side.</li>
+          <li><strong>the wordmark</strong> is always caps, tracked 0.18em: SUEDE STUDIO. big headings elsewhere are Title Case — the wordmark is the exception.</li>
+          <li><strong>colours:</strong> espresso or black on light; tan, cream or ice on dark. one colour at a time.</li>
+          <li><strong>the squiggle alone</strong> works as favicon, profile picture, watermark, and oversized faded background art (10–16% opacity).</li>
+          <li><strong>never:</strong> stretch it, rotate it upright, add a drop shadow, or place it over a busy photo.</li>
         </ul>
       </div>
     </div>
@@ -207,8 +201,8 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
 <section id="colour">
   <div class="wrap">
     <span class="label section-no">02 — colour</span>
-    <h2>Brown is the voice. Ice is the air.</h2>
-    <p class="lede">two brand colours, used with restraint. the neutrals do the quiet work in between.</p>
+    <h2>Neutral base. Blue pop. Espresso details.</h2>
+    <p class="lede">white, cream and black do the heavy lifting. ice blue is the call-to-action pop; espresso brown lives in the small details — never in big chunks.</p>
 
     <div class="grid2">
       <div class="swatch">
@@ -219,7 +213,7 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
             <span>PANTONE 732 C</span>
             <span>HEX #623412 · RGB 98 · 52 · 18</span>
           </div>
-          <p style="font-size:.9rem;margin-top:12px">headings, buttons, wordmark, key backgrounds. wherever the brand <em>speaks</em>, it speaks in brown.</p>
+          <p style="font-size:.9rem;margin-top:12px">small details only: labels, thin rules, the squiggle, tiny accents. espresso seasons the page — it never floods it.</p>
         </div>
       </div>
       <div class="swatch">
@@ -230,7 +224,7 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
             <span>PANTONE 13-4202 TCX · digital equivalent</span>
             <span>HEX #BFD5EB · RGB 191 · 213 · 235</span>
           </div>
-          <p style="font-size:.9rem;margin-top:12px">accents, tinted section backgrounds, rules and highlights. ice gives the brand room to breathe — it never shouts.</p>
+          <p style="font-size:.9rem;margin-top:12px">the pop: call-to-action buttons, bullet dots, small highlights. one or two moments of blue per screen — a pop, not a wash.</p>
         </div>
       </div>
     </div>
@@ -251,16 +245,20 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
     </div>
 
     <div class="ratio-bar">
-      <div style="background:var(--cream);color:var(--suede-soft);flex:50">cream ~50</div>
-      <div style="background:var(--suede-deep);color:var(--ice-light);flex:35">brown ~35</div>
-      <div style="background:var(--ice);color:var(--suede-dark);flex:15">ice ~15</div>
+      <div style="background:#fff;color:var(--suede-soft);flex:45">white ~45</div>
+      <div style="background:var(--cream);color:var(--suede-soft);flex:25">cream ~25</div>
+      <div style="background:#171310;color:var(--cream);flex:18">black ~18</div>
+      <div style="background:var(--ice);color:#171310;flex:8">ice ~8</div>
+      <div style="background:var(--suede-dark);color:var(--cream);flex:4">esp.</div>
     </div>
 
     <ul class="rules-list usage">
-      <li>the website alternates <strong>deep chocolate bands</strong> (hero, ai, contact) with cream sections — that banding rhythm is part of the brand. inside a band, text is cream or ice; on cream, text is ink or brown.</li>
-      <li>ice text sits on brown only. <strong>never put ice text on cream</strong> — it fails contrast and looks washed out.</li>
-      <li>body text is always ink or brown. never ice, never grey.</li>
-      <li>no third accent colour. ever. if a design feels flat, adjust ratio — don’t add colour.</li>
+      <li><strong>the base is neutral:</strong> white and cream pages, black (ink) headings and text. black also carries the ticker, one feature band and the footer — dramatic moments, not the default.</li>
+      <li><strong>ice blue = the call to action.</strong> if it's blue, it's clickable (or it's a tiny accent dot). never large blue backgrounds.</li>
+      <li><strong>espresso = seasoning.</strong> labels, hairlines, the squiggle, small caps details. never headings, never text walls, never big blocks.</li>
+      <li>ice text only ever sits on black/espresso — <strong>never on white or cream</strong> (it fails contrast).</li>
+      <li>tan (from the logo) may appear in the squiggle and faint watermarks only.</li>
+      <li>no new accent colours. if a design feels flat, adjust space and scale — don’t add colour.</li>
       <li>in print/product, reference the pantone codes; on screen, the hex values above are canonical.</li>
     </ul>
   </div>
@@ -271,39 +269,38 @@ footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
   <div class="wrap">
     <span class="label section-no">03 — typography</span>
     <h2>Caps speak. Lowercase explains.</h2>
-    <p class="lede">one family, two behaviours: headings are all caps and bold; body copy is lowercase, regular and smaller. the contrast between the two <em>is</em> the typographic style.</p>
+    <p class="lede">one family, two behaviours: big headings are chunky, bold and <strong>Title Case</strong> (like the deck — "About Us", "Packages"); body copy is lowercase, regular and smaller. small labels, buttons and the wordmark stay tracked-out caps.</p>
 
     <div class="spec">
       <div class="spec-row">
-        <span class="label">h1 · 800 · caps · .06em</span>
-        <div class="caps h1x">Done properly</div>
+        <span class="label">h1 · 800 · title case</span>
+        <div class="caps h1x">Done Properly</div>
       </div>
       <div class="spec-row">
-        <span class="label">h2 · 800 · caps · .06em</span>
-        <div class="caps h2x">Ecommerce &amp; content</div>
+        <span class="label">h2 · 700 · title case</span>
+        <div class="caps h2x">Ecommerce &amp; Content</div>
       </div>
       <div class="spec-row">
         <span class="label">body · 400 · lowercase</span>
         <p class="bodyx">we help small irish businesses sell online and show up well. body copy is written in a lowercase, plain-spoken voice — like a good text message from someone who knows what they’re doing.</p>
       </div>
       <div class="spec-row">
-        <span class="label">label · 700 · caps · .18em</span>
+        <span class="label">label · 600 · caps · .24em</span>
         <div class="label labelx">enquire for pricing</div>
       </div>
     </div>
 
-<pre>h1, h2, h3      { text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
+<pre>h1, h2, h3      { font-weight: 700–800; letter-spacing: -.02em; }   /* Title Case, chunky */
 .wordmark       { text-transform: uppercase; font-weight: 800; letter-spacing: .18em; }
-body            { font-weight: 400; font-size: 16px; line-height: 1.65; }
-.label, button  { text-transform: uppercase; font-weight: 700; font-size: .7rem;
-                  letter-spacing: .18em; }
+body            { font-weight: 400; font-size: 16px; line-height: 1.7; }
+.label, button  { text-transform: uppercase; font-weight: 600; font-size: .66rem;
+                  letter-spacing: .24em; }
 
-font-family: 'Pragmatica', 'Archivo', -apple-system, 'Helvetica Neue', Arial, sans-serif;</pre>
+font-family: 'Poppins', -apple-system, 'Helvetica Neue', Arial, sans-serif;</pre>
 
     <div class="fontnote">
-      <h3>Pragmatica &amp; the fallback</h3>
-      <p style="margin-top:10px"><strong>Pragmatica</strong> is the brand typeface. it’s a commercial font (licensed via paratype/myfonts), so it isn’t bundled here. until the licence is bought, everything renders in <strong>Archivo</strong> — a free google-fonts grotesque chosen because it shares pragmatica’s neutral, slightly condensed feel with strong bold caps.</p>
-      <p style="margin-top:10px">to switch to real pragmatica: buy the webfont (book + bold weights are enough), drop the <code>.woff2</code> files beside this html file, and uncomment the <code>@font-face</code> block at the top of the file. because <code>'Pragmatica'</code> is already first in the font stack, the whole document switches automatically.</p>
+      <h3>The working font</h3>
+      <p style="margin-top:10px">the deck's display face is a chunky geometric sans. on the web we use <strong>Poppins</strong> (free, google fonts, weights 400–800) — the closest open match to that rounded, confident feel. if we later license the exact deck typeface, it slots in first in the font stack and everything follows.</p>
     </div>
   </div>
 </section>
@@ -335,7 +332,7 @@ font-family: 'Pragmatica', 'Archivo', -apple-system, 'Helvetica Neue', Arial, sa
 
     <ul class="rules-list" style="margin-top:32px">
       <li>captions and body copy: lowercase, first person plural (“we”), short sentences.</li>
-      <li>headings and calls to action: caps, confident, no exclamation marks needed.</li>
+      <li>big headings: chunky Title Case. buttons and labels: small tracked caps. confident, no exclamation marks needed.</li>
       <li>the punch line device: short caps statements ending in full stops — “the store. handled.” “the busywork. automated.” — used in tickers, tiles and story covers.</li>
       <li>emoji: sparing — one, sometimes, where it earns its place. never strings of them.</li>
       <li>never promise “growth hacks”, “secrets” or overnight results. we sell done-properly.</li>
@@ -351,25 +348,25 @@ font-family: 'Pragmatica', 'Archivo', -apple-system, 'Helvetica Neue', Arial, sa
 
     <div class="grid3">
       <div class="dd good">
-        <div class="tile" style="background:var(--cream)">
-          <span class="t-caps" style="color:var(--suede-dark)">Caps heading</span>
-          <span class="t-body" style="color:var(--ink)">lowercase body underneath, plenty of space.</span>
+        <div class="tile" style="background:#fff">
+          <span style="font-weight:800;font-size:1rem;color:#171310;letter-spacing:-.02em">Chunky Title Case</span>
+          <span class="t-body" style="color:var(--ink)">black heading, lowercase body, loads of air.</span>
         </div>
-        <div class="verdict"><strong>do</strong> caps headings + lowercase body on cream.</div>
+        <div class="verdict"><strong>do</strong> black title-case headings on white/cream.</div>
       </div>
       <div class="dd good">
-        <div class="tile" style="background:var(--suede)">
-          <span class="t-caps" style="color:var(--ice)">Ice on brown</span>
-          <span class="t-body" style="color:var(--ice-light)">accent text always sits on the dark brown.</span>
+        <div class="tile" style="background:#fff">
+          <span style="background:var(--ice);color:#171310;font-weight:600;font-size:.68rem;border-radius:100px;padding:9px 18px">start the questionnaire</span>
+          <span class="t-body" style="color:var(--ink)">if it's blue, it's clickable.</span>
         </div>
-        <div class="verdict"><strong>do</strong> use ice text on brown for contrast moments.</div>
+        <div class="verdict"><strong>do</strong> reserve ice blue for buttons &amp; small pops.</div>
       </div>
       <div class="dd good">
-        <div class="tile" style="background:var(--ice-light)">
-          <span class="t-caps" style="color:var(--suede-dark)">Tinted section</span>
-          <span class="t-body" style="color:var(--ink)">ice-light bands break up long cream pages.</span>
+        <div class="tile" style="background:#171310">
+          <span class="t-caps" style="color:var(--ice)">Ice on black</span>
+          <span class="t-body" style="color:var(--cream)">accents pop on the dark feature bands.</span>
         </div>
-        <div class="verdict"><strong>do</strong> use ice-light as a section background tint.</div>
+        <div class="verdict"><strong>do</strong> use black bands for drama — one or two per page.</div>
       </div>
       <div class="dd bad">
         <div class="tile" style="background:var(--cream)">
@@ -379,11 +376,11 @@ font-family: 'Pragmatica', 'Archivo', -apple-system, 'Helvetica Neue', Arial, sa
         <div class="verdict"><strong>don’t</strong> put ice text on cream — it fails contrast.</div>
       </div>
       <div class="dd bad">
-        <div class="tile" style="background:var(--cream)">
-          <span style="font-weight:800;font-size:.95rem;color:var(--suede-dark)">Title Case Heading Here</span>
-          <span class="t-body" style="color:var(--ink)">headings are never title case or sentence case.</span>
+        <div class="tile" style="background:var(--suede)">
+          <span class="t-caps" style="color:var(--cream)">Brown everywhere</span>
+          <span class="t-body" style="color:var(--ice-light)">big brown blocks are the old look.</span>
         </div>
-        <div class="verdict"><strong>don’t</strong> use title-case headings. caps or nothing.</div>
+        <div class="verdict"><strong>don’t</strong> flood pages with brown — espresso is a detail, not a wall.</div>
       </div>
       <div class="dd bad">
         <div class="tile" style="background:linear-gradient(135deg,#e8b4d8,var(--ice))">
@@ -418,10 +415,10 @@ font-family: 'Pragmatica', 'Archivo', -apple-system, 'Helvetica Neue', Arial, sa
     </div>
 
     <ul class="rules-list ig-rules">
-      <li><strong>brown quote tiles:</strong> ice caps text on suede brown. short, punchy, saveable lines.</li>
+      <li><strong>black quote tiles:</strong> ice caps text on black. short, punchy, saveable lines.</li>
       <li><strong>ice carousel covers:</strong> brown caps title on ice, small label underneath naming the pillar.</li>
       <li><strong>photo tiles:</strong> real photography and reel covers — warm light, natural texture, no heavy filters.</li>
-      <li>keep the three-column rhythm when scheduling: never two brown tiles touching.</li>
+      <li>keep the three-column rhythm when scheduling: never two black tiles touching.</li>
       <li>captions in the lowercase voice; hashtags from the content plan’s pool, never the same block twice.</li>
     </ul>
   </div>

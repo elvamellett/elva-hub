@@ -3,255 +3,263 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Suede Studio — the AI-powered ecommerce studio for small businesses</title>
-<meta name="description" content="The Suede Studio takes over ecommerce for small businesses on Shopify — the store, the content, and the busywork, with AI built into your everyday operations. Based in Dublin, Ireland.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23623412'/%3E%3Ctext x='32' y='43' font-family='Arial' font-size='30' font-weight='bold' fill='%23BFD5EB' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<title>Suede Studio — the AI-powered ecommerce studio</title>
+<meta name="description" content="Suede Studio takes over ecommerce and social for small businesses on Shopify — the store, the content, the busywork — with AI built into your everyday operations. Dublin, Ireland.">
+<link rel="icon" href="assets/logo-espresso.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
-<!-- To use real Pragmatica: license the woff2 files, place them next to this file,
-     and uncomment this block. 'Pragmatica' is already first in - -font below, so it
-     takes over automatically; the Google Fonts <link> above can then be removed.
-<style>
-@font-face{font-family:'Pragmatica';src:url('pragmatica-book.woff2') format('woff2');font-weight:400;font-style:normal}
-@font-face{font-family:'Pragmatica';src:url('pragmatica-bold.woff2') format('woff2');font-weight:700;font-style:normal}
-@font-face{font-family:'Pragmatica';src:url('pragmatica-extrabold.woff2') format('woff2');font-weight:800;font-style:normal}
-</style> -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* ============ THE SUEDE STUDIO — BRAND TOKENS ============
-     Canonical values live in brand.html. Edit there first,
-     then mirror here. One block controls the whole site. */
-
-  /* PANTONE 732 C — deep chocolate brown. the voice. */
-  --suede:      #623412;
-  --suede-dark: #46240A;
-  --suede-deep: #2E1604;   /* near-black chocolate for hero/footer */
-  --suede-soft: #8A5B36;
-
-  /* PANTONE 13-4202 TCX "Ice Water" — pale ice blue. the air. */
-  --ice:        #BFD5EB;
-  --ice-light:  #EAF1F8;
-
-  /* supporting neutrals */
-  --cream:      #FAF7F3;
-  --ink:        #2B1D10;
-  --line:       #E6DCD2;
-  --line-dark:  rgba(191,213,235,.22);
-
-  --font: 'Pragmatica','Archivo',-apple-system,'Helvetica Neue',Arial,sans-serif;
-  --maxw: 1160px;
+  /* ============ SUEDE STUDIO — BRAND TOKENS ============
+     Neutral base: white / cream / black.
+     Espresso = small details only. Ice blue = CTAs & pops. */
+  --espresso:      #46240A;   /* PANTONE 732 C family — details, labels, rules */
+  --espresso-deep: #2E1604;
+  --ink:           #171310;   /* headings & body black */
+  --soft:          #6E6257;   /* secondary text */
+  --tan:           #D6BC96;   /* logo tan — subtle accents */
+  --ice:           #BFD5EB;   /* PANTONE 13-4202 TCX — CTAs, pops */
+  --ice-deep:      #A5C6E4;   /* CTA hover */
+  --cream:         #FAF7F3;   /* alt section background */
+  --white:         #FFFFFF;   /* page background */
+  --line:          #ECE5DB;   /* hairlines */
+  --font:'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --maxw:1160px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--cream);color:var(--ink);font-size:16.5px;line-height:1.7;font-weight:400;-webkit-font-smoothing:antialiased}
-::selection{background:var(--ice);color:var(--suede-deep)}
-h1,h2,h3{text-transform:uppercase;font-weight:800;letter-spacing:.07em;color:var(--suede-dark);line-height:1.12}
-h2{font-size:clamp(1.8rem,4vw,2.8rem)}
-h3{font-size:.95rem;letter-spacing:.12em}
-p{max-width:62ch}
-a{color:var(--suede);text-decoration:none}
+body{font-family:var(--font);background:var(--white);color:var(--ink);font-size:16px;line-height:1.75;font-weight:400;-webkit-font-smoothing:antialiased}
+::selection{background:var(--ice);color:var(--ink)}
+h1,h2,h3{font-weight:700;color:var(--ink);line-height:1.12;letter-spacing:-.02em}
+h2{font-size:clamp(2rem,4.6vw,3.2rem)}
+h3{font-size:1.15rem;font-weight:700}
+p{max-width:62ch;color:var(--soft)}
+a{color:var(--ink);text-decoration:none}
+img{max-width:100%;display:block}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
-.label{text-transform:uppercase;font-weight:700;font-size:.66rem;letter-spacing:.28em;color:var(--suede-soft)}
-.wordmark{text-transform:uppercase;font-weight:800;letter-spacing:.18em;color:var(--suede-dark)}
-section{padding:120px 0}
+.label{text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.26em;color:var(--espresso)}
+section{padding:110px 0}
 .hairline{border-top:1px solid var(--line)}
-.section-head{margin-bottom:64px}
-.section-head .label{display:block;margin-bottom:16px}
-.section-head p{margin-top:18px;color:var(--suede-soft);font-size:1.02rem}
+.section-head{margin-bottom:56px}
+.section-head .label{display:block;margin-bottom:14px}
+.section-head p{margin-top:14px;font-size:1.02rem}
 
 /* buttons */
-.btn{display:inline-block;padding:17px 38px;border-radius:0;text-transform:uppercase;font-weight:700;font-size:.68rem;letter-spacing:.26em;transition:all .25s ease;border:1px solid var(--suede);cursor:pointer}
-.btn-solid{background:var(--suede);color:var(--cream)}
-.btn-solid:hover{background:var(--suede-deep);border-color:var(--suede-deep)}
-.btn-ghost{background:transparent;color:var(--suede)}
-.btn-ghost:hover{background:var(--suede);color:var(--cream)}
-.btn-ice{background:var(--ice);border-color:var(--ice);color:var(--suede-deep)}
-.btn-ice:hover{background:transparent;color:var(--ice)}
-.btn-cream{background:transparent;border-color:rgba(250,247,243,.5);color:var(--cream)}
-.btn-cream:hover{background:var(--cream);color:var(--suede-deep);border-color:var(--cream)}
+.btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:600;font-size:.8rem;letter-spacing:.02em;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
+.btn-ice{background:var(--ice);color:var(--ink);border-color:var(--ice)}
+.btn-ice:hover{background:var(--ice-deep);border-color:var(--ice-deep);transform:translateY(-2px)}
+.btn-dark{background:var(--ink);color:var(--white);border-color:var(--ink)}
+.btn-dark:hover{background:#000;transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:var(--white);transform:translateY(-2px)}
+
+/* scroll progress */
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--ice);width:0;z-index:90;transition:width .1s linear}
 
 /* ---------- header ---------- */
-header{position:sticky;top:0;z-index:50;background:rgba(250,247,243,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);transition:box-shadow .3s ease}
-header.scrolled{box-shadow:0 6px 24px rgba(46,22,4,.07)}
-.nav{display:flex;align-items:center;justify-content:space-between;height:76px}
-.nav .wordmark{font-size:.88rem}
-.nav-links{display:flex;gap:36px;list-style:none;align-items:center}
-.nav-links a:not(.btn){text-transform:uppercase;font-weight:700;font-size:.64rem;letter-spacing:.22em;color:var(--suede-dark);padding-bottom:3px;background:linear-gradient(var(--suede) 0 0) bottom left/0 1px no-repeat;transition:background-size .3s ease}
-.nav-links a:not(.btn):hover{background-size:100% 1px}
-.nav-links .btn{padding:11px 24px}
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);transition:box-shadow .3s ease}
+header.scrolled{box-shadow:0 6px 24px rgba(23,19,16,.06)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:74px;gap:20px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{height:30px;width:auto}
+.brand .name{font-weight:700;font-size:.95rem;letter-spacing:.14em;text-transform:uppercase}
+.brand .est{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--soft);border-left:1px solid var(--line);padding-left:12px}
+.nav-links{display:flex;gap:30px;list-style:none;align-items:center}
+.nav-links a:not(.btn){font-weight:500;font-size:.82rem;color:var(--ink);padding-bottom:3px;background:linear-gradient(var(--espresso) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
+.nav-links a:not(.btn):hover{background-size:100% 1.5px}
+.nav-links .btn{padding:10px 24px}
 .burger{display:none;background:none;border:none;cursor:pointer;padding:8px}
-.burger span{display:block;width:22px;height:2px;background:var(--suede-dark);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
+.burger span{display:block;width:22px;height:2px;background:var(--ink);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
 .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
 .burger.open span:nth-child(2){opacity:0}
 .burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 
-/* ---------- hero (deep chocolate, framed) ---------- */
-.hero{background:var(--suede-deep);padding:26px;position:relative}
-.hero-frame{border:1px solid var(--line-dark);padding:130px 28px 120px;position:relative;overflow:hidden;text-align:center}
-.hero-frame::before{content:"";position:absolute;top:-260px;left:50%;transform:translateX(-50%);width:760px;height:760px;border-radius:50%;background:radial-gradient(circle,rgba(191,213,235,.16) 0%,transparent 65%);pointer-events:none}
-.hero .label{color:var(--ice);display:block;margin-bottom:34px}
-.hero-mark{text-transform:uppercase;font-weight:800;letter-spacing:.16em;color:var(--cream);font-size:clamp(2.6rem,8vw,5.6rem);line-height:1.1}
-.hero-rule{width:72px;height:1px;background:var(--ice);margin:34px auto}
-.hero-tag{font-size:clamp(1.02rem,2vw,1.3rem);color:var(--ice-light);max-width:42ch;margin:0 auto}
-.hero-ctas{margin-top:52px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+/* ---------- hero ---------- */
+.hero{position:relative;padding:130px 0 120px;overflow:hidden;text-align:center}
+.hero-logo{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);width:min(340px,60vw);opacity:.16;pointer-events:none;will-change:transform}
+.hero .wrap{position:relative}
+.hero .label{display:block;margin-bottom:26px}
+.hero h1{font-size:clamp(3rem,9vw,6.4rem);font-weight:800;letter-spacing:-.03em;line-height:1.02}
+.hero h1 .thin{color:var(--espresso)}
+.hero-tag{font-size:clamp(1.05rem,2vw,1.3rem);color:var(--soft);max-width:44ch;margin:30px auto 0}
+.hero-ctas{margin-top:44px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.hero-foot{margin-top:70px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.hero-foot span{font-size:.68rem;text-transform:uppercase;letter-spacing:.18em;font-weight:600;color:var(--espresso);border:1px solid var(--line);border-radius:100px;padding:9px 18px;background:var(--white)}
 
 /* ---------- ticker ---------- */
-.ticker{background:var(--ice);overflow:hidden;padding:15px 0;border-bottom:1px solid var(--line)}
-.ticker-track{display:flex;width:max-content;animation:tick 30s linear infinite}
-.ticker span{text-transform:uppercase;font-weight:700;font-size:.68rem;letter-spacing:.3em;color:var(--suede-deep);padding:0 34px;white-space:nowrap}
+.ticker{background:var(--ink);overflow:hidden;padding:14px 0}
+.ticker-track{display:flex;width:max-content;animation:tick 28s linear infinite}
+.ticker span{font-weight:600;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);padding:0 30px;white-space:nowrap}
+.ticker span.dot{color:var(--ice)}
 @keyframes tick{to{transform:translateX(-50%)}}
 
-/* ---------- intro statement ---------- */
-.intro{padding:130px 0;text-align:center}
-.intro .label{display:block;margin-bottom:26px}
-.intro p{font-size:clamp(1.3rem,2.8vw,1.9rem);line-height:1.5;max-width:34ch;margin:0 auto;color:var(--suede-dark);font-weight:500}
-.intro strong{color:var(--suede);font-weight:800;text-transform:uppercase;font-size:.85em;letter-spacing:.06em}
+/* ---------- intro ---------- */
+.intro{background:var(--cream);padding:120px 0;position:relative;overflow:hidden}
+.intro-logo{position:absolute;right:-60px;top:50%;transform:translateY(-50%);width:300px;opacity:.35;pointer-events:none}
+.intro .wrap{position:relative}
+.intro .label{display:block;margin-bottom:22px}
+.intro p{font-size:clamp(1.35rem,2.8vw,2rem);line-height:1.45;max-width:30ch;color:var(--ink);font-weight:600;letter-spacing:-.01em}
+.intro p em{font-style:normal;color:var(--espresso);border-bottom:3px solid var(--ice)}
 
-/* ---------- services (hairline grid) ---------- */
-.svc-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-left:1px solid var(--line)}
-.svc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:58px 48px;position:relative;transition:background .3s ease}
-.svc:hover{background:#fff}
-.svc .ghost{position:absolute;top:34px;right:40px;font-size:3.4rem;font-weight:800;color:var(--ice);line-height:1;letter-spacing:0;transition:transform .3s ease}
-.svc:hover .ghost{transform:translateY(-4px)}
-.svc h3{margin-bottom:16px;max-width:80%}
-.svc p{font-size:.96rem;margin-bottom:20px}
-.svc ul{list-style:none;display:grid;gap:9px}
-.svc li{font-size:.86rem;color:var(--suede-soft);padding-left:22px;position:relative}
-.svc li::before{content:"—";position:absolute;left:0;color:var(--ice);font-weight:700}
+/* ---------- services ---------- */
+.svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.svc{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:42px 38px;position:relative;transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease}
+.svc:hover{transform:translateY(-5px);box-shadow:0 20px 44px rgba(23,19,16,.07);border-color:var(--ice)}
+.svc .num{font-size:.7rem;font-weight:600;letter-spacing:.24em;color:var(--espresso);text-transform:uppercase;display:inline-block;border:1px solid var(--line);border-radius:100px;padding:6px 14px;margin-bottom:24px}
+.svc h3{margin-bottom:12px}
+.svc p{font-size:.94rem;margin-bottom:18px}
+.svc ul{list-style:none;display:grid;gap:8px}
+.svc li{font-size:.87rem;color:var(--soft);padding-left:22px;position:relative}
+.svc li::before{content:"";position:absolute;left:0;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--ice)}
+
+/* ---------- photo strip ---------- */
+.strip-imgs{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:22px;align-items:center}
+.strip-imgs figure{overflow:hidden;border-radius:18px}
+.strip-imgs img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.strip-imgs figure:hover img{transform:scale(1.05)}
+.strip-imgs .tall{aspect-ratio:3/4}
+.strip-imgs .mid{aspect-ratio:4/4.4}
 
 /* ---------- AI band ---------- */
-.ai-band{background:var(--suede-deep);color:var(--ice-light);padding:130px 0}
+.ai-band{background:var(--ink);color:var(--cream);padding:130px 0;position:relative;overflow:hidden}
+.ai-logo{position:absolute;left:-70px;bottom:-80px;width:380px;opacity:.12;pointer-events:none;will-change:transform}
+.ai-band .wrap{position:relative}
 .ai-band .label{color:var(--ice);display:block;margin-bottom:16px}
-.ai-band h2{color:var(--cream)}
-.ai-band .lede{margin:20px 0 70px;color:var(--ice);font-size:1.04rem;max-width:52ch}
-.ai-grid{display:grid;grid-template-columns:repeat(3,1fr)}
-.ai-card{padding:8px 44px 8px 0;border-left:1px solid var(--line-dark);padding-left:34px}
-.ai-card:first-child{border-left:none;padding-left:0}
-.ai-card h3{color:var(--cream);font-size:.85rem;margin-bottom:16px;letter-spacing:.22em}
+.ai-band h2{color:var(--white)}
+.ai-band .lede{margin:18px 0 64px;color:#B9AFA6;font-size:1.04rem;max-width:52ch}
+.ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.ai-card{border:1px solid rgba(250,247,243,.14);border-radius:18px;padding:34px 30px;transition:border-color .3s ease,transform .3s ease}
+.ai-card:hover{border-color:var(--ice);transform:translateY(-4px)}
+.ai-card h3{color:var(--white);font-size:1rem;margin-bottom:14px}
 .ai-card h3 em{font-style:normal;color:var(--ice)}
-.ai-card p{font-size:.93rem;color:var(--ice-light);max-width:none}
-.ai-note{margin-top:70px;font-size:.9rem;color:var(--ice);max-width:60ch;border-top:1px solid var(--line-dark);padding-top:30px}
-.ai-note strong{color:var(--cream);text-transform:uppercase;font-size:.78rem;letter-spacing:.18em}
+.ai-card p{font-size:.92rem;color:#B9AFA6;max-width:none}
+.ai-note{margin-top:60px;font-size:.92rem;color:#B9AFA6;max-width:62ch;border-top:1px solid rgba(250,247,243,.14);padding-top:28px}
+.ai-note strong{color:var(--white)}
 
 /* ---------- packages teaser ---------- */
-.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line)}
-.pkg{padding:56px 42px;display:flex;flex-direction:column;border-right:1px solid var(--line);transition:background .3s ease;background:var(--cream)}
-.pkg:last-child{border-right:none}
-.pkg:hover{background:#fff}
-.pkg .label{margin-bottom:12px}
-.pkg h3{font-size:1.5rem;margin-bottom:14px;letter-spacing:.1em}
-.pkg .promise{font-size:.93rem;color:var(--suede-soft);margin-bottom:34px}
-.pkg .go{margin-top:auto;text-transform:uppercase;font-weight:700;font-size:.66rem;letter-spacing:.26em;color:var(--suede);padding-bottom:4px;background:linear-gradient(var(--suede) 0 0) bottom left/0 1px no-repeat;transition:background-size .3s ease;width:fit-content}
-.pkg .go:hover{background-size:100% 1px}
-.pkg.featured{background:var(--suede);color:var(--ice-light)}
-.pkg.featured:hover{background:var(--suede-dark)}
-.pkg.featured .label{color:var(--ice)}
-.pkg.featured h3{color:var(--cream)}
-.pkg.featured .promise{color:var(--ice-light)}
-.pkg.featured .go{color:var(--ice);background:linear-gradient(var(--ice) 0 0) bottom left/0 1px no-repeat}
-.pkg.featured .go:hover{background-size:100% 1px}
-.pkg-note{text-align:center;margin-top:46px;font-size:.88rem;color:var(--suede-soft);max-width:none}
-.pkg-note a{font-weight:700;border-bottom:1px solid var(--ice)}
+.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:stretch}
+.pkg{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:44px 36px;display:flex;flex-direction:column;transition:transform .3s ease,box-shadow .3s ease}
+.pkg:hover{transform:translateY(-5px);box-shadow:0 20px 44px rgba(23,19,16,.07)}
+.pkg .tier{font-size:.66rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--espresso);margin-bottom:14px}
+.pkg h3{font-size:1.7rem;font-weight:800;margin-bottom:10px}
+.pkg .promise{font-size:.93rem;color:var(--soft);margin-bottom:30px}
+.pkg .go{margin-top:auto;font-weight:600;font-size:.82rem;color:var(--ink)}
+.pkg .go span{display:inline-block;transition:transform .25s ease}
+.pkg:hover .go span{transform:translateX(6px)}
+.pkg.featured{background:var(--ink);border-color:var(--ink)}
+.pkg.featured .tier{color:var(--ice)}
+.pkg.featured h3{color:var(--white)}
+.pkg.featured .promise{color:#B9AFA6}
+.pkg.featured .go{color:var(--ice)}
+.pkg-note{text-align:center;margin-top:44px;font-size:.9rem;color:var(--soft);max-width:none}
+.pkg-note a{font-weight:600;border-bottom:2px solid var(--ice)}
 
-/* ---------- founders ---------- */
-.founders-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
-.founder{padding:58px 48px 0 0}
-.founder + .founder{border-left:1px solid var(--line);padding-left:48px;padding-right:0}
-.founder .avatar{width:78px;height:78px;border-radius:50%;background:var(--ice);color:var(--suede-deep);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.7rem;margin-bottom:26px}
-.founder h3{margin-bottom:8px;font-size:1.2rem}
-.founder .role{display:block;margin-bottom:20px}
-.founder p{font-size:.96rem;margin-bottom:22px}
-.founder .handles{font-size:.88rem;color:var(--suede-soft);border-top:1px solid var(--line);padding-top:20px}
-.founder .handles strong{display:block;text-transform:uppercase;font-size:.62rem;letter-spacing:.24em;color:var(--suede);margin-bottom:8px}
+/* ---------- about / founders ---------- */
+.about{background:var(--cream)}
+.founders-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.founder{background:var(--white);border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:transform .3s ease,box-shadow .3s ease}
+.founder:hover{transform:translateY(-5px);box-shadow:0 20px 44px rgba(23,19,16,.07)}
+.founder figure{overflow:hidden;aspect-ratio:4/3.4}
+.founder img{width:100%;height:100%;object-fit:cover;object-position:center 22%;transition:transform .6s ease}
+.founder:hover img{transform:scale(1.04)}
+.founder .body{padding:34px 34px 38px}
+.founder h3{font-size:1.5rem;font-weight:800}
+.founder .role{display:block;margin:8px 0 18px}
+.founder p{font-size:.93rem}
 
 /* ---------- process ---------- */
-.steps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
-.step{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:44px 32px;transition:background .3s ease}
-.step:hover{background:#fff}
-.step .num{font-size:2.2rem;font-weight:800;color:var(--ice);line-height:1;margin-bottom:20px;letter-spacing:0}
-.step h3{font-size:.8rem;margin-bottom:12px}
-.step p{font-size:.86rem;color:var(--suede-soft);max-width:none}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.step{border:1px solid var(--line);border-radius:18px;padding:36px 30px;background:var(--white);transition:transform .3s ease,border-color .3s ease}
+.step:hover{transform:translateY(-4px);border-color:var(--ice)}
+.step .num{width:46px;height:46px;border-radius:50%;background:var(--ice);color:var(--ink);font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.step h3{font-size:1rem;margin-bottom:10px}
+.step p{font-size:.86rem;max-width:none}
 
 /* ---------- faq ---------- */
 .faq-list{max-width:780px;border-top:1px solid var(--line)}
 details{border-bottom:1px solid var(--line)}
-summary{cursor:pointer;padding:24px 4px;text-transform:uppercase;font-weight:700;font-size:.76rem;letter-spacing:.16em;color:var(--suede-dark);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:color .2s ease}
-summary:hover{color:var(--suede-soft)}
+summary{cursor:pointer;padding:24px 4px;font-weight:600;font-size:.98rem;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:color .2s ease}
+summary:hover{color:var(--espresso)}
 summary::-webkit-details-marker{display:none}
-summary::after{content:"+";font-size:1.3rem;color:var(--suede-soft);font-weight:400;flex-shrink:0}
-details[open] summary::after{content:"–"}
-details .a{padding:0 4px 26px;font-size:.94rem}
+summary::after{content:"+";font-size:1.4rem;color:var(--espresso);font-weight:400;flex-shrink:0;transition:transform .25s ease}
+details[open] summary::after{transform:rotate(45deg)}
+details .a{padding:0 4px 26px;font-size:.93rem}
 details .a p{max-width:62ch}
 
-/* ---------- contact ---------- */
-.contact{background:var(--suede-deep);color:var(--ice-light);padding:26px}
-.contact-frame{border:1px solid var(--line-dark);padding:110px 28px;text-align:center}
-.contact .label{color:var(--ice)}
-.contact h2{color:var(--cream);margin-top:18px}
-.contact .lede{margin:22px auto 50px;color:var(--ice);font-size:1.02rem;max-width:44ch}
-.contact-grid{display:grid;grid-template-columns:repeat(3,1fr);max-width:820px;margin:64px auto 0;border-top:1px solid var(--line-dark);padding-top:44px}
-.c-card{padding:0 20px}
-.c-card + .c-card{border-left:1px solid var(--line-dark)}
-.c-card .label{display:block;margin-bottom:12px}
-.c-card a,.c-card span{color:var(--cream);font-weight:700;font-size:.94rem;letter-spacing:.03em;word-break:break-word}
-.c-card a:hover{color:var(--ice)}
-.c-card .sub{display:block;font-size:.78rem;color:var(--ice);font-weight:400;margin-top:8px}
-.contact .base{font-size:.78rem;color:var(--ice);margin:56px auto 0;text-transform:uppercase;letter-spacing:.22em;font-weight:700;max-width:none}
+/* ---------- contact / let's work together ---------- */
+.contact{background:var(--cream)}
+.contact-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center}
+.contact h2{margin:14px 0 10px}
+.contact .lede{font-size:1rem;margin-bottom:36px}
+.c-rows{display:grid;gap:22px;margin-bottom:40px}
+.c-row{display:grid;grid-template-columns:26px 1fr;gap:14px;align-items:start}
+.c-row .arw{color:var(--espresso);font-weight:700;font-size:1rem;line-height:1.5}
+.c-row .k{font-weight:700;font-size:.95rem;color:var(--ink)}
+.c-row .v{font-size:.92rem;color:var(--soft)}
+.c-row a{color:var(--soft);border-bottom:1.5px solid var(--ice)}
+.c-row a:hover{color:var(--ink)}
+.contact figure{overflow:hidden;border-radius:20px;aspect-ratio:4/4.8}
+.contact img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.contact figure:hover img{transform:scale(1.03)}
 
 /* ---------- footer ---------- */
-footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
-.foot{border-top:1px solid var(--line-dark);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;padding-top:30px;max-width:calc(var(--maxw) + 56px);margin:0 auto}
-.foot .wordmark{color:var(--cream);font-size:.8rem}
-.foot nav{display:flex;gap:28px}
-.foot nav a{color:var(--ice);text-transform:uppercase;font-size:.6rem;font-weight:700;letter-spacing:.22em}
-.foot nav a:hover{color:var(--cream)}
-.foot .copy{font-size:.7rem;color:var(--ice);width:100%;margin-top:8px}
+footer{background:var(--ink);color:#B9AFA6;padding:60px 0 34px}
+.foot-top{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding-bottom:36px;border-bottom:1px solid rgba(250,247,243,.12);margin-bottom:26px}
+.foot-brand{display:flex;align-items:center;gap:14px}
+.foot-brand img{height:34px}
+.foot-brand span{color:var(--white);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.85rem}
+footer nav{display:flex;gap:26px;flex-wrap:wrap}
+footer nav a{color:#B9AFA6;font-size:.82rem;font-weight:500}
+footer nav a:hover{color:var(--ice)}
+.foot-copy{font-size:.74rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
-/* ---------- reveal animation ---------- */
-.reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,.61,.36,1),transform .8s cubic-bezier(.22,.61,.36,1)}
+/* ---------- reveal ---------- */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.22,.61,.36,1),transform .8s cubic-bezier(.22,.61,.36,1)}
 .reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none;transition:none}
   .ticker-track{animation:none}
+  .hero-logo,.ai-logo{transform:none!important}
 }
 
 /* ---------- responsive ---------- */
 @media(max-width:980px){
-  section{padding:88px 0}
-  .ai-grid{grid-template-columns:1fr;gap:0}
-  .ai-card{border-left:none;border-top:1px solid var(--line-dark);padding:30px 0}
-  .ai-card:first-child{border-top:none;padding-top:0}
-  .pkg-grid{grid-template-columns:1fr}
-  .pkg{border-right:none;border-bottom:1px solid var(--line)}
-  .pkg:last-child{border-bottom:none}
+  section{padding:84px 0}
+  .ai-grid,.pkg-grid,.steps{grid-template-columns:1fr}
   .steps{grid-template-columns:1fr 1fr}
-  .contact-grid{grid-template-columns:1fr;gap:34px;padding-top:38px}
-  .c-card + .c-card{border-left:none}
+  .strip-imgs{grid-template-columns:1fr 1fr}
+  .strip-imgs figure:nth-child(3){display:none}
+  .contact-grid{grid-template-columns:1fr;gap:40px}
 }
 @media(max-width:760px){
-  section{padding:72px 0}
-  .hero-frame{padding:90px 20px 84px}
-  .intro{padding:90px 0}
-  .svc-grid,.founders-grid,.steps{grid-template-columns:1fr}
-  .svc{padding:44px 30px}
-  .founder{padding:44px 0 0 0}
-  .founder + .founder{border-left:none;border-top:1px solid var(--line);margin-top:44px;padding-left:0}
+  section{padding:68px 0}
+  .hero{padding:90px 0 84px}
+  .svc-grid,.founders-grid,.steps,.strip-imgs{grid-template-columns:1fr}
+  .strip-imgs figure:nth-child(3){display:block}
+  .brand .est{display:none}
   .burger{display:block}
-  .nav-links{position:fixed;inset:76px 0 auto 0;background:var(--cream);flex-direction:column;gap:0;padding:10px 0 26px;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rgba(46,22,4,.1);transform:translateY(-130%);transition:transform .3s ease;z-index:40}
+  .nav-links{position:fixed;inset:74px 0 auto 0;background:var(--white);flex-direction:column;gap:0;padding:10px 0 26px;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rgba(23,19,16,.08);transform:translateY(-130%);transition:transform .3s ease;z-index:40}
   .nav-links.open{transform:none}
   .nav-links li{width:100%;text-align:center}
   .nav-links a:not(.btn){display:block;padding:15px 0;background:none}
-  .nav-links .btn{margin:12px auto 0;display:inline-block;padding:13px 28px}
+  .nav-links .btn{margin:12px auto 0;display:inline-block}
 }
 </style>
 </head>
 <body>
 
+<div id="progress"></div>
+
 <header id="top">
   <div class="wrap nav">
-    <a href="#top" class="wordmark">The Suede Studio</a>
+    <a href="#top" class="brand">
+      <img src="assets/logo-espresso.png" alt="Suede Studio logo">
+      <span class="name">Suede Studio</span>
+      <span class="est">est. 2026</span>
+    </a>
     <button class="burger" id="burger" aria-label="menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -261,22 +269,27 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
       <li><a href="#about">About</a></li>
       <li><a href="#process">Process</a></li>
       <li><a href="#faq">FAQ</a></li>
-      <li><a href="#contact" class="btn btn-solid">Enquire</a></li>
+      <li><a href="#contact" class="btn btn-ice">Enquire</a></li>
     </ul>
   </div>
 </header>
 
 <!-- ================= HERO ================= -->
 <div class="hero">
-  <div class="hero-frame">
-    <span class="label">the ai-powered ecommerce studio &nbsp;·&nbsp; dublin, ireland</span>
-    <h1 class="hero-mark">The Suede<br>Studio</h1>
-    <div class="hero-rule"></div>
-    <p class="hero-tag">we take over your shopify store — the selling, the content, the busywork — so you can get back to the business you actually wanted to run.</p>
+  <img src="assets/logo-tan.png" alt="" class="hero-logo" id="heroLogo">
+  <div class="wrap">
+    <span class="label">the ai-powered ecommerce studio · dublin, ireland</span>
+    <h1>Suede <span class="thin">Studio</span></h1>
+    <p class="hero-tag">we take over your shopify store and your socials — the selling, the content, the busywork — so you can get back to the business you actually wanted to run.</p>
     <div class="hero-ctas">
       <!-- Replace YOUR-GOOGLE-FORM-LINK everywhere with the real Google Form URL (see client-questionnaire.md) -->
       <a href="YOUR-GOOGLE-FORM-LINK" class="btn btn-ice">Start with the questionnaire</a>
-      <a href="packages.html" class="btn btn-cream">See packages</a>
+      <a href="packages.html" class="btn btn-ghost">See packages</a>
+    </div>
+    <div class="hero-foot">
+      <span>shopify, exclusively</span>
+      <span>ai in your operations</span>
+      <span>content made for you</span>
     </div>
   </div>
 </div>
@@ -284,37 +297,38 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
 <!-- ================= TICKER ================= -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
-    <span>the store. handled.</span><span>—</span>
-    <span>the content. made.</span><span>—</span>
-    <span>the busywork. automated.</span><span>—</span>
-    <span>shopify. exclusively.</span><span>—</span>
-    <span>the store. handled.</span><span>—</span>
-    <span>the content. made.</span><span>—</span>
-    <span>the busywork. automated.</span><span>—</span>
-    <span>shopify. exclusively.</span><span>—</span>
+    <span>the store. handled.</span><span class="dot">✦</span>
+    <span>the content. made.</span><span class="dot">✦</span>
+    <span>the busywork. automated.</span><span class="dot">✦</span>
+    <span>shopify. exclusively.</span><span class="dot">✦</span>
+    <span>the store. handled.</span><span class="dot">✦</span>
+    <span>the content. made.</span><span class="dot">✦</span>
+    <span>the busywork. automated.</span><span class="dot">✦</span>
+    <span>shopify. exclusively.</span><span class="dot">✦</span>
   </div>
 </div>
 
 <!-- ================= INTRO ================= -->
-<div class="intro reveal">
-  <div class="wrap">
+<div class="intro">
+  <img src="assets/logo-tan.png" alt="" class="intro-logo">
+  <div class="wrap reveal">
     <span class="label">the studio</span>
-    <p>most small businesses don't need another consultant. they need someone to <strong>take ecommerce off their plate</strong> — and run it better than they had time to.</p>
+    <p>most small businesses don't need another consultant. they need someone to <em>take it off their plate</em> — and run it better than they had time to.</p>
   </div>
 </div>
 
 <!-- ================= SERVICES ================= -->
-<section id="services" class="hairline">
+<section id="services">
   <div class="wrap">
     <div class="section-head reveal">
       <span class="label">01 — what we take over</span>
-      <h2>Your ecommerce, handled</h2>
+      <h2>Your Ecommerce, Handled</h2>
       <p>we work exclusively with businesses on shopify — depth over breadth, on the platform we know inside out.</p>
     </div>
-    <div class="svc-grid reveal">
-      <div class="svc">
-        <span class="ghost">i</span>
-        <h3>Ecommerce management</h3>
+    <div class="svc-grid">
+      <div class="svc reveal">
+        <span class="num">i — ecommerce</span>
+        <h3>Ecommerce Management</h3>
         <p>your shopify store, run by someone who manages ecommerce for a living — not checked on when there's a spare evening.</p>
         <ul>
           <li>store setup, refresh or migration onto shopify</li>
@@ -322,9 +336,9 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
           <li>ongoing management: promotions, apps, optimisation</li>
         </ul>
       </div>
-      <div class="svc">
-        <span class="ghost">ii</span>
-        <h3>AI in your operations</h3>
+      <div class="svc reveal d1">
+        <span class="num">ii — ai</span>
+        <h3>AI In Your Operations</h3>
         <p>the repetitive work that eats your week — drafted, automated and quietly handled by ai, with you in control.</p>
         <ul>
           <li>product descriptions drafted in your voice</li>
@@ -332,9 +346,9 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
           <li>weekly sales summaries that write themselves</li>
         </ul>
       </div>
-      <div class="svc">
-        <span class="ghost">iii</span>
-        <h3>Content, made for you</h3>
+      <div class="svc reveal d1">
+        <span class="num">iii — content</span>
+        <h3>Content, Made For You</h3>
         <p>instagram and tiktok that actually gets made — planned, shot, written and scheduled in your brand's voice.</p>
         <ul>
           <li>reels, carousels and captions, done for you</li>
@@ -342,13 +356,13 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
           <li>a grid that finally looks like one brand</li>
         </ul>
       </div>
-      <div class="svc">
-        <span class="ghost">iv</span>
-        <h3>Operations &amp; brand</h3>
+      <div class="svc reveal d2">
+        <span class="num">iv — operations</span>
+        <h3>Operations &amp; Brand</h3>
         <p>the back office and the shopfront — streamlined day-to-day operations and a brand kit that holds it all together.</p>
         <ul>
           <li>order flow, returns and supplier comms, smoothed out</li>
-          <li>brand starter kits: wordmark, colours, fonts, voice</li>
+          <li>brand starter kits: logo direction, colours, fonts, voice</li>
           <li>everything consistent, everywhere customers look</li>
         </ul>
       </div>
@@ -356,29 +370,41 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
   </div>
 </section>
 
+<!-- ================= PHOTO STRIP ================= -->
+<section class="hairline" style="padding-top:70px;padding-bottom:70px">
+  <div class="wrap">
+    <div class="strip-imgs reveal">
+      <figure class="tall"><img src="assets/studio-chair.jpg" alt="Behind the scenes at Suede Studio" loading="lazy"></figure>
+      <figure class="mid"><img src="assets/team.jpg" alt="Laura and Elva, founders of Suede Studio" loading="lazy" style="object-position:center 30%"></figure>
+      <figure class="tall"><img src="assets/studio-desk.jpg" alt="Studio workspace" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
+
 <!-- ================= AI BAND ================= -->
 <section id="ai" class="ai-band">
+  <img src="assets/logo-cream.png" alt="" class="ai-logo" id="aiLogo">
   <div class="wrap">
     <div class="reveal">
       <span class="label">02 — the quiet engine</span>
-      <h2>AI that works<br>while you sleep</h2>
+      <h2>AI That Works<br>While You Sleep</h2>
       <p class="lede">this is what makes us different. we don't just advise on ai — we build it into your everyday operations, so the hours you spend on busywork go back to being yours.</p>
     </div>
-    <div class="ai-grid reveal">
-      <div class="ai-card">
-        <h3>it drafts<em>.</em></h3>
+    <div class="ai-grid">
+      <div class="ai-card reveal">
+        <h3>It Drafts<em>.</em></h3>
         <p>product descriptions, customer replies, review responses — written in your voice, waiting for your one-tap approval each morning.</p>
       </div>
-      <div class="ai-card">
-        <h3>it watches<em>.</em></h3>
+      <div class="ai-card reveal d1">
+        <h3>It Watches<em>.</em></h3>
         <p>your week's sales, your bestsellers, your slow movers — summarised into a plain-english report that lands without you asking.</p>
       </div>
-      <div class="ai-card">
-        <h3>it remembers<em>.</em></h3>
+      <div class="ai-card reveal d2">
+        <h3>It Remembers<em>.</em></h3>
         <p>the reorder that's due, the promotion that's ending, the customer who's waiting — the small things that used to slip at 11pm.</p>
       </div>
     </div>
-    <p class="ai-note reveal"><strong>our rule: ai drafts, humans send.</strong><br>nothing customer-facing goes out without a person behind it, and you decide what gets automated — it's the first thing we ask in the questionnaire.</p>
+    <p class="ai-note reveal"><strong>our rule: ai drafts, humans send.</strong> nothing customer-facing goes out without a person behind it, and you decide what gets automated — it's the first thing we ask in the questionnaire.</p>
   </div>
 </section>
 
@@ -387,27 +413,27 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
   <div class="wrap">
     <div class="section-head reveal">
       <span class="label">03 — packages</span>
-      <h2>Three ways in</h2>
+      <h2>Silver. Gold. Platinum.</h2>
       <p>every business is different — we quote after a free discovery call, not from a rate card.</p>
     </div>
-    <div class="pkg-grid reveal">
-      <div class="pkg">
-        <span class="label">the starting point</span>
-        <h3>The Swatch</h3>
-        <p class="promise">a full once-over of your store, your content and your busywork — and a written roadmap of exactly what to fix.</p>
-        <a class="go" href="packages.html#swatch">Explore →</a>
+    <div class="pkg-grid">
+      <div class="pkg reveal">
+        <span class="tier">once-off · one lane</span>
+        <h3>Silver</h3>
+        <p class="promise">just social or just ecom — a once-off, done properly. one part of your business, fixed and handed back better.</p>
+        <a class="go" href="packages.html#silver">Explore Silver <span>→</span></a>
       </div>
-      <div class="pkg featured">
-        <span class="label">the takeover · our signature</span>
-        <h3>The Atelier</h3>
-        <p class="promise">we run your ecommerce, month to month — store, content and ai operations, with a report you'll actually read.</p>
-        <a class="go" href="packages.html#atelier">Explore →</a>
+      <div class="pkg reveal d1">
+        <span class="tier">once-off · both lanes</span>
+        <h3>Gold</h3>
+        <p class="promise">social and ecom together — the full once-off rebuild: store, content system, brand and your first automations.</p>
+        <a class="go" href="packages.html#gold">Explore Gold <span>→</span></a>
       </div>
-      <div class="pkg">
-        <span class="label">the transformation</span>
-        <h3>The Capsule</h3>
-        <p class="promise">a 3–4 week rebuild — store, brand, content system and your first automations, done properly, once.</p>
-        <a class="go" href="packages.html#capsule">Explore →</a>
+      <div class="pkg featured reveal d2">
+        <span class="tier">retainer · the takeover</span>
+        <h3>Platinum</h3>
+        <p class="promise">social, ecom or both — taken over and run for you, month after month, with ai working in the background.</p>
+        <a class="go" href="packages.html#platinum">Explore Platinum <span>→</span></a>
       </div>
     </div>
     <p class="pkg-note">full details on the <a href="packages.html">packages page</a> — or skip ahead and <a href="YOUR-GOOGLE-FORM-LINK">start the questionnaire</a>.</p>
@@ -415,32 +441,28 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
 </section>
 
 <!-- ================= ABOUT ================= -->
-<section id="about" class="hairline">
+<section id="about" class="about">
   <div class="wrap">
     <div class="section-head reveal">
-      <span class="label">04 — who we are</span>
-      <h2>Two friends, one studio</h2>
+      <span class="label">04 — about us</span>
+      <h2>Two Friends, One Studio</h2>
       <p>we both work in this world every day. the studio is where that experience goes to work for you.</p>
     </div>
-    <div class="founders-grid reveal">
-      <div class="founder">
-        <div class="avatar">E</div>
-        <h3>Elva</h3>
-        <span class="label role">ecommerce &amp; ai</span>
-        <p>elva manages ecommerce in dublin retail day-to-day and freelances for irish brands — product pages, checkouts, shipping settings, and the automations that quietly decide whether a shop runs itself or runs its owner into the ground.</p>
-        <div class="handles">
-          <strong>she'll handle</strong>
-          your store, your audits, your ai — everything "does it sell, and does it run itself?"
+    <div class="founders-grid">
+      <div class="founder reveal">
+        <figure><img src="assets/laura.jpg" alt="Laura Callaghan" loading="lazy"></figure>
+        <div class="body">
+          <h3>Laura Callaghan</h3>
+          <span class="label role">content creation · social management</span>
+          <p>social media is so much more than posting pretty content — it's about building a brand people remember. laura creates scroll-stopping content that reflects your business, connects with your audience and helps you grow, whether you're elevating your social presence or telling your story in a fresh way.</p>
         </div>
       </div>
-      <div class="founder">
-        <div class="avatar">L</div>
-        <h3>Laura</h3>
-        <span class="label role">content &amp; operations</span>
-        <p>laura leads the content and operations side of the studio — what your business looks and sounds like, what gets posted and why, and how the day-to-day behind the scenes actually flows.</p>
-        <div class="handles">
-          <strong>she'll handle</strong>
-          your content, your brand, your back office — everything "does it look, sound and operate right?"
+      <div class="founder reveal d1">
+        <figure><img src="assets/elva.jpg" alt="Elva Mallet" loading="lazy"></figure>
+        <div class="body">
+          <h3>Elva Mallet</h3>
+          <span class="label role">e-commerce management · ai</span>
+          <p>elva is passionate about all things e-commerce and loves bringing online stores to life — shopping experiences that feel effortless for customers, stores that are organised, engaging and built to convert. from the smallest update to full store optimisation and the ai that runs quietly underneath, she builds shops that keep customers coming back.</p>
         </div>
       </div>
     </div>
@@ -448,31 +470,31 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
 </section>
 
 <!-- ================= PROCESS ================= -->
-<section id="process" class="hairline">
+<section id="process">
   <div class="wrap">
     <div class="section-head reveal">
       <span class="label">05 — how it works</span>
-      <h2>No mystery, no maze</h2>
+      <h2>No Mystery, No Maze</h2>
     </div>
-    <div class="steps reveal">
-      <div class="step">
+    <div class="steps">
+      <div class="step reveal">
         <div class="num">01</div>
-        <h3>The questionnaire</h3>
+        <h3>The Questionnaire</h3>
         <p>ten minutes about your business — so we arrive already knowing your shop.</p>
       </div>
-      <div class="step">
+      <div class="step reveal d1">
         <div class="num">02</div>
-        <h3>Discovery call</h3>
+        <h3>Discovery Call</h3>
         <p>free, 20 minutes. we've read everything — we talk about what matters.</p>
       </div>
-      <div class="step">
+      <div class="step reveal d2">
         <div class="num">03</div>
         <h3>Proposal</h3>
         <p>a one-page plan with your price, in writing, within 3 days.</p>
       </div>
-      <div class="step">
+      <div class="step reveal d3">
         <div class="num">04</div>
-        <h3>The takeover</h3>
+        <h3>The Takeover</h3>
         <p>we get to work — with a short update from us every single week.</p>
       </div>
     </div>
@@ -484,7 +506,7 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
   <div class="wrap">
     <div class="section-head reveal">
       <span class="label">06 — faq</span>
-      <h2>Fair questions</h2>
+      <h2>Fair Questions</h2>
     </div>
     <div class="faq-list reveal">
       <details>
@@ -500,7 +522,7 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
         <div class="a"><p>because a five-product candle shop and a 400-product boutique aren't the same job, and pretending they are is how you end up overpaying. we scope from your questionnaire and the free call, and you get a fixed price in writing within 3 days — no surprises after that.</p></div>
       </details>
       <details>
-        <summary>what does "taking over" our ecommerce mean — do we lose control?</summary>
+        <summary>what does "taking over" mean — do we lose control?</summary>
         <div class="a"><p>the opposite. it stays your shop, your brand, your final say — we do the running: the updating, the posting, the replying, the optimising. you get a monthly call, a weekly one-line update, and a report that tells you what we did and what it moved.</p></div>
       </details>
       <details>
@@ -509,7 +531,7 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
       </details>
       <details>
         <summary>how long do things take?</summary>
-        <div class="a"><p>the swatch is delivered within a week of the consult. the capsule runs 3–4 weeks. the atelier starts on the 1st of the month after your proposal is signed. we'll always give you an honest start date — if we're at capacity, we'll tell you rather than let your project queue silently.</p></div>
+        <div class="a"><p>silver is delivered within 1–2 weeks. gold runs 3–4 weeks. platinum starts on the 1st of the month after your proposal is signed. we'll always give you an honest start date — if we're at capacity, we'll tell you rather than let your project queue silently.</p></div>
       </details>
     </div>
   </div>
@@ -517,42 +539,55 @@ footer{background:var(--suede-deep);color:var(--ice);padding:0 26px 26px}
 
 <!-- ================= CONTACT ================= -->
 <section id="contact" class="contact">
-  <div class="contact-frame">
-    <span class="label">07 — contact</span>
-    <h2>Let's talk</h2>
-    <p class="lede">the fastest way to start is the questionnaire — ten minutes about your business, and we'll come back to you within one business day.</p>
-    <a href="YOUR-GOOGLE-FORM-LINK" class="btn btn-ice">Start the questionnaire</a>
+  <div class="wrap">
     <div class="contact-grid">
-      <div class="c-card">
-        <span class="label">email</span>
-        <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a>
-        <span class="sub">replies within one business day</span>
+      <div class="reveal">
+        <span class="label">07 — contact</span>
+        <h2>Let's Work Together</h2>
+        <p class="lede">the fastest way to start is the questionnaire — ten minutes about your business, and we'll come back within one business day.</p>
+        <div class="c-rows">
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Email</div><div class="v"><a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a></div></div>
+          </div>
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Phone</div><div class="v"><a href="tel:+353852867737">085 286 7737</a> · <a href="tel:+353830499445">083 049 9445</a></div></div>
+          </div>
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Social</div><div class="v">@the.suede.studio — dms open, say hello</div></div>
+          </div>
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Studio</div><div class="v">dublin · working with shopify businesses across ireland</div></div>
+          </div>
+        </div>
+        <a href="YOUR-GOOGLE-FORM-LINK" class="btn btn-ice">Start the questionnaire</a>
       </div>
-      <div class="c-card">
-        <span class="label">phone</span>
-        <a href="tel:+353830499445">+353 83 049 9445</a>
-        <span class="sub">texts and whatsapp welcome</span>
-      </div>
-      <div class="c-card">
-        <span class="label">instagram</span>
-        <span>@thesuedestudio</span>
-        <span class="sub">dms open — say hello</span>
-      </div>
+      <figure class="reveal d1"><img src="assets/team.jpg" alt="Laura and Elva — Suede Studio" loading="lazy"></figure>
     </div>
-    <p class="base">based in dublin · working with shopify businesses across ireland</p>
   </div>
 </section>
 
 <footer>
-  <div class="foot">
-    <a href="#top" class="wordmark">The Suede Studio</a>
-    <nav>
-      <a href="#services">Services</a>
-      <a href="packages.html">Packages</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
-    </nav>
-    <span class="copy">© 2026 the suede studio · dublin, ireland</span>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="assets/logo-cream.png" alt="">
+        <span>Suede Studio</span>
+      </div>
+      <nav>
+        <a href="#services">Services</a>
+        <a href="packages.html">Packages</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-copy">
+      <span>© 2026 suede studio · dublin, ireland</span>
+      <span>est. 2026 · @the.suede.studio</span>
+    </div>
   </div>
 </footer>
 
@@ -571,12 +606,25 @@ navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
   burger.setAttribute('aria-expanded', 'false');
 }));
 
-// header shadow on scroll
+// header shadow + scroll progress + logo parallax
 const header = document.querySelector('header');
-addEventListener('scroll', () => header.classList.toggle('scrolled', scrollY > 8), {passive: true});
+const progress = document.getElementById('progress');
+const heroLogo = document.getElementById('heroLogo');
+const aiLogo = document.getElementById('aiLogo');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', scrollY > 8);
+  const h = document.documentElement.scrollHeight - innerHeight;
+  progress.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+  if (!reduced) {
+    heroLogo.style.transform = `translate(-50%,-50%) translateY(${scrollY * .18}px) rotate(${scrollY * .02}deg)`;
+    const r = aiLogo.parentElement.getBoundingClientRect();
+    aiLogo.style.transform = `translateY(${r.top * -.08}px)`;
+  }
+}, {passive: true});
 
 // fade-up reveals
-if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+if (reduced) {
   document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
 } else {
   const io = new IntersectionObserver(entries => {

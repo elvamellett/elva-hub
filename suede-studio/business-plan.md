@@ -15,7 +15,7 @@ The gap we fill: small businesses in Ireland currently choose between expensive 
 
 **Two deliberate constraints:**
 - **Shopify only.** Depth beats breadth — we know one platform inside out, our processes and automations are built for it, and "we only do Shopify" reads as expertise, not limitation.
-- **Takeover, not advice-only.** The core offer is *we run it for you* (THE ATELIER). Audits and projects exist as the on-ramp.
+- **Takeover, not advice-only.** The core offer is *we run it for you* (PLATINUM). Audits and projects exist as the on-ramp.
 
 Why "Suede": tactile, warm, a little premium but never flashy. The brand should feel like the fabric — soft, considered, quality you can feel.
 
@@ -23,15 +23,15 @@ Why "Suede": tactile, warm, a little premium but never flashy. The brand should 
 
 ## 2. Who we serve
 
-**Primary target:** Irish product-based small businesses, 1–10 staff, doing (or wanting to do) €20k–€500k/year online. **On Shopify** (or willing to move — migration is a Capsule job). The owner runs their own social media and is drowning.
+**Primary target:** Irish product-based small businesses, 1–10 staff, doing (or wanting to do) €20k–€500k/year online. **On Shopify** (or willing to move — migration is a Gold job). The owner runs their own social media and is drowning.
 
 ### Personas
 
-**Saoirse, boutique owner (Kilkenny).** Physical shop doing well, Shopify store thrown up in 2021 and embarrassing now. Product photos from her phone, no email capture, checkout loses people. Posts to Instagram when she remembers. Wants the online shop to stop being a guilt pile. → *Enters via THE SWATCH audit, upgrades to THE CAPSULE.*
+**Saoirse, boutique owner (Kilkenny).** Physical shop doing well, Shopify store thrown up in 2021 and embarrassing now. Product photos from her phone, no email capture, checkout loses people. Posts to Instagram when she remembers. Wants the online shop to stop being a guilt pile. → *Enters via SILVER audit, upgrades to GOLD.*
 
-**Cian, maker (candles/ceramics, sells at markets + Etsy).** Wants his own store so Etsy stops taking a cut and owning the customer relationship. No idea where to start with Shopify, shipping, or "brand." → *THE CAPSULE (store setup + brand starter kit).*
+**Cian, maker (candles/ceramics, sells at markets + Etsy).** Wants his own store so Etsy stops taking a cut and owning the customer relationship. No idea where to start with Shopify, shipping, or "brand." → *GOLD (store setup + brand starter kit).*
 
-**Aoife, café-with-retail (Dublin).** Great in person, invisible online. Doesn't need a big store — needs a consistent, good-looking Instagram, a simple way to sell gift boxes and vouchers online, and someone to tell her what to post. → *THE SWATCH first, then THE ATELIER retainer.*
+**Aoife, café-with-retail (Dublin).** Great in person, invisible online. Doesn't need a big store — needs a consistent, good-looking Instagram, a simple way to sell gift boxes and vouchers online, and someone to tell her what to post. → *SILVER first, then PLATINUM retainer.*
 
 **Where they are:** Instagram, local enterprise networks, craft/design markets, word of mouth. All three are reachable through our own content and warm referrals — no paid ads needed to start.
 
@@ -56,40 +56,40 @@ Rule of thumb: **Elva owns "does it sell and does it run itself," Laura owns "do
 
 Public materials (website, Instagram, proposals before the call) show package names and contents but **never prices** — every price is quoted after a discovery call. Internal ranges below are starting guidance for the Irish small-business market; adjust with experience.
 
-The ladder now points at the takeover: **Swatch (see) → Capsule (build) → Atelier (we run it)**. The Atelier is the hero offer; the other two exist to feed it.
+The ladder now points at the takeover: **Silver (one lane, once-off) → Gold (both lanes, once-off) → Platinum (we run it)**. Platinum is the hero offer; the other two exist to feed it.
 
-Every engagement is built on the **client strategy blueprint** (`client-strategy-blueprint.md`) — the per-client, all-pillars strategy template that the questionnaire feeds. The Swatch delivers its snapshot + findings + 90-day roadmap; a Capsule or Atelier client gets the full tailored blueprint at kickoff, and the Atelier's monthly report reuses its scoreboard.
+Every engagement is built on the **client strategy blueprint** (`client-strategy-blueprint.md`) — the per-client, all-pillars strategy template that the questionnaire feeds. Silver delivers its snapshot + findings + 90-day roadmap; a Gold or Platinum client gets the full tailored blueprint at kickoff, and the Platinum's monthly report reuses its scoreboard.
 
-### THE SWATCH — *the starting point. see everything clearly.*
-One-off engagement: 90-minute consult + a three-lens audit of the client's business, delivered as a written roadmap they can run with (or hand back to us).
-- 90-min video or in-person consult
-- Store audit (product pages, checkout, shipping, email capture) + content audit (profile, grid, last 30 posts) + **automation map**: the repetitive work in their week that AI could take over
-- Written roadmap: top 10 fixes, prioritised, with instructions
+### SILVER — *one lane, once-off. just social or just ecom.*
+One part of the business, fixed properly and handed back better. The client picks a lane:
+- **The ecom lane:** full store audit (product pages, checkout, shipping, email capture) + the priority fixes actually done + a written roadmap for the rest
+- **The social lane:** content reset — profile, pillars, tone, a month's content calendar + first 6 posts made with them
+- Either lane includes a 90-min consult and the **automation map** (the busywork AI could take over — plants the Platinum seed)
 - 2 weeks of email follow-up questions included
-- **Internal range: €300–€500** · effort ~4–6 hrs → healthy hourly rate, low commitment for the client, natural upsell into Capsule/Atelier
+- **Internal range: €300–€800** (audit-only at the bottom, lane + fixes toward the top) · effort ~5–10 hrs · delivered in 1–2 weeks · natural upsell into Gold/Platinum
 
-### THE CAPSULE — *the transformation. rebuilt, start to finish.*
-3–4 week project that gets a business Atelier-ready (or standing strong on its own):
+### GOLD — *both lanes, once-off. the full rebuild.*
+3–4 week project — social **and** ecom together — that gets a business Platinum-ready (or standing strong on its own):
 - Shopify store setup, refresh, or **migration onto Shopify** — theme, product pages, collections, shipping/payments, email capture, launch checklist
-- Brand + content system: starter kit (wordmark direction, palette, fonts, tone) + pillars + first month's calendar with 6 posts made
+- Brand + content system: starter kit (logo direction, palette, fonts, tone) + pillars + first month's calendar with 6 posts made
 - **First automations installed:** product-description workflow, customer-service draft replies, weekly sales summary — with human-approval steps
 - Written handover doc, 1-hour training, 30 days of email support
-- **Internal range: €1,500–€3,000** (scope-dependent; store-only or brand-only tracks quote lower) · effort ~25–40 hrs · 50% deposit, 50% on delivery
-- ⚠️ Never take a Capsule whose deadline lands inside a known exam window or retail peak — see §5
+- **Internal range: €1,500–€3,000** (scope-dependent) · effort ~25–40 hrs · 50% deposit, 50% on delivery
+- ⚠️ Never take a Gold whose deadline lands inside a known exam window or retail peak — see §5
 
-### THE ATELIER — *the takeover. we run your ecommerce.* ⭐ hero offer
-Monthly ongoing: the client hands us the keys to their ecommerce.
+### PLATINUM — *the takeover. social, ecom or both — on retainer.* ⭐ hero offer
+Monthly ongoing: the client hands us the keys (scope one lane or both; both is the full rate, one lane quotes lighter).
 - Store management: products, collections, promotions, apps, one improvement sprint/month
 - 8–12 pieces of content/month made and scheduled (carousels, reels, story templates)
 - AI operations maintained: automations monitored and tuned, drafts flowing, new busywork automated as it appears
 - Monthly planning call (30 min) + one-page report: what we did, what moved, what's next
 - **Internal range: €800–€1,500/month**, 3-month minimum · effort 6–10 hrs/month per client (AI leverage is what makes this margin work)
-- **Hard cap: 2 concurrent Atelier clients** while both founders work full-time — this is a time-budget rule, not a growth target
+- **Hard cap: 2 concurrent Platinum clients** while both founders work full-time — this is a time-budget rule, not a growth target
 
 ### Quoting rules
 1. **Never quote on the call.** Listen, scope, say "you'll have a proposal within 3 days."
 2. Proposal is one page: what we heard, what we'll do, timeline, price, what we need from them.
-3. 50% deposit before any work starts (Atelier: first month upfront). No exceptions, including friends.
+3. 50% deposit before any work starts (Platinum: first month upfront). No exceptions, including friends.
 4. Scope creep = new quote. "We can absolutely add that — I'll send an updated proposal."
 5. First 2–3 clients can be priced at the bottom of the range in exchange for a testimonial and permission to use the work as a case study — say this explicitly in the proposal so the discount has a reason.
 
@@ -110,25 +110,25 @@ Six hours is deliberately modest. It's sustainable through a college semester an
 
 ### Roles: split by domain, not by task count
 
-| | **Elva** | **Laura** |
+| | **Elva Mallet** | **Laura Callaghan** |
 |---|---|---|
-| Owns | Ecommerce (setup, audits, Shopify management), **AI & automation builds**, studio finance admin (invoices, expenses, ledger) | Content creation, brand work, **client operations support**, community & DMs, our own Instagram/TikTok |
-| Because | Day job in ecommerce retail management + Darcybow.ie freelance experience | Content lead who can also run operations *(adjust wording to Laura's actual background — edit me)* |
+| Owns | E-commerce management (setup, audits, Shopify management), **AI & automation builds**, studio finance admin (invoices, expenses, ledger) | Content creation & social management, brand work, **client operations support**, community & DMs, our own Instagram/TikTok |
+| Because | Day job in ecommerce retail management + Darcybow.ie freelance experience | Content creation / social management lead who can also run operations |
 
-- Domains are sized so the package mix keeps hours roughly equal — a Capsule store track is Elva-heavy, a content retainer is Laura-heavy; the pipeline is balanced across both when choosing what to take on.
+- Domains are sized so the package mix keeps hours roughly equal — a Gold store track is Elva-heavy, a content retainer is Laura-heavy; the pipeline is balanced across both when choosing what to take on.
 - **Each client gets one "account owner"** (alternating) who handles all comms for that client — clients get one voice, and neither founder becomes the default secretary.
 
 ### The time ledger
 A shared spreadsheet, ~30 seconds to update: date · hours · what. Reviewed in the last 10 minutes of every joint session.
 - Drift within ±4 hrs over a rolling month: normal, ignore it.
-- Drift beyond ±4 hrs: **rebalance with tasks, not guilt** — the lighter partner takes the next Swatch, the admin backlog, or the next fortnight's content batch. Named, scheduled, done.
+- Drift beyond ±4 hrs: **rebalance with tasks, not guilt** — the lighter partner takes the next Silver, the admin backlog, or the next fortnight's content batch. Named, scheduled, done.
 
 ### Busy-week protocol (exams, retail peaks, life)
 1. **Flag early.** Either partner can declare a *low-capacity week* — ideally a week or more ahead (exam timetables and Christmas rotas are known in advance).
 2. During a low-capacity week: the flagged partner covers **client-facing deadlines only**; our own marketing drops to the "minimum viable week" defined in the content plan; the other partner covers the gap.
 3. Covered hours are logged as **owed** and repaid within 4 weeks — repayment is scheduled at the joint session, not left vague.
 4. **Both partners low-capacity** (it will happen): pause new discovery calls, protect existing delivery deadlines, run pre-scheduled content only. Nothing new gets promised.
-5. **Standing rule:** no Capsule deadline inside a known exam window or the last two weeks before Christmas. Quote the timeline honestly instead — "we'd start on the 6th of January" wins more trust than a missed December deadline.
+5. **Standing rule:** no Gold deadline inside a known exam window or the last two weeks before Christmas. Quote the timeline honestly instead — "we'd start on the 6th of January" wins more trust than a missed December deadline.
 
 ### Money between us
 - **50/50 profit split**, matching the equal-time commitment. Reviewed quarterly against the ledger — if the time model changes, the split conversation happens *then*, openly, not resentfully in a year.
@@ -170,13 +170,13 @@ Tooling to start: shared Google Sheet (pipeline + ledger), Google Calendar, Canv
 | Week | Milestones |
 |---|---|
 | 5 | Public launch: announce on personal + studio accounts. Content calendar week 1–2 live. |
-| 6 | Offer THE SWATCH to the warm network — Darcybow contacts, retail colleagues, market sellers. Target: 5 conversations. |
-| 7–8 | First 2–3 **paid** Swatch audits delivered. Testimonials collected. Proposal template refined after first real use. |
+| 6 | Offer SILVER to the warm network — Darcybow contacts, retail colleagues, market sellers. Target: 5 conversations. |
+| 7–8 | First 2–3 **paid** Silvers delivered. Testimonials collected. Proposal template refined after first real use. |
 
 **Days 61–90 — first real money**
 | Week | Milestones |
 |---|---|
-| 9–10 | Convert at least one Swatch into THE CAPSULE. First ledger review + rebalance if needed. |
+| 9–10 | Convert at least one Silver into a Gold or Platinum. First ledger review + rebalance if needed. |
 | 11–12 | Decide whether to open the first ATELIER slot. Quarterly money review #1: what did 90 days earn, what do we change? |
 
 **Success at day 90 looks like:** 3+ paid engagements, 2 testimonials, a pipeline sheet with live leads, both founders still at ~6 hrs/week, and the friendship intact.
@@ -185,7 +185,7 @@ Tooling to start: shared Google Sheet (pipeline + ledger), Google Calendar, Canv
 
 ## 8. Ireland: legal & money checklist
 
-*High level only — not legal or tax advice. Verify current figures and rules on cro.ie and revenue.ie, and consider one session with an accountant before the first Capsule.*
+*High level only — not legal or tax advice. Verify current figures and rules on cro.ie and revenue.ie, and consider one session with an accountant before the first Gold.*
 
 - [ ] **Register the business name** — "The Suede Studio" with the CRO (form RBN1 for sole trader/RBN1A for partnership, filed online via CORE, ~€20). Required before trading under the name.
 - [ ] **Choose a structure.** Simplest start: registered **partnership** (or two sole traders with a revenue-sharing agreement). Either way, sign the one-page partnership agreement (`partnership-agreement.md`) covering the 50/50 split, the 6-hr time model, brand/IP ownership, and exit terms. A limited company can come later if revenue justifies it.
@@ -194,7 +194,7 @@ Tooling to start: shared Google Sheet (pipeline + ledger), Google Calendar, Canv
 - [ ] **Separate business bank account** — even a simple one. Never mix personal and studio money.
 - [ ] **Invoices** must show: business name & address, invoice number (sequential), date, client details, description of services, amount, payment terms.
 - [ ] **Track every expense from day one** (domain, Canva, phone %, travel to clients) — they reduce taxable profit.
-- [ ] **Professional indemnity insurance** — get a quote before the first Capsule engagement; cheap peace of mind when you're touching someone's live store.
+- [ ] **Professional indemnity insurance** — get a quote before the first Gold engagement; cheap peace of mind when you're touching someone's live store.
 - [ ] **Domain + email:** thesuedestudio.com (or .ie — .ie signals Irish and IEDR registration is straightforward for registered business names) + hello@ mailbox.
 - [ ] **Client work hygiene:** never take a client's actual Shopify password — use Shopify collaborator/staff access; keep a one-line data promise ("we access only what we need, and remove our access when the job ends").
 

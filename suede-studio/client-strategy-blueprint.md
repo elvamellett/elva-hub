@@ -6,7 +6,7 @@
 >
 > 1. **Copy** this file per client: `blueprint-<client-name>.md` (keep this master untouched).
 > 2. **Fill it** from their questionnaire answers (question numbers are pre-referenced throughout — the full map is in the appendix) plus what the audit/discovery call surfaced.
-> 3. **Tailor the depth to the package** — see the tailoring guide in the appendix. A Swatch client gets the Snapshot, each pillar's "where you are now", and the 90-day roadmap. A Capsule/Atelier client gets the full blueprint at kickoff.
+> 3. **Tailor the depth to the package** — see the tailoring guide in the appendix. A Silver client gets the Snapshot, each pillar's "where you are now", and the 90-day roadmap. A Gold/Platinum client gets the full blueprint at kickoff.
 > 4. **Delete every 🔒 INTERNAL block**, then paste into Google Docs (brand fonts/colours per brand.html) and export to PDF for delivery.
 > 5. Write client-facing text in the studio voice: lowercase, warm, plain-spoken, zero jargon. Internal boxes can be blunt.
 >
@@ -18,7 +18,7 @@
 
 **prepared for:** ______ · **business:** ______
 **prepared by:** the suede studio — elva & laura
-**date:** ______ · **engagement:** ☐ the swatch ☐ the capsule ☐ the atelier
+**date:** ______ · **engagement:** ☐ silver ☐ gold ☐ platinum
 
 *one document, every pillar of your business — where you are, where we're taking you, and exactly what happens next.*
 
@@ -80,7 +80,7 @@ ______
 
 **how we'll measure it** — a brand kit that exists and gets used: every post, page and package recognisably one brand within ______ weeks.
 
-> 🔒 **INTERNAL** — est. hours: ___ · covered by: ___ · notes: does this client need the full starter kit or a tighten-up of what exists? upsell path: brand kit inside a Capsule.
+> 🔒 **INTERNAL** — est. hours: ___ · covered by: ___ · notes: does this client need the full starter kit or a tighten-up of what exists? upsell path: brand kit inside a Gold.
 
 ---
 
@@ -111,7 +111,7 @@ ______
 
 **how we'll measure it** — conversion rate and completed checkouts, benchmarked from today's numbers *(Q19)*; the frustration in Q22 measurably gone.
 
-> 🔒 **INTERNAL** — est. hours: ___ · covered by: ___ · setup vs refresh vs migration? Elva leads. store size (Q20) drives Capsule quote more than anything else on this page.
+> 🔒 **INTERNAL** — est. hours: ___ · covered by: ___ · setup vs refresh vs migration? Elva leads. store size (Q20) drives Gold quote more than anything else on this page.
 
 ---
 
@@ -151,7 +151,7 @@ ______
 
 **how we'll measure it** — saves + shares (value & reach), DMs/enquiries per month, and consistency: ___ weeks out of every 4 hitting the cadence.
 
-> 🔒 **INTERNAL** — est. hours: ___ /month · covered by: ___ · Laura leads. is this "we make it" (Atelier) or "we teach the system" (Capsule/Swatch)? Q30 answers tell you which will actually stick.
+> 🔒 **INTERNAL** — est. hours: ___ /month · covered by: ___ · Laura leads. is this "we make it" (Platinum) or "we teach the system" (Gold/Silver)? Q30 answers tell you which will actually stick.
 
 ---
 
@@ -262,7 +262,7 @@ ______
 
 **how we'll measure it** — organic search traffic and email revenue as growing slices of the pie; one non-social win per quarter.
 
-> 🔒 **INTERNAL** — est. hours: ___ · covered by: ___ · deliberately the "later" pillar for most clients — don't let it steal Capsule scope. paid ads only ever after retention (pillar 4) is fixed, or we're buying leaky traffic.
+> 🔒 **INTERNAL** — est. hours: ___ · covered by: ___ · deliberately the "later" pillar for most clients — don't let it steal Gold scope. paid ads only ever after retention (pillar 4) is fixed, or we're buying leaky traffic.
 
 ---
 
@@ -329,7 +329,7 @@ ______
 
 ## what happens next
 
-based on everything above, our recommendation is **☐ the swatch · ☐ the capsule · ☐ the atelier** — because ______.
+based on everything above, our recommendation is **☐ silver · ☐ gold · ☐ platinum** — because ______.
 
 your fixed quote follows in a one-page proposal within 3 days. no surprises, valid for 30 days.
 
@@ -350,7 +350,7 @@ questions in the meantime — we're at **hello@thesuedestudio.com** · **+353 83
 > | §1 basics (Q1–9) | cover block, snapshot table, pipeline sheet |
 > | §2 business (Q10–14) | snapshot; Q14 sales split also steers pillar 7 |
 > | Q15 the final straw | snapshot "what you told us" — usually the whole brief |
-> | §3 shopify (Q16–23) | pillar 2 store; Q19–20 also pillar 8 + Capsule scoping |
+> | §3 shopify (Q16–23) | pillar 2 store; Q19–20 also pillar 8 + Gold scoping |
 > | §4 fulfilment (Q24–27) | Q24 pillars 5+8 · Q25 pillars 4+5 · Q26 content seasonality · Q27 pillars 1+3 |
 > | §5 content (Q28–33) | pillar 3; Q31–32 pillar 1 · Q33 pillars 1+3 |
 > | §6 busywork (Q34–37) | pillar 5; Q34/Q36 feed the automation map · Q37 pillars 4+6 |
@@ -375,7 +375,7 @@ questions in the meantime — we're at **hello@thesuedestudio.com** · **+353 83
 >
 > ### C — tailoring guide
 >
-> - **the swatch** → fill: snapshot, every pillar's "where you are now", pillar 9 roadmap (that IS the deliverable — their top 10 moves across all pillars, prioritised). Leave "where we're taking you" as one line each; skip internal boxes you don't need.
-> - **the capsule** → full blueprint, with pillars 1–3+6 moves detailed (the build) and 4/5/7/8 as the "after the capsule" path (the upsell to atelier, written honestly).
-> - **the atelier** → full blueprint at kickoff; the scoreboard and 90-day roadmap become the monthly report's skeleton — same table, updated numbers.
+> - **silver** → fill: snapshot, every pillar's "where you are now", pillar 9 roadmap (that IS the deliverable — their top 10 moves across all pillars, prioritised). Leave "where we're taking you" as one line each; skip internal boxes you don't need.
+> - **gold** → full blueprint, with pillars 1–3+6 moves detailed (the build) and 4/5/7/8 as the "after gold" path (the upsell to atelier, written honestly).
+> - **platinum** → full blueprint at kickoff; the scoreboard and 90-day roadmap become the monthly report's skeleton — same table, updated numbers.
 > - **tiny clients** (under ~20 products, solo owner): merge pillars 4+5 and 7+8 into single sections rather than serving thin soup in eight bowls.

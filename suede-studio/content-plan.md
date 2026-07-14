@@ -23,7 +23,7 @@ The studio's own accounts must *demonstrate* the service: if we can't keep our o
 Rotate through these; no week should need more than one filming/shooting effort.
 
 ### 🛒 pillar 1 — *shop talk*
-**Goal:** prove ecommerce + AI expertise → drives Swatch audits. **Owner: Elva.**
+**Goal:** prove ecommerce + AI expertise → drives Silver engagements. **Owner: Elva.**
 **Formats:** carousels, screen-recorded TikToks, quick talking-head reels.
 - "5 things killing your Shopify checkout (fix them tonight)" — carousel
 - Screen-record: rewriting one real (anonymised) product description live
@@ -109,7 +109,7 @@ Week 1 teases, week 2 launches, week 3 gives value, week 4 makes the first offer
 | **Wk 1 — tease** | 🏗️ "We're building something. 6 hours a week, two jobs, one studio." — reel, faces optional *(L drafts)* | 🧠 "Content pillars, explained with a café" — carousel *(L)* | 🏗️ Batch-session timelapse + "announcement coming Sunday" story *(E)* |
 | **Wk 2 — launch** | 🏗️ **Launch post:** who we are, what The Suede Studio does, the brand reveal — carousel *(both)* | 🛒 "5 things killing your Shopify checkout" — carousel *(E)* | 🍀 "3 Irish small shops doing Instagram right" — tagged carousel *(L)* |
 | **Wk 3 — value** | 🛒 Screen-record: product description rewrite — reel/TikTok *(E)* | ✨ Mock makeover before/after — carousel *(both, made in wk-2 session)* | 🏗️ "Week 3 of building a studio around full-time jobs" — reel *(L)* |
-| **Wk 4 — offer** | 🧠 "What to post when you have nothing to post" — saveable carousel *(L)* | ✨ "We audited our own Instagram like a client's" — carousel *(E)* | 🛒 **First offer post:** "THE SWATCH — our audit package. 3 launch slots, DM us." *(both)* |
+| **Wk 4 — offer** | 🧠 "What to post when you have nothing to post" — saveable carousel *(L)* | ✨ "We audited our own Instagram like a client's" — carousel *(E)* | 🛒 **First offer post:** "SILVER — one lane, fixed properly. 3 launch slots, DM us." *(both)* |
 
 Stories run underneath: polls in week 1 ("what's your biggest online-shop headache?"), launch-day countdown in week 2, this-or-that grid votes in week 3, testimonial/DM screenshots (even friendly ones) in week 4.
 
