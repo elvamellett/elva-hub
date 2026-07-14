@@ -54,14 +54,14 @@ body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-
 
 /* header — nav either side of the logo */
 header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-filter:blur(10px)}
-.nav-box{border:1px solid var(--line-dark);border-top:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:94px;padding:0 30px;gap:18px}
+.nav-box{border:1px solid var(--line-dark);border-top:none;display:grid;grid-template-columns:auto 1fr;align-items:center;height:94px;padding:0 30px;gap:18px}
 .nav-side{display:flex;gap:28px;align-items:center;list-style:none}
 .nav-side.right{justify-content:flex-end}
 .nav-side a:not(.btn){text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.22em;color:var(--cream);padding-bottom:3px;background:linear-gradient(var(--tan) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
 .nav-side a:not(.btn):hover,.nav-side a.active{background-size:100% 1.5px}
 .nav-side .btn{padding:10px 22px}
-.nav-logo{display:flex;flex-direction:column;align-items:center;gap:2px}
-.nav-logo img{height:50px;transition:transform .4s ease}
+.nav-logo{display:flex;flex-direction:row;align-items:center;gap:16px}
+.nav-logo img{height:46px;transition:transform .4s ease}
 .nav-logo:hover img{transform:rotate(180deg)}
 /* wordmark under the squiggle — TT Firs Neue when licensed, Archivo until then */
 .nav-logo .wm{font-family:'TT Firs Neue','Archivo',var(--font);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream);font-weight:800;white-space:nowrap}
@@ -184,14 +184,14 @@ footer nav a:hover{color:var(--tan)}
 }
 @media(max-width:760px){
   .chooser,.pricing{padding:70px 0}
-  .nav-box{grid-template-columns:auto 1fr auto;height:80px}
+  .nav-box{grid-template-columns:1fr auto;height:80px}
   .nav-side{display:none}
-  .nav-logo{justify-self:center;grid-column:2}
-  .burger{display:block;grid-column:3}
+  .nav-logo img{height:38px}
+  .nav-logo .wm{font-size:.62rem}
+  .burger{display:block}
   .m-menu{display:block;position:fixed;inset:80px 0 auto 0;background:var(--ink);border-bottom:1px solid var(--line-dark);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:translateY(-130%);transition:transform .3s ease;z-index:55;padding:10px 0 28px;list-style:none;text-align:center}
   .m-menu.open{transform:none}
   .m-menu a:not(.btn){display:block;padding:15px 0;color:var(--cream);text-transform:uppercase;font-weight:600;font-size:.72rem;letter-spacing:.22em}
-  .m-menu .btn{margin:14px auto 0;display:inline-block}
 }
 </style>
 </head>
@@ -201,19 +201,17 @@ footer nav a:hover{color:var(--tan)}
 
 <header>
   <div class="nav-box">
-    <ul class="nav-side left">
-      <li><a href="index.html#services">Services</a></li>
-      <li><a href="packages.html" class="active">Packages</a></li>
-      <li><a href="index.html#about">About</a></li>
-    </ul>
-    <a href="index.html" class="nav-logo" aria-label="Suede Studio home">
-      <img src="assets/logo-tan.png" alt="Suede Studio">
+    <a href="index.html" class="nav-logo" aria-label="The Suede Studio home">
+      <img src="assets/logo-tan.png" alt="The Suede Studio">
       <span class="wm">The Suede Studio</span>
     </a>
     <ul class="nav-side right">
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="packages.html" class="active">Packages</a></li>
+      <li><a href="index.html#about">About</a></li>
       <li><a href="index.html#process">Process</a></li>
       <li><a href="index.html#faq">FAQ</a></li>
-      <li><a href="index.html#contact" class="btn btn-ice">Enquire</a></li>
+      <li><a href="index.html#contact">Enquire</a></li>
     </ul>
     <button class="burger" id="burger" aria-label="menu" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -225,7 +223,7 @@ footer nav a:hover{color:var(--tan)}
     <li><a href="index.html#about">About</a></li>
     <li><a href="index.html#process">Process</a></li>
     <li><a href="index.html#faq">FAQ</a></li>
-    <li><a href="index.html#contact" class="btn btn-ice">Enquire</a></li>
+    <li><a href="index.html#contact">Enquire</a></li>
   </ul>
 </header>
 
