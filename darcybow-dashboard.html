@@ -112,6 +112,9 @@
   .b-blue { background: var(--blue-bg); color: var(--blue); }
   .b-grey { background: var(--grey-bg); color: #4b5563; }
   .b-brand { background: var(--brand-soft); color: var(--brand); }
+  .b-purple { background: #f0e7fd; color: #6d28d9; }
+  .b-teal { background: #d8f1ee; color: #0f766e; }
+  .b-gold { background: #fdf0d5; color: #92600a; }
 
   /* ---------- Buttons, inputs ---------- */
   button, .btn {
@@ -184,9 +187,19 @@
   .cname { font-weight: 700; font-size: 1.02rem; }
   .bigselect { padding: 11px 12px; border-radius: 12px; border: 1.5px solid #cfd3da; font-size: .95rem; max-width: 300px; }
   table.roomy td { padding: 13px 12px; }
-  .qa { margin: 0 0 12px; }
-  .qa .q { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 2px; }
-  .qa .a { font-size: .95rem; }
+  .qa { margin: 0 0 14px; }
+  .qa .q { font-size: .95rem; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .qa ul { margin: 2px 0 0; padding-left: 20px; }
+  .qa li { font-size: .95rem; margin-bottom: 3px; }
+  .dl-row { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .dl-row:last-child { border-bottom: none; }
+  .dl-label { width: 92px; flex-shrink: 0; font-size: .74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .dl-value { font-size: 1rem; font-weight: 700; color: var(--ink); }
+  .dl-value .muted { font-weight: 400; }
+  .venuegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 16px; }
+  @media (max-width: 560px) { .venuegrid { grid-template-columns: 1fr; } }
+  .vrow { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .vrow:hover { background: var(--brand-soft); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
   .toast {
     position: fixed; bottom: 22px; right: 22px; background: var(--ink); color: #fff;
     border-radius: 10px; padding: 12px 18px; font-size: .9rem; z-index: 99;
@@ -269,7 +282,7 @@ function splitCents(total, n) {
 }
 
 /* ---------------------- data store ---------------------- */
-const STORE_KEY = 'darcybow-db-v2';
+const STORE_KEY = 'darcybow-db-v3';
 let DB = null;
 
 const Store = {
@@ -338,6 +351,7 @@ const Seed = {
       P('Valentina Debs Gown', 'DB-VL05', 'dress', 48000, ['Champagne','Dusty Rose','Sage'], ['6','8','10','12','14','16']),
       P('Clara Confirmation Dress', 'DB-CL06', 'dress', 24500, ['White','Powder Blue','Lilac'], ['Age 11','Age 12','Age 13']),
       P('Mother-of-the-Bride Two Piece', 'DB-MB07', 'dress', 39500, ['Teal','Silver','Plum'], ['10','12','14','16','18','20']),
+      P('Willow Christening Gown', 'DB-CH08', 'dress', 14500, ['Ivory','White'], ['0-3 months','3-6 months','6-12 months','12-18 months']),
       P('Satin Ballet Pumps', 'DB-SH10', 'shoes', 5500, ['White','Ivory'], ['28','29','30','31','32','33','34','35']),
       P('Pearl Heeled Sandals', 'DB-SH11', 'shoes', 7500, ['Ivory','Silver','Nude'], ['36','37','38','39','40','41']),
       P('Crystal Tiara', 'DB-AC20', 'accessory', 4500, ['Silver','Gold'], ['One size']),
@@ -602,17 +616,30 @@ const Seed = {
       confirmedDaysAgo: 2, plan: null, flags: { needsReview: true },
     });
 
+    /* ---- Scenario 13: christening, 50/50 on track ---- */
+    mkOrder({
+      customer: C('Niamh Twomey', 'Éabha', 'niamh.twomey@gmail.com', '085 443 2211',
+        '6 Orchard Rise, Ballincollig, Co. Cork', 'Wants the gown kept boxed until the week of the christening.'),
+      items: [{ code: 'DB-CH08', colour: 'Ivory', size: '6-12 months' }, { code: 'DB-AC22', colour: 'Ivory', size: 'One size' }],
+      eventHotel: 'Christening — The Angler’s Rest, Innishannon', eventDate: daysFromNow(21),
+      staffNotes: 'Embroidered name on the hem — confirm spelling: Éabha.',
+      confirmedDaysAgo: 10, plan: 'fifty_fifty', finalDueInDays: 12,
+      payments: [{ amount: 'rest1', daysAgo: 10, method: 'card' }],
+    });
+
     /* ---- Appointly booking Q&As ----
        In live mode these are pulled from Appointly (via the Shopify link —
        see AppointlyService); seeded here in exactly the shape the sync
        produces so the customer page is testable offline. */
     const QS = db.settings.appointlyQuestions;
+    const SLOT_TIMES = ['10:00', '11:30', '13:00', '14:30', '16:00', '17:30'];
     const appt = (custName, daysAgoBooked, apptInDays, service, a1, a2, a3) => {
       const cust = db.customers.find(c => c.name === custName);
       if (!cust) return;
       db.appointments.push({
         id: uid(), customerId: cust.id, source: 'appointly',
         service, appointmentAt: daysFromNow(apptInDays),
+        time: SLOT_TIMES[db.appointments.length % SLOT_TIMES.length],
         status: apptInDays >= 0 ? 'upcoming' : 'completed',
         bookedAt: isoDaysAgo(daysAgoBooked, 12), syncedAt: isoDaysAgo(0, 9),
         questions: [{ q: QS[0], a: a1 }, { q: QS[1], a: a2 }, { q: QS[2], a: a3 }],
@@ -662,6 +689,10 @@ const Seed = {
       'Mia’s confirmation, reception at The Kingsley.',
       'Mia, age 11.',
       'Lilac was her first choice.');
+    appt('Niamh Twomey', 12, -9, 'Christening fitting',
+      'Éabha’s christening at the end of the month — lunch at the Angler’s Rest in Innishannon after.',
+      'Baby Éabha — she’ll be 8 months by then.',
+      'The Willow gown, ivory, with her name embroidered on the hem.');
     appt('Jennifer Barrett', 2, 3, 'Debs consultation',
       'Debs at the Rochestown Park in about ten weeks.',
       'Chloe, size 10.',
@@ -1382,6 +1413,18 @@ const UI = {
     const [cls, label] = map[status] || ['b-grey', status];
     return `<span class="badge ${cls}">${esc(label)}</span>`;
   },
+  // Occasion badge, colour-coded by type so Communion / Confirmation /
+  // Christening / Debs / Wedding are distinguishable at a glance.
+  eventBadge(eventHotel) {
+    if (!eventHotel) return '<span class="muted">—</span>';
+    const [type, venue] = eventHotel.split(/\s+—\s+/);
+    const cls = /communion/i.test(type) ? 'b-blue'
+      : /confirmation/i.test(type) ? 'b-purple'
+      : /christening|baptism/i.test(type) ? 'b-teal'
+      : /debs|prom|grad/i.test(type) ? 'b-brand'
+      : /wedding|flower/i.test(type) ? 'b-gold' : 'b-grey';
+    return `<span class="badge ${cls}">${esc(type)}</span>${venue ? `<br><span class="muted">${esc(venue)}</span>` : ''}`;
+  },
   dueBadge(du) {
     if (du == null) return '';
     if (du < 0) return `<span class="badge b-red">${Math.abs(du)}d overdue</span>`;
@@ -1423,6 +1466,7 @@ const App = {
     const nav = [
       ['dashboard', '⌂', 'Dashboard'],
       ['customers', '👥', 'Customers'],
+      ['venues', '📍', 'Venues'],
       ['balances', '€', 'Outstanding balances', () => Domain.balanceRows().length],
       ['reminders', '🔔', 'Reminders', () => Domain.openTasks().length],
       ['stock', '📦', 'Stock export'],
@@ -1435,6 +1479,7 @@ const App = {
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
       order: () => Pages.orderDetail(arg), 'order-form': () => Pages.orderForm(arg),
+      venues: Pages.venues,
       balances: Pages.balances, reminders: Pages.reminders, stock: Pages.stock,
       outbox: Pages.outbox, settings: Pages.settingsPage,
     };
@@ -1569,16 +1614,78 @@ Pages.customers = () => {
           const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
           const items = orders.flatMap(o => Domain.itemsOf(o.id));
           const firstItem = items[0];
-          const [evType, evVenue] = latest && latest.eventHotel ? latest.eventHotel.split(/\s+—\s+/) : ['', ''];
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
             <td><span class="cname">${esc(c.name)}</span>${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
-            <td class="small">${evType ? `<span class="badge b-brand">${esc(evType)}</span>${evVenue ? `<br><span class="muted">${esc(evVenue)}</span>` : ''}` : '<span class="muted">—</span>'}</td>
+            <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
             <td class="num">${bal > 0 ? '<b style="font-size:1.02rem">' + eur(bal) + '</b>' : '<span class="muted">—</span>'}</td>
             <td>${latest ? UI.badge(latest.status) : ''}</td></tr>`;
         }).join('') || '<tr><td colspan="6" class="muted">No customers match.</td></tr>'}
       </tbody></table></div>`;
+};
+
+/* =============================== VENUES =============================== */
+Pages.venues = () => {
+  const fmtWd = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
+  const groups = new Map();
+  for (const o of DB.orders) {
+    if (!o.eventHotel) continue;
+    const parts = o.eventHotel.split(/\s+—\s+/);
+    const venue = (parts[1] || parts[0]).trim();
+    if (!groups.has(venue)) groups.set(venue, []);
+    groups.get(venue).push(o);
+  }
+  const cards = [...groups.entries()].map(([venue, orders]) => {
+    const dates = orders.map(o => o.eventDate).filter(Boolean).sort();
+    const nextDate = dates.find(d => d >= todayStr()) || null;
+    const rows = orders.map(o => {
+      const c = Domain.customer(o.customerId);
+      const appts = AppointlyService.bookingsFor(c.id);
+      const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => a.appointmentAt < b.appointmentAt ? -1 : 1)[0];
+      const last = appts[0];
+      const bal = Domain.balanceCents(o.id);
+      const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
+      return { o, c, upcoming, last, bal, dress };
+    }).sort((a, b) => {
+      const ka = a.upcoming ? '0' + a.upcoming.appointmentAt + (a.upcoming.time || '') : '1' + (a.o.eventDate || '9999');
+      const kb = b.upcoming ? '0' + b.upcoming.appointmentAt + (b.upcoming.time || '') : '1' + (b.o.eventDate || '9999');
+      return ka < kb ? -1 : 1;
+    });
+    return { venue, orders, nextDate, rows };
+  }).sort((a, b) => (a.nextDate || '9999') < (b.nextDate || '9999') ? -1 : 1);
+
+  return `
+    ${bannerHtml()}
+    <div class="flex" style="justify-content:space-between; margin-bottom:4px">
+      <h1 style="margin:0">Venues <span class="muted" style="font-size:1rem; font-weight:400">${cards.length}</span></h1>
+    </div>
+    <p class="sub">Every customer grouped by where their event is held, with the time they're coming in to us. Venue &amp; occasion come from the order; coming-in times sync from Appointly and products from Shopify (mock data until the credential seams are keyed).</p>
+    <div class="venuegrid">
+      ${cards.map(v => `
+        <div class="card">
+          <div class="flex" style="justify-content:space-between; margin-bottom:2px">
+            <h2 style="margin:0">📍 ${esc(v.venue)}</h2>
+            <span class="badge b-grey">${v.rows.length} customer${v.rows.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="small muted" style="margin-bottom:10px">${v.nextDate ? 'Next event: <b>' + fmtWd(v.nextDate) + '</b>' : 'No upcoming event date'}</div>
+          ${v.rows.map(r => `
+            <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
+              <div style="flex:1; min-width:0">
+                <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
+                <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
+              </div>
+              <div style="text-align:right">
+                ${r.upcoming
+                  ? `<span class="badge b-blue">Coming in ${fmtWd(r.upcoming.appointmentAt)} · ${esc(r.upcoming.time || '')}</span>`
+                  : r.last
+                    ? `<span class="small muted">visited ${fmtWd(r.last.appointmentAt)}${r.last.time ? ' · ' + esc(r.last.time) : ''}</span>`
+                    : `<span class="badge b-amber">No appointment booked</span>`}
+                <br>${UI.eventBadge(r.o.eventHotel).split('<br>')[0]} ${r.bal > 0 ? `<span class="badge b-red">${eur(r.bal)} due</span>` : UI.badge(r.o.status)}
+              </div>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
 };
 
 Pages.customerDetail = (id) => {
@@ -1597,27 +1704,28 @@ Pages.customerDetail = (id) => {
     <div class="cols2">
       <div class="card">
         <h2 style="margin-top:0">Details</h2>
-        <table style="font-size:.9rem">
-          <tr><td class="muted" style="width:130px">Email</td><td>${esc(c.email || '—')}</td></tr>
-          <tr><td class="muted">Phone</td><td>${esc(c.phone || '—')}</td></tr>
-          <tr><td class="muted">Delivery address</td><td>${esc(c.address || '—')}</td></tr>
-          <tr><td class="muted">Staff notes</td><td>${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></td></tr>
-        </table>
+        <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></span></div>
       </div>
       <div class="card" style="grid-row: span 2">
         <div class="flex" style="justify-content:space-between">
           <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
-          <button class="small" onclick="Actions.logAppointment('${c.id}')">+ Log answers</button>
+          <button class="small primary" onclick="Actions.logAppointment('${c.id}')">+ Add answers</button>
         </div>
         ${AppointlyService.bookingsFor(c.id).map(a => `
           <div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
             <div class="flex" style="margin-bottom:10px">
               <b>${esc(a.service)}</b>
               <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
-              <span class="small muted">${fmtDate(a.appointmentAt)}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
+              <span class="small muted">${fmtDate(a.appointmentAt)}${a.time ? ' · <b>' + esc(a.time) + '</b>' : ''}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
+              <span class="spacer" style="flex:1"></span>
+              <button class="small" onclick="Actions.logAppointment('${c.id}','${a.id}')">✎ Edit</button>
             </div>
-            ${a.questions.map((qa, n) => `<div class="qa"><div class="q">${n + 1}. ${esc(qa.q)}</div><div class="a">${esc(qa.a || '—')}</div></div>`).join('')}
-          </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here when the customer books through the site, or log them after a phone booking.</p>'}
+            ${a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
+              <ul>${(qa.a || '—').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')}
+          </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here when the customer books through the site, or add them after a phone booking.</p>'}
         ${AppointlyService.isLive() ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — mock mode. Add the Appointly API key at the LIVE CREDENTIAL SEAM (Settings → Integrations) to sync real booking answers from Shopify.</div>'}
       </div>
       <div>
@@ -1631,7 +1739,7 @@ Pages.customerDetail = (id) => {
               <span style="margin-left:auto" class="num">${bal > 0 ? '<b>' + eur(bal) + ' due</b>' : '<span class="muted">settled</span>'}</span>
             </div>
             <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + ' (' + esc(i.colour) + ', ' + esc(i.size) + ')').join(' · ')}</div>
-            <div class="small muted">${esc(o.eventHotel)}${o.eventDate ? ' · ' + fmtDate(o.eventDate) : ''}</div>
+            <div class="small" style="margin-top:6px">${UI.eventBadge(o.eventHotel).replace('<br>', ' ')}${o.eventDate ? ' <span class="muted">· ' + fmtDate(o.eventDate) + '</span>' : ''}</div>
           </div>`;
         }).join('') || '<div class="card muted">No orders yet.</div>'}
       </div>
@@ -2618,31 +2726,41 @@ Pages.settingsPage = () => {
 
 /* ---- remaining actions ---- */
 Object.assign(Actions, {
-  logAppointment(customerId) {
-    const QS = DB.settings.appointlyQuestions;
+  logAppointment(customerId, apptId) {
+    const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
+    const QS = existing ? existing.questions.map(qa => qa.q) : DB.settings.appointlyQuestions;
     UI.modal(`
-      <h3>Log appointment answers</h3>
-      <p class="small muted">For bookings taken over the phone or in the shop. Online bookings sync automatically once Appointly is connected.</p>
+      <h3>${existing ? 'Edit appointment answers' : 'Add appointment answers'}</h3>
+      <p class="small muted">${existing ? '' : 'For bookings taken over the phone or in the shop. Online bookings sync automatically once Appointly is connected.'}</p>
       <div class="formgrid">
-        <div><label class="f">Appointment type</label><input id="ap-service" placeholder="e.g. Communion fitting"></div>
-        <div><label class="f">Appointment date</label><input id="ap-date" type="date" value="${todayStr()}"></div>
+        <div><label class="f">Appointment type</label><input id="ap-service" placeholder="e.g. Communion fitting" value="${existing ? esc(existing.service) : ''}"></div>
+        <div><label class="f">Appointment date</label><input id="ap-date" type="date" value="${existing ? existing.appointmentAt : todayStr()}"></div>
+        <div><label class="f">Time coming in</label><input id="ap-time" type="time" value="${existing && existing.time ? existing.time : ''}"></div>
       </div>
       ${QS.map((qtext, n) => `
-        <label class="f">${n + 1}. ${esc(qtext)}</label>
-        <textarea id="ap-a${n}" rows="2" style="width:100%"></textarea>`).join('')}
+        <label class="f" style="text-transform:none; font-size:.92rem; color:var(--ink)">${n + 1}. ${esc(qtext)}</label>
+        <textarea id="ap-a${n}" rows="2" style="width:100%">${existing ? esc(existing.questions[n].a) : ''}</textarea>`).join('')}
       <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.saveAppointment('${customerId}')">Save</button></div>`);
+        <button class="primary" onclick="Actions.saveAppointment('${customerId}','${apptId || ''}')">Save</button></div>`);
   },
-  saveAppointment(customerId) {
-    const QS = DB.settings.appointlyQuestions;
+  saveAppointment(customerId, apptId) {
     const date = document.getElementById('ap-date').value || todayStr();
-    DB.appointments.push({
-      id: uid(), customerId, source: 'manual',
-      service: document.getElementById('ap-service').value.trim() || 'Appointment',
-      appointmentAt: date, status: date >= todayStr() ? 'upcoming' : 'completed',
-      bookedAt: nowIso(), syncedAt: null,
-      questions: QS.map((qtext, n) => ({ q: qtext, a: document.getElementById('ap-a' + n).value.trim() })),
-    });
+    const time = document.getElementById('ap-time').value || '';
+    const service = document.getElementById('ap-service').value.trim() || 'Appointment';
+    const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
+    if (existing) {
+      existing.service = service; existing.appointmentAt = date; existing.time = time;
+      existing.status = date >= todayStr() ? 'upcoming' : 'completed';
+      existing.questions = existing.questions.map((qa, n) => ({ q: qa.q, a: document.getElementById('ap-a' + n).value.trim() }));
+    } else {
+      const QS = DB.settings.appointlyQuestions;
+      DB.appointments.push({
+        id: uid(), customerId, source: 'manual', service, time,
+        appointmentAt: date, status: date >= todayStr() ? 'upcoming' : 'completed',
+        bookedAt: nowIso(), syncedAt: null,
+        questions: QS.map((qtext, n) => ({ q: qtext, a: document.getElementById('ap-a' + n).value.trim() })),
+      });
+    }
     Store.save(); UI.closeModal(); App.route(); UI.toast('Appointment answers saved.');
   },
   taskReviewed(taskId) {
