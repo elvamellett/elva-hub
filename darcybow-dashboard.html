@@ -1894,6 +1894,11 @@ Pages.customerDetail = (id) => {
             </div>
             <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + ' (' + esc(i.colour) + ', ' + esc(i.size) + ')').join(' · ')}</div>
             <div class="small" style="margin-top:6px">${UI.eventBadge(o.eventHotel).replace('<br>', ' ')}${o.eventDate ? ' <span class="muted">· ' + fmtDate(o.eventDate) + '</span>' : ''}</div>
+            <div class="flex" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--line)">
+              <button class="small" onclick="event.stopPropagation(); Actions.viewInvoice('${o.id}','customer')">🧾 Customer invoice</button>
+              <button class="small" onclick="event.stopPropagation(); Actions.viewInvoice('${o.id}','accountant')">🧾 Accountant invoice</button>
+              <button class="small primary" onclick="event.stopPropagation(); Actions.sendInvoice('${o.id}')">✉ Send invoice</button>
+            </div>
           </div>`;
         }).join('') || '<div class="card muted">No orders yet.</div>'}
       </div>
