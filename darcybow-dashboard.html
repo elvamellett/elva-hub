@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darcybow — Orders & Balances</title>
+<style>
+  :root {
+    --brand: #9b2c4d;
+    --brand-dark: #7c1f3c;
+    --brand-soft: #fdf0f4;
+    --ink: #23262e;
+    --muted: #6b7280;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --line: #e5e7eb;
+    --green: #157347; --green-bg: #e6f4ec;
+    --amber: #b45309; --amber-bg: #fef3c7;
+    --red: #b91c1c;   --red-bg: #fde8e8;
+    --blue: #1d4ed8;  --blue-bg: #e7edfd;
+    --grey-bg: #eef0f3;
+    --sidebar: #221722;
+    --radius: 10px;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    display: flex; min-height: 100vh;
+  }
+  /* ---------- Sidebar ---------- */
+  #sidebar {
+    width: 218px; background: var(--sidebar); color: #e8dfe4; flex-shrink: 0;
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+  }
+  #sidebar .logo { padding: 22px 20px 14px; }
+  #sidebar .logo b { font-size: 1.35rem; letter-spacing: .04em; color: #fff; font-weight: 600; }
+  #sidebar .logo span { display:block; font-size: .72rem; color: #b99aa8; letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
+  #sidebar nav { flex: 1; padding: 8px 10px; }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 2px 0;
+    color: #cdbcc5; text-decoration: none; border-radius: 8px; font-size: .95rem;
+  }
+  #sidebar nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
+  #sidebar nav a.active { background: var(--brand); color: #fff; }
+  #sidebar nav a .cnt {
+    margin-left: auto; background: rgba(255,255,255,.15); border-radius: 99px;
+    font-size: .72rem; padding: 1px 8px; min-width: 22px; text-align: center;
+  }
+  #sidebar nav a.active .cnt { background: rgba(255,255,255,.25); }
+  #sidebar .staffbox { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.1); font-size: .8rem; }
+  #sidebar .staffbox label { color: #b99aa8; display: block; margin-bottom: 5px; }
+  #sidebar .staffbox select {
+    width: 100%; background: #3a2733; border: 1px solid #55404c; color: #fff;
+    border-radius: 6px; padding: 6px 8px; font-size: .85rem;
+  }
+  #sidebar .demo { padding: 10px 16px 16px; }
+  #sidebar .demo button {
+    width: 100%; background: none; border: 1px solid #55404c; color: #b99aa8;
+    border-radius: 6px; padding: 6px; font-size: .75rem; cursor: pointer;
+  }
+  #sidebar .demo button:hover { color: #fff; border-color: #7a5f6f; }
+
+  /* ---------- Main ---------- */
+  #main { flex: 1; min-width: 0; padding: 22px 28px 60px; }
+  h1 { font-size: 1.45rem; margin: 6px 0 4px; font-weight: 650; }
+  h2 { font-size: 1.05rem; margin: 22px 0 10px; font-weight: 650; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 18px; }
+
+  /* ---------- Notification banner ---------- */
+  #banner {
+    background: linear-gradient(90deg, var(--brand), var(--brand-dark)); color: #fff;
+    border-radius: var(--radius); padding: 13px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(155,44,77,.25); cursor: pointer;
+  }
+  #banner.quiet { background: #fff; color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+  #banner .bell { font-size: 1.3rem; }
+  #banner b { font-weight: 650; }
+  #banner .pill { background: rgba(255,255,255,.18); border-radius: 99px; padding: 2px 11px; font-size: .82rem; }
+  #banner.quiet .pill { background: var(--grey-bg); }
+
+  /* ---------- Cards, stats ---------- */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .stat .v { font-size: 1.35rem; font-weight: 700; margin-top: 2px; }
+  .stat .l { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+  .stat.warn .v { color: var(--amber); }
+  .stat.bad .v { color: var(--red); }
+  .stat.good .v { color: var(--green); }
+
+  /* ---------- Tables ---------- */
+  .tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #fafafb; color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; position: sticky; top: 0; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr.click:hover { background: var(--brand-soft); cursor: pointer; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .grouphead td {
+    background: var(--grey-bg); font-weight: 650; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .04em; color: #444; padding: 7px 12px;
+  }
+
+  /* ---------- Badges ---------- */
+  .badge { display: inline-block; border-radius: 99px; padding: 2px 10px; font-size: .74rem; font-weight: 600; white-space: nowrap; }
+  .b-green { background: var(--green-bg); color: var(--green); }
+  .b-amber { background: var(--amber-bg); color: var(--amber); }
+  .b-red { background: var(--red-bg); color: var(--red); }
+  .b-blue { background: var(--blue-bg); color: var(--blue); }
+  .b-grey { background: var(--grey-bg); color: #4b5563; }
+  .b-brand { background: var(--brand-soft); color: var(--brand); }
+
+  /* ---------- Buttons, inputs ---------- */
+  button, .btn {
+    font: inherit; border-radius: 8px; border: 1px solid var(--line); background: #fff;
+    padding: 7px 14px; cursor: pointer; font-size: .88rem; color: var(--ink);
+  }
+  button:hover, .btn:hover { border-color: #c9ccd2; background: #fafafa; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+  button.primary:hover { background: var(--brand-dark); }
+  button.danger { color: var(--red); border-color: #f3c2c2; }
+  button.danger:hover { background: var(--red-bg); }
+  button.small, .btn.small { padding: 3px 10px; font-size: .78rem; border-radius: 6px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  input, select, textarea {
+    font: inherit; border: 1px solid #cfd3da; border-radius: 8px; padding: 7px 10px;
+    background: #fff; color: var(--ink); font-size: .9rem;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+  label.f { display: block; font-size: .78rem; font-weight: 600; color: var(--muted); margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 18px; }
+  .formgrid input, .formgrid select, .formgrid textarea { width: 100%; }
+  .searchbar {
+    width: 100%; max-width: 620px; font-size: 1.05rem; padding: 12px 16px;
+    border-radius: 12px; border: 1.5px solid #cfd3da; margin-bottom: 16px;
+  }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .toolbar .spacer { flex: 1; }
+  .chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 5px 13px;
+    font-size: .8rem; cursor: pointer; color: #444;
+  }
+  .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+
+  /* ---------- Modal ---------- */
+  #modalroot { position: fixed; inset: 0; display: none; z-index: 50; }
+  #modalroot.open { display: block; }
+  #modalroot .scrim { position: absolute; inset: 0; background: rgba(20,15,20,.55); }
+  #modalroot .box {
+    position: relative; background: #fff; border-radius: 14px; max-width: 860px; width: calc(100% - 40px);
+    margin: 4vh auto; max-height: 92vh; overflow-y: auto; padding: 24px 26px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.3);
+  }
+  #modalroot .box.wide { max-width: 1040px; }
+  #modalroot h3 { margin: 0 0 4px; font-size: 1.15rem; }
+  .modalfoot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .x { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 1.25rem; color: var(--muted); cursor: pointer; }
+
+  .note { background: var(--amber-bg); border: 1px solid #f4d488; color: #7c5205; border-radius: 8px; padding: 9px 13px; font-size: .85rem; margin: 10px 0; }
+  .note.info { background: var(--blue-bg); border-color: #c3d0f5; color: #1e3a8a; }
+  .note.ok { background: var(--green-bg); border-color: #bfe3cf; color: var(--green); }
+  .note.err { background: var(--red-bg); border-color: #f3c2c2; color: var(--red); }
+  .muted { color: var(--muted); }
+  .small { font-size: .8rem; }
+  .mono { font-family: ui-monospace, Consolas, monospace; font-size: .84em; }
+  .right { text-align: right; }
+  .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } body { flex-direction: column; } #sidebar { width: 100%; height: auto; position: static; } }
+  a.plain { color: var(--brand); text-decoration: none; font-weight: 600; }
+  a.plain:hover { text-decoration: underline; }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { border-left: 2px solid var(--line); padding: 4px 0 10px 14px; margin-left: 6px; position: relative; font-size: .86rem; }
+  .timeline li::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: var(--brand); position: absolute; left: -5px; top: 9px; }
+  .invoice-frame { width: 100%; height: 66vh; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  .seam {
+    border: 1.5px dashed var(--brand); background: var(--brand-soft); border-radius: 8px;
+    padding: 10px 14px; font-size: .82rem; color: var(--brand-dark); margin: 10px 0;
+  }
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: var(--ink); color: #fff;
+    border-radius: 10px; padding: 12px 18px; font-size: .9rem; z-index: 99;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35); max-width: 380px;
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="logo"><b>Darcybow</b><span>Orders &amp; Balances</span></div>
+    <nav id="nav"></nav>
+    <div class="staffbox">
+      <label for="staffsel">Signed in as</label>
+      <select id="staffsel" onchange="App.setStaff(this.value)"></select>
+    </div>
+    <div class="demo"><button onclick="App.resetDemo()">↺ Reset demo data</button></div>
+  </aside>
+  <main id="main"></main>
+  <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   Darcybow Orders & Balances dashboard — single-file working slice.
+
+   Runs fully offline on seeded mock data (persisted in localStorage).
+   External integrations (Shopify catalogue, Gmail sending) are isolated
+   in ShopifyService / GmailService below, each with a clearly marked
+   LIVE CREDENTIAL SEAM where a real API key / OAuth credential plugs in.
+
+   NOTE FOR THE LIVE BUILD: in this offline slice the "domain" module
+   plays the role of the server. When this is wired to a real backend,
+   every function in Domain (totals, balances, instalment maths, plan
+   validation, payment allocation) must run server-side — never trust
+   amounts or "paid" flags posted from the browser.
+   ===================================================================== */
+
+/* ---------------------- small utilities ---------------------- */
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2) + Date.now());
+const nowIso = () => new Date().toISOString();
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
+function isoDaysAgo(n, h) { const d = new Date(); d.setDate(d.getDate() - n); if (h != null) d.setHours(h, 15, 0, 0); return d.toISOString(); }
+function daysUntil(dateStr) {
+  const a = new Date(todayStr() + 'T00:00:00'); const b = new Date(dateStr + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+// Calendar-month addition clamped to shorter months (31 Jan + 1m = 28/29 Feb).
+function addCalendarMonths(dateStr, months) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const t = new Date(y, m - 1 + months, 1);
+  const dim = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+  t.setDate(Math.min(d, dim));
+  return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+}
+function fmtDate(ds) {
+  if (!ds) return '—';
+  return new Date(ds + 'T00:00:00').toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-IE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* ------- money: integer euro cents everywhere ------- */
+const eur = c => (c / 100).toLocaleString('en-IE', { style: 'currency', currency: 'EUR' });
+function parseEuros(str) {
+  const clean = String(str ?? '').replace(/[€,\s]/g, '');
+  if (clean === '' || !/^-?\d+(\.\d{1,2})?$/.test(clean)) return null;
+  return Math.round(parseFloat(clean) * 100);
+}
+// Split a total into n instalments; rounding difference goes to the FINAL one.
+function splitCents(total, n) {
+  const base = Math.floor(total / n);
+  const out = Array(n).fill(base);
+  out[n - 1] = total - base * (n - 1);
+  return out;
+}
+
+/* ---------------------- data store ---------------------- */
+const STORE_KEY = 'darcybow-db-v1';
+let DB = null;
+
+const Store = {
+  load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) { DB = JSON.parse(raw); return; }
+    } catch (e) { /* corrupt store: fall through to reseed */ }
+    DB = Seed.build();
+    Store.save();
+  },
+  save() { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); },
+  reset() { localStorage.removeItem(STORE_KEY); DB = Seed.build(); Store.save(); },
+};
+
+const DEFAULT_SETTINGS = {
+  // Internal reminder stages, in days before the due date (editable in Settings).
+  reminderOffsets: { upcoming: 14, dueSoon: 7 },
+  duplicateReminderWindowDays: 3,
+  dailySummary: { enabled: false, recipients: ['owner@darcybow.ie'], sendHour: 8 },
+  reminderTemplate: {
+    subject: 'Darcybow — payment reminder ({{orderReference}})',
+    body: 'Hi {{customerName}},\n\nA friendly reminder about the remaining balance on your Darcybow order {{orderReference}} (invoice {{invoiceNumber}}).\n\nOrder total: {{orderTotal}}\nPayments received: {{totalPaid}}\nRemaining balance: {{remainingBalance}}\nDue date: {{dueDate}}\n\n{{paymentLink}}\n\nIf you have any questions, or have already made this payment, just reply to this email or give us a ring.\n\nWarm regards,\nDarcybow\nhello@darcybow.ie · +353 21 123 4567 · darcybow.ie',
+  },
+  shop: {
+    name: 'Darcybow', addressLine: 'Unit 4, The Courtyard, Douglas, Cork, Ireland',
+    email: 'hello@darcybow.ie', phone: '+353 21 123 4567', web: 'darcybow.ie', vat: 'IE 1234567X',
+  },
+  staff: [
+    { name: 'Elva', role: 'admin' },
+    { name: 'Aoife', role: 'staff' },
+    { name: 'Niamh', role: 'staff' },
+  ],
+};
+
+/* ---------------------- seed data ---------------------- */
+const Seed = {
+  build() {
+    const db = {
+      seededAt: nowIso(),
+      settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+      customers: [], products: [], orders: [], orderItems: [], instalments: [],
+      payments: [], allocations: [], adjustments: [], reminderTasks: [],
+      contactLog: [], customerReminders: [], outbox: [],
+      counters: { order: 1040, invoice: 2100 },
+    };
+
+    // Product catalogue — in live mode this is refreshed from Shopify
+    // via ShopifyService.fetchCatalogue(); these mirror that shape.
+    const P = (title, styleCode, category, price, colours, sizes) =>
+      ({ id: uid(), shopifySourceId: 'gid://shopify/Product/' + Math.floor(1e12 + Math.random() * 9e12),
+         title, styleCode, category, retailPriceCents: price, colours, sizes, active: true });
+    const products = [
+      P('Isabella Communion Gown', 'DB-IS01', 'dress', 38500, ['Ivory','White'], ['Age 7','Age 8','Age 9','Age 10']),
+      P('Grace Communion Dress', 'DB-GR02', 'dress', 32000, ['White','Ivory'], ['Age 7','Age 8','Age 9','Age 10']),
+      P('Aoibhinn Flower Girl Dress', 'DB-AO03', 'dress', 18500, ['Ivory','Blush','Champagne'], ['Age 3','Age 4','Age 5','Age 6','Age 7']),
+      P('Sofia Debs Gown', 'DB-SF04', 'dress', 42500, ['Emerald','Navy','Ruby','Black'], ['6','8','10','12','14','16']),
+      P('Valentina Debs Gown', 'DB-VL05', 'dress', 48000, ['Champagne','Dusty Rose','Sage'], ['6','8','10','12','14','16']),
+      P('Clara Confirmation Dress', 'DB-CL06', 'dress', 24500, ['White','Powder Blue','Lilac'], ['Age 11','Age 12','Age 13']),
+      P('Mother-of-the-Bride Two Piece', 'DB-MB07', 'dress', 39500, ['Teal','Silver','Plum'], ['10','12','14','16','18','20']),
+      P('Satin Ballet Pumps', 'DB-SH10', 'shoes', 5500, ['White','Ivory'], ['28','29','30','31','32','33','34','35']),
+      P('Pearl Heeled Sandals', 'DB-SH11', 'shoes', 7500, ['Ivory','Silver','Nude'], ['36','37','38','39','40','41']),
+      P('Crystal Tiara', 'DB-AC20', 'accessory', 4500, ['Silver','Gold'], ['One size']),
+      P('Pearl Bolero Jacket', 'DB-AC21', 'accessory', 6500, ['White','Ivory'], ['Age 7-8','Age 9-10','S','M','L']),
+      P('Communion Veil with Comb', 'DB-AC22', 'accessory', 3500, ['White','Ivory'], ['One size']),
+      P('Satin Gloves', 'DB-AC23', 'accessory', 1800, ['White','Ivory'], ['Child','Adult']),
+      P('Beaded Clutch Bag', 'DB-AC24', 'accessory', 4200, ['Silver','Champagne','Navy'], ['One size']),
+    ];
+    db.products = products;
+    const prod = code => products.find(p => p.styleCode === code);
+
+    const C = (name, daughterName, email, phone, address, notes) =>
+      ({ id: uid(), name, daughterName, email, phone, address, notes, createdAt: isoDaysAgo(90), updatedAt: isoDaysAgo(10) });
+
+    // Helper: create a full order with items, deposit, plan and payments.
+    // spec: { customer, items:[{code,colour,size,qty?}], eventHotel, eventDate, staffNotes,
+    //         confirmedDaysAgo, plan: 'paid_in_full'|'fifty_fifty'|'custom'|null,
+    //         custom:[{amount,dueInDays,notes}], finalDueInDays, payments:[{amount|'rest1'|'all', daysAgo, method}],
+    //         status?, flags?, writeOff?, reminderSentDaysAgo?, contact?[], promisedInDays? }
+    let refN = db.counters.order;
+    const mkOrder = (spec) => {
+      const cust = spec.customer; db.customers.push(cust);
+      const oid = uid();
+      const created = isoDaysAgo(spec.confirmedDaysAgo, 11);
+      const order = {
+        id: oid, reference: 'DB-' + (refN++), customerId: cust.id,
+        status: spec.status || 'confirmed', planType: spec.plan || null,
+        eventHotel: spec.eventHotel || '', eventDate: spec.eventDate || null,
+        staffNotes: spec.staffNotes || '',
+        remindersPaused: !!(spec.flags && spec.flags.remindersPaused),
+        needsReview: !!(spec.flags && spec.flags.needsReview),
+        refundProcessing: false, promisedPaymentDate: spec.promisedInDays != null ? daysFromNow(spec.promisedInDays) : null,
+        createdAt: created, updatedAt: created,
+      };
+      db.orders.push(order);
+      let total = 0;
+      for (const it of spec.items) {
+        const p = prod(it.code); const qty = it.qty || 1;
+        total += p.retailPriceCents * qty;
+        db.orderItems.push({ id: uid(), orderId: oid, productId: p.id, title: p.title, styleCode: p.styleCode,
+          category: p.category, colour: it.colour, size: it.size, quantity: qty, retailPriceCents: p.retailPriceCents });
+      }
+      // Every order starts with the €25 Shopify deposit (the only thing sold through checkout).
+      const payments = [{ amount: 2500, daysAgo: spec.confirmedDaysAgo, method: 'shopify_deposit',
+        notes: 'Shopify deposit product — order #' + order.reference }];
+      for (const pay of (spec.payments || [])) payments.push(pay);
+
+      // Build instalments.
+      const insts = [];
+      const mkInst = (n, due, dueDate, notes) => {
+        const inst = { id: uid(), dressOrderId: oid, instalmentNumber: n, amountDueCents: due, amountPaidCents: 0,
+          dueDate, status: 'scheduled', paidAt: null, reminderStatus: 'not_due', lastReminderSentAt: null,
+          nextReminderAt: null, notes: notes || '', createdAt: created, updatedAt: created };
+        insts.push(inst); db.instalments.push(inst); return inst;
+      };
+      if (spec.plan === 'paid_in_full') {
+        mkInst(1, total, daysFromNow(-(spec.confirmedDaysAgo)), 'Paid in full at confirmation');
+      } else if (spec.plan === 'fifty_fifty') {
+        const [h1] = splitCents(total, 2);
+        mkInst(1, h1, daysFromNow(-(spec.confirmedDaysAgo)), 'First 50% at confirmation');
+        mkInst(2, total - h1, spec.finalDueInDays != null ? daysFromNow(spec.finalDueInDays)
+          : addCalendarMonths(daysFromNow(-(spec.confirmedDaysAgo)), 1), 'Final balance');
+      } else if (spec.plan === 'custom') {
+        let n = 1;
+        for (const ci of spec.custom) mkInst(n++, ci.amount, daysFromNow(ci.dueInDays), ci.notes || '');
+      }
+      // Record payments and allocate oldest-instalment-first.
+      for (const pay of payments) {
+        let amt = pay.amount;
+        if (amt === 'rest1') amt = insts[0].amountDueCents - insts[0].amountPaidCents;
+        if (amt === 'all') amt = total - payments.filter(p2 => typeof p2.amount === 'number').reduce((s, p2) => s + p2.amount, 0);
+        const pm = { id: uid(), orderId: oid, amountCents: amt, method: pay.method || 'card', reference: '',
+          receivedAt: isoDaysAgo(pay.daysAgo, 14), recordedBy: pay.by || 'Elva', notes: pay.notes || '',
+          voided: false, voidReason: '', createdAt: isoDaysAgo(pay.daysAgo, 14) };
+        db.payments.push(pm);
+        let left = amt;
+        for (const inst of insts) {
+          if (left <= 0) break;
+          const need = inst.amountDueCents - inst.amountPaidCents;
+          if (need <= 0) continue;
+          const take = Math.min(left, need);
+          db.allocations.push({ id: uid(), paymentId: pm.id, instalmentId: inst.id, amountCents: take, createdAt: pm.createdAt });
+          inst.amountPaidCents += take; left -= take;
+          if (inst.amountPaidCents >= inst.amountDueCents) { inst.paidAt = pm.receivedAt; }
+        }
+      }
+      if (spec.writeOff) {
+        db.adjustments.push({ id: uid(), orderId: oid, type: 'write_off', amountCents: spec.writeOff.amount,
+          reason: spec.writeOff.reason, staff: 'Elva', previousValue: 'balance ' + eur(spec.writeOff.amount),
+          newValue: 'balance €0.00 (written off)', createdAt: isoDaysAgo(spec.writeOff.daysAgo, 16) });
+        order.status = 'written_off';
+      }
+      if (spec.reminderSentDaysAgo != null) {
+        const inst = insts[insts.length - 1];
+        inst.reminderStatus = 'sent'; inst.lastReminderSentAt = isoDaysAgo(spec.reminderSentDaysAgo, 10);
+        db.customerReminders.push({ id: uid(), orderId: oid, instalmentId: inst.id, method: 'email',
+          recipient: cust.email, subject: 'Darcybow — payment reminder (' + order.reference + ')',
+          body: 'Hi ' + cust.name + ',\n\nA friendly reminder about the remaining balance on your Darcybow order ' + order.reference + '. (seeded sample reminder)',
+          sentBy: 'Aoife', sentAt: isoDaysAgo(spec.reminderSentDaysAgo, 10), deliveryStatus: 'delivered', customerResponse: spec.reminderResponse || '' });
+      }
+      for (const cl of (spec.contact || [])) {
+        db.contactLog.push({ id: uid(), orderId: oid, reminderTaskId: null, action: cl.action, note: cl.note || '',
+          staff: cl.by || 'Aoife', createdAt: isoDaysAgo(cl.daysAgo, 15) });
+      }
+      return order;
+    };
+
+    /* ---- Scenario 1: paid in full (recently paid) ---- */
+    mkOrder({
+      customer: C('Mary O’Sullivan', 'Saoirse', 'mary.osullivan@gmail.com', '087 234 5678',
+        '14 Elm Grove, Douglas, Cork', 'Lovely family, returning customer — sister’s communion 2024.'),
+      items: [{ code: 'DB-IS01', colour: 'Ivory', size: 'Age 8' }, { code: 'DB-AC22', colour: 'Ivory', size: 'One size' }],
+      eventHotel: 'Communion — Rochestown Park Hotel', eventDate: daysFromNow(40),
+      staffNotes: 'Hem take-up booked for fitting on the 22nd.',
+      confirmedDaysAgo: 21, plan: 'paid_in_full',
+      payments: [{ amount: 'all', daysAgo: 5, method: 'card' }],
+      status: 'fully_paid',
+    });
+
+    /* ---- Scenario 2: 50/50, final due later (~25 days) ---- */
+    mkOrder({
+      customer: C('Claire Murphy', 'Aoife', 'claire.murphy82@gmail.com', '086 112 3344',
+        '3 The Willows, Carrigaline, Co. Cork', ''),
+      items: [{ code: 'DB-GR02', colour: 'White', size: 'Age 9' }, { code: 'DB-SH10', colour: 'White', size: '31' }],
+      eventHotel: 'Communion — Oriel House Hotel, Ballincollig', eventDate: daysFromNow(38),
+      staffNotes: 'Wants matching bolero if it comes back in stock — call when the AC21 delivery lands.',
+      confirmedDaysAgo: 6, plan: 'fifty_fifty', finalDueInDays: 25,
+      payments: [{ amount: 'rest1', daysAgo: 6, method: 'card' }],
+    });
+
+    /* ---- Scenario 3: 50/50, final due in 10 days ---- */
+    mkOrder({
+      customer: C('Sinéad Kelleher', 'Róisín', 'sinead.kelleher@hotmail.com', '085 667 8899',
+        'Glenview House, Bandon, Co. Cork', 'Prefers WhatsApp over calls.'),
+      items: [{ code: 'DB-SF04', colour: 'Emerald', size: '10' }, { code: 'DB-SH11', colour: 'Silver', size: '38' }, { code: 'DB-AC24', colour: 'Silver', size: 'One size' }],
+      eventHotel: 'Debs — Clayton Hotel Silver Springs', eventDate: daysFromNow(24),
+      staffNotes: 'Dress needs strap adjustment — pinned at fitting 2 weeks ago.',
+      confirmedDaysAgo: 20, plan: 'fifty_fifty', finalDueInDays: 10,
+      payments: [{ amount: 'rest1', daysAgo: 20, method: 'bank_transfer' }],
+    });
+
+    /* ---- Scenario 4: 50/50, final due in 5 days ---- */
+    mkOrder({
+      customer: C('Emma Walsh', 'Lucy', 'emmawalsh.cork@gmail.com', '083 445 6677',
+        '27 Maple Court, Midleton, Co. Cork', ''),
+      items: [{ code: 'DB-AO03', colour: 'Blush', size: 'Age 5' }],
+      eventHotel: 'Wedding — Castlemartyr Resort', eventDate: daysFromNow(12),
+      staffNotes: 'Flower girl for aunt’s wedding. Mum asked for the dress steamed before collection.',
+      confirmedDaysAgo: 26, plan: 'fifty_fifty', finalDueInDays: 5,
+      payments: [{ amount: 'rest1', daysAgo: 26, method: 'cash' }],
+    });
+
+    /* ---- Scenario 5: 50/50, final due today ---- */
+    mkOrder({
+      customer: C('Fiona Byrne', 'Ella', 'fiona.byrne@yahoo.ie', '089 990 1122',
+        '8 Harbour View, Cobh, Co. Cork', 'Asked us to hold collection until final payment clears.'),
+      items: [{ code: 'DB-CL06', colour: 'Powder Blue', size: 'Age 12' }, { code: 'DB-AC23', colour: 'White', size: 'Child' }],
+      eventHotel: 'Confirmation — Fota Island Resort', eventDate: daysFromNow(9),
+      staffNotes: '', confirmedDaysAgo: 31, plan: 'fifty_fifty', finalDueInDays: 0,
+      payments: [{ amount: 'rest1', daysAgo: 31, method: 'card' }],
+      contact: [{ action: 'texted', note: 'Text sent Monday confirming balance due date.', daysAgo: 3, by: 'Niamh' }],
+    });
+
+    /* ---- Scenario 6: 50/50, overdue 12 days, reminder sent, no response ---- */
+    mkOrder({
+      customer: C('Deirdre Nolan', 'Kate', 'deirdre.nolan@gmail.com', '087 776 5544',
+        '41 Riverside Drive, Mallow, Co. Cork', ''),
+      items: [{ code: 'DB-VL05', colour: 'Dusty Rose', size: '12' }],
+      eventHotel: 'Debs — Vienna Woods Hotel', eventDate: daysFromNow(15),
+      staffNotes: 'Two missed fitting appointments. Handle gently — bereavement in the family recently.',
+      confirmedDaysAgo: 45, plan: 'fifty_fifty', finalDueInDays: -12,
+      payments: [{ amount: 'rest1', daysAgo: 45, method: 'card' }],
+      reminderSentDaysAgo: 8,
+      contact: [{ action: 'called', note: 'No answer, left voicemail.', daysAgo: 5, by: 'Aoife' }],
+    });
+
+    /* ---- Scenario 7: custom plan, partially paid instalment now overdue ---- */
+    mkOrder({
+      customer: C('Orla McCarthy', 'Niamh', 'orla.mccarthy@outlook.com', '086 334 2211',
+        '5 Beechwood Park, Fermoy, Co. Cork', 'Paying in small amounts — agreed flexible plan.'),
+      items: [{ code: 'DB-MB07', colour: 'Teal', size: '14' }, { code: 'DB-SH11', colour: 'Nude', size: '39' }],
+      eventHotel: 'Wedding — Springfort Hall, Mallow', eventDate: daysFromNow(30),
+      staffNotes: 'Mother of the bride. Second instalment part-paid — said she’d clear it after payday.',
+      confirmedDaysAgo: 50, plan: 'custom',
+      custom: [
+        { amount: 15000, dueInDays: -40, notes: 'Agreed opening instalment' },
+        { amount: 15000, dueInDays: -6, notes: 'Mid plan' },
+        { amount: 14500, dueInDays: 20, notes: 'Final — before collection' },
+      ],
+      payments: [
+        { amount: 12500, daysAgo: 40, method: 'cash', notes: 'Topped deposit up to first instalment' },
+        { amount: 8000, daysAgo: 4, method: 'revolut', notes: 'Part payment toward instalment 2' },
+      ],
+      promisedInDays: 3,
+      contact: [{ action: 'promised_date', note: 'Promised remaining €70 of instalment 2 by ' + fmtDate(daysFromNow(3)) + '.', daysAgo: 4, by: 'Elva' }],
+    });
+
+    /* ---- Scenario 8: custom plan on track, next due in 6 days ---- */
+    mkOrder({
+      customer: C('Grace Hennessy', 'Sophie', 'grace.hennessy@gmail.com', '085 221 9988',
+        '12 The Paddocks, Kinsale, Co. Cork', ''),
+      items: [{ code: 'DB-SF04', colour: 'Navy', size: '8' }, { code: 'DB-AC20', colour: 'Silver', size: 'One size' }],
+      eventHotel: 'Debs — Actons Hotel, Kinsale', eventDate: daysFromNow(55),
+      staffNotes: 'Tiara to be gift-wrapped separately (birthday surprise).',
+      confirmedDaysAgo: 30, plan: 'custom',
+      custom: [
+        { amount: 20000, dueInDays: -25 },
+        { amount: 15000, dueInDays: 6 },
+        { amount: 9500, dueInDays: 36, notes: 'Final before collection' },
+      ],
+      payments: [{ amount: 17500, daysAgo: 25, method: 'card', notes: 'Cleared instalment 1' }],
+    });
+
+    /* ---- Scenario 9: overdue, NO reminder ever sent (reminder required) ---- */
+    mkOrder({
+      customer: C('Laura Dempsey', 'Holly', 'laura.dempsey@gmail.com', '083 887 7665',
+        '22 Sycamore Close, Ballinlough, Cork', ''),
+      items: [{ code: 'DB-GR02', colour: 'Ivory', size: 'Age 10' }, { code: 'DB-AC21', colour: 'Ivory', size: 'Age 9-10' }, { code: 'DB-SH10', colour: 'Ivory', size: '33' }],
+      eventHotel: 'Communion — Radisson Blu Little Island', eventDate: daysFromNow(18),
+      staffNotes: 'Collection arranged for the week before the communion.',
+      confirmedDaysAgo: 35, plan: 'fifty_fifty', finalDueInDays: -4,
+      payments: [{ amount: 'rest1', daysAgo: 35, method: 'card' }],
+    });
+
+    /* ---- Scenario 10: small balance written off (stays in reporting) ---- */
+    mkOrder({
+      customer: C('Patricia Lynch', 'Amy', 'patricia.lynch@eircom.net', '087 123 9876',
+        '9 Church Road, Blackrock, Cork', 'Long-standing customer.'),
+      items: [{ code: 'DB-AO03', colour: 'Champagne', size: 'Age 6' }],
+      eventHotel: 'Wedding — Maryborough Hotel', eventDate: daysFromNow(-10),
+      staffNotes: 'Goodwill write-off of the last €10 — dress had a small bead flaw we repaired.',
+      confirmedDaysAgo: 60, plan: 'fifty_fifty', finalDueInDays: -20,
+      payments: [
+        { amount: 'rest1', daysAgo: 60, method: 'card' },
+        { amount: 9250, daysAgo: 22, method: 'cash', notes: 'Final payment less €10 goodwill' },
+      ],
+      writeOff: { amount: 1000, reason: 'Goodwill gesture — repaired bead-work flaw on the bodice.', daysAgo: 22 },
+    });
+
+    /* ---- Scenario 11: cancelled order ---- */
+    (() => {
+      const o = mkOrder({
+        customer: C('Rachel Cronin', 'Mia', 'rachel.cronin@gmail.com', '089 456 7123',
+          '30 Lakeside Avenue, Wilton, Cork', ''),
+        items: [{ code: 'DB-CL06', colour: 'Lilac', size: 'Age 11' }],
+        eventHotel: 'Confirmation — The Kingsley', eventDate: daysFromNow(50),
+        staffNotes: 'Family moved to Dublin — order cancelled, deposit retained per policy.',
+        confirmedDaysAgo: 15, plan: 'fifty_fifty', finalDueInDays: 14,
+        status: 'cancelled',
+      });
+      // Cancel the schedule to match the order status.
+      for (const inst of db.instalments.filter(i => i.dressOrderId === o.id)) inst.status = 'cancelled';
+    })();
+
+    /* ---- Scenario 12: deposit only, no plan yet (needs review / follow-up) ---- */
+    mkOrder({
+      customer: C('Jennifer Barrett', 'Chloe', 'jen.barrett@gmail.com', '086 909 8071',
+        '17 Meadow Springs, Glanmire, Co. Cork', 'New customer — came from Instagram.'),
+      items: [{ code: 'DB-VL05', colour: 'Sage', size: '10' }, { code: 'DB-SH11', colour: 'Ivory', size: '37' }],
+      eventHotel: 'Debs — Rochestown Park Hotel', eventDate: daysFromNow(70),
+      staffNotes: 'Deposit paid online. Ring to agree the payment plan and book first fitting.',
+      confirmedDaysAgo: 2, plan: null, flags: { needsReview: true },
+    });
+
+    return db;
+  },
+};
+</script>
+<script>
+/* =====================================================================
+   Domain — every euro figure is computed here from the ledger, never
+   taken from UI state. In the live build this module moves server-side.
+   ===================================================================== */
+const Domain = {
+
+  customer: id => DB.customers.find(c => c.id === id),
+  order: id => DB.orders.find(o => o.id === id),
+  itemsOf: orderId => DB.orderItems.filter(i => i.orderId === orderId),
+  instalmentsOf: orderId => DB.instalments.filter(i => i.dressOrderId === orderId).sort((a, b) => a.instalmentNumber - b.instalmentNumber),
+  paymentsOf: orderId => DB.payments.filter(p => p.orderId === orderId).sort((a, b) => a.receivedAt < b.receivedAt ? -1 : 1),
+  ordersOf: customerId => DB.orders.filter(o => o.customerId === customerId),
+
+  orderTotalCents(orderId) {
+    return Domain.itemsOf(orderId).reduce((s, i) => s + i.retailPriceCents * i.quantity, 0);
+  },
+  paidCents(orderId) {
+    return Domain.paymentsOf(orderId).filter(p => !p.voided).reduce((s, p) => s + p.amountCents, 0);
+  },
+  creditCents(orderId) { // discounts + write-offs: reduce the balance, are NOT payments
+    return DB.adjustments.filter(a => a.orderId === orderId && (a.type === 'discount' || a.type === 'write_off'))
+      .reduce((s, a) => s + (a.amountCents || 0), 0);
+  },
+  balanceCents(orderId) {
+    return Domain.orderTotalCents(orderId) - Domain.paidCents(orderId) - Domain.creditCents(orderId);
+  },
+
+  /* -------- instalment status (recomputed, never trusted from UI) -------- */
+  refreshInstalment(inst) {
+    if (inst.status === 'cancelled') return;
+    const order = Domain.order(inst.dressOrderId);
+    if (order.status === 'cancelled') { inst.status = 'cancelled'; return; }
+    const offs = DB.settings.reminderOffsets;
+    const du = daysUntil(inst.dueDate);
+    let status;
+    if (inst.amountPaidCents >= inst.amountDueCents) status = 'paid';
+    else if (du < 0) status = 'overdue';
+    else if (inst.amountPaidCents > 0) status = 'partially_paid';
+    else if (du <= offs.dueSoon) status = 'due_soon';
+    else status = 'scheduled';
+    if (status !== inst.status) { inst.status = status; inst.updatedAt = nowIso(); }
+    // reminderStatus: pending once inside the reminder window, unless already sent
+    if (status === 'paid') inst.reminderStatus = inst.reminderStatus === 'sent' ? 'sent' : 'not_due';
+    else if (inst.reminderStatus !== 'sent' && inst.reminderStatus !== 'failed') {
+      inst.reminderStatus = du <= offs.upcoming ? 'pending' : 'not_due';
+    }
+    inst.nextReminderAt = status === 'paid' ? null
+      : du > offs.upcoming ? daysFromNow(du - offs.upcoming)
+      : du > offs.dueSoon ? daysFromNow(du - offs.dueSoon)
+      : du > 0 ? inst.dueDate : todayStr();
+  },
+
+  nextUnpaidInstalment(orderId) {
+    return Domain.instalmentsOf(orderId).find(i => i.status !== 'cancelled' && i.amountPaidCents < i.amountDueCents) || null;
+  },
+
+  reminderStage(inst) {
+    const du = daysUntil(inst.dueDate);
+    const offs = DB.settings.reminderOffsets;
+    if (du < 0) return 'overdue';
+    if (du === 0) return 'due_today';
+    if (du <= offs.dueSoon) return 'upcoming_7';
+    if (du <= offs.upcoming) return 'upcoming_14';
+    return null;
+  },
+
+  /* -------- reminder engine: internal follow-up tasks --------
+     Tasks are created per (instalment, stage) and are never cleared just
+     because they were reviewed — they close only when the balance hits
+     zero, the order is cancelled, or the balance is written off. */
+  refreshAll() {
+    for (const inst of DB.instalments) Domain.refreshInstalment(inst);
+    for (const order of DB.orders) {
+      const balance = Domain.balanceCents(order.id);
+      const active = order.status !== 'cancelled' && order.status !== 'written_off';
+      if (active && balance <= 0 && order.status !== 'fully_paid' && order.planType) {
+        order.status = 'fully_paid'; order.updatedAt = nowIso();
+      }
+      const done = !active || balance <= 0;
+      if (done) { // stop reminders, keep history
+        for (const t of DB.reminderTasks.filter(t => t.orderId === order.id && t.status !== 'closed')) {
+          t.status = 'closed'; t.updatedAt = nowIso();
+        }
+        continue;
+      }
+      if (order.remindersPaused) continue;
+      const inst = Domain.nextUnpaidInstalment(order.id);
+      if (!inst) continue;
+      const stage = Domain.reminderStage(inst);
+      if (!stage) continue;
+      let task = DB.reminderTasks.find(t => t.instalmentId === inst.id && t.stage === stage);
+      if (!task) {
+        task = { id: uid(), orderId: order.id, instalmentId: inst.id, stage, status: 'open',
+          snoozedUntil: null, promisedPaymentDate: null, createdAt: nowIso(), updatedAt: nowIso() };
+        DB.reminderTasks.push(task);
+      }
+      // Reopen when a snooze or promised payment date has passed unpaid.
+      if (task.status === 'snoozed' && task.snoozedUntil && task.snoozedUntil <= todayStr()) {
+        task.status = 'open'; task.updatedAt = nowIso();
+        DB.contactLog.push({ id: uid(), orderId: order.id, reminderTaskId: task.id, action: 'reopened',
+          note: 'Snooze until ' + fmtDate(task.snoozedUntil) + ' elapsed with balance still outstanding.', staff: 'System', createdAt: nowIso() });
+        task.snoozedUntil = null;
+      }
+      if (order.promisedPaymentDate && order.promisedPaymentDate < todayStr()) {
+        if (task.status === 'reviewed') {
+          task.status = 'open'; task.updatedAt = nowIso();
+          DB.contactLog.push({ id: uid(), orderId: order.id, reminderTaskId: task.id, action: 'reopened',
+            note: 'Promised payment date ' + fmtDate(order.promisedPaymentDate) + ' passed unpaid.', staff: 'System', createdAt: nowIso() });
+        }
+        order.promisedPaymentDate = null;
+      }
+    }
+    Store.save();
+  },
+
+  openTasks() {
+    return DB.reminderTasks.filter(t => {
+      if (t.status === 'closed') return false;
+      if (t.status === 'snoozed' && t.snoozedUntil && t.snoozedUntil > todayStr()) return false;
+      return true;
+    });
+  },
+
+  /* -------- payment plans -------- */
+  createPlan(orderId, planType, opts, staff) {
+    const order = Domain.order(orderId);
+    if (!order) throw new Error('Order not found');
+    if (Domain.instalmentsOf(orderId).some(i => i.status !== 'cancelled'))
+      throw new Error('This order already has an active plan. Cancel it first (with a reason) to re-plan.');
+    const total = Domain.orderTotalCents(orderId);
+    const outstanding = Domain.balanceCents(orderId);
+    const now = nowIso();
+    const mk = (n, amountDueCents, dueDate, notes) => DB.instalments.push({
+      id: uid(), dressOrderId: orderId, instalmentNumber: n, amountDueCents, amountPaidCents: 0,
+      dueDate, status: 'scheduled', paidAt: null, reminderStatus: 'not_due', lastReminderSentAt: null,
+      nextReminderAt: null, notes: notes || '', createdAt: now, updatedAt: now,
+    });
+
+    if (planType === 'paid_in_full') {
+      mk(1, total, todayStr(), 'Paid in full');
+    } else if (planType === 'fifty_fifty') {
+      // First payment is 50% of the ORDER TOTAL; rounding cent goes to the final instalment.
+      const [first] = splitCents(total, 2);
+      const finalDue = opts.finalDueDate || addCalendarMonths(todayStr(), 1); // default: one calendar month after first payment; editable
+      if (finalDue < todayStr()) throw new Error('Final instalment due date cannot be in the past.');
+      mk(1, first, todayStr(), 'First 50% of order total');
+      mk(2, total - first, finalDue, 'Final balance');
+    } else if (planType === 'custom') {
+      const rows = opts.instalments || [];
+      if (!rows.length) throw new Error('Add at least one instalment.');
+      let sum = 0, n = 1;
+      for (const r of rows) {
+        if (!Number.isInteger(r.amountCents) || r.amountCents <= 0) throw new Error('Instalment ' + n + ': enter a valid amount.');
+        if (!r.dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(r.dueDate)) throw new Error('Instalment ' + n + ': enter a due date.');
+        sum += r.amountCents; n++;
+      }
+      // Scheduled instalments must sum to the outstanding balance (server-side rule).
+      if (sum !== outstanding) {
+        throw new Error('Instalments sum to ' + eur(sum) + ' but the outstanding balance is ' + eur(outstanding) +
+          '. Difference: ' + eur(sum - outstanding) + '.');
+      }
+      n = 1;
+      for (const r of rows.slice().sort((a, b) => a.dueDate < b.dueDate ? -1 : 1)) mk(n++, r.amountCents, r.dueDate, r.notes || '');
+    } else {
+      throw new Error('Unknown plan type');
+    }
+    order.planType = planType; order.needsReview = false; order.updatedAt = now;
+    // Existing payments (e.g. the Shopify deposit) allocate onto the new schedule.
+    Domain.reallocateAll(orderId);
+    Domain.refreshAll();
+  },
+
+  cancelPlan(orderId, reason, staff) {
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled');
+    for (const i of insts) { i.status = 'cancelled'; i.updatedAt = nowIso(); }
+    for (const al of DB.allocations.filter(a => insts.some(i => i.id === a.instalmentId))) {
+      // keep allocation history; amounts re-allocate when a new plan is made
+    }
+    const order = Domain.order(orderId);
+    DB.adjustments.push({ id: uid(), orderId, type: 'plan_cancelled', amountCents: 0, reason, staff,
+      previousValue: 'plan: ' + (order.planType || 'none'), newValue: 'plan cancelled', createdAt: nowIso() });
+    order.planType = null; order.updatedAt = nowIso();
+    Domain.refreshAll();
+  },
+
+  // Rebuild allocations for an order from its non-voided payments, oldest
+  // payment → lowest-numbered unpaid instalment. Keeps the audit trail:
+  // old allocation rows for voided payments are removed with the void entry logged.
+  reallocateAll(orderId) {
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled');
+    const orderInstIds = new Set(Domain.instalmentsOf(orderId).map(i => i.id));
+    DB.allocations = DB.allocations.filter(a => !orderInstIds.has(a.instalmentId));
+    for (const i of insts) { i.amountPaidCents = 0; i.paidAt = null; }
+    for (const p of Domain.paymentsOf(orderId).filter(p => !p.voided)) {
+      let left = p.amountCents;
+      for (const inst of insts) {
+        if (left <= 0) break;
+        const need = inst.amountDueCents - inst.amountPaidCents;
+        if (need <= 0) continue;
+        const take = Math.min(left, need);
+        DB.allocations.push({ id: uid(), paymentId: p.id, instalmentId: inst.id, amountCents: take, createdAt: nowIso() });
+        inst.amountPaidCents += take; left -= take;
+        if (inst.amountPaidCents >= inst.amountDueCents) inst.paidAt = p.receivedAt;
+      }
+    }
+  },
+
+  /* -------- payments -------- */
+  recordPayment(orderId, { amountCents, method, receivedAt, notes, recordedBy, allocations }) {
+    if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('Enter a valid payment amount.');
+    const order = Domain.order(orderId);
+    if (!order) throw new Error('Order not found');
+    if (order.status === 'cancelled') throw new Error('This order is cancelled — record an adjustment instead.');
+    const balance = Domain.balanceCents(orderId);
+    if (amountCents > balance) throw new Error('Payment (' + eur(amountCents) + ') exceeds the outstanding balance (' + eur(balance) + '). Record the correct amount, or apply an adjustment for overpayments.');
+    const pm = { id: uid(), orderId, amountCents, method: method || 'card', reference: '',
+      receivedAt: receivedAt || nowIso(), recordedBy, notes: notes || '', voided: false, voidReason: '', createdAt: nowIso() };
+    DB.payments.push(pm);
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled');
+    let left = amountCents;
+    if (allocations && allocations.length) {
+      // Manual split: must match the payment amount exactly.
+      const sum = allocations.reduce((s, a) => s + a.amountCents, 0);
+      if (sum !== amountCents) throw new Error('Allocations (' + eur(sum) + ') must equal the payment amount (' + eur(amountCents) + ').');
+      for (const a of allocations) {
+        const inst = insts.find(i => i.id === a.instalmentId);
+        if (!inst) throw new Error('Unknown instalment in allocation.');
+        const need = inst.amountDueCents - inst.amountPaidCents;
+        if (a.amountCents > need) throw new Error('Allocation to instalment ' + inst.instalmentNumber + ' exceeds what is owed on it (' + eur(need) + ').');
+        DB.allocations.push({ id: uid(), paymentId: pm.id, instalmentId: inst.id, amountCents: a.amountCents, createdAt: nowIso() });
+        inst.amountPaidCents += a.amountCents;
+        if (inst.amountPaidCents >= inst.amountDueCents) inst.paidAt = pm.receivedAt;
+        inst.updatedAt = nowIso();
+      }
+    } else {
+      // Auto: oldest unpaid instalment first.
+      for (const inst of insts) {
+        if (left <= 0) break;
+        const need = inst.amountDueCents - inst.amountPaidCents;
+        if (need <= 0) continue;
+        const take = Math.min(left, need);
+        DB.allocations.push({ id: uid(), paymentId: pm.id, instalmentId: inst.id, amountCents: take, createdAt: nowIso() });
+        inst.amountPaidCents += take; left -= take;
+        if (inst.amountPaidCents >= inst.amountDueCents) inst.paidAt = pm.receivedAt;
+        inst.updatedAt = nowIso();
+      }
+    }
+    order.updatedAt = nowIso();
+    Domain.refreshAll(); // marks order fully_paid at zero balance and closes reminder tasks
+    return pm;
+  },
+
+  voidPayment(paymentId, reason, staff) {
+    const pm = DB.payments.find(p => p.id === paymentId);
+    if (!pm) throw new Error('Payment not found');
+    if (pm.voided) throw new Error('Payment already corrected.');
+    pm.voided = true; pm.voidReason = reason;
+    DB.adjustments.push({ id: uid(), orderId: pm.orderId, type: 'payment_correction', amountCents: 0,
+      reason, staff, previousValue: eur(pm.amountCents) + ' ' + pm.method + ' on ' + fmtDateTime(pm.receivedAt),
+      newValue: 'payment voided', createdAt: nowIso() });
+    const order = Domain.order(pm.orderId);
+    if (order.status === 'fully_paid' && Domain.balanceCents(order.id) + pm.amountCents > 0) order.status = 'confirmed';
+    Domain.reallocateAll(pm.orderId);
+    Domain.refreshAll();
+  },
+
+  /* -------- adjustments (admin only, always audited) -------- */
+  applyAdjustment(orderId, { type, amountCents, reason, staff, previousValue, newValue }) {
+    if (!reason || !reason.trim()) throw new Error('A reason is required for every adjustment.');
+    DB.adjustments.push({ id: uid(), orderId, type, amountCents: amountCents || 0, reason: reason.trim(),
+      staff, previousValue: previousValue || '', newValue: newValue || '', createdAt: nowIso() });
+    if (type === 'write_off') {
+      const order = Domain.order(orderId);
+      if (Domain.balanceCents(orderId) <= 0) { order.status = 'written_off'; order.updatedAt = nowIso(); }
+    }
+    Domain.refreshAll();
+  },
+
+  changeDueDate(instalmentId, newDate, reason, staff) {
+    const inst = DB.instalments.find(i => i.id === instalmentId);
+    if (!inst) throw new Error('Instalment not found');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) throw new Error('Enter a valid date.');
+    Domain.applyAdjustment(inst.dressOrderId, {
+      type: 'due_date_change', reason, staff,
+      previousValue: 'instalment ' + inst.instalmentNumber + ' due ' + fmtDate(inst.dueDate),
+      newValue: 'due ' + fmtDate(newDate),
+    });
+    inst.dueDate = newDate; inst.updatedAt = nowIso();
+    Domain.refreshAll();
+  },
+
+  /* -------- outstanding balances view -------- */
+  balanceRows() {
+    const rows = [];
+    for (const order of DB.orders) {
+      if (order.status === 'cancelled') continue;
+      const balance = Domain.balanceCents(order.id);
+      const writtenOff = order.status === 'written_off';
+      if (balance <= 0 && !writtenOff) continue;
+      if (writtenOff) continue; // written-off balances appear in reporting, not as owing customers
+      const cust = Domain.customer(order.customerId);
+      const next = Domain.nextUnpaidInstalment(order.id);
+      const du = next ? daysUntil(next.dueDate) : null;
+      const lastRem = DB.customerReminders.filter(r => r.orderId === order.id).sort((a, b) => a.sentAt < b.sentAt ? 1 : -1)[0];
+      const dress = Domain.itemsOf(order.id).filter(i => i.category === 'dress').map(i => i.title).join(', ')
+        || Domain.itemsOf(order.id).map(i => i.title).join(', ');
+      let group;
+      if (!next) group = 'no_plan';
+      else if (du < 0) group = next.amountPaidCents > 0 ? 'partially_paid_overdue' : 'overdue';
+      else if (du === 0) group = 'due_today';
+      else if (du <= DB.settings.reminderOffsets.dueSoon) group = 'due_7';
+      else if (du <= DB.settings.reminderOffsets.upcoming) group = 'due_14';
+      else group = 'due_later';
+      const reminderRequired = next && du <= DB.settings.reminderOffsets.dueSoon && (!lastRem || (du < 0 && lastRem.sentAt < new Date(Date.now() - DB.settings.duplicateReminderWindowDays * 86400000).toISOString()));
+      rows.push({
+        order, customer: cust, dress,
+        totalCents: Domain.orderTotalCents(order.id), paidCents: Domain.paidCents(order.id),
+        creditCents: Domain.creditCents(order.id), balanceCents: balance,
+        next, daysUntilDue: du, group, lastReminder: lastRem || null,
+        reminderRequired: !!reminderRequired,
+        planStatus: order.planType ? (next ? next.status : 'paid') : 'no_plan',
+      });
+    }
+    return rows;
+  },
+
+  balanceSummary(rows) {
+    const withinSoon = rows.filter(r => r.daysUntilDue != null && r.daysUntilDue >= 0 && r.daysUntilDue <= DB.settings.reminderOffsets.dueSoon);
+    const overdue = rows.filter(r => r.daysUntilDue != null && r.daysUntilDue < 0);
+    return {
+      totalOutstanding: rows.reduce((s, r) => s + r.balanceCents, 0),
+      dueSoonAmount: withinSoon.reduce((s, r) => s + (r.next ? r.next.amountDueCents - r.next.amountPaidCents : 0), 0),
+      dueSoonCount: withinSoon.length,
+      overdueAmount: overdue.reduce((s, r) => s + r.balanceCents, 0),
+      overdueCount: overdue.length,
+      customersOwing: new Set(rows.map(r => r.customer.id)).size,
+      remindersNeeded: rows.filter(r => r.reminderRequired).length,
+      writtenOffCents: DB.adjustments.filter(a => a.type === 'write_off').reduce((s, a) => s + a.amountCents, 0),
+    };
+  },
+
+  /* -------- customer reminder guard-rails --------
+     These are the conditions under which a reminder must never be sent
+     automatically; for manual sends they surface as blocks/warnings. */
+  reminderBlocks(orderId) {
+    const order = Domain.order(orderId);
+    const blocks = [];
+    if (Domain.balanceCents(orderId) <= 0) blocks.push('The balance is already paid.');
+    if (order.status === 'cancelled') blocks.push('The order is cancelled.');
+    if (order.refundProcessing) blocks.push('A refund is being processed.');
+    if (order.remindersPaused) blocks.push('Reminders are paused for this order.');
+    if (order.needsReview) blocks.push('The record is flagged as needing review.');
+    if (order.promisedPaymentDate && order.promisedPaymentDate >= todayStr())
+      blocks.push('An agreed payment date is in the future (' + fmtDate(order.promisedPaymentDate) + ').');
+    return blocks;
+  },
+  duplicateReminderWarning(orderId) {
+    const win = DB.settings.duplicateReminderWindowDays;
+    const cutoff = new Date(Date.now() - win * 86400000).toISOString();
+    const recent = DB.customerReminders.filter(r => r.orderId === orderId && r.sentAt >= cutoff)
+      .sort((a, b) => a.sentAt < b.sentAt ? 1 : -1)[0];
+    return recent ? 'A reminder was already sent ' + fmtDateTime(recent.sentAt) + ' by ' + recent.sentBy +
+      ' (' + recent.method + '). Sending again within ' + win + ' days needs an authorised override.' : null;
+  },
+
+  invoiceNumber(order, variant) {
+    return 'INV-' + order.reference.replace('DB-', '') + (variant === 'accountant' ? '-A' : '-C');
+  },
+
+  /* -------- stock export -------- */
+  stockRows() {
+    const map = new Map();
+    for (const order of DB.orders) {
+      if (order.status === 'cancelled') continue;
+      for (const it of Domain.itemsOf(order.id)) {
+        const key = it.styleCode + '|' + it.title;
+        if (!map.has(key)) map.set(key, { styleCode: it.styleCode, title: it.title, category: it.category, total: 0, variants: new Map() });
+        const row = map.get(key);
+        row.total += it.quantity;
+        const vk = (it.colour || '—') + ' / ' + (it.size || '—');
+        row.variants.set(vk, (row.variants.get(vk) || 0) + it.quantity);
+      }
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  },
+};
+</script>
+<script>
+/* =====================================================================
+   Integration services. The app runs fully on mock data with NO keys
+   present; supplying credentials at the marked seams switches to live.
+   ===================================================================== */
+
+const Credentials = {
+  // ------------------------------------------------------------------
+  // LIVE CREDENTIAL SEAM — Shopify Admin API
+  // To go live, fill these in (store domain + Admin API access token
+  // with read_products scope) and ShopifyService switches from the
+  // seeded mock catalogue to the real one. Nothing else changes.
+  // ------------------------------------------------------------------
+  shopify: {
+    storeDomain: '',        // e.g. 'darcybow.myshopify.com'
+    adminApiAccessToken: '', // shpat_...  (read_products)
+  },
+  // ------------------------------------------------------------------
+  // LIVE CREDENTIAL SEAM — Gmail API (OAuth2)
+  // To go live, complete the OAuth consent flow for the sending mailbox
+  // and store the client id/secret + refresh token here (in the real
+  // deployment these live server-side, never in the browser).
+  // ------------------------------------------------------------------
+  gmail: {
+    clientId: '',
+    clientSecret: '',
+    refreshToken: '',
+    senderAddress: '',      // e.g. 'hello@darcybow.ie'
+  },
+};
+
+const ShopifyService = {
+  isLive: () => !!(Credentials.shopify.storeDomain && Credentials.shopify.adminApiAccessToken),
+  // Returns the full product catalogue for staff selection. The dresses,
+  // shoes and accessories exist in Shopify as product records only —
+  // checkout is used solely for the €25 deposit product, so no order or
+  // payment data ever comes from Shopify; just the catalogue.
+  async fetchCatalogue() {
+    if (ShopifyService.isLive()) {
+      // LIVE CREDENTIAL SEAM — real call goes here, e.g.:
+      //   GET https://{storeDomain}/admin/api/2024-10/products.json
+      //   Header: X-Shopify-Access-Token: {adminApiAccessToken}
+      // Map each product/variant to { id, shopifySourceId, title, styleCode,
+      // category, retailPriceCents, colours[], sizes[], active } and merge
+      // into DB.products keyed on shopifySourceId.
+      throw new Error('Live Shopify fetch not wired in this offline slice.');
+    }
+    return DB.products.filter(p => p.active); // mock catalogue seeded from Seed.build()
+  },
+};
+
+const GmailService = {
+  isLive: () => !!(Credentials.gmail.clientId && Credentials.gmail.refreshToken),
+  // Sends an email. In mock mode the message is recorded to the outbox
+  // exactly as it would have been sent, so the whole flow is testable.
+  async send({ to, subject, body, kind, meta }) {
+    let status = 'mock_sent';
+    if (GmailService.isLive()) {
+      // LIVE CREDENTIAL SEAM — real send goes here, e.g.:
+      //   POST https://gmail.googleapis.com/gmail/v1/users/me/messages/send
+      //   Authorization: Bearer {access token from refreshToken}
+      //   body: base64url RFC 2822 message
+      // Set status = 'sent' on 200, 'failed' otherwise.
+      throw new Error('Live Gmail send not wired in this offline slice.');
+    }
+    const rec = { id: uid(), recipient: to, subject, body, kind, status,
+      meta: meta || {}, sentAt: nowIso() };
+    DB.outbox.unshift(rec);
+    Store.save();
+    return rec;
+  },
+};
+
+/* ---------------------- template rendering ---------------------- */
+function renderTemplate(tpl, vars) {
+  return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] != null ? vars[k] : '');
+}
+
+function reminderVars(order) {
+  const cust = Domain.customer(order.customerId);
+  const next = Domain.nextUnpaidInstalment(order.id);
+  return {
+    customerName: cust.name,
+    orderReference: order.reference,
+    invoiceNumber: Domain.invoiceNumber(order, 'customer'),
+    orderTotal: eur(Domain.orderTotalCents(order.id)),
+    totalPaid: eur(Domain.paidCents(order.id)),
+    remainingBalance: eur(Domain.balanceCents(order.id)),
+    dueDate: next ? fmtDate(next.dueDate) : '—',
+    // LIVE CREDENTIAL SEAM — when a payment provider link is available
+    // (e.g. a Shopify draft-order invoice URL or payment link), inject it
+    // here; until then the line reads as plain contact instructions.
+    paymentLink: 'You can pay by card over the phone, by bank transfer, or in the shop.',
+  };
+}
+
+/* ---------------------- invoices ----------------------
+   Two invoices per order, styled after the Shopify order-invoice layout.
+   variant 'customer'  → shows what the customer paid / owes.
+   variant 'accountant'→ additionally shows the full retail price of each
+   item alongside what was actually paid.
+   Internal staff notes are NEVER rendered on either variant. */
+function invoiceHtml(orderId, variant) {
+  const order = Domain.order(orderId);
+  const cust = Domain.customer(order.customerId);
+  const items = Domain.itemsOf(orderId);
+  const shop = DB.settings.shop;
+  const total = Domain.orderTotalCents(orderId);
+  const paid = Domain.paidCents(orderId);
+  const credits = Domain.creditCents(orderId);
+  const balance = total - paid - credits;
+  const payments = Domain.paymentsOf(orderId).filter(p => !p.voided);
+  const adjustments = DB.adjustments.filter(a => a.orderId === orderId && (a.type === 'discount' || a.type === 'write_off'));
+  const invNo = Domain.invoiceNumber(order, variant);
+  const isAcc = variant === 'accountant';
+  const methodLabel = m => ({ shopify_deposit: 'Deposit (Shopify)', cash: 'Cash', card: 'Card',
+    bank_transfer: 'Bank transfer', revolut: 'Revolut', other: 'Other' }[m] || m);
+
+  const itemRows = items.map(it => `
+      <tr>
+        <td>
+          <b>${esc(it.title)}</b><br>
+          <span class="m">Style ${esc(it.styleCode)} · Colour: ${esc(it.colour || '—')} · Size: ${esc(it.size || '—')}</span>
+        </td>
+        <td class="n">${it.quantity}</td>
+        ${isAcc ? `<td class="n">${eur(it.retailPriceCents)}</td>` : ''}
+        <td class="n">${eur(it.retailPriceCents * it.quantity)}</td>
+      </tr>`).join('');
+
+  const paymentRows = payments.map(p => `
+      <tr><td>${fmtDateTime(p.receivedAt)}</td><td>${esc(methodLabel(p.method))}</td><td class="n">${eur(p.amountCents)}</td></tr>`).join('');
+  const adjRows = adjustments.map(a => `
+      <tr><td>${fmtDateTime(a.createdAt)}</td><td>${a.type === 'write_off' ? 'Balance written off' : 'Discount applied'}</td><td class="n">${eur(a.amountCents)}</td></tr>`).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(invNo)}</title><style>
+    body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; padding: 34px 42px; font-size: 13.5px; }
+    .top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #9b2c4d; padding-bottom: 18px; }
+    .shop b { font-size: 24px; letter-spacing: .04em; color: #9b2c4d; }
+    .shop div { color: #555; margin-top: 4px; line-height: 1.5; }
+    .inv { text-align: right; }
+    .inv h1 { margin: 0; font-size: 19px; letter-spacing: .08em; }
+    .inv .m { color: #666; }
+    .tag { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
+           background: ${isAcc ? '#fde8e8; color:#b91c1c' : '#e7edfd; color:#1d4ed8'}; }
+    .cols { display: flex; gap: 40px; margin: 22px 0; }
+    .cols h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #888; }
+    .cols div { line-height: 1.55; }
+    table { border-collapse: collapse; width: 100%; margin-top: 6px; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #777;
+         border-bottom: 2px solid #ddd; padding: 7px 8px; }
+    td { padding: 9px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+    td.n, th.n { text-align: right; white-space: nowrap; }
+    .m { color: #666; font-size: 12px; }
+    .totals { margin-left: auto; width: 300px; margin-top: 14px; }
+    .totals td { padding: 5px 8px; border: none; }
+    .totals tr.grand td { border-top: 2px solid #1f2229; font-weight: 700; font-size: 15px; padding-top: 9px; }
+    .totals tr.due td { color: ${balance > 0 ? '#b91c1c' : '#157347'}; font-weight: 700; }
+    h3 { font-size: 13px; margin: 26px 0 2px; }
+    .foot { margin-top: 38px; border-top: 1px solid #ddd; padding-top: 14px; color: #777; font-size: 12px; line-height: 1.6; }
+    @media print { body { padding: 0; } }
+  </style></head><body>
+    <div class="top">
+      <div class="shop"><b>${esc(shop.name)}</b>
+        <div>${esc(shop.addressLine)}<br>${esc(shop.phone)} · ${esc(shop.email)}<br>${esc(shop.web)} · VAT ${esc(shop.vat)}</div>
+      </div>
+      <div class="inv">
+        <h1>INVOICE</h1>
+        <div class="m">${esc(invNo)}<br>Order ${esc(order.reference)}<br>Date: ${fmtDate(todayStr())}</div>
+        <span class="tag">${isAcc ? 'ACCOUNTANT COPY — includes retail pricing' : 'CUSTOMER COPY'}</span>
+      </div>
+    </div>
+    <div class="cols">
+      <div><h4>Billed to</h4>
+        <b>${esc(cust.name)}</b><br>${esc(cust.address).replace(/, /g, '<br>')}<br>${esc(cust.phone)}<br>${esc(cust.email)}
+      </div>
+      <div><h4>Order details</h4>
+        ${cust.daughterName ? 'For: ' + esc(cust.daughterName) + '<br>' : ''}
+        ${order.eventHotel ? esc(order.eventHotel) + '<br>' : ''}
+        ${order.eventDate ? 'Event date: ' + fmtDate(order.eventDate) : ''}
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Item</th><th class="n">Qty</th>${isAcc ? '<th class="n">Retail price</th>' : ''}<th class="n">Line total</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <table class="totals">
+      <tr class="grand"><td>Order total</td><td class="n">${eur(total)}</td></tr>
+      <tr><td>Payments received</td><td class="n">−${eur(paid)}</td></tr>
+      ${credits ? `<tr><td>Credits &amp; adjustments</td><td class="n">−${eur(credits)}</td></tr>` : ''}
+      <tr class="due"><td>${balance > 0 ? 'Balance due' : 'Balance'}</td><td class="n">${eur(Math.max(balance, 0))}</td></tr>
+    </table>
+    <h3>Payments received</h3>
+    <table><thead><tr><th>Date</th><th>Method</th><th class="n">Amount</th></tr></thead>
+      <tbody>${paymentRows || '<tr><td colspan="3" class="m">No payments recorded yet.</td></tr>'}${isAcc ? adjRows : ''}</tbody></table>
+    <div class="foot">
+      The €25 booking deposit is taken online at ${esc(shop.web)}; all remaining balances are payable directly to ${esc(shop.name)}.
+      Thank you for choosing ${esc(shop.name)}.${isAcc ? '<br><b>Accountant copy:</b> retail prices shown per item alongside amounts actually received.' : ''}
+    </div>
+  </body></html>`;
+}
+
+/* ---------------------- CSV export ---------------------- */
+function downloadCsv(filename, rows) {
+  const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = rows.map(r => r.map(cell).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+function stockCsvRows() {
+  const rows = [['Style code', 'Product', 'Category', 'Colour', 'Size', 'Quantity ordered']];
+  for (const s of Domain.stockRows())
+    for (const [vk, qty] of s.variants) {
+      const [colour, size] = vk.split(' / ');
+      rows.push([s.styleCode, s.title, s.category, colour, size, qty]);
+    }
+  return rows;
+}
+function stockSummaryCsvRows() {
+  const rows = [['Style code', 'Product', 'Category', 'Total ordered']];
+  for (const s of Domain.stockRows()) rows.push([s.styleCode, s.title, s.category, s.total]);
+  return rows;
+}
+
+/* ---------------------- daily summary email ---------------------- */
+function buildDailySummary() {
+  const rows = Domain.balanceRows();
+  const pick = f => rows.filter(f);
+  const sect = (title, list) => !list.length ? '' :
+    '\n' + title + '\n' + '-'.repeat(title.length) + '\n' + list.map(r =>
+      '• ' + r.customer.name + (r.customer.daughterName ? ' (for ' + r.customer.daughterName + ')' : '') +
+      ' — ' + r.customer.phone + ' · ' + r.customer.email +
+      '\n  Amount due: ' + eur(r.next ? r.next.amountDueCents - r.next.amountPaidCents : r.balanceCents) +
+      ' · Due: ' + (r.next ? fmtDate(r.next.dueDate) : '—') +
+      (r.daysUntilDue < 0 ? ' · ' + Math.abs(r.daysUntilDue) + ' days overdue' : '') +
+      '\n  Record: [dashboard]/#/order/' + r.order.id + '  (secure link — sign-in required)'
+    ).join('\n');
+  const dueSoon = pick(r => r.daysUntilDue != null && r.daysUntilDue > 0 && r.daysUntilDue <= DB.settings.reminderOffsets.dueSoon);
+  const dueToday = pick(r => r.daysUntilDue === 0);
+  const overdue = pick(r => r.daysUntilDue != null && r.daysUntilDue < 0);
+  const s = Domain.balanceSummary(rows);
+  return {
+    subject: 'Darcybow daily balance summary — ' + fmtDate(todayStr()),
+    body: 'Good morning,\n\nOutstanding balances at a glance: ' + eur(s.totalOutstanding) + ' across ' + s.customersOwing +
+      ' customers. ' + s.dueSoonCount + ' due within ' + DB.settings.reminderOffsets.dueSoon + ' days, ' + s.overdueCount + ' overdue.\n' +
+      sect('OVERDUE', overdue) + sect('DUE TODAY', dueToday) + sect('DUE WITHIN ' + DB.settings.reminderOffsets.dueSoon + ' DAYS', dueSoon) +
+      '\n\n(Automated summary. Customer contact details are included for follow-up; no further personal detail is sent by email.)',
+  };
+}
+</script>
+<script>
+/* =====================================================================
+   UI — hash-routed single page app.
+   ===================================================================== */
+const UI = {
+  modal(html, wide) {
+    const root = document.getElementById('modalroot');
+    const box = document.getElementById('modalbox');
+    box.className = 'box' + (wide ? ' wide' : '');
+    box.innerHTML = '<button class="x" onclick="UI.closeModal()">✕</button>' + html;
+    root.classList.add('open');
+    box.scrollTop = 0;
+  },
+  closeModal() { document.getElementById('modalroot').classList.remove('open'); },
+  toast(msg, ms = 3200) {
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), ms);
+  },
+  err(e) { UI.toast('⚠ ' + (e.message || e), 5000); },
+
+  badge(status) {
+    const map = {
+      paid: ['b-green', 'Paid'], fully_paid: ['b-green', 'Fully paid'], scheduled: ['b-grey', 'Scheduled'],
+      due_soon: ['b-amber', 'Due soon'], partially_paid: ['b-blue', 'Partially paid'], overdue: ['b-red', 'Overdue'],
+      cancelled: ['b-grey', 'Cancelled'], confirmed: ['b-blue', 'Active'], written_off: ['b-grey', 'Written off'],
+      draft: ['b-grey', 'Draft'], no_plan: ['b-amber', 'No plan yet'],
+      not_due: ['b-grey', 'Not due'], pending: ['b-amber', 'Reminder pending'], sent: ['b-blue', 'Reminder sent'], failed: ['b-red', 'Send failed'],
+      open: ['b-amber', 'Open'], reviewed: ['b-blue', 'Reviewed'], snoozed: ['b-grey', 'Snoozed'], closed: ['b-green', 'Closed'],
+      mock_sent: ['b-blue', 'Mock sent'],
+    };
+    const [cls, label] = map[status] || ['b-grey', status];
+    return `<span class="badge ${cls}">${esc(label)}</span>`;
+  },
+  dueBadge(du) {
+    if (du == null) return '';
+    if (du < 0) return `<span class="badge b-red">${Math.abs(du)}d overdue</span>`;
+    if (du === 0) return `<span class="badge b-red">Due today</span>`;
+    if (du <= DB.settings.reminderOffsets.dueSoon) return `<span class="badge b-amber">${du}d</span>`;
+    return `<span class="badge b-grey">${du}d</span>`;
+  },
+};
+
+const App = {
+  staff: null,
+
+  setStaff(name) {
+    App.staff = DB.settings.staff.find(s => s.name === name) || DB.settings.staff[0];
+    localStorage.setItem('darcybow-staff', App.staff.name);
+    App.renderStaff();
+  },
+  renderStaff() {
+    const sel = document.getElementById('staffsel');
+    sel.innerHTML = DB.settings.staff.map(s =>
+      `<option value="${esc(s.name)}" ${App.staff.name === s.name ? 'selected' : ''}>${esc(s.name)} (${s.role})</option>`).join('');
+  },
+  requireAdmin() {
+    if (App.staff.role !== 'admin') throw new Error('This action needs an admin — switch the signed-in staff member (bottom left) to an admin account.');
+  },
+  resetDemo() {
+    if (!confirm('Reset all demo data back to the seeded sample set?')) return;
+    Store.reset(); Domain.refreshAll(); App.route();
+    UI.toast('Demo data reset.');
+  },
+
+  /* ---------- router ---------- */
+  route() {
+    Domain.refreshAll();
+    const hash = location.hash || '#/dashboard';
+    const [_, pageRaw, argRaw] = hash.split('/');
+    const page = (pageRaw || '').split('?')[0];
+    const arg = (argRaw || '').split('?')[0];
+    const nav = [
+      ['dashboard', '⌂', 'Dashboard'],
+      ['customers', '👥', 'Customers'],
+      ['balances', '€', 'Outstanding balances', () => Domain.balanceRows().length],
+      ['reminders', '🔔', 'Reminders', () => Domain.openTasks().length],
+      ['stock', '📦', 'Stock export'],
+      ['outbox', '✉', 'Email outbox', () => DB.outbox.length],
+      ['settings', '⚙', 'Settings'],
+    ];
+    document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
+      `<a href="#/${key}" class="${page === key ? 'active' : ''}"><span>${icon}</span> ${label}${cnt ? `<span class="cnt">${cnt()}</span>` : ''}</a>`).join('');
+    const main = document.getElementById('main');
+    const pages = {
+      dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
+      order: () => Pages.orderDetail(arg), 'order-form': () => Pages.orderForm(arg),
+      balances: Pages.balances, reminders: Pages.reminders, stock: Pages.stock,
+      outbox: Pages.outbox, settings: Pages.settingsPage,
+    };
+    main.innerHTML = (pages[page] || Pages.dashboard)();
+    main.scrollTop = 0;
+    if (document.getElementById('of-lines')) Actions.renderLines(); // order form product lines
+
+    const s = document.getElementById('pagesearch');
+    if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+  },
+  go(hash) { if (location.hash === hash) App.route(); else location.hash = hash; },
+};
+
+/* ---------- shared banner ---------- */
+function bannerHtml() {
+  const rows = Domain.balanceRows();
+  const s = Domain.balanceSummary(rows);
+  if (!rows.length) return `<div id="banner" class="quiet" onclick="App.go('#/balances')"><span class="bell">✓</span><b>No outstanding balances.</b></div>`;
+  return `<div id="banner" onclick="App.go('#/balances')">
+    <span class="bell">🔔</span>
+    <b>${s.customersOwing} customer${s.customersOwing === 1 ? ' has' : 's have'} outstanding balances.</b>
+    <span class="pill">${s.dueSoonCount} due within ${DB.settings.reminderOffsets.dueSoon} days</span>
+    <span class="pill">${s.overdueCount} overdue</span>
+    <span class="pill">${s.remindersNeeded} reminder${s.remindersNeeded === 1 ? '' : 's'} needing action</span>
+    <span style="margin-left:auto; font-size:.85rem; opacity:.9">View balances →</span>
+  </div>`;
+}
+
+const Pages = {};
+
+/* =============================== DASHBOARD =============================== */
+Pages.dashboard = () => {
+  const rows = Domain.balanceRows();
+  const s = Domain.balanceSummary(rows);
+  const tasks = Domain.openTasks();
+  const recentPay = DB.payments.filter(p => !p.voided).sort((a, b) => a.receivedAt < b.receivedAt ? 1 : -1).slice(0, 6);
+  return `
+    ${bannerHtml()}
+    <h1>Dashboard</h1>
+    <p class="sub">Orders, balances and payment plans — everything outside the €25 Shopify deposit lives here.</p>
+    <div class="statrow">
+      <div class="stat"><div class="l">Total outstanding</div><div class="v">${eur(s.totalOutstanding)}</div></div>
+      <div class="stat warn"><div class="l">Due within ${DB.settings.reminderOffsets.dueSoon} days</div><div class="v">${eur(s.dueSoonAmount)}</div></div>
+      <div class="stat bad"><div class="l">Overdue</div><div class="v">${eur(s.overdueAmount)}</div></div>
+      <div class="stat"><div class="l">Customers owing</div><div class="v">${s.customersOwing}</div></div>
+      <div class="stat warn"><div class="l">Reminders needing action</div><div class="v">${s.remindersNeeded}</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="primary" onclick="App.go('#/order-form')">+ New order</button>
+      <button onclick="App.go('#/customers')">Customer directory</button>
+      <button onclick="App.go('#/balances')">Outstanding balances</button>
+    </div>
+    <div class="cols2">
+      <div>
+        <h2>Follow-up tasks (${tasks.length})</h2>
+        ${tasks.length ? `<div class="tablewrap"><table>
+          <thead><tr><th>Customer</th><th>Stage</th><th class="num">Balance</th><th>Due</th></tr></thead>
+          <tbody>${tasks.slice(0, 8).map(t => {
+            const o = Domain.order(t.orderId); const c = Domain.customer(o.customerId);
+            const inst = DB.instalments.find(i => i.id === t.instalmentId);
+            return `<tr class="click" onclick="App.go('#/order/${o.id}')">
+              <td><b>${esc(c.name)}</b><br><span class="muted small">${esc(c.daughterName)}</span></td>
+              <td>${UI.badge(t.stage === 'overdue' ? 'overdue' : t.stage === 'due_today' ? 'due_soon' : 'scheduled')}
+                  <span class="small muted">${t.stage.replace('upcoming_', 'due in ≤').replace('_', ' ')}${t.stage.startsWith('upcoming') ? 'd' : ''}</span></td>
+              <td class="num">${eur(Domain.balanceCents(o.id))}</td>
+              <td>${inst ? fmtDate(inst.dueDate) : '—'} ${inst ? UI.dueBadge(daysUntil(inst.dueDate)) : ''}</td></tr>`;
+          }).join('')}</tbody></table></div>
+          ${tasks.length > 8 ? `<p class="small"><a class="plain" href="#/reminders">All ${tasks.length} tasks →</a></p>` : ''}`
+        : `<div class="card muted">Nothing needs following up right now.</div>`}
+      </div>
+      <div>
+        <h2>Recent payments</h2>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Customer</th><th>When</th><th>Method</th><th class="num">Amount</th></tr></thead>
+          <tbody>${recentPay.map(p => {
+            const o = Domain.order(p.orderId); const c = Domain.customer(o.customerId);
+            return `<tr class="click" onclick="App.go('#/order/${o.id}')">
+              <td>${esc(c.name)}</td><td class="small">${fmtDateTime(p.receivedAt)}</td>
+              <td class="small">${esc(p.method.replace('_', ' '))}</td><td class="num">${eur(p.amountCents)}</td></tr>`;
+          }).join('') || '<tr><td colspan="4" class="muted">No payments yet.</td></tr>'}</tbody></table></div>
+      </div>
+    </div>`;
+};
+
+/* =============================== CUSTOMERS =============================== */
+let customerQuery = '';
+Pages.customers = () => {
+  const q = customerQuery.trim().toLowerCase();
+  const matches = DB.customers.filter(c => {
+    if (!q) return true;
+    const orders = Domain.ordersOf(c.id);
+    const hay = [c.name, c.daughterName, c.email, c.phone,
+      ...orders.map(o => o.eventHotel),
+      ...orders.flatMap(o => Domain.itemsOf(o.id).map(i => i.title + ' ' + i.styleCode)),
+    ].join(' ').toLowerCase();
+    return q.split(/\s+/).every(w => hay.includes(w));
+  }).sort((a, b) => a.name.localeCompare(b.name));
+  return `
+    ${bannerHtml()}
+    <h1>Customers</h1>
+    <p class="sub">Search across customer, daughter, email, phone, event/hotel and dress ordered.</p>
+    <div class="toolbar">
+      <button class="primary" onclick="Actions.newCustomer()">+ New customer</button>
+      <button onclick="App.go('#/order-form')">+ New order</button>
+    </div>
+    <input id="pagesearch" class="searchbar" placeholder="Search customers… e.g. “Saoirse”, “Clayton”, “Sofia gown”, “086…”"
+      value="${esc(customerQuery)}" oninput="customerQuery = this.value; App.route()">
+    <div class="tablewrap"><table>
+      <thead><tr><th>Customer</th><th>Daughter</th><th>Contact</th><th>Event / hotel</th><th>Ordered</th><th class="num">Balance</th><th>Status</th></tr></thead>
+      <tbody>
+        ${matches.map(c => {
+          const orders = Domain.ordersOf(c.id);
+          const bal = orders.filter(o => o.status !== 'cancelled' && o.status !== 'written_off').reduce((s, o) => s + Math.max(Domain.balanceCents(o.id), 0), 0);
+          const latest = orders.sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+          return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
+            <td><b>${esc(c.name)}</b></td>
+            <td>${esc(c.daughterName || '—')}</td>
+            <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
+            <td class="small">${esc(latest ? latest.eventHotel : '—')}</td>
+            <td class="small">${orders.length ? orders.map(o => Domain.itemsOf(o.id).map(i => esc(i.title)).join(', ')).join('; ') : '<span class="muted">No orders</span>'}</td>
+            <td class="num">${bal > 0 ? '<b>' + eur(bal) + '</b>' : '<span class="muted">€0.00</span>'}</td>
+            <td>${latest ? UI.badge(latest.status) : ''}</td></tr>`;
+        }).join('') || '<tr><td colspan="7" class="muted">No customers match that search.</td></tr>'}
+      </tbody></table></div>
+    <p class="small muted">${matches.length} of ${DB.customers.length} customers shown.</p>`;
+};
+
+Pages.customerDetail = (id) => {
+  const c = Domain.customer(id);
+  if (!c) return '<h1>Customer not found</h1>';
+  const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  return `
+    ${bannerHtml()}
+    <p><a class="plain" href="#/customers">← Customers</a></p>
+    <h1>${esc(c.name)}</h1>
+    <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> · ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
+    <div class="toolbar">
+      <button class="primary" onclick="App.go('#/order-form?customer=${c.id}')">+ New order for ${esc(c.name.split(' ')[0])}</button>
+      <button onclick="Actions.editCustomer('${c.id}')">Edit details</button>
+    </div>
+    <div class="cols2">
+      <div class="card">
+        <h2 style="margin-top:0">Details</h2>
+        <table style="font-size:.9rem">
+          <tr><td class="muted" style="width:130px">Email</td><td>${esc(c.email || '—')}</td></tr>
+          <tr><td class="muted">Phone</td><td>${esc(c.phone || '—')}</td></tr>
+          <tr><td class="muted">Delivery address</td><td>${esc(c.address || '—')}</td></tr>
+          <tr><td class="muted">Staff notes</td><td>${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></td></tr>
+        </table>
+      </div>
+      <div>
+        <h2 style="margin-top:0">Orders (${orders.length})</h2>
+        ${orders.map(o => {
+          const items = Domain.itemsOf(o.id);
+          const bal = Domain.balanceCents(o.id);
+          return `<div class="card" style="margin-bottom:12px; cursor:pointer" onclick="App.go('#/order/${o.id}')">
+            <div class="flex" style="justify-content:space-between">
+              <b>${esc(o.reference)}</b> ${UI.badge(o.status)} ${o.planType ? `<span class="badge b-brand">${o.planType.replace('_', '/').replace('fifty/fifty', '50/50').replace('paid/in_full', 'paid in full')}</span>` : UI.badge('no_plan')}
+              <span style="margin-left:auto" class="num">${bal > 0 ? '<b>' + eur(bal) + ' due</b>' : '<span class="muted">settled</span>'}</span>
+            </div>
+            <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + ' (' + esc(i.colour) + ', ' + esc(i.size) + ')').join(' · ')}</div>
+            <div class="small muted">${esc(o.eventHotel)}${o.eventDate ? ' · ' + fmtDate(o.eventDate) : ''}</div>
+          </div>`;
+        }).join('') || '<div class="card muted">No orders yet.</div>'}
+      </div>
+    </div>`;
+};
+</script>
+<script>
+/* =============================== ORDER DETAIL =============================== */
+Pages.orderDetail = (id) => {
+  const o = Domain.order(id);
+  if (!o) return '<h1>Order not found</h1>';
+  const c = Domain.customer(o.customerId);
+  const items = Domain.itemsOf(o.id);
+  const insts = Domain.instalmentsOf(o.id);
+  const activeInsts = insts.filter(i => i.status !== 'cancelled');
+  const payments = Domain.paymentsOf(o.id);
+  const total = Domain.orderTotalCents(o.id);
+  const paid = Domain.paidCents(o.id);
+  const credits = Domain.creditCents(o.id);
+  const balance = total - paid - credits;
+  const adjustments = DB.adjustments.filter(a => a.orderId === o.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  const sentReminders = DB.customerReminders.filter(r => r.orderId === o.id).sort((a, b) => a.sentAt < b.sentAt ? 1 : -1);
+  const contact = DB.contactLog.filter(l => l.orderId === o.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  const planLabel = { paid_in_full: 'Paid in full', fifty_fifty: '50/50 plan', custom: 'Custom plan' }[o.planType];
+  const allocsFor = pid => DB.allocations.filter(a => a.paymentId === pid);
+
+  return `
+    ${bannerHtml()}
+    <p><a class="plain" href="#/customer/${c.id}">← ${esc(c.name)}</a></p>
+    <div class="flex" style="justify-content:space-between; align-items:flex-start">
+      <div>
+        <h1>Order ${esc(o.reference)} ${UI.badge(o.status)} ${o.planType ? `<span class="badge b-brand">${planLabel}</span>` : UI.badge('no_plan')}</h1>
+        <p class="sub">${esc(c.name)}${c.daughterName ? ' — for ' + esc(c.daughterName) : ''} · ${esc(o.eventHotel || 'No event set')}${o.eventDate ? ' · ' + fmtDate(o.eventDate) : ''}</p>
+      </div>
+      <div class="flex">
+        <button onclick="Actions.viewInvoice('${o.id}','customer')">Customer invoice</button>
+        <button onclick="Actions.viewInvoice('${o.id}','accountant')">Accountant invoice</button>
+        <button class="primary" onclick="Actions.sendInvoice('${o.id}')">✉ Send invoice</button>
+      </div>
+    </div>
+    <div class="statrow">
+      <div class="stat"><div class="l">Order total</div><div class="v">${eur(total)}</div></div>
+      <div class="stat good"><div class="l">Paid</div><div class="v">${eur(paid)}</div></div>
+      ${credits ? `<div class="stat"><div class="l">Credits / write-off</div><div class="v">${eur(credits)}</div></div>` : ''}
+      <div class="stat ${balance > 0 ? 'bad' : 'good'}"><div class="l">Balance</div><div class="v">${eur(Math.max(balance, 0))}</div></div>
+      ${o.promisedPaymentDate ? `<div class="stat warn"><div class="l">Promised payment</div><div class="v" style="font-size:1rem">${fmtDate(o.promisedPaymentDate)}</div></div>` : ''}
+    </div>
+
+    <h2>Items</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th>Style</th><th>Colour</th><th>Size</th><th class="num">Qty</th><th class="num">Retail</th><th class="num">Line total</th></tr></thead>
+      <tbody>${items.map(i => `<tr><td><b>${esc(i.title)}</b></td><td class="mono">${esc(i.styleCode)}</td>
+        <td>${esc(i.colour)}</td><td>${esc(i.size)}</td><td class="num">${i.quantity}</td>
+        <td class="num">${eur(i.retailPriceCents)}</td><td class="num">${eur(i.retailPriceCents * i.quantity)}</td></tr>`).join('')}
+      </tbody></table></div>
+    <div class="toolbar" style="margin-top:8px">
+      ${activeInsts.length ? '<span class="small muted">To change items, cancel the payment plan first (Adjustments) — instalments must always sum to the balance.</span>'
+        : `<button class="small" onclick="App.go('#/order-form?id=${o.id}')">Edit items</button>`}
+    </div>
+
+    <h2>Payment plan</h2>
+    ${activeInsts.length ? `
+      <div class="tablewrap"><table>
+        <thead><tr><th>#</th><th class="num">Due</th><th class="num">Paid</th><th>Due date</th><th></th><th>Status</th><th>Reminder</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${activeInsts.map(i => `<tr>
+          <td>${i.instalmentNumber}</td>
+          <td class="num">${eur(i.amountDueCents)}</td>
+          <td class="num">${eur(i.amountPaidCents)}</td>
+          <td>${fmtDate(i.dueDate)}</td>
+          <td>${i.status !== 'paid' ? UI.dueBadge(daysUntil(i.dueDate)) : ''}</td>
+          <td>${UI.badge(i.status)}</td>
+          <td>${UI.badge(i.reminderStatus)}${i.lastReminderSentAt ? '<br><span class="small muted">' + fmtDateTime(i.lastReminderSentAt) + '</span>' : ''}</td>
+          <td class="small muted">${esc(i.notes)}</td>
+          <td>${i.status !== 'paid' ? `<button class="small" onclick="Actions.changeDueDate('${i.id}')">Change date</button>` : (i.paidAt ? '<span class="small muted">paid ' + fmtDate(i.paidAt.slice(0, 10)) + '</span>' : '')}</td>
+        </tr>`).join('')}</tbody></table></div>`
+      : o.status === 'cancelled' ? '<div class="card muted">Order cancelled — no active plan.</div>'
+      : Pages._planPicker(o, balance)}
+
+    <div class="cols2" style="margin-top:22px">
+      <div>
+        <h2>Payments ledger</h2>
+        <div class="toolbar">
+          <button class="primary" onclick="Actions.recordPayment('${o.id}')" ${balance <= 0 || o.status === 'cancelled' ? 'disabled' : ''}>+ Record payment</button>
+          <span class="small muted">An order is only ever marked paid by matching payments or an audited adjustment — never a checkbox.</span>
+        </div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Received</th><th>Method</th><th class="num">Amount</th><th>Allocated to</th><th>By</th><th></th></tr></thead>
+          <tbody>${payments.map(p => `<tr ${p.voided ? 'style="opacity:.5;text-decoration:line-through"' : ''}>
+            <td class="small">${fmtDateTime(p.receivedAt)}${p.notes ? '<br><span class="muted">' + esc(p.notes) + '</span>' : ''}${p.voided ? '<br><span class="badge b-red" style="text-decoration:none">Voided: ' + esc(p.voidReason) + '</span>' : ''}</td>
+            <td class="small">${esc(p.method.replace('_', ' '))}</td>
+            <td class="num">${eur(p.amountCents)}</td>
+            <td class="small">${allocsFor(p.id).map(a => { const inst = DB.instalments.find(i => i.id === a.instalmentId); return 'Inst ' + (inst ? inst.instalmentNumber : '?') + ': ' + eur(a.amountCents); }).join('<br>') || '<span class="muted">unallocated</span>'}</td>
+            <td class="small">${esc(p.recordedBy)}</td>
+            <td>${!p.voided && p.method !== 'shopify_deposit' ? `<button class="small danger" onclick="Actions.voidPayment('${p.id}')">Correct</button>` : ''}</td>
+          </tr>`).join('') || '<tr><td colspan="6" class="muted">No payments recorded.</td></tr>'}</tbody></table></div>
+
+        <h2>Adjustments &amp; audit</h2>
+        <div class="toolbar">
+          <button onclick="Actions.addAdjustment('${o.id}')">+ Adjustment (admin)</button>
+          ${activeInsts.length && o.status !== 'fully_paid' ? `<button class="danger" onclick="Actions.cancelPlan('${o.id}')">Cancel plan (admin)</button>` : ''}
+        </div>
+        ${adjustments.length ? `<ul class="timeline">${adjustments.map(a => `<li>
+            <b>${esc(a.type.replace(/_/g, ' '))}</b>${a.amountCents ? ' · ' + eur(a.amountCents) : ''} — ${esc(a.staff)}, ${fmtDateTime(a.createdAt)}<br>
+            <span class="muted">Reason: ${esc(a.reason)}</span>
+            ${a.previousValue ? `<br><span class="small muted">Was: ${esc(a.previousValue)} → Now: ${esc(a.newValue)}</span>` : ''}
+          </li>`).join('')}</ul>` : '<p class="small muted">No adjustments.</p>'}
+      </div>
+      <div>
+        <h2>Reminders &amp; contact</h2>
+        <div class="toolbar">
+          <button class="primary" onclick="Actions.customerReminder('${o.id}')" ${o.status === 'cancelled' ? 'disabled' : ''}>✉ Send customer reminder…</button>
+          <button onclick="Actions.logContact('${o.id}')">+ Log contact</button>
+          <button onclick="Actions.promisedDate('${o.id}')">Promised date…</button>
+          <button onclick="Actions.toggleFlag('${o.id}','remindersPaused')">${o.remindersPaused ? '▶ Resume reminders' : '⏸ Pause reminders'}</button>
+          <button onclick="Actions.toggleFlag('${o.id}','needsReview')">${o.needsReview ? '✓ Clear review flag' : '⚑ Flag for review'}</button>
+        </div>
+        ${o.remindersPaused ? '<div class="note">Reminders are paused for this order — nothing will be flagged and customer reminders are blocked.</div>' : ''}
+        ${o.needsReview ? '<div class="note">Flagged as needing review — customer reminders are blocked until cleared.</div>' : ''}
+        ${sentReminders.length ? `<h2 class="small" style="margin-bottom:6px">Sent to customer</h2>
+          <ul class="timeline">${sentReminders.map(r => `<li>
+            <b>${esc(r.method)}</b> to ${esc(r.recipient)} — ${esc(r.sentBy)}, ${fmtDateTime(r.sentAt)} ${UI.badge(r.deliveryStatus === 'delivered' ? 'sent' : r.deliveryStatus)}
+            <br><a class="plain small" href="javascript:void(0)" onclick="Actions.viewReminderCopy('${r.id}')">View copy sent</a>
+            ${r.customerResponse ? '<br><span class="small">Response: ' + esc(r.customerResponse) + '</span>'
+              : ` · <a class="plain small" href="javascript:void(0)" onclick="Actions.recordResponse('${r.id}')">Record response</a>`}
+          </li>`).join('')}</ul>` : ''}
+        <h2 class="small" style="margin-bottom:6px">Internal contact log</h2>
+        ${contact.length ? `<ul class="timeline">${contact.map(l => `<li>
+            <b>${esc(l.action.replace(/_/g, ' '))}</b> — ${esc(l.staff)}, ${fmtDateTime(l.createdAt)}
+            ${l.note ? '<br><span class="muted">' + esc(l.note) + '</span>' : ''}</li>`).join('')}</ul>`
+          : '<p class="small muted">No contact logged yet.</p>'}
+        <h2 class="small" style="margin-bottom:6px">Staff notes <span class="muted">(internal — never on invoices or reminders)</span></h2>
+        <textarea id="ordnotes" style="width:100%" rows="3">${esc(o.staffNotes)}</textarea>
+        <div style="margin-top:6px"><button class="small" onclick="Actions.saveOrderNotes('${o.id}')">Save notes</button></div>
+      </div>
+    </div>`;
+};
+
+/* ---- plan picker (shown while an order has no active plan) ---- */
+Pages._planPicker = (o, balance) => {
+  const total = Domain.orderTotalCents(o.id);
+  const [half] = splitCents(total, 2);
+  return `
+  <div class="card">
+    <b>No payment plan yet.</b> <span class="muted">Outstanding balance: ${eur(balance)} (of ${eur(total)} total — the €25 Shopify deposit is already recorded).</span>
+    <div class="note info" style="margin-top:10px">All plan maths is validated by the app (server-side in the live build): custom instalments must sum exactly to the outstanding balance, and rounding differences always land on the final instalment.</div>
+    <div class="flex" style="margin-top:12px">
+      <button class="primary" onclick="Actions.planPaidInFull('${o.id}')">Paid in full</button>
+      <button class="primary" onclick="Actions.planFiftyFifty('${o.id}')">50 / 50 plan (first ${eur(half)})</button>
+      <button class="primary" onclick="Actions.planCustom('${o.id}')">Custom plan…</button>
+    </div>
+  </div>`;
+};
+
+/* =============================== ORDER FORM =============================== */
+Pages.orderForm = () => {
+  const params = new URLSearchParams((location.hash.split('?')[1] || ''));
+  const editId = params.get('id');
+  const presetCustomer = params.get('customer');
+  const o = editId ? Domain.order(editId) : null;
+  const items = o ? Domain.itemsOf(o.id) : [];
+  OrderFormState.lines = items.length ? items.map(i => ({ productId: i.productId, colour: i.colour, size: i.size, qty: i.quantity, priceCents: i.retailPriceCents }))
+    : [{ productId: App.catalogue[0].id, colour: App.catalogue[0].colours[0], size: App.catalogue[0].sizes[0], qty: 1, priceCents: App.catalogue[0].retailPriceCents }];
+  OrderFormState.editId = editId;
+  const custOptions = DB.customers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(c =>
+    `<option value="${c.id}" ${(o ? o.customerId : presetCustomer) === c.id ? 'selected' : ''}>${esc(c.name)}${c.daughterName ? ' — ' + esc(c.daughterName) : ''}</option>`).join('');
+  return `
+    ${bannerHtml()}
+    <p><a class="plain" href="javascript:history.back()">← Back</a></p>
+    <h1>${o ? 'Edit order ' + esc(o.reference) : 'New order'}</h1>
+    <p class="sub">Products are selected from the Shopify catalogue (mock until credentials are added) — add as many lines as needed for dresses plus accessories.</p>
+    <div class="card">
+      <div class="formgrid">
+        <div><label class="f">Customer</label>
+          <select id="of-customer" ${o ? 'disabled' : ''}>${custOptions}</select>
+          ${o ? '' : '<div style="margin-top:6px"><button class="small" onclick="Actions.newCustomer(true)">+ New customer</button></div>'}
+        </div>
+        <div><label class="f">Appointment event / hotel</label>
+          <input id="of-event" placeholder="e.g. Communion — Rochestown Park Hotel" value="${esc(o ? o.eventHotel : '')}"></div>
+        <div><label class="f">Event date</label>
+          <input id="of-eventdate" type="date" value="${o && o.eventDate ? o.eventDate : ''}"></div>
+      </div>
+      <label class="f">Staff notes (internal only)</label>
+      <textarea id="of-notes" rows="2" style="width:100%">${esc(o ? o.staffNotes : '')}</textarea>
+      <h2>Products</h2>
+      <div id="of-lines"></div>
+      <div class="toolbar"><button onclick="Actions.addLine()">+ Add product / accessory</button>
+        <span class="spacer"></span><b id="of-total"></b></div>
+      ${o ? '' : `<label class="f"><input type="checkbox" id="of-deposit" checked style="width:auto;margin-right:6px">Record the €25 Shopify deposit as already paid (taken at online booking)</label>`}
+      <div class="modalfoot" style="justify-content:flex-start">
+        <button class="primary" onclick="Actions.saveOrder()">${o ? 'Save changes' : 'Create order'}</button>
+        <button onclick="history.back()">Cancel</button>
+      </div>
+    </div>`;
+};
+
+const OrderFormState = { lines: [], editId: null };
+
+/* =============================== ACTIONS =============================== */
+const Actions = {
+  /* ---- customers ---- */
+  newCustomer(fromOrderForm) {
+    UI.modal(`
+      <h3>New customer</h3>
+      <div class="formgrid">
+        <div><label class="f">Customer name *</label><input id="nc-name"></div>
+        <div><label class="f">Daughter’s name</label><input id="nc-daughter"></div>
+        <div><label class="f">Email</label><input id="nc-email" type="email"></div>
+        <div><label class="f">Phone</label><input id="nc-phone"></div>
+      </div>
+      <label class="f">Delivery address</label><input id="nc-address" style="width:100%">
+      <label class="f">Staff notes (internal)</label><textarea id="nc-notes" rows="2" style="width:100%"></textarea>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.saveNewCustomer(${!!fromOrderForm})">Save customer</button></div>`);
+  },
+  saveNewCustomer(fromOrderForm) {
+    const v = id => document.getElementById(id).value.trim();
+    if (!v('nc-name')) return UI.err(new Error('Customer name is required.'));
+    const c = { id: uid(), name: v('nc-name'), daughterName: v('nc-daughter'), email: v('nc-email'),
+      phone: v('nc-phone'), address: v('nc-address'), notes: v('nc-notes'), createdAt: nowIso(), updatedAt: nowIso() };
+    DB.customers.push(c); Store.save(); UI.closeModal();
+    if (fromOrderForm) {
+      App.route();
+      setTimeout(() => { const sel = document.getElementById('of-customer'); if (sel) sel.value = c.id; }, 0);
+    } else App.go('#/customer/' + c.id);
+    UI.toast('Customer added.');
+  },
+  editCustomer(id) {
+    const c = Domain.customer(id);
+    UI.modal(`
+      <h3>Edit customer</h3>
+      <div class="formgrid">
+        <div><label class="f">Customer name *</label><input id="nc-name" value="${esc(c.name)}"></div>
+        <div><label class="f">Daughter’s name</label><input id="nc-daughter" value="${esc(c.daughterName)}"></div>
+        <div><label class="f">Email</label><input id="nc-email" value="${esc(c.email)}"></div>
+        <div><label class="f">Phone</label><input id="nc-phone" value="${esc(c.phone)}"></div>
+      </div>
+      <label class="f">Delivery address</label><input id="nc-address" style="width:100%" value="${esc(c.address)}">
+      <label class="f">Staff notes (internal)</label><textarea id="nc-notes" rows="2" style="width:100%">${esc(c.notes)}</textarea>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.saveEditCustomer('${id}')">Save</button></div>`);
+  },
+  saveEditCustomer(id) {
+    const c = Domain.customer(id);
+    const v = k => document.getElementById(k).value.trim();
+    if (!v('nc-name')) return UI.err(new Error('Customer name is required.'));
+    Object.assign(c, { name: v('nc-name'), daughterName: v('nc-daughter'), email: v('nc-email'),
+      phone: v('nc-phone'), address: v('nc-address'), notes: v('nc-notes'), updatedAt: nowIso() });
+    Store.save(); UI.closeModal(); App.route(); UI.toast('Customer updated.');
+  },
+
+  /* ---- order form lines ---- */
+  renderLines() {
+    const wrap = document.getElementById('of-lines');
+    if (!wrap) return;
+    wrap.innerHTML = OrderFormState.lines.map((ln, i) => {
+      const p = App.catalogue.find(x => x.id === ln.productId) || App.catalogue[0];
+      return `<div class="flex" style="border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px">
+        <select onchange="Actions.setLine(${i},'productId',this.value)" style="min-width:220px">
+          ${App.catalogue.map(x => `<option value="${x.id}" ${x.id === p.id ? 'selected' : ''}>${esc(x.title)} · ${eur(x.retailPriceCents)}</option>`).join('')}
+        </select>
+        <select onchange="Actions.setLine(${i},'colour',this.value)">
+          ${p.colours.map(col => `<option ${col === ln.colour ? 'selected' : ''}>${esc(col)}</option>`).join('')}
+        </select>
+        <select onchange="Actions.setLine(${i},'size',this.value)">
+          ${p.sizes.map(sz => `<option ${sz === ln.size ? 'selected' : ''}>${esc(sz)}</option>`).join('')}
+        </select>
+        <label class="small muted">Qty <input type="number" min="1" value="${ln.qty}" style="width:60px" onchange="Actions.setLine(${i},'qty',this.value)"></label>
+        <label class="small muted">Retail € <input value="${(ln.priceCents / 100).toFixed(2)}" style="width:90px" onchange="Actions.setLine(${i},'priceCents',this.value)"></label>
+        <button class="small danger" onclick="Actions.removeLine(${i})" ${OrderFormState.lines.length === 1 ? 'disabled' : ''}>✕</button>
+      </div>`;
+    }).join('');
+    const total = OrderFormState.lines.reduce((s, ln) => s + ln.priceCents * ln.qty, 0);
+    document.getElementById('of-total').textContent = 'Order total: ' + eur(total);
+  },
+  setLine(i, key, val) {
+    const ln = OrderFormState.lines[i];
+    if (key === 'productId') {
+      const p = App.catalogue.find(x => x.id === val);
+      Object.assign(ln, { productId: val, colour: p.colours[0], size: p.sizes[0], priceCents: p.retailPriceCents });
+    } else if (key === 'qty') ln.qty = Math.max(1, parseInt(val, 10) || 1);
+    else if (key === 'priceCents') {
+      const cents = parseEuros(val);
+      if (cents == null || cents <= 0) { UI.err(new Error('Enter a valid price.')); }
+      else ln.priceCents = cents;
+    } else ln[key] = val;
+    Actions.renderLines();
+  },
+  addLine() {
+    const p = App.catalogue[0];
+    OrderFormState.lines.push({ productId: p.id, colour: p.colours[0], size: p.sizes[0], qty: 1, priceCents: p.retailPriceCents });
+    Actions.renderLines();
+  },
+  removeLine(i) { OrderFormState.lines.splice(i, 1); Actions.renderLines(); },
+
+  saveOrder() {
+    try {
+      const custSel = document.getElementById('of-customer');
+      const customerId = custSel.value;
+      if (!customerId) throw new Error('Choose a customer.');
+      if (!OrderFormState.lines.length) throw new Error('Add at least one product.');
+      const eventHotel = document.getElementById('of-event').value.trim();
+      const eventDate = document.getElementById('of-eventdate').value || null;
+      const staffNotes = document.getElementById('of-notes').value.trim();
+      let order;
+      if (OrderFormState.editId) {
+        order = Domain.order(OrderFormState.editId);
+        if (Domain.instalmentsOf(order.id).some(i => i.status !== 'cancelled'))
+          throw new Error('This order has an active plan — cancel the plan before changing items.');
+        DB.orderItems = DB.orderItems.filter(i => i.orderId !== order.id);
+        Object.assign(order, { eventHotel, eventDate, staffNotes, updatedAt: nowIso() });
+      } else {
+        DB.counters.order += 1;
+        order = { id: uid(), reference: 'DB-' + DB.counters.order, customerId, status: 'confirmed', planType: null,
+          eventHotel, eventDate, staffNotes, remindersPaused: false, needsReview: false, refundProcessing: false,
+          promisedPaymentDate: null, createdAt: nowIso(), updatedAt: nowIso() };
+        DB.orders.push(order);
+      }
+      for (const ln of OrderFormState.lines) {
+        const p = App.catalogue.find(x => x.id === ln.productId);
+        DB.orderItems.push({ id: uid(), orderId: order.id, productId: p.id, title: p.title, styleCode: p.styleCode,
+          category: p.category, colour: ln.colour, size: ln.size, quantity: ln.qty, retailPriceCents: ln.priceCents });
+      }
+      const dep = document.getElementById('of-deposit');
+      if (dep && dep.checked) {
+        DB.payments.push({ id: uid(), orderId: order.id, amountCents: 2500, method: 'shopify_deposit', reference: '',
+          receivedAt: nowIso(), recordedBy: App.staff.name, notes: 'Shopify deposit product', voided: false, voidReason: '', createdAt: nowIso() });
+      }
+      Store.save(); Domain.refreshAll();
+      App.go('#/order/' + order.id);
+      UI.toast(OrderFormState.editId ? 'Order updated.' : 'Order ' + order.reference + ' created — now choose a payment plan.');
+    } catch (e) { UI.err(e); }
+  },
+
+  /* ---- plans ---- */
+  planPaidInFull(orderId) {
+    try { Domain.createPlan(orderId, 'paid_in_full', {}, App.staff.name); App.route(); UI.toast('Plan set: paid in full. Record the payment when it is received.'); }
+    catch (e) { UI.err(e); }
+  },
+  planFiftyFifty(orderId) {
+    const total = Domain.orderTotalCents(orderId);
+    const [first] = splitCents(total, 2);
+    UI.modal(`
+      <h3>50 / 50 plan</h3>
+      <p class="muted small">First payment is 50% of the order total (${eur(total)}). The remaining balance — recalculated after all valid payments and credits — falls due one calendar month after the first payment by default; the rounding cent, if any, sits on the final instalment.</p>
+      <table style="max-width:420px"><tr><td>Instalment 1 (now)</td><td class="num"><b>${eur(first)}</b></td></tr>
+        <tr><td>Instalment 2 (final)</td><td class="num"><b>${eur(total - first)}</b></td></tr></table>
+      <label class="f">Final balance due date (editable)</label>
+      <input type="date" id="ff-due" value="${addCalendarMonths(todayStr(), 1)}">
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmFiftyFifty('${orderId}')">Confirm plan</button></div>`);
+  },
+  confirmFiftyFifty(orderId) {
+    try {
+      Domain.createPlan(orderId, 'fifty_fifty', { finalDueDate: document.getElementById('ff-due').value }, App.staff.name);
+      UI.closeModal(); App.route(); UI.toast('50/50 plan created.');
+    } catch (e) { UI.err(e); }
+  },
+  planCustom(orderId) {
+    Actions._customRows = [{ amount: '', dueDate: todayStr(), notes: '' }, { amount: '', dueDate: addCalendarMonths(todayStr(), 1), notes: '' }];
+    Actions._customOrder = orderId;
+    Actions.renderCustomPlan();
+  },
+  renderCustomPlan() {
+    const orderId = Actions._customOrder;
+    const outstanding = Domain.balanceCents(orderId);
+    const sum = Actions._customRows.reduce((s, r) => s + (parseEuros(r.amount) || 0), 0);
+    UI.modal(`
+      <h3>Custom payment plan</h3>
+      <p class="muted small">Outstanding balance to schedule: <b>${eur(outstanding)}</b>. Instalments must sum to it exactly.</p>
+      ${Actions._customRows.map((r, i) => `
+        <div class="flex" style="margin-bottom:8px">
+          <b style="width:26px">${i + 1}.</b>
+          <label class="small muted">€ <input style="width:110px" value="${esc(r.amount)}" onchange="Actions._customRows[${i}].amount = this.value; Actions.renderCustomPlan()"></label>
+          <input type="date" value="${r.dueDate}" onchange="Actions._customRows[${i}].dueDate = this.value">
+          <input placeholder="notes (optional)" style="flex:1" value="${esc(r.notes)}" onchange="Actions._customRows[${i}].notes = this.value">
+          <button class="small danger" onclick="Actions._customRows.splice(${i},1); Actions.renderCustomPlan()" ${Actions._customRows.length === 1 ? 'disabled' : ''}>✕</button>
+        </div>`).join('')}
+      <div class="flex">
+        <button class="small" onclick="Actions._customRows.push({amount:'', dueDate: '${addCalendarMonths(todayStr(), 2)}', notes:''}); Actions.renderCustomPlan()">+ Add instalment</button>
+        <span class="spacer"></span>
+        <span class="${sum === outstanding ? '' : 'muted'}" style="${sum === outstanding ? 'color:var(--green);font-weight:600' : sum ? 'color:var(--red)' : ''}">
+          Scheduled: ${eur(sum)} ${sum && sum !== outstanding ? '(' + (sum > outstanding ? '+' : '−') + eur(Math.abs(sum - outstanding)) + ')' : sum === outstanding ? '✓' : ''}</span>
+      </div>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmCustomPlan()">Confirm plan</button></div>`);
+  },
+  confirmCustomPlan() {
+    try {
+      const rows = Actions._customRows.map(r => ({ amountCents: parseEuros(r.amount), dueDate: r.dueDate, notes: r.notes }));
+      Domain.createPlan(Actions._customOrder, 'custom', { instalments: rows }, App.staff.name);
+      UI.closeModal(); App.route(); UI.toast('Custom plan created.');
+    } catch (e) { UI.err(e); }
+  },
+  cancelPlan(orderId) {
+    try {
+      App.requireAdmin();
+      const reason = prompt('Reason for cancelling this payment plan (required, audited):');
+      if (!reason || !reason.trim()) return;
+      Domain.cancelPlan(orderId, reason.trim(), App.staff.name);
+      App.route(); UI.toast('Plan cancelled — set up a new one when ready.');
+    } catch (e) { UI.err(e); }
+  },
+
+  /* ---- payments ---- */
+  recordPayment(orderId) {
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled' && i.amountPaidCents < i.amountDueCents);
+    const balance = Domain.balanceCents(orderId);
+    const next = insts[0];
+    UI.modal(`
+      <h3>Record payment</h3>
+      <p class="muted small">Outstanding balance ${eur(balance)}${next ? ' · next instalment ' + eur(next.amountDueCents - next.amountPaidCents) + ' due ' + fmtDate(next.dueDate) : ''}.</p>
+      <div class="formgrid">
+        <div><label class="f">Amount (€)</label><input id="pay-amt" value="${next ? ((next.amountDueCents - next.amountPaidCents) / 100).toFixed(2) : ''}"></div>
+        <div><label class="f">Method</label><select id="pay-method">
+          <option value="card">Card</option><option value="cash">Cash</option>
+          <option value="bank_transfer">Bank transfer</option><option value="revolut">Revolut</option><option value="other">Other</option>
+        </select></div>
+        <div><label class="f">Received date</label><input id="pay-date" type="date" value="${todayStr()}"></div>
+      </div>
+      <label class="f">Notes</label><input id="pay-notes" style="width:100%">
+      <label class="f">Allocation</label>
+      <select id="pay-alloc">
+        <option value="auto">Automatic — oldest instalment first (allocation recorded for audit)</option>
+        ${insts.map(i => `<option value="${i.id}">All to instalment ${i.instalmentNumber} (owes ${eur(i.amountDueCents - i.amountPaidCents)}, due ${fmtDate(i.dueDate)})</option>`).join('')}
+      </select>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmPayment('${orderId}')">Record payment</button></div>`);
+  },
+  confirmPayment(orderId) {
+    try {
+      const amountCents = parseEuros(document.getElementById('pay-amt').value);
+      if (amountCents == null) throw new Error('Enter a valid amount.');
+      const allocSel = document.getElementById('pay-alloc').value;
+      const dateVal = document.getElementById('pay-date').value || todayStr();
+      const receivedAt = new Date(dateVal + 'T' + new Date().toTimeString().slice(0, 8)).toISOString();
+      Domain.recordPayment(orderId, {
+        amountCents, method: document.getElementById('pay-method').value, receivedAt,
+        notes: document.getElementById('pay-notes').value.trim(), recordedBy: App.staff.name,
+        allocations: allocSel === 'auto' ? null : [{ instalmentId: allocSel, amountCents }],
+      });
+      UI.closeModal(); App.route();
+      const bal = Domain.balanceCents(orderId);
+      UI.toast(bal <= 0 ? '🎉 Final payment recorded — order fully paid, reminders stopped, history retained.' : 'Payment recorded. Remaining balance ' + eur(bal) + '.');
+    } catch (e) { UI.err(e); }
+  },
+  voidPayment(paymentId) {
+    try {
+      App.requireAdmin();
+      const reason = prompt('Reason for correcting (voiding) this payment — required, audited:');
+      if (!reason || !reason.trim()) return;
+      Domain.voidPayment(paymentId, reason.trim(), App.staff.name);
+      App.route(); UI.toast('Payment voided and balances recalculated.');
+    } catch (e) { UI.err(e); }
+  },
+
+  /* ---- adjustments ---- */
+  addAdjustment(orderId) {
+    UI.modal(`
+      <h3>Adjustment (admin only, always audited)</h3>
+      <div class="formgrid">
+        <div><label class="f">Type</label><select id="adj-type">
+          <option value="discount">Approved discount</option>
+          <option value="write_off">Write off balance</option>
+        </select></div>
+        <div><label class="f">Amount (€)</label><input id="adj-amt" value="${(Domain.balanceCents(orderId) / 100).toFixed(2)}"></div>
+      </div>
+      <label class="f">Reason (required)</label><input id="adj-reason" style="width:100%">
+      <p class="small muted">Write-offs stay visible in financial reporting and are never shown as customer payments.</p>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmAdjustment('${orderId}')">Apply</button></div>`);
+  },
+  confirmAdjustment(orderId) {
+    try {
+      App.requireAdmin();
+      const amountCents = parseEuros(document.getElementById('adj-amt').value);
+      const type = document.getElementById('adj-type').value;
+      const reason = document.getElementById('adj-reason').value.trim();
+      if (amountCents == null || amountCents <= 0) throw new Error('Enter a valid amount.');
+      const bal = Domain.balanceCents(orderId);
+      if (amountCents > bal) throw new Error('Amount exceeds the outstanding balance (' + eur(bal) + ').');
+      Domain.applyAdjustment(orderId, { type, amountCents, reason, staff: App.staff.name,
+        previousValue: 'balance ' + eur(bal), newValue: 'balance ' + eur(bal - amountCents) });
+      UI.closeModal(); App.route(); UI.toast(type === 'write_off' ? 'Balance written off (kept in reporting).' : 'Discount applied.');
+    } catch (e) { UI.err(e); }
+  },
+  changeDueDate(instalmentId) {
+    try {
+      App.requireAdmin();
+      const inst = DB.instalments.find(i => i.id === instalmentId);
+      const nd = prompt('New due date for instalment ' + inst.instalmentNumber + ' (YYYY-MM-DD):', inst.dueDate);
+      if (!nd) return;
+      const reason = prompt('Reason for the change (required, audited):');
+      if (!reason || !reason.trim()) return;
+      Domain.changeDueDate(instalmentId, nd.trim(), reason.trim(), App.staff.name);
+      App.route(); UI.toast('Due date changed.');
+    } catch (e) { UI.err(e); }
+  },
+
+  saveOrderNotes(orderId) {
+    const o = Domain.order(orderId);
+    o.staffNotes = document.getElementById('ordnotes').value.trim();
+    o.updatedAt = nowIso(); Store.save(); UI.toast('Notes saved.');
+  },
+  toggleFlag(orderId, flag) {
+    const o = Domain.order(orderId);
+    o[flag] = !o[flag]; o.updatedAt = nowIso(); Store.save(); Domain.refreshAll(); App.route();
+  },
+  promisedDate(orderId) {
+    const o = Domain.order(orderId);
+    const d = prompt('Customer promised to pay by (YYYY-MM-DD) — blank to clear:', o.promisedPaymentDate || daysFromNow(7));
+    if (d === null) return;
+    o.promisedPaymentDate = d.trim() || null; o.updatedAt = nowIso();
+    if (o.promisedPaymentDate) DB.contactLog.push({ id: uid(), orderId, reminderTaskId: null, action: 'promised_date',
+      note: 'Customer promised payment by ' + fmtDate(o.promisedPaymentDate) + '.', staff: App.staff.name, createdAt: nowIso() });
+    Store.save(); Domain.refreshAll(); App.route();
+  },
+  logContact(orderId) {
+    UI.modal(`
+      <h3>Log customer contact</h3>
+      <div class="formgrid">
+        <div><label class="f">How</label><select id="lc-action">
+          <option value="called">Called</option><option value="emailed">Emailed</option>
+          <option value="texted">Texted</option><option value="whatsapp">WhatsApp</option><option value="note">Note only</option>
+        </select></div>
+      </div>
+      <label class="f">Note</label><textarea id="lc-note" rows="3" style="width:100%"></textarea>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmLogContact('${orderId}')">Save</button></div>`);
+  },
+  confirmLogContact(orderId) {
+    DB.contactLog.push({ id: uid(), orderId, reminderTaskId: null,
+      action: document.getElementById('lc-action').value, note: document.getElementById('lc-note').value.trim(),
+      staff: App.staff.name, createdAt: nowIso() });
+    Store.save(); UI.closeModal(); App.route(); UI.toast('Contact logged.');
+  },
+
+  /* ---- invoices ---- */
+  viewInvoice(orderId, variant) {
+    const html = invoiceHtml(orderId, variant);
+    Actions._invoiceHtml = html; Actions._invoiceOrder = orderId; Actions._invoiceVariant = variant;
+    UI.modal(`
+      <h3>${variant === 'accountant' ? 'Accountant invoice (includes retail pricing)' : 'Customer invoice'}</h3>
+      <p class="small muted">Styled after the Shopify invoice layout. Internal staff notes never appear on either invoice.</p>
+      <iframe class="invoice-frame" id="invframe"></iframe>
+      <div class="modalfoot">
+        <button onclick="Actions.viewInvoice('${orderId}','${variant === 'accountant' ? 'customer' : 'accountant'}')">Switch to ${variant === 'accountant' ? 'customer' : 'accountant'} copy</button>
+        <button onclick="document.getElementById('invframe').contentWindow.print()">🖨 Print / save PDF</button>
+        <button class="primary" onclick="Actions.sendInvoice('${orderId}','${variant}')">✉ Send by email…</button>
+      </div>`, true);
+    document.getElementById('invframe').srcdoc = html;
+  },
+
+  /* ---- send invoice via Gmail seam (preview → confirm) ---- */
+  sendInvoice(orderId, variant = 'customer') {
+    const o = Domain.order(orderId); const c = Domain.customer(o.customerId);
+    const invNo = Domain.invoiceNumber(o, variant);
+    UI.modal(`
+      <h3>Send invoice ${esc(invNo)} by email</h3>
+      <div class="seam">✉ Gmail integration — running in <b>mock mode</b> (no credentials present). The email below is recorded to the outbox exactly as it would be sent. Plug real credentials into the LIVE CREDENTIAL SEAM in GmailService to go live.</div>
+      <div class="formgrid">
+        <div><label class="f">To</label><input id="si-to" value="${esc(c.email)}"></div>
+        <div><label class="f">Copy</label><select id="si-variant">
+          <option value="customer" ${variant === 'customer' ? 'selected' : ''}>Customer invoice</option>
+          <option value="accountant" ${variant === 'accountant' ? 'selected' : ''}>Accountant invoice (internal use)</option>
+        </select></div>
+      </div>
+      <label class="f">Subject</label><input id="si-subject" style="width:100%" value="Your Darcybow invoice ${esc(invNo)} — order ${esc(o.reference)}">
+      <label class="f">Message</label>
+      <textarea id="si-body" rows="6" style="width:100%">Hi ${esc(c.name)},
+
+Please find your Darcybow invoice attached for order ${esc(o.reference)}.
+
+If anything doesn’t look right, just reply to this email or call us on ${esc(DB.settings.shop.phone)}.
+
+Warm regards,
+Darcybow</textarea>
+      <p class="small muted">The rendered invoice HTML is attached/inlined on send.</p>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmSendInvoice('${orderId}')">Confirm &amp; send</button></div>`);
+  },
+  async confirmSendInvoice(orderId) {
+    try {
+      const to = document.getElementById('si-to').value.trim();
+      if (!to || !to.includes('@')) throw new Error('Enter a valid recipient email.');
+      const variant = document.getElementById('si-variant').value;
+      const o = Domain.order(orderId);
+      const rec = await GmailService.send({
+        to, subject: document.getElementById('si-subject').value.trim(),
+        body: document.getElementById('si-body').value + '\n\n[invoice ' + Domain.invoiceNumber(o, variant) + ' attached]\n\n' + invoiceHtml(orderId, variant),
+        kind: 'invoice', meta: { orderId, variant },
+      });
+      UI.closeModal(); App.route();
+      UI.toast(rec.status === 'mock_sent' ? 'Invoice recorded to outbox (mock mode — add Gmail credentials to send for real).' : 'Invoice sent.');
+    } catch (e) { UI.err(e); }
+  },
+
+  /* ---- customer payment reminders (manual only) ---- */
+  customerReminder(orderId, overrideDuplicate) {
+    const o = Domain.order(orderId); const c = Domain.customer(o.customerId);
+    const blocks = Domain.reminderBlocks(orderId);
+    if (blocks.length) {
+      UI.modal(`<h3>Reminder blocked</h3>
+        <div class="note err"><b>This reminder can’t be sent:</b><ul>${blocks.map(b => '<li>' + esc(b) + '</li>').join('')}</ul></div>
+        <p class="small muted">These same conditions guarantee nothing is ever sent automatically. Resolve them on the order record first.</p>
+        <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">OK</button></div>`);
+      return;
+    }
+    const dup = Domain.duplicateReminderWarning(orderId);
+    if (dup && !overrideDuplicate) {
+      UI.modal(`<h3>Possible duplicate reminder</h3>
+        <div class="note">${esc(dup)}</div>
+        <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+          <button class="primary" onclick="Actions.overrideDuplicate('${orderId}')">Authorised override — continue</button></div>`);
+      return;
+    }
+    const tpl = DB.settings.reminderTemplate;
+    const vars = reminderVars(o);
+    UI.modal(`
+      <h3>Send payment reminder — ${esc(c.name)}</h3>
+      <p class="small muted">Preview and edit before sending. Reminders are <b>never sent automatically</b>; internal staff notes are never included.</p>
+      <div class="formgrid">
+        <div><label class="f">Method</label><select id="cr-method" onchange="document.getElementById('cr-subj-wrap').style.display = this.value === 'email' ? '' : 'none'">
+          <option value="email">Email</option><option value="sms">SMS / text</option><option value="whatsapp">WhatsApp</option><option value="phone">Phone script</option>
+        </select></div>
+        <div><label class="f">Recipient</label><input id="cr-recipient" value="${esc(c.email)}"></div>
+      </div>
+      <div id="cr-subj-wrap"><label class="f">Subject</label><input id="cr-subject" style="width:100%" value="${esc(renderTemplate(tpl.subject, vars))}"></div>
+      <label class="f">Message (editable)</label>
+      <textarea id="cr-body" rows="12" style="width:100%">${esc(renderTemplate(tpl.body, vars))}</textarea>
+      <div class="note info">Confirm before sending: recipient <b>${esc(c.email)}</b> / <b>${esc(c.phone)}</b> · remaining balance <b>${vars.remainingBalance}</b> · due <b>${vars.dueDate}</b>.</div>
+      <div class="seam">✉ Email sends run through the Gmail LIVE CREDENTIAL SEAM (mock mode records to the outbox). SMS/WhatsApp are logged for the record — wire a provider at the same seam if wanted later.</div>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.confirmCustomerReminder('${orderId}')">Confirm &amp; send</button></div>`, true);
+  },
+  overrideDuplicate(orderId) {
+    try { App.requireAdmin(); Actions.customerReminder(orderId, true); }
+    catch (e) { UI.err(e); }
+  },
+  async confirmCustomerReminder(orderId) {
+    try {
+      const o = Domain.order(orderId);
+      const method = document.getElementById('cr-method').value;
+      const recipient = document.getElementById('cr-recipient').value.trim();
+      const subject = method === 'email' ? document.getElementById('cr-subject').value.trim() : '';
+      const body = document.getElementById('cr-body').value;
+      if (!recipient) throw new Error('Enter a recipient.');
+      const inst = Domain.nextUnpaidInstalment(orderId);
+      let deliveryStatus = 'logged';
+      if (method === 'email') {
+        const rec = await GmailService.send({ to: recipient, subject, body, kind: 'customer_reminder', meta: { orderId } });
+        deliveryStatus = rec.status === 'mock_sent' ? 'mock_sent' : rec.status;
+      }
+      DB.customerReminders.push({ id: uid(), orderId, instalmentId: inst ? inst.id : null, method, recipient,
+        subject, body, sentBy: App.staff.name, sentAt: nowIso(), deliveryStatus, customerResponse: '' });
+      if (inst) { inst.reminderStatus = 'sent'; inst.lastReminderSentAt = nowIso(); inst.updatedAt = nowIso(); }
+      DB.contactLog.push({ id: uid(), orderId, reminderTaskId: null, action: method === 'email' ? 'emailed' : method,
+        note: 'Payment reminder sent (' + method + ').', staff: App.staff.name, createdAt: nowIso() });
+      Store.save(); UI.closeModal(); App.route();
+      UI.toast('Reminder recorded' + (method === 'email' ? ' and queued via Gmail seam (mock mode).' : '.'));
+    } catch (e) { UI.err(e); }
+  },
+  viewReminderCopy(id) {
+    const r = DB.customerReminders.find(x => x.id === id);
+    UI.modal(`<h3>Reminder sent ${fmtDateTime(r.sentAt)}</h3>
+      <p class="small muted">${esc(r.method)} to ${esc(r.recipient)} — sent by ${esc(r.sentBy)} · delivery: ${esc(r.deliveryStatus)}</p>
+      ${r.subject ? '<p><b>' + esc(r.subject) + '</b></p>' : ''}
+      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:14px; border-radius:8px; font-family:inherit">${esc(r.body)}</pre>
+      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">Close</button></div>`);
+  },
+  recordResponse(id) {
+    const r = DB.customerReminders.find(x => x.id === id);
+    const resp = prompt('Customer response to this reminder:');
+    if (resp === null) return;
+    r.customerResponse = resp.trim(); Store.save(); App.route();
+  },
+};
+</script>
+<script>
+/* =============================== OUTSTANDING BALANCES =============================== */
+const BalState = {
+  preset: '', search: '', event: '', due: 'all', from: '', to: '',
+  planType: 'all', status: 'all', minBal: '', maxBal: '', reminder: 'all', paidState: 'all', showPaid: false,
+};
+function balPreset(name) {
+  Object.assign(BalState, { preset: name, search: '', event: '', due: 'all', from: '', to: '',
+    planType: 'all', status: 'all', minBal: '', maxBal: '', reminder: 'all', paidState: 'all', showPaid: false });
+  if (name === 'week') BalState.due = 'week';
+  if (name === 'nextweek') BalState.due = 'nextweek';
+  if (name === 'overdue') BalState.due = 'overdue';
+  if (name === 'fifty') { BalState.planType = 'fifty_fifty'; BalState.paidState = 'awaiting_final'; }
+  if (name === 'reminder') BalState.paidState = 'reminder_required';
+  if (name === 'noresponse') BalState.paidState = 'no_response';
+  if (name === 'recentpaid') BalState.showPaid = true;
+  App.route();
+}
+function balFilter(rows) {
+  const q = BalState.search.trim().toLowerCase();
+  const ev = BalState.event.trim().toLowerCase();
+  const min = parseEuros(BalState.minBal), max = parseEuros(BalState.maxBal);
+  return rows.filter(r => {
+    const du = r.daysUntilDue;
+    if (BalState.due === '7' && !(du != null && du >= 0 && du <= 7)) return false;
+    if (BalState.due === '14' && !(du != null && du >= 0 && du <= 14)) return false;
+    if (BalState.due === 'week' && !(du != null && du >= 0 && du <= 7)) return false;
+    if (BalState.due === 'nextweek' && !(du != null && du > 7 && du <= 14)) return false;
+    if (BalState.due === 'overdue' && !(du != null && du < 0)) return false;
+    if (BalState.due === 'month' && !(r.next && r.next.dueDate.slice(0, 7) === todayStr().slice(0, 7))) return false;
+    if (BalState.due === 'range') {
+      if (!r.next) return false;
+      if (BalState.from && r.next.dueDate < BalState.from) return false;
+      if (BalState.to && r.next.dueDate > BalState.to) return false;
+    }
+    if (q && !((r.customer.name + ' ' + r.customer.daughterName).toLowerCase().includes(q))) return false;
+    if (ev && !(r.order.eventHotel || '').toLowerCase().includes(ev)) return false;
+    if (BalState.planType !== 'all' && r.order.planType !== BalState.planType) return false;
+    if (BalState.status !== 'all' && r.order.status !== BalState.status) return false;
+    if (min != null && r.balanceCents < min) return false;
+    if (max != null && r.balanceCents > max) return false;
+    if (BalState.reminder === 'sent' && !r.lastReminder) return false;
+    if (BalState.reminder === 'not_sent' && r.lastReminder) return false;
+    if (BalState.paidState === 'partial' && !(r.next && r.next.amountPaidCents > 0)) return false;
+    if (BalState.paidState === 'awaiting_final') {
+      const insts = Domain.instalmentsOf(r.order.id).filter(i => i.status !== 'cancelled');
+      if (!(r.next && insts.length === 2 && r.next.instalmentNumber === 2)) return false;
+    }
+    if (BalState.paidState === 'reminder_required' && !r.reminderRequired) return false;
+    if (BalState.paidState === 'no_response' && !(r.lastReminder && !r.lastReminder.customerResponse && r.balanceCents > 0)) return false;
+    if (BalState.paidState === 'follow_up' && !(r.reminderRequired || r.order.needsReview || Domain.openTasks().some(t => t.orderId === r.order.id))) return false;
+    return true;
+  });
+}
+const BAL_GROUPS = [
+  ['overdue', 'Overdue'], ['partially_paid_overdue', 'Partially paid — overdue'], ['due_today', 'Due today'],
+  ['due_7', 'Due within 7 days'], ['due_14', 'Due within 14 days'], ['due_later', 'Due later'], ['no_plan', 'No plan agreed yet'],
+];
+Pages.balances = () => {
+  const all = Domain.balanceRows();
+  const s = Domain.balanceSummary(all);
+  const rows = balFilter(all);
+  const reminderGroup = rows.filter(r => r.reminderRequired);
+  const presets = [
+    ['week', 'Due this week'], ['nextweek', 'Due next week'], ['overdue', 'Overdue'],
+    ['fifty', '50/50 awaiting final payment'], ['reminder', 'Reminder required'],
+    ['noresponse', 'No response after reminder'], ['recentpaid', 'Recently paid'],
+  ];
+  const recentlyPaid = DB.orders.filter(o => o.status === 'fully_paid').map(o => {
+    const lastPay = Domain.paymentsOf(o.id).filter(p => !p.voided).slice(-1)[0];
+    return { order: o, customer: Domain.customer(o.customerId), lastPay };
+  }).filter(x => x.lastPay && (Date.now() - new Date(x.lastPay.receivedAt)) / 86400000 <= 14)
+    .sort((a, b) => a.lastPay.receivedAt < b.lastPay.receivedAt ? 1 : -1);
+
+  const rowHtml = r => {
+    const nextOwes = r.next ? r.next.amountDueCents - r.next.amountPaidCents : null;
+    return `<tr class="click" onclick="App.go('#/order/${r.order.id}')">
+      <td><b>${esc(r.customer.name)}</b><br><span class="small muted">${esc(r.customer.daughterName || '')}</span></td>
+      <td class="small">${esc(r.customer.phone)}<br><span class="muted">${esc(r.customer.email)}</span></td>
+      <td class="small">${esc(r.dress)}<br><span class="muted">${esc(r.order.eventHotel)}</span></td>
+      <td class="num">${eur(r.totalCents)}</td>
+      <td class="num">${eur(r.paidCents)}</td>
+      <td class="num"><b>${eur(r.balanceCents)}</b></td>
+      <td class="num">${nextOwes != null ? eur(nextOwes) : '—'}</td>
+      <td>${r.next ? fmtDate(r.next.dueDate) : '—'} ${UI.dueBadge(r.daysUntilDue)}</td>
+      <td>${UI.badge(r.planStatus)}${r.order.planType ? '<br><span class="small muted">' + r.order.planType.replace('fifty_fifty', '50/50').replace('_', ' ') + '</span>' : ''}</td>
+      <td class="small">${r.lastReminder ? fmtDate(r.lastReminder.sentAt.slice(0, 10)) + '<br><span class="muted">' + esc(r.lastReminder.method) + ' · ' + esc(r.lastReminder.sentBy) + '</span>' : (r.reminderRequired ? '<span class="badge b-red">Required</span>' : '<span class="muted">—</span>')}</td>
+      <td class="small muted" style="max-width:180px">${esc(r.order.staffNotes)}</td>
+    </tr>`;
+  };
+  const groupsHtml = BAL_GROUPS.map(([key, label]) => {
+    const g = rows.filter(r => r.group === key);
+    if (!g.length) return '';
+    return `<tr class="grouphead"><td colspan="11">${label} · ${g.length} — ${eur(g.reduce((x, r) => x + r.balanceCents, 0))} outstanding</td></tr>` +
+      g.sort((a, b) => (a.daysUntilDue ?? 999) - (b.daysUntilDue ?? 999)).map(rowHtml).join('');
+  }).join('');
+
+  return `
+    ${bannerHtml()}
+    <h1>Outstanding balances</h1>
+    <p class="sub">Every customer with an unpaid balance, grouped by urgency. Written-off balances (${eur(s.writtenOffCents)} to date) stay in financial reporting but are never shown as payments.</p>
+    <div class="statrow">
+      <div class="stat"><div class="l">Total outstanding</div><div class="v">${eur(s.totalOutstanding)}</div></div>
+      <div class="stat warn"><div class="l">Due within 7 days</div><div class="v">${eur(s.dueSoonAmount)}</div></div>
+      <div class="stat bad"><div class="l">Overdue</div><div class="v">${eur(s.overdueAmount)}</div></div>
+      <div class="stat"><div class="l">Customers owing</div><div class="v">${s.customersOwing}</div></div>
+      <div class="stat warn"><div class="l">Reminders needing action</div><div class="v">${s.remindersNeeded}</div></div>
+    </div>
+    <div class="chips">${presets.map(([k, label]) =>
+      `<button class="chip ${BalState.preset === k ? 'on' : ''}" onclick="balPreset('${BalState.preset === k ? '' : k}')">${label}</button>`).join('')}</div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="flex">
+        <input id="pagesearch" placeholder="Customer / daughter name…" value="${esc(BalState.search)}" oninput="BalState.search=this.value; BalState.preset=''; App.route()">
+        <input placeholder="Event / hotel…" value="${esc(BalState.event)}" oninput="BalState.event=this.value; App.route()">
+        <select onchange="BalState.due=this.value; App.route()">
+          ${[['all', 'Any due date'], ['7', 'Due within 7 days'], ['14', 'Due within 14 days'], ['month', 'Due this month'], ['overdue', 'Overdue'], ['range', 'Due-date range…']]
+            .map(([v, l]) => `<option value="${v}" ${BalState.due === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        ${BalState.due === 'range' ? `<input type="date" value="${BalState.from}" onchange="BalState.from=this.value; App.route()">
+          <span class="muted">to</span> <input type="date" value="${BalState.to}" onchange="BalState.to=this.value; App.route()">` : ''}
+        <select onchange="BalState.planType=this.value; App.route()">
+          ${[['all', 'Any plan'], ['fifty_fifty', '50/50'], ['custom', 'Custom'], ['paid_in_full', 'Paid in full']]
+            .map(([v, l]) => `<option value="${v}" ${BalState.planType === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <select onchange="BalState.status=this.value; App.route()">
+          ${[['all', 'Any order status'], ['confirmed', 'Active'], ['fully_paid', 'Fully paid'], ['written_off', 'Written off']]
+            .map(([v, l]) => `<option value="${v}" ${BalState.status === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <select onchange="BalState.reminder=this.value; App.route()">
+          ${[['all', 'Reminder: any'], ['sent', 'Reminder sent'], ['not_sent', 'No reminder sent']]
+            .map(([v, l]) => `<option value="${v}" ${BalState.reminder === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <select onchange="BalState.paidState=this.value; App.route()">
+          ${[['all', 'Any payment state'], ['partial', 'Partially paid instalment'], ['awaiting_final', '50/50 awaiting final'], ['reminder_required', 'Reminder required'], ['no_response', 'No response after reminder'], ['follow_up', 'Follow-up required']]
+            .map(([v, l]) => `<option value="${v}" ${BalState.paidState === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <label class="small muted">Balance € <input style="width:80px" placeholder="min" value="${esc(BalState.minBal)}" onchange="BalState.minBal=this.value; App.route()">
+          – <input style="width:80px" placeholder="max" value="${esc(BalState.maxBal)}" onchange="BalState.maxBal=this.value; App.route()"></label>
+      </div>
+    </div>
+    ${BalState.showPaid ? `
+      <h2>Recently paid (last 14 days)</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Customer</th><th>Order</th><th class="num">Total</th><th>Final payment</th><th>Status</th></tr></thead>
+        <tbody>${recentlyPaid.map(x => `<tr class="click" onclick="App.go('#/order/${x.order.id}')">
+          <td><b>${esc(x.customer.name)}</b> <span class="small muted">${esc(x.customer.daughterName)}</span></td>
+          <td>${esc(x.order.reference)}</td><td class="num">${eur(Domain.orderTotalCents(x.order.id))}</td>
+          <td class="small">${fmtDateTime(x.lastPay.receivedAt)} · ${esc(x.lastPay.method.replace('_', ' '))}</td>
+          <td>${UI.badge('fully_paid')}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing fully paid in the last 14 days.</td></tr>'}
+        </tbody></table></div>` : `
+      ${reminderGroup.length && !BalState.paidState.includes('reminder') ? `<div class="note">⚠ ${reminderGroup.length} customer${reminderGroup.length === 1 ? '' : 's'} in this list need${reminderGroup.length === 1 ? 's' : ''} a reminder — use the “Reminder required” preset to work through them.</div>` : ''}
+      <div class="tablewrap"><table>
+        <thead><tr><th>Customer</th><th>Contact</th><th>Dress / event</th><th class="num">Total</th><th class="num">Paid</th>
+          <th class="num">Balance</th><th class="num">Next inst.</th><th>Next due</th><th>Plan</th><th>Last reminder</th><th>Staff notes</th></tr></thead>
+        <tbody>${groupsHtml || '<tr><td colspan="11" class="muted">No balances match these filters.</td></tr>'}</tbody>
+      </table></div>
+      <p class="small muted">${rows.length} of ${all.length} outstanding orders shown.</p>`}`;
+};
+
+/* =============================== REMINDERS (internal) =============================== */
+Pages.reminders = () => {
+  Domain.refreshAll();
+  const open = Domain.openTasks().sort((a, b) => {
+    const rank = { overdue: 0, due_today: 1, upcoming_7: 2, upcoming_14: 3 };
+    return (rank[a.stage] ?? 9) - (rank[b.stage] ?? 9);
+  });
+  const snoozed = DB.reminderTasks.filter(t => t.status === 'snoozed' && t.snoozedUntil && t.snoozedUntil > todayStr());
+  const stageLabel = { upcoming_14: 'Due within 14 days', upcoming_7: 'Due within 7 days', due_today: 'Due today', overdue: 'Overdue' };
+  const stageBadge = { upcoming_14: 'scheduled', upcoming_7: 'due_soon', due_today: 'due_soon', overdue: 'overdue' };
+  const taskRow = (t, isSnoozed) => {
+    const o = Domain.order(t.orderId); const c = Domain.customer(o.customerId);
+    const inst = DB.instalments.find(i => i.id === t.instalmentId);
+    const owed = inst ? inst.amountDueCents - inst.amountPaidCents : Domain.balanceCents(o.id);
+    return `<tr>
+      <td><b><a class="plain" href="#/order/${o.id}">${esc(c.name)}</a></b><br><span class="small muted">${esc(c.daughterName)} · ${esc(o.reference)}</span></td>
+      <td>${UI.badge(stageBadge[t.stage])} <span class="small">${stageLabel[t.stage]}</span>${t.status === 'reviewed' ? '<br>' + UI.badge('reviewed') : ''}${isSnoozed ? '<br>' + UI.badge('snoozed') + ' <span class="small muted">until ' + fmtDate(t.snoozedUntil) + '</span>' : ''}</td>
+      <td class="num"><b>${eur(owed)}</b><br><span class="small muted">of ${eur(Domain.balanceCents(o.id))} total</span></td>
+      <td>${inst ? fmtDate(inst.dueDate) : '—'} ${inst ? UI.dueBadge(daysUntil(inst.dueDate)) : ''}</td>
+      <td class="small">${o.promisedPaymentDate ? '<span class="badge b-blue">Promised ' + fmtDate(o.promisedPaymentDate) + '</span>' : ''}
+        ${inst && inst.lastReminderSentAt ? '<br><span class="muted">Customer reminded ' + fmtDate(inst.lastReminderSentAt.slice(0, 10)) + '</span>' : ''}</td>
+      <td style="white-space:nowrap">
+        <button class="small" onclick="Actions.taskReviewed('${t.id}')" ${t.status === 'reviewed' ? 'disabled' : ''}>✓ Reviewed</button>
+        <button class="small" onclick="Actions.taskSnooze('${t.id}')">Snooze…</button>
+        <button class="small" onclick="Actions.logContact('${o.id}')">Contact…</button>
+        <button class="small" onclick="Actions.promisedDate('${o.id}')">Promised…</button>
+        <button class="small" onclick="Actions.customerReminder('${o.id}')">✉ Remind</button>
+        <button class="small primary" onclick="Actions.recordPayment('${o.id}')">€ Payment</button>
+      </td></tr>`;
+  };
+  return `
+    ${bannerHtml()}
+    <h1>Internal reminders &amp; follow-ups</h1>
+    <p class="sub">Payments are flagged ${DB.settings.reminderOffsets.upcoming} days before, ${DB.settings.reminderOffsets.dueSoon} days before, on the due date and when overdue (change in Settings). Reviewing keeps the task visible — it only clears when the balance hits zero, the plan is cancelled, or the balance is written off.</p>
+    <h2>Needs attention (${open.length})</h2>
+    ${open.length ? `<div class="tablewrap"><table>
+      <thead><tr><th>Customer</th><th>Stage</th><th class="num">Amount due</th><th>Due date</th><th>Context</th><th>Actions</th></tr></thead>
+      <tbody>${open.map(t => taskRow(t, false)).join('')}</tbody></table></div>`
+      : '<div class="card muted">Nothing needs attention right now. 🎉</div>'}
+    ${snoozed.length ? `<h2>Snoozed (${snoozed.length})</h2>
+      <div class="tablewrap"><table><tbody>${snoozed.map(t => taskRow(t, true)).join('')}</tbody></table></div>` : ''}
+    <h2>Daily email summary</h2>
+    <div class="card">
+      <p class="small" style="margin-top:0">A daily digest of customers due within ${DB.settings.reminderOffsets.dueSoon} days, due today and overdue is emailed to the owner/authorised staff. Currently <b>${DB.settings.dailySummary.enabled ? 'ON — ' + esc(DB.settings.dailySummary.recipients.join(', ')) + ' at ' + DB.settings.dailySummary.sendHour + ':00' : 'OFF'}</b> (configure in Settings). Emails include contact details and amounts with a secure link back to the record — no unnecessary personal detail.</p>
+      <div class="flex">
+        <button onclick="Actions.previewDailySummary()">Preview today’s summary</button>
+        <button class="primary" onclick="Actions.sendDailySummary()">Send now (via Gmail seam)</button>
+      </div>
+    </div>`;
+};
+
+/* =============================== STOCK EXPORT =============================== */
+Pages.stock = () => {
+  const rows = Domain.stockRows();
+  return `
+    ${bannerHtml()}
+    <h1>Stock export</h1>
+    <p class="sub">How many of each dress/style have been ordered (cancelled orders excluded) — download as sheets for the manufacturer and stock tracking.</p>
+    <div class="toolbar">
+      <button class="primary" onclick="downloadCsv('darcybow-stock-by-variant-${todayStr()}.csv', stockCsvRows())">⬇ Download variant breakdown (CSV)</button>
+      <button onclick="downloadCsv('darcybow-stock-summary-${todayStr()}.csv', stockSummaryCsvRows())">⬇ Download style summary (CSV)</button>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Style</th><th>Product</th><th>Category</th><th class="num">Total ordered</th><th>Breakdown (colour / size)</th></tr></thead>
+      <tbody>${rows.map(r => `<tr>
+        <td class="mono">${esc(r.styleCode)}</td><td><b>${esc(r.title)}</b></td><td>${esc(r.category)}</td>
+        <td class="num"><b>${r.total}</b></td>
+        <td class="small">${[...r.variants].map(([vk, q]) => esc(vk) + ' × ' + q).join(' · ')}</td></tr>`).join('')}
+      </tbody></table></div>`;
+};
+
+/* =============================== OUTBOX =============================== */
+Pages.outbox = () => `
+    ${bannerHtml()}
+    <h1>Email outbox</h1>
+    <p class="sub">Every email the dashboard has sent. With no Gmail credentials present, messages are recorded here in <b>mock mode</b> exactly as they would be sent.</p>
+    <div class="seam">✉ LIVE CREDENTIAL SEAM — add the Gmail OAuth credentials in <span class="mono">GmailService</span> (see Settings → Integrations) and these switch from “Mock sent” to real sends.</div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Sent</th><th>To</th><th>Subject</th><th>Kind</th><th>Status</th><th></th></tr></thead>
+      <tbody>${DB.outbox.map(m => `<tr>
+        <td class="small">${fmtDateTime(m.sentAt)}</td><td class="small">${esc(m.recipient)}</td>
+        <td>${esc(m.subject)}</td><td class="small">${esc(m.kind.replace('_', ' '))}</td>
+        <td>${UI.badge(m.status)}</td>
+        <td><button class="small" onclick="Actions.viewOutbox('${m.id}')">View</button></td></tr>`).join('')
+        || '<tr><td colspan="6" class="muted">Nothing sent yet — try “Send invoice” on an order.</td></tr>'}
+      </tbody></table></div>`;
+
+/* =============================== SETTINGS =============================== */
+Pages.settingsPage = () => {
+  const st = DB.settings;
+  return `
+    ${bannerHtml()}
+    <h1>Settings</h1>
+    <div class="cols2">
+      <div>
+        <div class="card">
+          <h2 style="margin-top:0">Reminder timings</h2>
+          <p class="small muted">Payments are flagged this many days before the due date, on the day, and when overdue.</p>
+          <div class="formgrid">
+            <div><label class="f">First flag (days before)</label><input id="st-upcoming" type="number" min="1" value="${st.reminderOffsets.upcoming}"></div>
+            <div><label class="f">Due-soon flag (days before)</label><input id="st-duesoon" type="number" min="1" value="${st.reminderOffsets.dueSoon}"></div>
+            <div><label class="f">Duplicate-send warning window (days)</label><input id="st-dupwin" type="number" min="0" value="${st.duplicateReminderWindowDays}"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <h2 style="margin-top:0">Daily email summary</h2>
+          <label class="f"><input type="checkbox" id="st-ds-enabled" ${st.dailySummary.enabled ? 'checked' : ''} style="width:auto;margin-right:6px"> Enabled</label>
+          <label class="f">Recipients (comma separated)</label>
+          <input id="st-ds-recipients" style="width:100%" value="${esc(st.dailySummary.recipients.join(', '))}">
+          <label class="f">Send at (hour, 24h)</label>
+          <input id="st-ds-hour" type="number" min="0" max="23" value="${st.dailySummary.sendHour}">
+          <p class="small muted">In this offline slice the scheduler runs while the page is open (and can be triggered from the Reminders page). In the live build this becomes a server-side cron.</p>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <h2 style="margin-top:0">Default customer reminder template</h2>
+          <p class="small muted">Placeholders: {{customerName}} {{orderReference}} {{invoiceNumber}} {{orderTotal}} {{totalPaid}} {{remainingBalance}} {{dueDate}} {{paymentLink}}</p>
+          <label class="f">Subject</label><input id="st-tpl-subject" style="width:100%" value="${esc(st.reminderTemplate.subject)}">
+          <label class="f">Body</label><textarea id="st-tpl-body" rows="12" style="width:100%">${esc(st.reminderTemplate.body)}</textarea>
+        </div>
+        <div class="modalfoot" style="justify-content:flex-start">
+          <button class="primary" onclick="Actions.saveSettings()">Save settings</button>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2 style="margin-top:0">Integrations</h2>
+          <b>Shopify product catalogue</b> ${UI.badge(ShopifyService.isLive() ? 'confirmed' : 'mock_sent')}
+          <div class="seam">🛍 LIVE CREDENTIAL SEAM — <span class="mono">Credentials.shopify</span> in the source: set <span class="mono">storeDomain</span> + <span class="mono">adminApiAccessToken</span> (read_products) and the catalogue is pulled from Shopify instead of the seeded mock. Only the catalogue comes from Shopify: checkout is used solely for the €25 deposit product, so every balance, instalment, invoice and payment calculation stays in this dashboard.</div>
+          <b>Gmail sending</b> ${UI.badge(GmailService.isLive() ? 'confirmed' : 'mock_sent')}
+          <div class="seam">✉ LIVE CREDENTIAL SEAM — <span class="mono">Credentials.gmail</span> in the source: complete the OAuth flow for the sending mailbox and set clientId / clientSecret / refreshToken / senderAddress. Until then every send is recorded to the outbox in mock mode. (In the live deployment these credentials live server-side, never in the browser.)</div>
+          <p class="small muted">The app runs fully on mock data with no keys present — switching to live requires only supplying credentials at these two seams.</p>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <h2 style="margin-top:0">Staff</h2>
+          <p class="small muted">Adjustments, write-offs, plan cancellations and duplicate-reminder overrides need an <b>admin</b>. Every audited action records who did it.</p>
+          <table>${st.staff.map(s => `<tr><td>${esc(s.name)}</td><td>${UI.badge(s.role === 'admin' ? 'confirmed' : 'scheduled')} ${esc(s.role)}</td></tr>`).join('')}</table>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <h2 style="margin-top:0">Shop details (shown on invoices)</h2>
+          ${['name', 'addressLine', 'phone', 'email', 'web', 'vat'].map(k =>
+            `<label class="f">${k}</label><input id="st-shop-${k}" style="width:100%" value="${esc(st.shop[k])}">`).join('')}
+        </div>
+      </div>
+    </div>`;
+};
+
+/* ---- remaining actions ---- */
+Object.assign(Actions, {
+  taskReviewed(taskId) {
+    const t = DB.reminderTasks.find(x => x.id === taskId);
+    t.status = 'reviewed'; t.updatedAt = nowIso();
+    DB.contactLog.push({ id: uid(), orderId: t.orderId, reminderTaskId: t.id, action: 'reviewed',
+      note: 'Reminder marked reviewed (stays visible until the balance is cleared).', staff: App.staff.name, createdAt: nowIso() });
+    Store.save(); App.route();
+  },
+  taskSnooze(taskId) {
+    const t = DB.reminderTasks.find(x => x.id === taskId);
+    const d = prompt('Snooze until (YYYY-MM-DD):', daysFromNow(3));
+    if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return;
+    t.status = 'snoozed'; t.snoozedUntil = d.trim(); t.updatedAt = nowIso();
+    DB.contactLog.push({ id: uid(), orderId: t.orderId, reminderTaskId: t.id, action: 'snoozed',
+      note: 'Snoozed until ' + fmtDate(t.snoozedUntil) + '. Reopens automatically if still unpaid.', staff: App.staff.name, createdAt: nowIso() });
+    Store.save(); App.route();
+  },
+  previewDailySummary() {
+    const s = buildDailySummary();
+    UI.modal(`<h3>${esc(s.subject)}</h3>
+      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:14px; border-radius:8px; font-family:inherit; font-size:.85rem">${esc(s.body)}</pre>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
+        <button class="primary" onclick="Actions.sendDailySummary()">Send now</button></div>`, true);
+  },
+  async sendDailySummary() {
+    try {
+      const s = buildDailySummary();
+      for (const to of DB.settings.dailySummary.recipients) {
+        await GmailService.send({ to: to.trim(), subject: s.subject, body: s.body, kind: 'daily_summary', meta: {} });
+      }
+      DB.lastDailySummaryDate = todayStr(); Store.save(); UI.closeModal(); App.route();
+      UI.toast('Daily summary sent to ' + DB.settings.dailySummary.recipients.length + ' recipient(s) — see outbox (mock mode).');
+    } catch (e) { UI.err(e); }
+  },
+  viewOutbox(id) {
+    const m = DB.outbox.find(x => x.id === id);
+    const isInvoice = m.kind === 'invoice' && m.body.includes('<!DOCTYPE html>');
+    const textPart = isInvoice ? m.body.slice(0, m.body.indexOf('<!DOCTYPE html>')) : m.body;
+    UI.modal(`<h3>${esc(m.subject)}</h3>
+      <p class="small muted">To ${esc(m.recipient)} · ${fmtDateTime(m.sentAt)} · ${UI.badge(m.status)}</p>
+      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:14px; border-radius:8px; font-family:inherit; font-size:.85rem">${esc(textPart)}</pre>
+      ${isInvoice ? '<iframe class="invoice-frame" id="obframe"></iframe>' : ''}
+      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">Close</button></div>`, true);
+    if (isInvoice) document.getElementById('obframe').srcdoc = m.body.slice(m.body.indexOf('<!DOCTYPE html>'));
+  },
+  saveSettings() {
+    try {
+      const st = DB.settings;
+      const up = parseInt(document.getElementById('st-upcoming').value, 10);
+      const ds = parseInt(document.getElementById('st-duesoon').value, 10);
+      if (!(up > 0) || !(ds > 0) || ds > up) throw new Error('Timings must be positive and the due-soon flag must be within the first flag window.');
+      st.reminderOffsets = { upcoming: up, dueSoon: ds };
+      st.duplicateReminderWindowDays = Math.max(0, parseInt(document.getElementById('st-dupwin').value, 10) || 0);
+      st.dailySummary.enabled = document.getElementById('st-ds-enabled').checked;
+      st.dailySummary.recipients = document.getElementById('st-ds-recipients').value.split(',').map(s => s.trim()).filter(Boolean);
+      st.dailySummary.sendHour = Math.min(23, Math.max(0, parseInt(document.getElementById('st-ds-hour').value, 10) || 8));
+      st.reminderTemplate.subject = document.getElementById('st-tpl-subject').value;
+      st.reminderTemplate.body = document.getElementById('st-tpl-body').value;
+      for (const k of ['name', 'addressLine', 'phone', 'email', 'web', 'vat']) st.shop[k] = document.getElementById('st-shop-' + k).value.trim();
+      Store.save(); Domain.refreshAll(); App.route(); UI.toast('Settings saved.');
+    } catch (e) { UI.err(e); }
+  },
+});
+
+/* =============================== BOOT =============================== */
+(async function boot() {
+  Store.load();
+  const savedStaff = localStorage.getItem('darcybow-staff');
+  App.staff = DB.settings.staff.find(s => s.name === savedStaff) || DB.settings.staff[0];
+  App.catalogue = await ShopifyService.fetchCatalogue(); // mock catalogue until Shopify credentials are supplied
+  App.renderStaff();
+  Domain.refreshAll();
+  window.addEventListener('hashchange', App.route);
+  App.route();
+  // Mock scheduler for the daily summary: fires while the dashboard is open.
+  // In the live build this moves to a server-side cron at dailySummary.sendHour.
+  setInterval(() => {
+    const ds = DB.settings.dailySummary;
+    if (ds.enabled && DB.lastDailySummaryDate !== todayStr() && new Date().getHours() >= ds.sendHour) {
+      Actions.sendDailySummary();
+    }
+  }, 60 * 1000);
+})();
+</script>
+</body>
+</html>
