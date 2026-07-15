@@ -181,6 +181,12 @@
     border: 1.5px dashed var(--brand); background: var(--brand-soft); border-radius: 8px;
     padding: 10px 14px; font-size: .82rem; color: var(--brand-dark); margin: 10px 0;
   }
+  .cname { font-weight: 700; font-size: 1.02rem; }
+  .bigselect { padding: 11px 12px; border-radius: 12px; border: 1.5px solid #cfd3da; font-size: .95rem; max-width: 300px; }
+  table.roomy td { padding: 13px 12px; }
+  .qa { margin: 0 0 12px; }
+  .qa .q { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 2px; }
+  .qa .a { font-size: .95rem; }
   .toast {
     position: fixed; bottom: 22px; right: 22px; background: var(--ink); color: #fff;
     border-radius: 10px; padding: 12px 18px; font-size: .9rem; z-index: 99;
@@ -263,7 +269,7 @@ function splitCents(total, n) {
 }
 
 /* ---------------------- data store ---------------------- */
-const STORE_KEY = 'darcybow-db-v1';
+const STORE_KEY = 'darcybow-db-v2';
 let DB = null;
 
 const Store = {
@@ -288,6 +294,14 @@ const DEFAULT_SETTINGS = {
     subject: 'Darcybow — payment reminder ({{orderReference}})',
     body: 'Hi {{customerName}},\n\nA friendly reminder about the remaining balance on your Darcybow order {{orderReference}} (invoice {{invoiceNumber}}).\n\nOrder total: {{orderTotal}}\nPayments received: {{totalPaid}}\nRemaining balance: {{remainingBalance}}\nDue date: {{dueDate}}\n\n{{paymentLink}}\n\nIf you have any questions, or have already made this payment, just reply to this email or give us a ring.\n\nWarm regards,\nDarcybow\nhello@darcybow.ie · +353 21 123 4567 · darcybow.ie',
   },
+  // The three booking questions Appointly asks when a customer books an
+  // appointment through Shopify. Shown with the customer's answers on the
+  // customer page; also used to prefill manual logging.
+  appointlyQuestions: [
+    'What is the occasion, and when is it?',
+    'Who is the appointment for, and what age/size do they usually wear?',
+    'Are there any styles, colours or budget you have in mind?',
+  ],
   shop: {
     name: 'Darcybow', addressLine: 'Unit 4, The Courtyard, Douglas, Cork, Ireland',
     email: 'hello@darcybow.ie', phone: '+353 21 123 4567', web: 'darcybow.ie', vat: 'IE 1234567X',
@@ -307,7 +321,7 @@ const Seed = {
       settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
       customers: [], products: [], orders: [], orderItems: [], instalments: [],
       payments: [], allocations: [], adjustments: [], reminderTasks: [],
-      contactLog: [], customerReminders: [], outbox: [],
+      contactLog: [], customerReminders: [], outbox: [], appointments: [],
       counters: { order: 1040, invoice: 2100 },
     };
 
@@ -587,6 +601,71 @@ const Seed = {
       staffNotes: 'Deposit paid online. Ring to agree the payment plan and book first fitting.',
       confirmedDaysAgo: 2, plan: null, flags: { needsReview: true },
     });
+
+    /* ---- Appointly booking Q&As ----
+       In live mode these are pulled from Appointly (via the Shopify link —
+       see AppointlyService); seeded here in exactly the shape the sync
+       produces so the customer page is testable offline. */
+    const QS = db.settings.appointlyQuestions;
+    const appt = (custName, daysAgoBooked, apptInDays, service, a1, a2, a3) => {
+      const cust = db.customers.find(c => c.name === custName);
+      if (!cust) return;
+      db.appointments.push({
+        id: uid(), customerId: cust.id, source: 'appointly',
+        service, appointmentAt: daysFromNow(apptInDays),
+        status: apptInDays >= 0 ? 'upcoming' : 'completed',
+        bookedAt: isoDaysAgo(daysAgoBooked, 12), syncedAt: isoDaysAgo(0, 9),
+        questions: [{ q: QS[0], a: a1 }, { q: QS[1], a: a2 }, { q: QS[2], a: a3 }],
+      });
+    };
+    appt('Mary O’Sullivan', 24, -22, 'Communion fitting',
+      'First Holy Communion on ' + fmtDate(daysFromNow(40)) + ' — Rochestown Park afterwards.',
+      'My daughter Saoirse, she’s 8 and usually wears age 8.',
+      'She loved the Isabella gown on your Instagram — ivory if possible.');
+    appt('Claire Murphy', 8, -6, 'Communion fitting',
+      'Communion in May, party at Oriel House in Ballincollig.',
+      'Aoife, age 9 — tall for her age so maybe age 10 in some styles.',
+      'Something classic in plain satin, budget around €350 with shoes.');
+    appt('Sinéad Kelleher', 22, -20, 'Debs consultation',
+      'Debs at the Clayton Silver Springs, ' + fmtDate(daysFromNow(24)) + '.',
+      'For Róisín, she’s a size 10, 5ft 7.',
+      'Emerald green — she has the Sofia gown saved from your website.');
+    appt('Emma Walsh', 28, -26, 'Flower girl fitting',
+      'My sister’s wedding at Castlemartyr Resort, ' + fmtDate(daysFromNow(12)) + '.',
+      'Lucy, age 5 — she’s the flower girl.',
+      'Blush tones to match the bridesmaids, nothing too fussy.');
+    appt('Fiona Byrne', 33, -31, 'Confirmation fitting',
+      'Ella’s confirmation, then lunch at Fota Island Resort.',
+      'Ella, she’s 12, usually age 12 fits her.',
+      'Powder blue if you have it, with a modest neckline for the church.');
+    appt('Deirdre Nolan', 47, -44, 'Debs consultation',
+      'Debs at the Vienna Woods, mid next month.',
+      'Kate, size 12.',
+      'Dusty rose, strapless if possible — open on budget for the right dress.');
+    appt('Orla McCarthy', 52, -49, 'Occasionwear consultation',
+      'My daughter’s wedding at Springfort Hall — I’m mother of the bride!',
+      'It’s for myself, size 14, and I’ll need comfortable shoes too.',
+      'A teal two-piece caught my eye in the window. Would like to pay in bits if that’s ok.');
+    appt('Grace Hennessy', 32, -29, 'Debs consultation',
+      'Debs at Actons in Kinsale, ' + fmtDate(daysFromNow(55)) + '.',
+      'Sophie, size 8.',
+      'Navy — and she has her heart set on a tiara to go with it.');
+    appt('Laura Dempsey', 37, -34, 'Communion fitting',
+      'First Communion, celebration at the Radisson Little Island after.',
+      'Holly, age 10.',
+      'A full skirt like her cousin had, plus a bolero for the church.');
+    appt('Patricia Lynch', 62, -59, 'Flower girl fitting',
+      'A family wedding at the Maryborough in the spring.',
+      'Amy, my granddaughter, age 6.',
+      'Champagne to match the theme — you dressed her sister in 2024!');
+    appt('Rachel Cronin', 17, -14, 'Confirmation fitting',
+      'Mia’s confirmation, reception at The Kingsley.',
+      'Mia, age 11.',
+      'Lilac was her first choice.');
+    appt('Jennifer Barrett', 2, 3, 'Debs consultation',
+      'Debs at the Rochestown Park in about ten weeks.',
+      'Chloe, size 10.',
+      'The sage Valentina from your Instagram — budget up to €500.');
 
     return db;
   },
@@ -998,6 +1077,19 @@ const Credentials = {
     adminApiAccessToken: '', // shpat_...  (read_products)
   },
   // ------------------------------------------------------------------
+  // LIVE CREDENTIAL SEAM — Appointly (appointment booking on Shopify)
+  // Appointly asks three questions when a customer books an appointment
+  // through the Shopify storefront and stores the answers with the
+  // booking. Fill in the Appointly API key (Appointly app → Settings →
+  // API) — plus the same Shopify credentials above — and
+  // AppointlyService pulls each booking's Q&As and matches them to
+  // customers by email/phone. Until then, seeded sample bookings are
+  // shown and staff can log answers manually.
+  // ------------------------------------------------------------------
+  appointly: {
+    apiKey: '',
+  },
+  // ------------------------------------------------------------------
   // LIVE CREDENTIAL SEAM — Gmail API (OAuth2)
   // To go live, complete the OAuth consent flow for the sending mailbox
   // and store the client id/secret + refresh token here (in the real
@@ -1028,6 +1120,28 @@ const ShopifyService = {
       throw new Error('Live Shopify fetch not wired in this offline slice.');
     }
     return DB.products.filter(p => p.active); // mock catalogue seeded from Seed.build()
+  },
+};
+
+const AppointlyService = {
+  isLive: () => !!(Credentials.appointly.apiKey && ShopifyService.isLive()),
+  // Returns appointment bookings with the three question/answer pairs.
+  async fetchBookings() {
+    if (AppointlyService.isLive()) {
+      // LIVE CREDENTIAL SEAM — real sync goes here, e.g.:
+      //   GET https://api.appointly.io/v1/bookings  (X-Api-Key: {apiKey})
+      //   or read the booking's question answers from the Shopify order's
+      //   note_attributes on the Appointly booking order.
+      // Map each booking to { id, customerId (matched on email/phone),
+      // source:'appointly', service, appointmentAt, status, bookedAt,
+      // questions:[{q,a}×3], syncedAt } and merge into DB.appointments.
+      throw new Error('Live Appointly sync not wired in this offline slice.');
+    }
+    return DB.appointments; // seeded sample bookings (same shape as the live sync)
+  },
+  bookingsFor(customerId) {
+    return DB.appointments.filter(a => a.customerId === customerId)
+      .sort((a, b) => a.appointmentAt < b.appointmentAt ? 1 : -1);
   },
 };
 
@@ -1407,11 +1521,17 @@ Pages.dashboard = () => {
 
 /* =============================== CUSTOMERS =============================== */
 let customerQuery = '';
+let customerEventFilter = '';
+let customerDressFilter = '';
 Pages.customers = () => {
   const q = customerQuery.trim().toLowerCase();
+  const events = [...new Set(DB.orders.map(o => o.eventHotel).filter(Boolean))].sort();
+  const dresses = [...new Set(DB.orderItems.filter(i => i.category === 'dress').map(i => i.title))].sort();
   const matches = DB.customers.filter(c => {
-    if (!q) return true;
     const orders = Domain.ordersOf(c.id);
+    if (customerEventFilter && !orders.some(o => o.eventHotel === customerEventFilter)) return false;
+    if (customerDressFilter && !orders.some(o => Domain.itemsOf(o.id).some(i => i.title === customerDressFilter))) return false;
+    if (!q) return true;
     const hay = [c.name, c.daughterName, c.email, c.phone,
       ...orders.map(o => o.eventHotel),
       ...orders.flatMap(o => Domain.itemsOf(o.id).map(i => i.title + ' ' + i.styleCode)),
@@ -1420,32 +1540,45 @@ Pages.customers = () => {
   }).sort((a, b) => a.name.localeCompare(b.name));
   return `
     ${bannerHtml()}
-    <h1>Customers</h1>
-    <p class="sub">Search across customer, daughter, email, phone, event/hotel and dress ordered.</p>
-    <div class="toolbar">
-      <button class="primary" onclick="Actions.newCustomer()">+ New customer</button>
-      <button onclick="App.go('#/order-form')">+ New order</button>
+    <div class="flex" style="justify-content:space-between; margin-bottom:14px">
+      <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
+      <div class="flex">
+        <button onclick="App.go('#/order-form')">+ New order</button>
+        <button class="primary" onclick="Actions.newCustomer()">+ New customer</button>
+      </div>
     </div>
-    <input id="pagesearch" class="searchbar" placeholder="Search customers… e.g. “Saoirse”, “Clayton”, “Sofia gown”, “086…”"
-      value="${esc(customerQuery)}" oninput="customerQuery = this.value; App.route()">
-    <div class="tablewrap"><table>
-      <thead><tr><th>Customer</th><th>Daughter</th><th>Contact</th><th>Event / hotel</th><th>Ordered</th><th class="num">Balance</th><th>Status</th></tr></thead>
+    <div class="flex" style="margin-bottom:16px">
+      <input id="pagesearch" class="searchbar" style="margin:0; flex:1; max-width:460px" placeholder="Search name, daughter, phone, email…"
+        value="${esc(customerQuery)}" oninput="customerQuery = this.value; App.route()">
+      <select id="ev-filter" class="bigselect" onchange="customerEventFilter = this.value; App.route()">
+        <option value="">All events</option>
+        ${events.map(ev => `<option value="${esc(ev)}" ${customerEventFilter === ev ? 'selected' : ''}>${esc(ev)}</option>`).join('')}
+      </select>
+      <select id="dress-filter" class="bigselect" onchange="customerDressFilter = this.value; App.route()">
+        <option value="">All dresses</option>
+        ${dresses.map(d => `<option value="${esc(d)}" ${customerDressFilter === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+      </select>
+      ${customerEventFilter || customerDressFilter || customerQuery ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; App.route()">✕ Clear</button>` : ''}
+    </div>
+    <div class="tablewrap"><table class="roomy">
+      <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th class="num">Balance</th><th>Status</th></tr></thead>
       <tbody>
         ${matches.map(c => {
           const orders = Domain.ordersOf(c.id);
           const bal = orders.filter(o => o.status !== 'cancelled' && o.status !== 'written_off').reduce((s, o) => s + Math.max(Domain.balanceCents(o.id), 0), 0);
-          const latest = orders.sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+          const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+          const items = orders.flatMap(o => Domain.itemsOf(o.id));
+          const firstItem = items[0];
+          const [evType, evVenue] = latest && latest.eventHotel ? latest.eventHotel.split(/\s+—\s+/) : ['', ''];
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><b>${esc(c.name)}</b></td>
-            <td>${esc(c.daughterName || '—')}</td>
+            <td><span class="cname">${esc(c.name)}</span>${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
-            <td class="small">${esc(latest ? latest.eventHotel : '—')}</td>
-            <td class="small">${orders.length ? orders.map(o => Domain.itemsOf(o.id).map(i => esc(i.title)).join(', ')).join('; ') : '<span class="muted">No orders</span>'}</td>
-            <td class="num">${bal > 0 ? '<b>' + eur(bal) + '</b>' : '<span class="muted">€0.00</span>'}</td>
+            <td class="small">${evType ? `<span class="badge b-brand">${esc(evType)}</span>${evVenue ? `<br><span class="muted">${esc(evVenue)}</span>` : ''}` : '<span class="muted">—</span>'}</td>
+            <td class="small">${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
+            <td class="num">${bal > 0 ? '<b style="font-size:1.02rem">' + eur(bal) + '</b>' : '<span class="muted">—</span>'}</td>
             <td>${latest ? UI.badge(latest.status) : ''}</td></tr>`;
-        }).join('') || '<tr><td colspan="7" class="muted">No customers match that search.</td></tr>'}
-      </tbody></table></div>
-    <p class="small muted">${matches.length} of ${DB.customers.length} customers shown.</p>`;
+        }).join('') || '<tr><td colspan="6" class="muted">No customers match.</td></tr>'}
+      </tbody></table></div>`;
 };
 
 Pages.customerDetail = (id) => {
@@ -1470,6 +1603,22 @@ Pages.customerDetail = (id) => {
           <tr><td class="muted">Delivery address</td><td>${esc(c.address || '—')}</td></tr>
           <tr><td class="muted">Staff notes</td><td>${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></td></tr>
         </table>
+      </div>
+      <div class="card" style="grid-row: span 2">
+        <div class="flex" style="justify-content:space-between">
+          <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
+          <button class="small" onclick="Actions.logAppointment('${c.id}')">+ Log answers</button>
+        </div>
+        ${AppointlyService.bookingsFor(c.id).map(a => `
+          <div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
+            <div class="flex" style="margin-bottom:10px">
+              <b>${esc(a.service)}</b>
+              <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
+              <span class="small muted">${fmtDate(a.appointmentAt)}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
+            </div>
+            ${a.questions.map((qa, n) => `<div class="qa"><div class="q">${n + 1}. ${esc(qa.q)}</div><div class="a">${esc(qa.a || '—')}</div></div>`).join('')}
+          </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here when the customer books through the site, or log them after a phone booking.</p>'}
+        ${AppointlyService.isLive() ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — mock mode. Add the Appointly API key at the LIVE CREDENTIAL SEAM (Settings → Integrations) to sync real booking answers from Shopify.</div>'}
       </div>
       <div>
         <h2 style="margin-top:0">Orders (${orders.length})</h2>
@@ -2447,6 +2596,8 @@ Pages.settingsPage = () => {
           <h2 style="margin-top:0">Integrations</h2>
           <b>Shopify product catalogue</b> ${UI.badge(ShopifyService.isLive() ? 'confirmed' : 'mock_sent')}
           <div class="seam">🛍 LIVE CREDENTIAL SEAM — <span class="mono">Credentials.shopify</span> in the source: set <span class="mono">storeDomain</span> + <span class="mono">adminApiAccessToken</span> (read_products) and the catalogue is pulled from Shopify instead of the seeded mock. Only the catalogue comes from Shopify: checkout is used solely for the €25 deposit product, so every balance, instalment, invoice and payment calculation stays in this dashboard.</div>
+          <b>Appointly appointment bookings</b> ${UI.badge(AppointlyService.isLive() ? 'confirmed' : 'mock_sent')}
+          <div class="seam">📅 LIVE CREDENTIAL SEAM — <span class="mono">Credentials.appointly</span> in the source: set the Appointly API key (Appointly app → Settings → API) alongside the Shopify credentials above, and each booking's three question answers sync from Shopify and appear on the customer page, matched by email/phone. Until then, seeded sample bookings are shown and staff can log answers manually on the customer sheet.</div>
           <b>Gmail sending</b> ${UI.badge(GmailService.isLive() ? 'confirmed' : 'mock_sent')}
           <div class="seam">✉ LIVE CREDENTIAL SEAM — <span class="mono">Credentials.gmail</span> in the source: complete the OAuth flow for the sending mailbox and set clientId / clientSecret / refreshToken / senderAddress. Until then every send is recorded to the outbox in mock mode. (In the live deployment these credentials live server-side, never in the browser.)</div>
           <p class="small muted">The app runs fully on mock data with no keys present — switching to live requires only supplying credentials at these two seams.</p>
@@ -2467,6 +2618,33 @@ Pages.settingsPage = () => {
 
 /* ---- remaining actions ---- */
 Object.assign(Actions, {
+  logAppointment(customerId) {
+    const QS = DB.settings.appointlyQuestions;
+    UI.modal(`
+      <h3>Log appointment answers</h3>
+      <p class="small muted">For bookings taken over the phone or in the shop. Online bookings sync automatically once Appointly is connected.</p>
+      <div class="formgrid">
+        <div><label class="f">Appointment type</label><input id="ap-service" placeholder="e.g. Communion fitting"></div>
+        <div><label class="f">Appointment date</label><input id="ap-date" type="date" value="${todayStr()}"></div>
+      </div>
+      ${QS.map((qtext, n) => `
+        <label class="f">${n + 1}. ${esc(qtext)}</label>
+        <textarea id="ap-a${n}" rows="2" style="width:100%"></textarea>`).join('')}
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions.saveAppointment('${customerId}')">Save</button></div>`);
+  },
+  saveAppointment(customerId) {
+    const QS = DB.settings.appointlyQuestions;
+    const date = document.getElementById('ap-date').value || todayStr();
+    DB.appointments.push({
+      id: uid(), customerId, source: 'manual',
+      service: document.getElementById('ap-service').value.trim() || 'Appointment',
+      appointmentAt: date, status: date >= todayStr() ? 'upcoming' : 'completed',
+      bookedAt: nowIso(), syncedAt: null,
+      questions: QS.map((qtext, n) => ({ q: qtext, a: document.getElementById('ap-a' + n).value.trim() })),
+    });
+    Store.save(); UI.closeModal(); App.route(); UI.toast('Appointment answers saved.');
+  },
   taskReviewed(taskId) {
     const t = DB.reminderTasks.find(x => x.id === taskId);
     t.status = 'reviewed'; t.updatedAt = nowIso();
