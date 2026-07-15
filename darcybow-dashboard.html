@@ -196,10 +196,21 @@
   .dl-label { width: 92px; flex-shrink: 0; font-size: .74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
   .dl-value { font-size: 1rem; font-weight: 700; color: var(--ink); }
   .dl-value .muted { font-weight: 400; }
-  .venuegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 16px; }
+  .venuegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
   @media (max-width: 560px) { .venuegrid { grid-template-columns: 1fr; } }
-  .vrow { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .vtile {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 24px; cursor: pointer; transition: box-shadow .12s, transform .12s;
+  }
+  .vtile:hover { box-shadow: 0 6px 18px rgba(155,44,77,.14); transform: translateY(-1px); border-color: #e3c3ce; }
+  .vtile-date { font-size: .8rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+  .vtile-name { font-size: 1.3rem; font-weight: 750; line-height: 1.25; margin-bottom: 8px; }
+  .vtile-sub { font-size: .82rem; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .vrow { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .vrow:first-child { border-top: none; }
   .vrow:hover { background: var(--brand-soft); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+  .vtime { width: 86px; flex-shrink: 0; text-align: center; line-height: 1.3; }
+  .vclock { font-size: 1.15rem; font-weight: 750; color: var(--brand); font-variant-numeric: tabular-nums; }
   .toast {
     position: fixed; bottom: 22px; right: 22px; background: var(--ink); color: #fff;
     border-radius: 10px; padding: 12px 18px; font-size: .9rem; z-index: 99;
@@ -282,7 +293,7 @@ function splitCents(total, n) {
 }
 
 /* ---------------------- data store ---------------------- */
-const STORE_KEY = 'darcybow-db-v3';
+const STORE_KEY = 'darcybow-db-v4';
 let DB = null;
 
 const Store = {
@@ -365,6 +376,11 @@ const Seed = {
 
     const C = (name, daughterName, email, phone, address, notes) =>
       ({ id: uid(), name, daughterName, email, phone, address, notes, createdAt: isoDaysAgo(90), updatedAt: isoDaysAgo(10) });
+
+    // Venues usually host a whole weekend of events (Saturday + Sunday):
+    // find the Saturday ~5 weeks out so the seed demos the day filters.
+    let satN = 35; while (new Date(Date.now() + satN * 86400000).getDay() !== 6) satN++;
+    const SAT = daysFromNow(satN), SUN = daysFromNow(satN + 1);
 
     // Helper: create a full order with items, deposit, plan and payments.
     // spec: { customer, items:[{code,colour,size,qty?}], eventHotel, eventDate, staffNotes,
@@ -464,7 +480,7 @@ const Seed = {
       customer: C('Mary O’Sullivan', 'Saoirse', 'mary.osullivan@gmail.com', '087 234 5678',
         '14 Elm Grove, Douglas, Cork', 'Lovely family, returning customer — sister’s communion 2024.'),
       items: [{ code: 'DB-IS01', colour: 'Ivory', size: 'Age 8' }, { code: 'DB-AC22', colour: 'Ivory', size: 'One size' }],
-      eventHotel: 'Communion — Rochestown Park Hotel', eventDate: daysFromNow(40),
+      eventHotel: 'Communion — Rochestown Park Hotel', eventDate: SAT,
       staffNotes: 'Hem take-up booked for fitting on the 22nd.',
       confirmedDaysAgo: 21, plan: 'paid_in_full',
       payments: [{ amount: 'all', daysAgo: 5, method: 'card' }],
@@ -611,7 +627,7 @@ const Seed = {
       customer: C('Jennifer Barrett', 'Chloe', 'jen.barrett@gmail.com', '086 909 8071',
         '17 Meadow Springs, Glanmire, Co. Cork', 'New customer — came from Instagram.'),
       items: [{ code: 'DB-VL05', colour: 'Sage', size: '10' }, { code: 'DB-SH11', colour: 'Ivory', size: '37' }],
-      eventHotel: 'Debs — Rochestown Park Hotel', eventDate: daysFromNow(70),
+      eventHotel: 'Debs — Rochestown Park Hotel', eventDate: SUN,
       staffNotes: 'Deposit paid online. Ring to agree the payment plan and book first fitting.',
       confirmedDaysAgo: 2, plan: null, flags: { needsReview: true },
     });
@@ -625,6 +641,17 @@ const Seed = {
       staffNotes: 'Embroidered name on the hem — confirm spelling: Éabha.',
       confirmedDaysAgo: 10, plan: 'fifty_fifty', finalDueInDays: 12,
       payments: [{ amount: 'rest1', daysAgo: 10, method: 'card' }],
+    });
+
+    /* ---- Scenario 14: same weekend, Saturday at Rochestown Park ---- */
+    mkOrder({
+      customer: C('Aisling Buckley', 'Emily', 'aisling.buckley@gmail.com', '087 665 4321',
+        '44 Castle Heights, Carrigtwohill, Co. Cork', ''),
+      items: [{ code: 'DB-IS01', colour: 'White', size: 'Age 9' }, { code: 'DB-SH10', colour: 'White', size: '32' }],
+      eventHotel: 'Communion — Rochestown Park Hotel', eventDate: SAT,
+      staffNotes: 'Same communion weekend as the O’Sullivans — friends, would like fittings together if possible.',
+      confirmedDaysAgo: 8, plan: 'fifty_fifty', finalDueInDays: 18,
+      payments: [{ amount: 'rest1', daysAgo: 8, method: 'card' }],
     });
 
     /* ---- Appointly booking Q&As ----
@@ -693,6 +720,10 @@ const Seed = {
       'Éabha’s christening at the end of the month — lunch at the Angler’s Rest in Innishannon after.',
       'Baby Éabha — she’ll be 8 months by then.',
       'The Willow gown, ivory, with her name embroidered on the hem.');
+    appt('Aisling Buckley', 6, 5, 'Communion fitting',
+      'First Communion — same weekend as the O’Sullivans at the Rochestown Park.',
+      'Emily, age 9.',
+      'White, and she’d love the same ballet pumps her friend Saoirse got.');
     appt('Jennifer Barrett', 2, 3, 'Debs consultation',
       'Debs at the Rochestown Park in about ten weeks.',
       'Chloe, size 10.',
@@ -1479,7 +1510,7 @@ const App = {
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
       order: () => Pages.orderDetail(arg), 'order-form': () => Pages.orderForm(arg),
-      venues: Pages.venues,
+      venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
       balances: Pages.balances, reminders: Pages.reminders, stock: Pages.stock,
       outbox: Pages.outbox, settings: Pages.settingsPage,
     };
@@ -1626,8 +1657,11 @@ Pages.customers = () => {
 };
 
 /* =============================== VENUES =============================== */
-Pages.venues = () => {
-  const fmtWd = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtWd = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
+
+// Orders grouped by venue (the part after the "—" in event/hotel),
+// sorted chronologically by each venue's next event date.
+function venueGroups() {
   const groups = new Map();
   for (const o of DB.orders) {
     if (!o.eventHotel) continue;
@@ -1636,56 +1670,87 @@ Pages.venues = () => {
     if (!groups.has(venue)) groups.set(venue, []);
     groups.get(venue).push(o);
   }
-  const cards = [...groups.entries()].map(([venue, orders]) => {
-    const dates = orders.map(o => o.eventDate).filter(Boolean).sort();
+  return [...groups.entries()].map(([venue, orders]) => {
+    const dates = [...new Set(orders.map(o => o.eventDate).filter(Boolean))].sort();
     const nextDate = dates.find(d => d >= todayStr()) || null;
-    const rows = orders.map(o => {
-      const c = Domain.customer(o.customerId);
-      const appts = AppointlyService.bookingsFor(c.id);
-      const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => a.appointmentAt < b.appointmentAt ? -1 : 1)[0];
-      const last = appts[0];
-      const bal = Domain.balanceCents(o.id);
-      const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
-      return { o, c, upcoming, last, bal, dress };
-    }).sort((a, b) => {
-      const ka = a.upcoming ? '0' + a.upcoming.appointmentAt + (a.upcoming.time || '') : '1' + (a.o.eventDate || '9999');
-      const kb = b.upcoming ? '0' + b.upcoming.appointmentAt + (b.upcoming.time || '') : '1' + (b.o.eventDate || '9999');
-      return ka < kb ? -1 : 1;
-    });
-    return { venue, orders, nextDate, rows };
-  }).sort((a, b) => (a.nextDate || '9999') < (b.nextDate || '9999') ? -1 : 1);
+    const occasions = [...new Set(orders.map(o => (o.eventHotel.split(/\s+—\s+/)[0] || '').trim()).filter(Boolean))];
+    return { venue, orders, dates, nextDate, occasions };
+  }).sort((a, b) => (a.nextDate || '9999-' + (a.dates.slice(-1)[0] || '')) < (b.nextDate || '9999-' + (b.dates.slice(-1)[0] || '')) ? -1 : 1);
+}
 
+/* ---- Venues board: big clean bubbles, no customers, chronological ---- */
+Pages.venues = () => {
+  const cards = venueGroups();
   return `
     ${bannerHtml()}
-    <div class="flex" style="justify-content:space-between; margin-bottom:4px">
-      <h1 style="margin:0">Venues <span class="muted" style="font-size:1rem; font-weight:400">${cards.length}</span></h1>
-    </div>
-    <p class="sub">Every customer grouped by where their event is held, with the time they're coming in to us. Venue &amp; occasion come from the order; coming-in times sync from Appointly and products from Shopify (mock data until the credential seams are keyed).</p>
+    <h1 style="margin-bottom:2px">Venues <span class="muted" style="font-size:1rem; font-weight:400">${cards.length}</span></h1>
+    <p class="sub">In date order — tap a venue to see everyone booked for it and when they're coming in.</p>
     <div class="venuegrid">
       ${cards.map(v => `
-        <div class="card">
-          <div class="flex" style="justify-content:space-between; margin-bottom:2px">
-            <h2 style="margin:0">📍 ${esc(v.venue)}</h2>
-            <span class="badge b-grey">${v.rows.length} customer${v.rows.length === 1 ? '' : 's'}</span>
-          </div>
-          <div class="small muted" style="margin-bottom:10px">${v.nextDate ? 'Next event: <b>' + fmtWd(v.nextDate) + '</b>' : 'No upcoming event date'}</div>
-          ${v.rows.map(r => `
-            <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
-              <div style="flex:1; min-width:0">
-                <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
-                <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
-              </div>
-              <div style="text-align:right">
-                ${r.upcoming
-                  ? `<span class="badge b-blue">Coming in ${fmtWd(r.upcoming.appointmentAt)} · ${esc(r.upcoming.time || '')}</span>`
-                  : r.last
-                    ? `<span class="small muted">visited ${fmtWd(r.last.appointmentAt)}${r.last.time ? ' · ' + esc(r.last.time) : ''}</span>`
-                    : `<span class="badge b-amber">No appointment booked</span>`}
-                <br>${UI.eventBadge(r.o.eventHotel).split('<br>')[0]} ${r.bal > 0 ? `<span class="badge b-red">${eur(r.bal)} due</span>` : UI.badge(r.o.status)}
-              </div>
-            </div>`).join('')}
+        <div class="vtile" onclick="App.go('#/venue/${encodeURIComponent(v.venue).replace(/'/g, '%27')}')">
+          <div class="vtile-date">${v.nextDate ? fmtWd(v.nextDate) + (v.dates.filter(d => d >= todayStr()).length > 1 ? ' · +' + (v.dates.filter(d => d >= todayStr()).length - 1) + ' more date' + (v.dates.filter(d => d >= todayStr()).length > 2 ? 's' : '') : '') : 'No upcoming date'}</div>
+          <div class="vtile-name">${esc(v.venue)}</div>
+          <div class="vtile-sub">${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · ${v.occasions.map(oc => UI.eventBadge(oc + ' — ').split('<br>')[0]).join(' ')}</div>
         </div>`).join('')}
     </div>`;
+};
+
+/* ---- Single venue: every customer + coming-in times, chronological.
+       Venues often host a whole weekend (Sat + Sun), so each event day
+       gets its own filter chip alongside "All customers". ---- */
+let venueDayFilter = '';
+let venueDayFilterVenue = '';
+Pages.venueDetail = (venueName) => {
+  const v = venueGroups().find(x => x.venue === venueName);
+  if (!v) return `<p><a class="plain" href="#/venues">← Venues</a></p><h1>Venue not found</h1>`;
+  if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueDayFilterVenue = venueName; }
+  const allRows = v.orders.map(o => {
+    const c = Domain.customer(o.customerId);
+    const appts = AppointlyService.bookingsFor(c.id);
+    const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+    const last = appts[0];
+    const bal = Domain.balanceCents(o.id);
+    const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
+    return { o, c, upcoming, last, bal, dress };
+  });
+  const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
+  const dayChips = v.dates.map(d => ({
+    date: d,
+    label: dayName(d) + ' · ' + new Date(d + 'T00:00').toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
+    count: allRows.filter(r => r.o.eventDate === d).length,
+  }));
+  const rows = venueDayFilter ? allRows.filter(r => r.o.eventDate === venueDayFilter) : allRows;
+  const key = r => r.upcoming ? r.upcoming.appointmentAt + 'T' + (r.upcoming.time || '00:00') : (r.last ? r.last.appointmentAt + 'T' + (r.last.time || '00:00') : '');
+  const booked = rows.filter(r => r.upcoming).sort((a, b) => key(a) < key(b) ? -1 : 1);
+  const noAppt = rows.filter(r => !r.upcoming && !r.last).sort((a, b) => (a.o.eventDate || '9999') < (b.o.eventDate || '9999') ? -1 : 1);
+  const visited = rows.filter(r => !r.upcoming && r.last).sort((a, b) => key(a) < key(b) ? -1 : 1);
+  const row = (r, timeHtml) => `
+    <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
+      <div class="vtime">${timeHtml}</div>
+      <div style="flex:1; min-width:0">
+        <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
+        <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
+      </div>
+      <div style="text-align:right">
+        ${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}
+        ${r.bal > 0 ? `<span class="badge b-red">${eur(r.bal)} due</span>` : UI.badge(r.o.status)}
+      </div>
+    </div>`;
+  return `
+    ${bannerHtml()}
+    <p><a class="plain" href="#/venues">← Venues</a></p>
+    <h1 style="margin-bottom:2px">📍 ${esc(v.venue)}</h1>
+    <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> · ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · coming-in times from Appointly, in time order.</p>
+    ${dayChips.length > 1 ? `<div class="chips">
+      <button class="chip ${!venueDayFilter ? 'on' : ''}" onclick="venueDayFilter=''; App.route()">All customers (${allRows.length})</button>
+      ${dayChips.map(dc => `<button class="chip ${venueDayFilter === dc.date ? 'on' : ''}" onclick="venueDayFilter='${dc.date}'; App.route()">${esc(dc.label)} (${dc.count})</button>`).join('')}
+    </div>` : ''}
+    ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+      ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '—')}</span>`)).join('')}</div>` : ''}
+    ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+      ${noAppt.map(r => row(r, `<span class="badge b-amber">Book in</span>`)).join('')}</div>` : ''}
+    ${visited.length ? `<h2>Already visited (${visited.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+      ${visited.map(r => row(r, `<span class="muted small">${fmtWd(r.last.appointmentAt)}</span><br><span class="vclock" style="color:var(--muted)">${esc(r.last.time || '—')}</span>`)).join('')}</div>` : ''}`;
 };
 
 Pages.customerDetail = (id) => {
