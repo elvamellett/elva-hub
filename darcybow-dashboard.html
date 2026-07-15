@@ -194,8 +194,12 @@
   .dl-row { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
   .dl-row:last-child { border-bottom: none; }
   .dl-label { width: 92px; flex-shrink: 0; font-size: .74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  .dl-value { font-size: 1rem; font-weight: 700; color: var(--ink); }
+  .dl-value { font-size: 1rem; font-weight: 700; color: var(--ink); flex: 1; }
   .dl-value .muted { font-weight: 400; }
+  .dl-row.editable { cursor: pointer; border-radius: 8px; }
+  .dl-row.editable:hover { background: var(--brand-soft); }
+  .editpen { color: var(--brand); opacity: 0; font-size: .9rem; padding-left: 8px; }
+  .dl-row.editable:hover .editpen { opacity: 1; }
   .venuegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
   @media (max-width: 560px) { .venuegrid { grid-template-columns: 1fr; } }
   .vtile {
@@ -1851,11 +1855,11 @@ Pages.customerDetail = (id) => {
     </div>
     <div class="cols2">
       <div class="card">
-        <h2 style="margin-top:0">Details</h2>
-        <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
-        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
-        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
-        <div class="dl-row"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></span></div>
+        <h2 style="margin-top:0">Details <span class="small muted" style="font-weight:400; text-transform:none; letter-spacing:0">— tap a row to edit</span></h2>
+        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','email',this)"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span><span class="editpen">✎</span></div>
+        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','phone',this)"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span><span class="editpen">✎</span></div>
+        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','address',this)"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span><span class="editpen">✎</span></div>
+        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','notes',this)"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></span><span class="editpen">✎</span></div>
       </div>
       <div class="card" style="grid-row: span 2">
         <div class="flex" style="justify-content:space-between">
@@ -2885,6 +2889,44 @@ Pages.settingsPage = () => {
 
 /* ---- remaining actions ---- */
 Object.assign(Actions, {
+  // Tap-to-edit on the customer sheet: the row becomes an input in place.
+  // Enter saves (Ctrl+Enter for notes), Esc cancels, clicking away saves.
+  inlineEdit(customerId, field, rowEl) {
+    if (rowEl.querySelector('input, textarea')) return; // already editing
+    const c = Domain.customer(customerId);
+    const valEl = rowEl.querySelector('.dl-value');
+    const isNotes = field === 'notes';
+    const cur = c[field] || '';
+    valEl.innerHTML = '';
+    const input = document.createElement(isNotes ? 'textarea' : 'input');
+    input.value = cur;
+    input.style.width = '100%';
+    if (isNotes) input.rows = 3;
+    input.onclick = e => e.stopPropagation();
+    let done = false;
+    const save = () => {
+      if (done) return; done = true;
+      const v = input.value.trim();
+      if (v !== cur.trim()) {
+        c[field] = v; c.updatedAt = nowIso(); Store.save();
+        UI.toast('Saved.');
+      }
+      App.route();
+    };
+    const cancel = () => { if (done) return; done = true; App.route(); };
+    input.onblur = save;
+    input.onkeydown = e => {
+      if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+      else if (e.key === 'Enter' && (!isNotes || e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
+    };
+    valEl.appendChild(input);
+    const hint = document.createElement('div');
+    hint.className = 'small muted';
+    hint.textContent = (isNotes ? 'Ctrl+Enter' : 'Enter') + ' to save · Esc to cancel';
+    valEl.appendChild(hint);
+    input.focus();
+    if (!isNotes) input.setSelectionRange(input.value.length, input.value.length);
+  },
   logAppointment(customerId, apptId, prefillDate, prefillService) {
     const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
     const QS = existing ? existing.questions.map(qa => qa.q) : DB.settings.appointlyQuestions;
