@@ -211,6 +211,9 @@
   .vrow:hover { background: var(--brand-soft); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
   .vtime { width: 86px; flex-shrink: 0; text-align: center; line-height: 1.3; }
   .vclock { font-size: 1.15rem; font-weight: 750; color: var(--brand); font-variant-numeric: tabular-nums; }
+  .blockhead { margin: 14px 0 8px; }
+  .blockhead b { font-size: 1.02rem; }
+  select.mini { padding: 4px 8px; font-size: .82rem; border-radius: 6px; }
   .toast {
     position: fixed; bottom: 22px; right: 22px; background: var(--ink); color: #fff;
     border-radius: 10px; padding: 12px 18px; font-size: .9rem; z-index: 99;
@@ -293,7 +296,7 @@ function splitCents(total, n) {
 }
 
 /* ---------------------- data store ---------------------- */
-const STORE_KEY = 'darcybow-db-v4';
+const STORE_KEY = 'darcybow-db-v5';
 let DB = null;
 
 const Store = {
@@ -330,11 +333,18 @@ const DEFAULT_SETTINGS = {
     name: 'Darcybow', addressLine: 'Unit 4, The Courtyard, Douglas, Cork, Ireland',
     email: 'hello@darcybow.ie', phone: '+353 21 123 4567', web: 'darcybow.ie', vat: 'IE 1234567X',
   },
+  // Six staff run private appointments with customers at event days.
   staff: [
     { name: 'Elva', role: 'admin' },
     { name: 'Aoife', role: 'staff' },
     { name: 'Niamh', role: 'staff' },
+    { name: 'Sinéad', role: 'staff' },
+    { name: 'Ciara', role: 'staff' },
+    { name: 'Emma', role: 'staff' },
   ],
+  // Event-day schedule: hourly blocks from 9am to 6pm, up to 6 customers
+  // per slot (private appointments, one staff member per customer).
+  eventDay: { startHour: 9, endHour: 18, slotCapacity: 6 },
 };
 
 /* ---------------------- seed data ---------------------- */
@@ -670,6 +680,21 @@ const Seed = {
         status: apptInDays >= 0 ? 'upcoming' : 'completed',
         bookedAt: isoDaysAgo(daysAgoBooked, 12), syncedAt: isoDaysAgo(0, 9),
         questions: [{ q: QS[0], a: a1 }, { q: QS[1], a: a2 }, { q: QS[2], a: a3 }],
+        staffName: '',
+      });
+    };
+    // Event-day slot at a venue: the private appointment where a staff
+    // member helps the customer pick their dress on the day itself.
+    const apptVenue = (custName, dateStr, time, venue, staffName) => {
+      const cust = db.customers.find(c => c.name === custName);
+      if (!cust) return;
+      db.appointments.push({
+        id: uid(), customerId: cust.id, source: 'appointly',
+        service: 'Private appointment — ' + venue,
+        appointmentAt: dateStr, time,
+        status: dateStr >= daysFromNow(0) ? 'upcoming' : 'completed',
+        bookedAt: isoDaysAgo(4, 12), syncedAt: isoDaysAgo(0, 9),
+        questions: [], staffName: staffName || '',
       });
     };
     appt('Mary O’Sullivan', 24, -22, 'Communion fitting',
@@ -728,6 +753,11 @@ const Seed = {
       'Debs at the Rochestown Park in about ten weeks.',
       'Chloe, size 10.',
       'The sage Valentina from your Instagram — budget up to €500.');
+
+    // Rochestown Park weekend: booked slots + assigned staff for the demo.
+    apptVenue('Mary O’Sullivan', SAT, '10:15', 'Rochestown Park Hotel', 'Aoife');
+    apptVenue('Aisling Buckley', SAT, '10:40', 'Rochestown Park Hotel', 'Niamh');
+    apptVenue('Jennifer Barrett', SUN, '13:00', 'Rochestown Park Hotel', '');
 
     return db;
   },
@@ -1719,38 +1749,91 @@ Pages.venueDetail = (venueName) => {
     label: dayName(d) + ' · ' + new Date(d + 'T00:00').toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
     count: allRows.filter(r => r.o.eventDate === d).length,
   }));
-  const rows = venueDayFilter ? allRows.filter(r => r.o.eventDate === venueDayFilter) : allRows;
   const key = r => r.upcoming ? r.upcoming.appointmentAt + 'T' + (r.upcoming.time || '00:00') : (r.last ? r.last.appointmentAt + 'T' + (r.last.time || '00:00') : '');
-  const booked = rows.filter(r => r.upcoming).sort((a, b) => key(a) < key(b) ? -1 : 1);
-  const noAppt = rows.filter(r => !r.upcoming && !r.last).sort((a, b) => (a.o.eventDate || '9999') < (b.o.eventDate || '9999') ? -1 : 1);
-  const visited = rows.filter(r => !r.upcoming && r.last).sort((a, b) => key(a) < key(b) ? -1 : 1);
-  const row = (r, timeHtml) => `
+  const staffSelect = a => `
+    <select class="mini" onclick="event.stopPropagation()" onchange="Actions.assignStaff('${a.id}', this.value)">
+      <option value="">— Assign staff —</option>
+      ${DB.settings.staff.map(s => `<option ${a.staffName === s.name ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+    </select>`;
+  const row = (r, timeHtml, appt) => `
     <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
       <div class="vtime">${timeHtml}</div>
       <div style="flex:1; min-width:0">
         <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
         <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
       </div>
+      ${appt ? `<div>${staffSelect(appt)}</div>` : ''}
       <div style="text-align:right">
         ${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}
         ${r.bal > 0 ? `<span class="badge b-red">${eur(r.bal)} due</span>` : UI.badge(r.o.status)}
       </div>
     </div>`;
+
+  let body;
+  if (venueDayFilter) {
+    /* ---- Day planner: hourly blocks 9am–6pm, 6-per-slot capacity,
+           staff assigned per customer, printable run sheet ---- */
+    const day = venueDayFilter;
+    const cfg = DB.settings.eventDay;
+    const dayRows = allRows.filter(r => r.o.eventDate === day);
+    const slotted = [], notBooked = [];
+    for (const r of dayRows) {
+      const a = DB.appointments.filter(x => x.customerId === r.c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      if (a) slotted.push({ ...r, a }); else notBooked.push(r);
+    }
+    const hh = h => String(h).padStart(2, '0');
+    const blocks = [];
+    for (let h = cfg.startHour; h < cfg.endHour; h++) {
+      const inBlock = slotted.filter(s => s.a.time && s.a.time >= hh(h) + ':00' && s.a.time < hh(h + 1) + ':00')
+        .sort((p, q) => p.a.time < q.a.time ? -1 : 1);
+      blocks.push({ n: blocks.length + 1, from: hh(h) + ':00', to: hh(h + 1) + ':00', rows: inBlock });
+    }
+    const unscheduled = slotted.filter(s => !s.a.time || s.a.time < hh(cfg.startHour) + ':00' || s.a.time >= hh(cfg.endHour) + ':00');
+    body = `
+      <div class="toolbar">
+        <button class="primary" onclick="Actions.printRunSheet('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">🖨 Print staff run sheet</button>
+        <span class="small muted">Up to ${cfg.slotCapacity} customers per slot · one staff member per customer (private appointments).</span>
+      </div>
+      ${blocks.map(b => `
+        <div class="flex blockhead">
+          <b>Block ${b.n}</b><span class="muted">${b.from} – ${b.to}</span>
+          <span class="badge ${b.rows.length > cfg.slotCapacity ? 'b-red' : b.rows.length ? 'b-blue' : 'b-grey'}">${b.rows.length ? b.rows.length + ' booked' : 'free'}${b.rows.length > cfg.slotCapacity ? ' — over capacity!' : ''}</span>
+        </div>
+        ${b.rows.length ? `<div class="card" style="padding-top:2px; padding-bottom:2px; margin-bottom:10px">
+          ${b.rows.map(s => row(s, `<span class="vclock">${esc(s.a.time)}</span>`, s.a)).join('')}</div>` : ''}`).join('')}
+      ${unscheduled.length ? `<h2>Booked, no time set (${unscheduled.length})</h2><div class="card" style="padding-top:2px; padding-bottom:2px">
+        ${unscheduled.map(s => row(s, `<span class="badge b-amber">Set time</span>`, s.a)).join('')}</div>` : ''}
+      ${notBooked.length ? `<h2>Not booked in yet (${notBooked.length})</h2><div class="card" style="padding-top:2px; padding-bottom:2px">
+        ${notBooked.map(r => `
+          <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
+            <div class="vtime"><button class="small primary" onclick="event.stopPropagation(); Actions.logAppointment('${r.c.id}', '', '${day}', 'Private appointment — ${esc(v.venue).replace(/'/g, '&#39;')}')">Book slot</button></div>
+            <div style="flex:1"><span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
+              <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}</span></div>
+            <div>${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}</div>
+          </div>`).join('')}</div>` : ''}`;
+  } else {
+    const booked = allRows.filter(r => r.upcoming).sort((a, b) => key(a) < key(b) ? -1 : 1);
+    const noAppt = allRows.filter(r => !r.upcoming && !r.last).sort((a, b) => (a.o.eventDate || '9999') < (b.o.eventDate || '9999') ? -1 : 1);
+    const visited = allRows.filter(r => !r.upcoming && r.last).sort((a, b) => key(a) < key(b) ? -1 : 1);
+    body = `
+      ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+        ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '—')}</span>`, r.upcoming)).join('')}</div>` : ''}
+      ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+        ${noAppt.map(r => row(r, `<span class="badge b-amber">Book in</span>`)).join('')}</div>` : ''}
+      ${visited.length ? `<h2>Already visited (${visited.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+        ${visited.map(r => row(r, `<span class="muted small">${fmtWd(r.last.appointmentAt)}</span><br><span class="vclock" style="color:var(--muted)">${esc(r.last.time || '—')}</span>`)).join('')}</div>` : ''}`;
+  }
   return `
     ${bannerHtml()}
     <p><a class="plain" href="#/venues">← Venues</a></p>
     <h1 style="margin-bottom:2px">📍 ${esc(v.venue)}</h1>
-    <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> · ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · coming-in times from Appointly, in time order.</p>
-    ${dayChips.length > 1 ? `<div class="chips">
+    <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> · ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · slot times from Appointly, in time order.</p>
+    <div class="chips">
       <button class="chip ${!venueDayFilter ? 'on' : ''}" onclick="venueDayFilter=''; App.route()">All customers (${allRows.length})</button>
       ${dayChips.map(dc => `<button class="chip ${venueDayFilter === dc.date ? 'on' : ''}" onclick="venueDayFilter='${dc.date}'; App.route()">${esc(dc.label)} (${dc.count})</button>`).join('')}
-    </div>` : ''}
-    ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
-      ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '—')}</span>`)).join('')}</div>` : ''}
-    ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
-      ${noAppt.map(r => row(r, `<span class="badge b-amber">Book in</span>`)).join('')}</div>` : ''}
-    ${visited.length ? `<h2>Already visited (${visited.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
-      ${visited.map(r => row(r, `<span class="muted small">${fmtWd(r.last.appointmentAt)}</span><br><span class="vclock" style="color:var(--muted)">${esc(r.last.time || '—')}</span>`)).join('')}</div>` : ''}`;
+    </div>
+    ${body}`;
 };
 
 Pages.customerDetail = (id) => {
@@ -1786,10 +1869,16 @@ Pages.customerDetail = (id) => {
               <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
               <span class="small muted">${fmtDate(a.appointmentAt)}${a.time ? ' · <b>' + esc(a.time) + '</b>' : ''}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
               <span class="spacer" style="flex:1"></span>
+              <select class="mini" onchange="Actions.assignStaff('${a.id}', this.value)" title="Staff member looking after this customer">
+                <option value="">— Staff —</option>
+                ${DB.settings.staff.map(s => `<option ${a.staffName === s.name ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+              </select>
               <button class="small" onclick="Actions.logAppointment('${c.id}','${a.id}')">✎ Edit</button>
             </div>
-            ${a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
-              <ul>${(qa.a || '—').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')}
+            ${a.staffName ? `<div class="small" style="margin-bottom:8px">Looked after by <b>${esc(a.staffName)}</b></div>` : ''}
+            ${a.questions.length ? a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
+              <ul>${(qa.a || '—').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')
+              : '<div class="small muted">Event-day slot — no booking questions.</div>'}
           </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here when the customer books through the site, or add them after a phone booking.</p>'}
         ${AppointlyService.isLive() ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — mock mode. Add the Appointly API key at the LIVE CREDENTIAL SEAM (Settings → Integrations) to sync real booking answers from Shopify.</div>'}
       </div>
@@ -2791,42 +2880,115 @@ Pages.settingsPage = () => {
 
 /* ---- remaining actions ---- */
 Object.assign(Actions, {
-  logAppointment(customerId, apptId) {
+  logAppointment(customerId, apptId, prefillDate, prefillService) {
     const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
     const QS = existing ? existing.questions.map(qa => qa.q) : DB.settings.appointlyQuestions;
+    const isSlot = !!prefillService; // booking an event-day slot: no questions form
     UI.modal(`
-      <h3>${existing ? 'Edit appointment answers' : 'Add appointment answers'}</h3>
-      <p class="small muted">${existing ? '' : 'For bookings taken over the phone or in the shop. Online bookings sync automatically once Appointly is connected.'}</p>
+      <h3>${existing ? 'Edit appointment' : isSlot ? 'Book event-day slot' : 'Add appointment answers'}</h3>
+      <p class="small muted">${existing || isSlot ? '' : 'For bookings taken over the phone or in the shop. Online bookings sync automatically once Appointly is connected.'}</p>
       <div class="formgrid">
-        <div><label class="f">Appointment type</label><input id="ap-service" placeholder="e.g. Communion fitting" value="${existing ? esc(existing.service) : ''}"></div>
-        <div><label class="f">Appointment date</label><input id="ap-date" type="date" value="${existing ? existing.appointmentAt : todayStr()}"></div>
+        <div><label class="f">Appointment type</label><input id="ap-service" placeholder="e.g. Communion fitting" value="${existing ? esc(existing.service) : esc(prefillService || '')}"></div>
+        <div><label class="f">Appointment date</label><input id="ap-date" type="date" value="${existing ? existing.appointmentAt : (prefillDate || todayStr())}"></div>
         <div><label class="f">Time coming in</label><input id="ap-time" type="time" value="${existing && existing.time ? existing.time : ''}"></div>
+        <div><label class="f">Staff member</label><select id="ap-staff">
+          <option value="">— Unassigned —</option>
+          ${DB.settings.staff.map(s => `<option ${existing && existing.staffName === s.name ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+        </select></div>
       </div>
-      ${QS.map((qtext, n) => `
+      ${isSlot && !existing ? '' : QS.map((qtext, n) => `
         <label class="f" style="text-transform:none; font-size:.92rem; color:var(--ink)">${n + 1}. ${esc(qtext)}</label>
         <textarea id="ap-a${n}" rows="2" style="width:100%">${existing ? esc(existing.questions[n].a) : ''}</textarea>`).join('')}
       <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.saveAppointment('${customerId}','${apptId || ''}')">Save</button></div>`);
+        <button class="primary" onclick="Actions.saveAppointment('${customerId}','${apptId || ''}', ${isSlot})">Save</button></div>`);
   },
-  saveAppointment(customerId, apptId) {
+  saveAppointment(customerId, apptId, isSlot) {
     const date = document.getElementById('ap-date').value || todayStr();
     const time = document.getElementById('ap-time').value || '';
     const service = document.getElementById('ap-service').value.trim() || 'Appointment';
+    const staffName = document.getElementById('ap-staff').value || '';
     const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
+    const answers = n => { const el = document.getElementById('ap-a' + n); return el ? el.value.trim() : ''; };
     if (existing) {
-      existing.service = service; existing.appointmentAt = date; existing.time = time;
+      existing.service = service; existing.appointmentAt = date; existing.time = time; existing.staffName = staffName;
       existing.status = date >= todayStr() ? 'upcoming' : 'completed';
-      existing.questions = existing.questions.map((qa, n) => ({ q: qa.q, a: document.getElementById('ap-a' + n).value.trim() }));
+      existing.questions = existing.questions.map((qa, n) => ({ q: qa.q, a: answers(n) }));
     } else {
-      const QS = DB.settings.appointlyQuestions;
       DB.appointments.push({
-        id: uid(), customerId, source: 'manual', service, time,
+        id: uid(), customerId, source: 'manual', service, time, staffName,
         appointmentAt: date, status: date >= todayStr() ? 'upcoming' : 'completed',
         bookedAt: nowIso(), syncedAt: null,
-        questions: QS.map((qtext, n) => ({ q: qtext, a: document.getElementById('ap-a' + n).value.trim() })),
+        questions: isSlot ? [] : DB.settings.appointlyQuestions.map((qtext, n) => ({ q: qtext, a: answers(n) })),
       });
     }
-    Store.save(); UI.closeModal(); App.route(); UI.toast('Appointment answers saved.');
+    Store.save(); UI.closeModal(); App.route(); UI.toast('Appointment saved.');
+  },
+  assignStaff(apptId, staffName) {
+    const a = DB.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    a.staffName = staffName;
+    Store.save(); App.route();
+    UI.toast(staffName ? staffName + ' assigned.' : 'Staff unassigned.');
+  },
+  /* Printable run sheet: hand each staff member the day's schedule —
+     time, customer, who it's for, dress, assigned staff. No balances. */
+  printRunSheet(venueEnc, day) {
+    const venue = decodeURIComponent(venueEnc);
+    const cfg = DB.settings.eventDay;
+    const hh = h => String(h).padStart(2, '0');
+    const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const rows = [];
+    for (const o of DB.orders) {
+      if (!o.eventHotel || o.eventDate !== day) continue;
+      const parts = o.eventHotel.split(/\s+—\s+/);
+      if ((parts[1] || parts[0]).trim() !== venue) continue;
+      const c = Domain.customer(o.customerId);
+      const a = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
+      rows.push({ c, o, a, dress, occasion: (parts[0] || '').trim() });
+    }
+    const blockRows = [];
+    for (let h = cfg.startHour; h < cfg.endHour; h++) {
+      const inBlock = rows.filter(r => r.a && r.a.time && r.a.time >= hh(h) + ':00' && r.a.time < hh(h + 1) + ':00')
+        .sort((p, q) => p.a.time < q.a.time ? -1 : 1);
+      if (inBlock.length) blockRows.push({ label: hh(h) + ':00 – ' + hh(h + 1) + ':00', rows: inBlock });
+    }
+    const unslotted = rows.filter(r => !r.a || !r.a.time);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Run sheet — ${esc(venue)}</title><style>
+      body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; padding: 30px 36px; font-size: 13.5px; }
+      h1 { font-size: 20px; margin: 0; color: #9b2c4d; } .m { color: #666; }
+      h2 { font-size: 13px; background: #f2e5ea; padding: 6px 10px; border-radius: 6px; margin: 22px 0 4px; }
+      table { border-collapse: collapse; width: 100%; }
+      th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: #777; border-bottom: 2px solid #ddd; padding: 6px 8px; }
+      td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+      .t { font-weight: 800; font-size: 15px; white-space: nowrap; } .s { font-weight: 700; }
+      .blank { color: #bbb; } @media print { body { padding: 0 } }
+    </style></head><body>
+      <h1>Darcybow — staff run sheet</h1>
+      <div class="m">${esc(venue)} · <b>${esc(dayLabel)}</b> · private appointments, up to ${cfg.slotCapacity} customers per slot</div>
+      ${blockRows.map(b => `<h2>${b.label}</h2>
+        <table><thead><tr><th style="width:70px">Time</th><th>Customer</th><th>For</th><th>Dress / occasion</th><th style="width:120px">Staff</th></tr></thead>
+        <tbody>${b.rows.map(r => `<tr>
+          <td class="t">${esc(r.a.time)}</td>
+          <td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
+          <td>${esc(r.c.daughterName || '—')}</td>
+          <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' · ' + esc(r.dress.size) + '</span>' : '—'}<br><span class="m">${esc(r.occasion)}</span></td>
+          <td class="s">${r.a.staffName ? esc(r.a.staffName) : '<span class="blank">____________</span>'}</td>
+        </tr>`).join('')}</tbody></table>`).join('')}
+      ${unslotted.length ? `<h2>No slot time yet</h2><table><tbody>${unslotted.map(r => `<tr>
+          <td class="t blank">____</td><td class="s">${esc(r.c.name)}</td><td>${esc(r.c.daughterName || '—')}</td>
+          <td>${r.dress ? esc(r.dress.title) : '—'}</td>
+          <td class="s">${r.a && r.a.staffName ? esc(r.a.staffName) : '<span class="blank">____________</span>'}</td>
+        </tr>`).join('')}</tbody></table>` : ''}
+    </body></html>`;
+    UI.modal(`
+      <h3>Staff run sheet — ${esc(venue)}, ${esc(dayLabel)}</h3>
+      <p class="small muted">One sheet for the whole day: time, customer, who it's for, dress and assigned staff. Balances are deliberately left off.</p>
+      <iframe class="invoice-frame" id="runframe"></iframe>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
+        <button class="primary" onclick="document.getElementById('runframe').contentWindow.print()">🖨 Print / save PDF</button></div>`, true);
+    document.getElementById('runframe').srcdoc = html;
   },
   taskReviewed(taskId) {
     const t = DB.reminderTasks.find(x => x.id === taskId);
