@@ -1796,7 +1796,8 @@ Pages.venueDetail = (venueName) => {
     const unscheduled = slotted.filter(s => !s.a.time || s.a.time < hh(cfg.startHour) + ':00' || s.a.time >= hh(cfg.endHour) + ':00');
     body = `
       <div class="toolbar">
-        <button class="primary" onclick="Actions.printRunSheet('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">🖨 Print staff run sheet</button>
+        <button class="primary" onclick="Actions.printRunSheet('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">🖨 Staff run sheet</button>
+        <button class="primary" onclick="Actions.printCustomerSheets('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">🖨 Customer sheets (A4, one per customer)</button>
         <span class="small muted">Up to ${cfg.slotCapacity} customers per slot · one staff member per customer (private appointments).</span>
       </div>
       ${blocks.map(b => `
@@ -2976,6 +2977,100 @@ Object.assign(Actions, {
     a.staffName = staffName;
     Store.save(); App.route();
     UI.toast(staffName ? staffName + ' assigned.' : 'Staff unassigned.');
+  },
+  /* Per-customer A4 event sheets: one page per customer, ordered by
+     block, with a big staff-name corner for sorting into piles. Contact
+     info + daughter + booking Q&As + what's already on order, then
+     write-in fields for the dress ordered on the day (style, size,
+     colour, alterations, accessories) and a large notes box. */
+  printCustomerSheets(venueEnc, day) {
+    const venue = decodeURIComponent(venueEnc);
+    const cfg = DB.settings.eventDay;
+    const hh = h => String(h).padStart(2, '0');
+    const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const rows = [];
+    for (const o of DB.orders) {
+      if (!o.eventHotel || o.eventDate !== day) continue;
+      const parts = o.eventHotel.split(/\s+—\s+/);
+      if ((parts[1] || parts[0]).trim() !== venue) continue;
+      const c = Domain.customer(o.customerId);
+      const slot = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      // Booking answers can live on an earlier fitting appointment.
+      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
+        .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      rows.push({ c, o, slot, qa, items: Domain.itemsOf(o.id), occasion: (parts[0] || '').trim() });
+    }
+    rows.sort((a, b) => ((a.slot && a.slot.time) || '99') < ((b.slot && b.slot.time) || '99') ? -1 : 1);
+    const blockOf = t => {
+      if (!t) return null;
+      const h = parseInt(t.slice(0, 2), 10);
+      return h >= cfg.startHour && h < cfg.endHour ? h - cfg.startHour + 1 : null;
+    };
+    const line = (label, width) => `<div class="fl" style="width:${width || '100%'}"><span>${label}</span><div class="ln"></div></div>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Customer sheets — ${esc(venue)}</title><style>
+      @page { size: A4; margin: 14mm; }
+      body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; font-size: 13px; }
+      .sheet { page-break-after: always; padding: 8px 2px; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #9b2c4d; padding-bottom: 10px; }
+      .top h1 { font-size: 17px; margin: 0; color: #9b2c4d; }
+      .m { color: #666; }
+      .slotbox { text-align: center; border: 2px solid #9b2c4d; border-radius: 10px; padding: 6px 16px; }
+      .slotbox .t { font-size: 22px; font-weight: 800; }
+      .staffbox { text-align: center; border: 2px dashed #999; border-radius: 10px; padding: 6px 16px; min-width: 130px; }
+      .staffbox .s { font-size: 18px; font-weight: 800; min-height: 24px; }
+      h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: #9b2c4d; margin: 16px 0 6px; border-bottom: 1px solid #e5c9d3; padding-bottom: 3px; }
+      .cust { font-size: 19px; font-weight: 800; margin: 12px 0 2px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 24px; }
+      .grid div b { font-weight: 700; }
+      .qa { margin: 6px 0; } .qa .q { font-weight: 700; } .qa .a { margin: 2px 0 0 14px; }
+      .fl { display: inline-flex; align-items: flex-end; gap: 6px; margin: 7px 12px 0 0; vertical-align: bottom; }
+      .fl span { white-space: nowrap; font-weight: 600; }
+      .fl .ln { flex: 1; border-bottom: 1.5px solid #888; min-width: 60px; height: 18px; }
+      .notes { border: 1.5px solid #888; border-radius: 8px; height: 150px; margin-top: 6px; }
+      table.itms { border-collapse: collapse; width: 100%; } .itms td { padding: 3px 6px 3px 0; }
+      .foot { margin-top: 14px; display: flex; gap: 30px; }
+    </style></head><body>
+    ${rows.map(r => {
+      const blk = r.slot ? blockOf(r.slot.time) : null;
+      return `<div class="sheet">
+        <div class="top">
+          <div><h1>Darcybow — event appointment sheet</h1>
+            <div class="m">${esc(venue)} · <b>${esc(dayLabel)}</b> · ${esc(r.occasion)}</div></div>
+          <div class="slotbox"><div class="t">${r.slot && r.slot.time ? esc(r.slot.time) : '—'}</div>
+            <div class="m">${blk ? 'Block ' + blk : 'No slot booked'}</div></div>
+          <div class="staffbox"><div class="m">Staff member</div>
+            <div class="s">${r.slot && r.slot.staffName ? esc(r.slot.staffName) : ''}</div></div>
+        </div>
+        <div class="cust">${esc(r.c.name)}${r.c.daughterName ? ' <span class="m" style="font-weight:400">— for ' + esc(r.c.daughterName) + '</span>' : ''}</div>
+        <div class="grid">
+          <div><b>Phone:</b> ${esc(r.c.phone || '—')}</div>
+          <div><b>Email:</b> ${esc(r.c.email || '—')}</div>
+          <div style="grid-column:1/-1"><b>Address:</b> ${esc(r.c.address || '—')}</div>
+        </div>
+        <h2>What they told us when booking</h2>
+        ${r.qa ? r.qa.questions.map(q => `<div class="qa"><div class="q">${esc(q.q)}</div><div class="a">${esc(q.a || '—')}</div></div>`).join('')
+          : '<div class="m">No booking answers on file.</div>'}
+        <h2>Already on order (${esc(r.o.reference)})</h2>
+        <table class="itms">${r.items.map(i => `<tr><td><b>${esc(i.title)}</b></td><td>${esc(i.colour || '—')}</td><td>${esc(i.size || '—')}</td><td>× ${i.quantity}</td></tr>`).join('') || '<tr><td class="m">Nothing yet.</td></tr>'}</table>
+        <h2>Ordered at this appointment — fill in</h2>
+        ${line('Dress / style:', '58%')}${line('Size:', '36%')}
+        ${line('Colour:', '46%')}${line('Alterations:', '48%')}
+        <div style="margin-top:4px">${line('Bow:', '30%')}${line('Veil:', '30%')}${line('Shoes:', '31%')}
+        ${line('Bag:', '30%')}${line('Tiara:', '30%')}${line('Other:', '31%')}</div>
+        <h2>Staff notes</h2>
+        <div class="notes"></div>
+        <div class="foot">${line('Taken by:', '40%')}${line('Deposit / payment taken:', '52%')}</div>
+      </div>`;
+    }).join('')}
+    </body></html>`;
+    UI.modal(`
+      <h3>Customer sheets — ${esc(venue)}, ${esc(dayLabel)}</h3>
+      <p class="small muted">One A4 page per customer, in block order, staff name top-right for sorting into piles. Print the lot before the event.</p>
+      <iframe class="invoice-frame" id="csframe"></iframe>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
+        <button class="primary" onclick="document.getElementById('csframe').contentWindow.print()">🖨 Print all (${rows.length} sheet${rows.length === 1 ? '' : 's'})</button></div>`, true);
+    document.getElementById('csframe').srcdoc = html;
   },
   /* Printable run sheet: hand each staff member the day's schedule —
      time, customer, who it's for, dress, assigned staff. No balances. */
