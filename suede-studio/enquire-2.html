@@ -342,7 +342,7 @@ button{font-family:var(--sans);cursor:pointer}
           <label>What are you looking for?</label>
           <div class="dd" id="laneDD">
             <button type="button" class="dd-btn" id="laneBtn" aria-expanded="false">
-              <span id="laneLabel">Pick one — or "not sure yet" is grand</span>
+              <span id="laneLabel">Pick one</span>
               <span class="dd-arrow" aria-hidden="true"></span>
             </button>
             <div class="dd-panel" id="lanePanel">
@@ -458,7 +458,7 @@ button{font-family:var(--sans);cursor:pointer}
       document.querySelectorAll('#lanePanel .dd-opt').forEach(function(x){ if(x !== o) x.classList.remove('on'); });
       o.classList.toggle('on');
       var on = o.classList.contains('on');
-      laneLabel.textContent = on ? o.dataset.v : 'Pick one — or "not sure yet" is grand';
+      laneLabel.textContent = on ? o.dataset.v : 'Pick one';
       if(on){ laneDD.classList.remove('open'); document.getElementById('laneBtn').setAttribute('aria-expanded','false'); }
     });
   });
