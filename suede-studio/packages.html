@@ -60,11 +60,11 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .nav-side a:not(.btn){text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.22em;color:var(--cream);padding-bottom:3px;background:linear-gradient(var(--tan) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
 .nav-side a:not(.btn):hover,.nav-side a.active{background-size:100% 1.5px}
 .nav-side .btn{padding:10px 22px}
-.nav-logo{display:flex;flex-direction:column;align-items:center;gap:5px;justify-self:start}
+.nav-logo{display:flex;flex-direction:row;align-items:center;gap:16px;justify-self:start}
 .nav-logo img{height:46px;transition:transform .4s ease}
 .nav-logo:hover img{transform:rotate(180deg)}
 /* wordmark under the squiggle — TT Firs Neue when licensed, Archivo until then */
-.nav-logo .wm{font-family:'TT Firs Neue','Archivo',var(--font);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream);font-weight:800;white-space:nowrap}
+.nav-logo .wm{font-family:'TT Firs Neue','Archivo',var(--font);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream);font-weight:800;white-space:nowrap}
 .burger{display:none;background:none;border:none;cursor:pointer;padding:8px;justify-self:end}
 .burger span{display:block;width:22px;height:2px;background:var(--cream);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
 .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
@@ -186,7 +186,7 @@ footer nav a:hover{color:var(--tan)}
   .chooser,.pricing{padding:70px 0}
   .nav-box{grid-template-columns:auto 1fr auto;height:96px}
   .nav-side{display:none}
-  .nav-logo{grid-column:2;justify-self:center}
+  .nav-logo{grid-column:2;justify-self:center;flex-direction:column;gap:5px}
   .nav-logo img{height:40px}
   .nav-logo .wm{font-size:.58rem}
   .burger{display:block;grid-column:3}
