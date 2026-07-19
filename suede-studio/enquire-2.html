@@ -340,11 +340,17 @@ button{font-family:var(--sans);cursor:pointer}
         </div>
         <div class="field">
           <label>What are you looking for?</label>
-          <div class="chips" id="laneChips">
-            <span class="chip" data-v="Content for my socials">Content for my socials</span>
-            <span class="chip" data-v="Help with my store / website">Help with my store</span>
-            <span class="chip" data-v="Both — content and ecommerce">Both</span>
-            <span class="chip" data-v="Honestly not sure yet">Not sure yet</span>
+          <div class="dd" id="laneDD">
+            <button type="button" class="dd-btn" id="laneBtn" aria-expanded="false">
+              <span id="laneLabel">Pick one — or "not sure yet" is grand</span>
+              <span class="dd-arrow" aria-hidden="true"></span>
+            </button>
+            <div class="dd-panel" id="lanePanel">
+              <div class="dd-opt" data-v="Content for my socials"><span class="dd-box"></span>Content for my socials</div>
+              <div class="dd-opt" data-v="Help with my store / website"><span class="dd-box"></span>Help with my store / website</div>
+              <div class="dd-opt" data-v="Both — content and ecommerce"><span class="dd-box"></span>Both — content and ecommerce</div>
+              <div class="dd-opt" data-v="Honestly not sure yet"><span class="dd-box"></span>Honestly not sure yet</div>
+            </div>
           </div>
         </div>
         <div class="field" style="margin-top:22px">
@@ -432,27 +438,33 @@ button{font-family:var(--sans);cursor:pointer}
   }, {threshold:.12, rootMargin:'0px 0px -6% 0px'});
   document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
 
-  function chipValues(id){
-    return Array.prototype.map.call(
-      document.querySelectorAll('#' + id + ' .chip.on'),
-      function(c){ return c.dataset.v; });
+  function wireDD(ddId, btnId){
+    var dd = document.getElementById(ddId);
+    var btn = document.getElementById(btnId);
+    btn.addEventListener('click', function(){
+      var open = dd.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+    });
+    document.addEventListener('click', function(e){
+      if(!dd.contains(e.target)){ dd.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+    });
+    return dd;
   }
-  document.querySelectorAll('#laneChips .chip').forEach(function(c){
-    c.addEventListener('click', function(){
-      document.querySelectorAll('#laneChips .chip').forEach(function(o){ if(o !== c) o.classList.remove('on'); });
-      c.classList.toggle('on');
+  // lane: single pick — choosing closes the box and shows the choice
+  var laneDD = wireDD('laneDD', 'laneBtn');
+  var laneLabel = document.getElementById('laneLabel');
+  document.querySelectorAll('#lanePanel .dd-opt').forEach(function(o){
+    o.addEventListener('click', function(){
+      document.querySelectorAll('#lanePanel .dd-opt').forEach(function(x){ if(x !== o) x.classList.remove('on'); });
+      o.classList.toggle('on');
+      var on = o.classList.contains('on');
+      laneLabel.textContent = on ? o.dataset.v : 'Pick one — or "not sure yet" is grand';
+      if(on){ laneDD.classList.remove('open'); document.getElementById('laneBtn').setAttribute('aria-expanded','false'); }
     });
   });
-  var painDD = document.getElementById('painDD');
-  var painBtn = document.getElementById('painBtn');
+  // pains: multi pick with running count
+  wireDD('painDD', 'painBtn');
   var painCount = document.getElementById('painCount');
-  painBtn.addEventListener('click', function(){
-    var open = painDD.classList.toggle('open');
-    painBtn.setAttribute('aria-expanded', open);
-  });
-  document.addEventListener('click', function(e){
-    if(!painDD.contains(e.target)){ painDD.classList.remove('open'); painBtn.setAttribute('aria-expanded','false'); }
-  });
   document.querySelectorAll('#painPanel .dd-opt').forEach(function(o){
     o.addEventListener('click', function(){
       o.classList.toggle('on');
@@ -463,7 +475,9 @@ button{font-family:var(--sans);cursor:pointer}
   document.getElementById('enquiryForm').addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target;
-    var lane = chipValues('laneChips');
+    var lane = Array.prototype.map.call(
+      document.querySelectorAll('#lanePanel .dd-opt.on'),
+      function(o){ return o.dataset.v; });
     var pains = Array.prototype.map.call(
       document.querySelectorAll('#painPanel .dd-opt.on'),
       function(o){ return o.dataset.v; });
