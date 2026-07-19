@@ -14,14 +14,14 @@
    Suede brand + serif twist · interactive single page
    ============================================================ */
 :root{
-  --cream:#FAF7F3;
-  --cream-2:#F4EEE5;
-  --ink:#191512;
-  --ink-soft:#262019;
+  --cream:#FAF8F4;
+  --cream-2:#F1EDE5;
+  --ink:#161310;
+  --ink-soft:#242019;
   --espresso-deep:#332C25;
-  --tan:#D9C6A4;
-  --tan-deep:#B99C72;
-  --tan-soft:#EFE5D6;
+  --tan:#D9CFBF;
+  --tan-deep:#84705C;
+  --tan-soft:#EAE4D8;
   --soft:#6E6257;
   --ivory:#F0E9DD;
   --line:#E8E0D5;
@@ -72,10 +72,10 @@ button{font-family:var(--sans);cursor:pointer}
   display:inline-flex;align-items:center;gap:10px;justify-content:center;
   padding:15px 32px;border-radius:var(--r-pill);
   font-size:.8rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
-  background:var(--tan);color:var(--ink);border:1.5px solid var(--tan);
+  background:var(--ink);color:var(--cream);border:1.5px solid var(--ink);
   transition:transform .25s ease,background .25s ease,border-color .25s ease;
 }
-.pill:hover{transform:translateY(-2px);background:var(--tan-deep);border-color:var(--tan-deep)}
+.pill:hover{transform:translateY(-2px);background:#2E2925;border-color:#2E2925}
 .pill.pill-ink{background:var(--ink);border-color:var(--ink);color:var(--cream)}
 .pill.pill-ink:hover{background:var(--espresso-deep);border-color:var(--espresso-deep)}
 .pill.pill-ghost{background:transparent;border-color:rgba(250,247,243,.4);color:var(--cream)}
@@ -125,7 +125,7 @@ button{font-family:var(--sans);cursor:pointer}
 }
 .hdr.scrolled .hdr-nav a,.hdr.on-light .hdr-nav a{color:var(--ink)}
 .hdr-nav a:hover{opacity:.6}
-.hdr-nav .pill{padding:12px 26px;font-size:.72rem}
+.hdr-nav .hdr-cta{border-bottom:1.5px solid currentColor;padding-bottom:3px}
 .burger{
   display:none;background:none;border:none;width:40px;height:40px;
   flex-direction:column;justify-content:center;align-items:center;gap:6px;
@@ -348,7 +348,7 @@ button{font-family:var(--sans);cursor:pointer}
 .step{position:relative;z-index:1}
 .step:nth-child(odd){margin-top:56px}
 .step-dot{
-  width:48px;height:48px;border-radius:50%;background:var(--tan);color:var(--ink);
+  width:48px;height:48px;border-radius:50%;background:var(--ink);color:var(--cream);
   display:flex;align-items:center;justify-content:center;
   font-family:var(--serif);font-style:italic;font-size:1.15rem;font-weight:500;
   box-shadow:0 0 0 8px var(--cream-2);margin-bottom:24px;
@@ -402,7 +402,7 @@ button{font-family:var(--sans);cursor:pointer}
 .pkg-card:hover{transform:translateY(-6px)}
 .pkg-card.s{background:var(--cream);color:var(--ink)}
 .pkg-card.g{background:var(--tan);color:var(--ink)}
-.pkg-card.p{background:var(--ink-soft);border:1px solid rgba(214,188,150,.35)}
+.pkg-card.p{background:var(--ink-soft);border:1px solid rgba(217,207,191,.3)}
 .pkg-tier{font-size:.66rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;opacity:.65;margin-bottom:14px}
 .pkg-name{font-family:var(--serif);font-style:italic;font-size:2.1rem;font-weight:500;margin-bottom:16px}
 .pkg-card p{font-size:.88rem;font-weight:300;line-height:1.75;opacity:.82;flex:1}
@@ -465,7 +465,8 @@ button{font-family:var(--sans);cursor:pointer}
   font-size:.92rem;font-weight:300;outline:none;transition:border-color .25s ease;resize:vertical;
 }
 .field input:focus,.field textarea:focus{border-color:var(--tan)}
-.form-card .pill{width:100%;margin-top:10px}
+.form-card .pill{width:100%;margin-top:10px;background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.form-card .pill:hover{background:var(--tan);border-color:var(--tan)}
 .form-note{margin-top:16px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,243,.35);text-align:center}
 
 /* ============================================================
@@ -562,7 +563,7 @@ button{font-family:var(--sans);cursor:pointer}
       <a href="#packages">Packages</a>
       <a href="#process">Process</a>
       <a href="#faq">FAQ</a>
-      <a class="pill" href="#contact">Enquire</a>
+      <a class="hdr-cta" href="#contact">Enquire</a>
     </nav>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -575,7 +576,7 @@ button{font-family:var(--sans);cursor:pointer}
   <a href="#packages">Packages</a>
   <a href="#process">Process</a>
   <a href="#faq">FAQ</a>
-  <a class="pill" href="#contact">Enquire</a>
+  <a href="#contact">Enquire</a>
 </div>
 
 <!-- ================= HERO ================= -->
