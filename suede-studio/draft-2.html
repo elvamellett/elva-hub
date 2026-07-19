@@ -469,6 +469,44 @@ button{font-family:var(--sans);cursor:pointer}
 .form-card .pill{width:100%;margin-top:10px;background:var(--cream);color:var(--ink);border-color:var(--cream)}
 .form-card .pill:hover{background:var(--tan);border-color:var(--tan)}
 .form-note{margin-top:16px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,243,.35);text-align:center}
+.chips-note{margin-top:10px;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,248,244,.35)}
+/* multi-select toggle box */
+.dd{position:relative}
+.dd-btn{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:rgba(250,248,244,.06);border:1px solid rgba(250,248,244,.16);border-radius:14px;
+  padding:14px 16px;color:rgba(250,248,244,.85);font-family:var(--sans);font-size:.92rem;font-weight:300;
+  text-align:left;cursor:pointer;transition:border-color .25s ease;
+}
+.dd.open .dd-btn,.dd-btn:focus{border-color:var(--tan);outline:none}
+.dd-arrow{
+  flex:0 0 auto;width:8px;height:8px;margin-top:-4px;
+  border-right:1.5px solid rgba(250,248,244,.6);border-bottom:1.5px solid rgba(250,248,244,.6);
+  transform:rotate(45deg);transition:transform .25s ease;
+}
+.dd.open .dd-arrow{transform:rotate(225deg);margin-top:4px}
+.dd-panel{
+  display:none;margin-top:10px;border:1px solid rgba(250,248,244,.16);border-radius:14px;
+  overflow:hidden;background:rgba(250,248,244,.04);
+}
+.dd.open .dd-panel{display:block}
+.dd-opt{
+  display:flex;gap:12px;align-items:center;padding:13px 16px;
+  font-size:.88rem;font-weight:300;color:rgba(250,248,244,.8);cursor:pointer;user-select:none;
+  border-bottom:1px solid rgba(250,248,244,.08);transition:background .2s ease,color .2s ease;
+}
+.dd-opt:last-child{border-bottom:none}
+.dd-opt:hover{background:rgba(250,248,244,.06)}
+.dd-box{
+  flex:0 0 auto;width:20px;height:20px;border-radius:6px;
+  border:1.5px solid rgba(250,248,244,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.68rem;font-weight:700;color:var(--ink);
+  transition:background .2s ease,border-color .2s ease;
+}
+.dd-opt.on{color:var(--cream)}
+.dd-opt.on .dd-box{background:var(--cream);border-color:var(--cream)}
+.dd-opt.on .dd-box::after{content:'✓'}
 
 /* ============================================================
    FOOTER
@@ -932,8 +970,46 @@ button{font-family:var(--sans);cursor:pointer}
           <input id="fEmail" name="email" type="email" required autocomplete="email">
         </div>
         <div class="field">
-          <label for="fMsg">What do you need a hand with?</label>
-          <textarea id="fMsg" name="message" rows="4" required></textarea>
+          <label for="fSocial">Website or Instagram (if you have one)</label>
+          <input id="fSocial" name="social" type="text" placeholder="@yourbrand or yourshop.ie">
+        </div>
+        <div class="field">
+          <label>What are you looking for?</label>
+          <div class="dd" id="laneDD">
+            <button type="button" class="dd-btn" id="laneBtn" aria-expanded="false">
+              <span id="laneLabel">Pick one</span>
+              <span class="dd-arrow" aria-hidden="true"></span>
+            </button>
+            <div class="dd-panel" id="lanePanel">
+              <div class="dd-opt" data-v="Content for my socials"><span class="dd-box"></span>Content for my socials</div>
+              <div class="dd-opt" data-v="Help with my store / website"><span class="dd-box"></span>Help with my store / website</div>
+              <div class="dd-opt" data-v="Both — content and ecommerce"><span class="dd-box"></span>Both — content and ecommerce</div>
+              <div class="dd-opt" data-v="Honestly not sure yet"><span class="dd-box"></span>Honestly not sure yet</div>
+            </div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label>Which of these sounds like you?</label>
+          <div class="dd" id="painDD">
+            <button type="button" class="dd-btn" id="painBtn" aria-expanded="false">
+              <span id="painCount">Select as many as you like</span>
+              <span class="dd-arrow" aria-hidden="true"></span>
+            </button>
+            <div class="dd-panel" id="painPanel">
+              <div class="dd-opt" data-v="My website needs work (or building from scratch)"><span class="dd-box"></span>My website needs work — or doesn't exist yet</div>
+              <div class="dd-opt" data-v="My product pages aren't converting"><span class="dd-box"></span>People visit but don't buy</div>
+              <div class="dd-opt" data-v="People can't find us on Google"><span class="dd-box"></span>Nobody finds us on Google</div>
+              <div class="dd-opt" data-v="My brand doesn't look how I want it to"><span class="dd-box"></span>My brand doesn't look how I want</div>
+              <div class="dd-opt" data-v="I never have time to make content"><span class="dd-box"></span>I never have time for content</div>
+              <div class="dd-opt" data-v="My feed doesn't feel like my brand"><span class="dd-box"></span>My feed doesn't feel like my brand</div>
+              <div class="dd-opt" data-v="I want reels but hate making them"><span class="dd-box"></span>I want reels but hate making them</div>
+            </div>
+          </div>
+          <p class="chips-note">No wrong answers — this just helps us reply with the right ideas</p>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label for="fMsg">Anything else you'd like us to know? <span style="text-transform:none;letter-spacing:.04em">(optional)</span></label>
+          <textarea id="fMsg" name="message" rows="4" placeholder="What you sell, what's working, what's driving you mad — anything at all."></textarea>
         </div>
         <button class="pill" type="submit">Send enquiry</button>
         <p class="form-note">Opens your email app — no data stored on this site</p>
@@ -1076,15 +1152,56 @@ button{font-family:var(--sans);cursor:pointer}
     if(src) src.addEventListener('error', function(){ v.style.display = 'none'; });
   });
 
-  /* ---------- enquiry form → mailto ---------- */
+  /* ---------- guided enquiry form ---------- */
+  function wireDD(ddId, btnId){
+    var dd = document.getElementById(ddId);
+    var btn = document.getElementById(btnId);
+    btn.addEventListener('click', function(){
+      var open = dd.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+    });
+    document.addEventListener('click', function(e){
+      if(!dd.contains(e.target)){ dd.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+    });
+    return dd;
+  }
+  var laneDD = wireDD('laneDD', 'laneBtn');
+  var laneLabel = document.getElementById('laneLabel');
+  document.querySelectorAll('#lanePanel .dd-opt').forEach(function(o){
+    o.addEventListener('click', function(){
+      document.querySelectorAll('#lanePanel .dd-opt').forEach(function(x){ if(x !== o) x.classList.remove('on'); });
+      o.classList.toggle('on');
+      var on = o.classList.contains('on');
+      laneLabel.textContent = on ? o.dataset.v : 'Pick one';
+      if(on){ laneDD.classList.remove('open'); document.getElementById('laneBtn').setAttribute('aria-expanded','false'); }
+    });
+  });
+  wireDD('painDD', 'painBtn');
+  var painCount = document.getElementById('painCount');
+  document.querySelectorAll('#painPanel .dd-opt').forEach(function(o){
+    o.addEventListener('click', function(){
+      o.classList.toggle('on');
+      var n = document.querySelectorAll('#painPanel .dd-opt.on').length;
+      painCount.textContent = n ? n + ' selected' : 'Select as many as you like';
+    });
+  });
   document.getElementById('enquiryForm').addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target;
+    var lane = Array.prototype.map.call(
+      document.querySelectorAll('#lanePanel .dd-opt.on'),
+      function(o){ return o.dataset.v; });
+    var pains = Array.prototype.map.call(
+      document.querySelectorAll('#painPanel .dd-opt.on'),
+      function(o){ return o.dataset.v; });
     var subject = 'Enquiry from ' + (f.business.value || f.name.value);
     var body = 'Name: ' + f.name.value +
                '\nBusiness: ' + (f.business.value || '-') +
                '\nEmail: ' + f.email.value +
-               '\n\n' + f.message.value;
+               '\nWebsite/Instagram: ' + (f.social.value || '-') +
+               '\nLooking for: ' + (lane.length ? lane.join(', ') : '-') +
+               '\nSounds like them: ' + (pains.length ? pains.join('; ') : '-') +
+               '\n\n' + (f.message.value || '-');
     window.location.href = 'mailto:hello@thesuedestudio.com?subject=' +
       encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
   });
