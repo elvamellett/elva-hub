@@ -84,14 +84,14 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .m-menu{display:none}
 
 /* ---------- hero: the suede cover ---------- */
-.hero{background:var(--ink) url('assets/suede.jpg') center/cover;color:var(--cream);min-height:82vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:90px 28px}
+.hero{background:#B8A794 url('assets/suede-light.jpg') center/cover;color:var(--ink);min-height:82vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:90px 28px}
 .hero-lockup{position:relative;text-align:center;width:100%}
-.hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:clamp(240px,34vw,440px);width:auto;z-index:1;will-change:transform;pointer-events:none}
-.hero-mark{position:relative;z-index:2;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.5rem,9vw,7.6rem);line-height:.95;color:var(--cream);text-shadow:0 4px 30px rgba(0,0,0,.25);white-space:nowrap}
+.hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:clamp(240px,34vw,440px);width:auto;z-index:1;opacity:.55;will-change:transform;pointer-events:none}
+.hero-mark{position:relative;z-index:2;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.5rem,9vw,7.6rem);line-height:.95;color:#8A7A6C;white-space:nowrap}
 .hero-ctas{margin-top:215px;display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:center;position:relative;z-index:2}
-.link-cta{text-transform:uppercase;font-weight:700;font-size:.72rem;letter-spacing:.18em;color:var(--cream);border-bottom:1.5px solid var(--tan);padding-bottom:4px;transition:color .25s ease,border-color .25s ease}
-.link-cta:hover{color:var(--tan)}
-.hero-arrow{position:absolute;right:40px;bottom:26px;font-size:2rem;color:var(--cream);animation:bob 1.8s ease-in-out infinite}
+.link-cta{text-transform:uppercase;font-weight:700;font-size:.72rem;letter-spacing:.18em;color:#6E5F52;border-bottom:1.5px solid #8A7A6C;padding-bottom:4px;transition:color .25s ease,border-color .25s ease}
+.link-cta:hover{color:var(--ink);border-color:var(--ink)}
+.hero-arrow{position:absolute;right:40px;bottom:26px;font-size:2rem;color:#8A7A6C;animation:bob 1.8s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(8px)}}
 
 
