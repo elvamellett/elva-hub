@@ -163,6 +163,17 @@ button{font-family:var(--sans);cursor:pointer}
 .field select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,rgba(250,248,244,.6) 50%),linear-gradient(135deg,rgba(250,248,244,.6) 50%,transparent 50%);background-position:calc(100% - 21px) 50%,calc(100% - 16px) 50%;background-size:5px 5px;background-repeat:no-repeat}
 .field select option{color:var(--ink);background:var(--cream)}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--tan)}
+/* guided prompt chips */
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{
+  border:1px solid rgba(250,248,244,.22);border-radius:var(--r-pill);
+  padding:10px 18px;font-size:.78rem;font-weight:400;color:rgba(250,248,244,.85);
+  background:rgba(250,248,244,.05);cursor:pointer;user-select:none;
+  transition:background .2s ease,color .2s ease,border-color .2s ease;
+}
+.chip:hover{border-color:var(--tan)}
+.chip.on{background:var(--cream);color:var(--ink);border-color:var(--cream);font-weight:500}
+.chips-note{margin-top:10px;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,248,244,.35)}
 .form-card .pill{width:100%;margin-top:10px;background:var(--cream);color:var(--ink);border-color:var(--cream)}
 .form-card .pill:hover{background:var(--tan);border-color:var(--tan)}
 .form-note{margin-top:16px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,248,244,.35);text-align:center}
@@ -282,28 +293,39 @@ button{font-family:var(--sans);cursor:pointer}
             <input id="fBiz" name="business" type="text">
           </div>
         </div>
-        <div class="form-row">
-          <div class="field">
-            <label for="fEmail">Email</label>
-            <input id="fEmail" name="email" type="email" required autocomplete="email">
-          </div>
-          <div class="field">
-            <label for="fPkg">Which package interests you?</label>
-            <select id="fPkg" name="package">
-              <option>Not sure yet</option>
-              <option>Content</option>
-              <option>Ecommerce</option>
-              <option>The Duo</option>
-            </select>
-          </div>
+        <div class="field">
+          <label for="fEmail">Email</label>
+          <input id="fEmail" name="email" type="email" required autocomplete="email">
         </div>
         <div class="field">
           <label for="fSocial">Website or Instagram (if you have one)</label>
           <input id="fSocial" name="social" type="text" placeholder="@yourbrand or yourshop.ie">
         </div>
         <div class="field">
-          <label for="fMsg">What do you need a hand with?</label>
-          <textarea id="fMsg" name="message" rows="5" required></textarea>
+          <label>What are you looking for?</label>
+          <div class="chips" id="laneChips">
+            <span class="chip" data-v="Content for my socials">Content for my socials</span>
+            <span class="chip" data-v="Help with my store / website">Help with my store</span>
+            <span class="chip" data-v="Both — content and ecommerce">Both</span>
+            <span class="chip" data-v="Honestly not sure yet">Not sure yet</span>
+          </div>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label>Which of these sounds like you? <span style="text-transform:none;letter-spacing:.04em">(tick any)</span></label>
+          <div class="chips" id="painChips">
+            <span class="chip" data-v="My website needs work (or building from scratch)">My website needs work — or doesn't exist yet</span>
+            <span class="chip" data-v="My product pages aren't converting">People visit but don't buy</span>
+            <span class="chip" data-v="People can't find us on Google">Nobody finds us on Google</span>
+            <span class="chip" data-v="My brand doesn't look how I want it to">My brand doesn't look how I want</span>
+            <span class="chip" data-v="I never have time to make content">I never have time for content</span>
+            <span class="chip" data-v="My feed doesn't feel like my brand">My feed doesn't feel like my brand</span>
+            <span class="chip" data-v="I want reels but hate making them">I want reels but hate making them</span>
+          </div>
+          <p class="chips-note">No wrong answers — this just helps us reply with the right ideas</p>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label for="fMsg">Anything else you'd like us to know? <span style="text-transform:none;letter-spacing:.04em">(optional)</span></label>
+          <textarea id="fMsg" name="message" rows="4" placeholder="What you sell, what's working, what's driving you mad — anything at all."></textarea>
         </div>
         <button class="pill" type="submit">Send enquiry</button>
         <p class="form-note">Opens your email app — no data stored on this site</p>
@@ -367,16 +389,33 @@ button{font-family:var(--sans);cursor:pointer}
   }, {threshold:.12, rootMargin:'0px 0px -6% 0px'});
   document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
 
+  function chipValues(id){
+    return Array.prototype.map.call(
+      document.querySelectorAll('#' + id + ' .chip.on'),
+      function(c){ return c.dataset.v; });
+  }
+  document.querySelectorAll('#laneChips .chip').forEach(function(c){
+    c.addEventListener('click', function(){
+      document.querySelectorAll('#laneChips .chip').forEach(function(o){ if(o !== c) o.classList.remove('on'); });
+      c.classList.toggle('on');
+    });
+  });
+  document.querySelectorAll('#painChips .chip').forEach(function(c){
+    c.addEventListener('click', function(){ c.classList.toggle('on'); });
+  });
   document.getElementById('enquiryForm').addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target;
+    var lane = chipValues('laneChips');
+    var pains = chipValues('painChips');
     var subject = 'Enquiry from ' + (f.business.value || f.name.value);
     var body = 'Name: ' + f.name.value +
                '\nBusiness: ' + (f.business.value || '-') +
                '\nEmail: ' + f.email.value +
-               '\nPackage: ' + f.package.value +
                '\nWebsite/Instagram: ' + (f.social.value || '-') +
-               '\n\n' + f.message.value;
+               '\nLooking for: ' + (lane.length ? lane.join(', ') : '-') +
+               '\nSounds like them: ' + (pains.length ? pains.join('; ') : '-') +
+               '\n\n' + (f.message.value || '-');
     window.location.href = 'mailto:hello@thesuedestudio.com?subject=' +
       encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
   });
