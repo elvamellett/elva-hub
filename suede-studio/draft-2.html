@@ -394,7 +394,7 @@ button{font-family:var(--sans);cursor:pointer}
 .pkg-head .eyebrow::before{background:var(--tan)}
 .pkg-head .h-lg .serif-i{color:var(--tan);font-weight:400}
 .pkg .text-link{color:var(--cream);border-bottom-color:var(--tan);margin-bottom:10px;white-space:nowrap}
-.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.pkg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
 .pkg-card{
   border-radius:var(--r-card);padding:40px 34px 44px;display:flex;flex-direction:column;
   transition:transform .35s ease;
@@ -402,12 +402,13 @@ button{font-family:var(--sans);cursor:pointer}
 .pkg-card:hover{transform:translateY(-6px)}
 .pkg-card.s{background:var(--cream);color:var(--ink)}
 .pkg-card.g{background:var(--tan);color:var(--ink)}
+.pkg-card.d{background:#C9BEAD;color:var(--ink)}
 .pkg-card.p{background:var(--ink-soft);border:1px solid rgba(217,207,191,.3)}
 .pkg-tier{font-size:.66rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;opacity:.65;margin-bottom:14px}
 .pkg-name{font-family:var(--serif);font-style:italic;font-size:2.1rem;font-weight:500;margin-bottom:16px}
 .pkg-card p{font-size:.88rem;font-weight:300;line-height:1.75;opacity:.82;flex:1}
 .pkg-card .text-link{margin-top:26px;align-self:flex-start;font-size:.72rem}
-.pkg-card.s .text-link,.pkg-card.g .text-link{color:var(--ink);border-bottom-color:var(--ink)}
+.pkg-card.s .text-link,.pkg-card.g .text-link,.pkg-card.d .text-link{color:var(--ink);border-bottom-color:var(--ink)}
 
 /* ============================================================
    FAQ — two-column accordion
@@ -626,7 +627,7 @@ button{font-family:var(--sans);cursor:pointer}
         <p class="eyebrow rv">What we do</p>
         <h2 class="h-lg rv d1" style="margin-top:16px">Two lanes.<br>One <span class="serif-i">seriously</span> tidy store.</h2>
       </div>
-      <a class="text-link rv d2" href="packages.html">See the packages &rarr;</a>
+      <a class="text-link rv d2" href="packages-2.html">See the packages &rarr;</a>
     </div>
     <div class="svc-grid">
       <article class="svc-card rv">
@@ -837,28 +838,34 @@ button{font-family:var(--sans);cursor:pointer}
     <div class="pkg-head">
       <div>
         <p class="eyebrow rv">Packages</p>
-        <h2 class="h-lg rv d1" style="margin-top:16px">Three ways <span class="serif-i">in</span></h2>
+        <h2 class="h-lg rv d1" style="margin-top:16px">Four ways <span class="serif-i">in</span></h2>
       </div>
-      <a class="text-link rv d2" href="packages.html">Full details &rarr;</a>
+      <a class="text-link rv d2" href="packages-2.html">Full details &rarr;</a>
     </div>
     <div class="pkg-grid">
       <article class="pkg-card s rv">
-        <p class="pkg-tier">Tier one</p>
-        <p class="pkg-name">Silver</p>
-        <p>One lane, done properly. A focused once-off project — a store refresh or a content package — for when you need one thing fixed well.</p>
-        <a class="text-link" href="packages.html">Explore Silver &rarr;</a>
+        <p class="pkg-tier">01 · Socials</p>
+        <p class="pkg-name">Content</p>
+        <p>A content plan and schedule, shoot days with your product, and stories, carousels, posts and reels — ready to publish.</p>
+        <a class="text-link" href="packages-2.html#content">Explore Content &rarr;</a>
       </article>
       <article class="pkg-card g rv d1">
-        <p class="pkg-tier">Tier two</p>
-        <p class="pkg-name">Gold</p>
-        <p>Both lanes, one project. Store and content built together so your shopfront and your socials finally tell the same story.</p>
-        <a class="text-link" href="packages.html">Explore Gold &rarr;</a>
+        <p class="pkg-tier">02 · Store</p>
+        <p class="pkg-name">Ecommerce</p>
+        <p>Product pages, homepages, full website builds, SEO and brand packs — a store designed to sell.</p>
+        <a class="text-link" href="packages-2.html#ecommerce">Explore Ecommerce &rarr;</a>
       </article>
-      <article class="pkg-card p rv d2">
-        <p class="pkg-tier">Tier three</p>
-        <p class="pkg-name">Platinum</p>
-        <p>The ongoing takeover. We run your store and content month to month — capped at two clients at a time, so you get real attention.</p>
-        <a class="text-link" href="packages.html">Explore Platinum &rarr;</a>
+      <article class="pkg-card d rv d2">
+        <p class="pkg-tier">03 · Both</p>
+        <p class="pkg-name">The Duo</p>
+        <p>Content and ecommerce built together, so your store and your socials finally tell the same story.</p>
+        <a class="text-link" href="packages-2.html#duo">Explore the Duo &rarr;</a>
+      </article>
+      <article class="pkg-card p rv d3">
+        <p class="pkg-tier">04 · Ongoing</p>
+        <p class="pkg-name">The Takeover</p>
+        <p>We run your store and content month to month — capped at two clients at a time, so you get real attention.</p>
+        <a class="text-link" href="packages-2.html#takeover">Explore the Takeover &rarr;</a>
       </article>
     </div>
   </div>
