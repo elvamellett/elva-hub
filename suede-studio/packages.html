@@ -184,12 +184,12 @@ footer nav a:hover{color:var(--tan)}
 }
 @media(max-width:760px){
   .chooser,.pricing{padding:70px 0}
-  .nav-box{grid-template-columns:auto 1fr auto;height:96px}
+  .nav-box{grid-template-columns:1fr auto;height:96px;position:relative}
   .nav-side{display:none}
-  .nav-logo{grid-column:2;justify-self:center;flex-direction:column;gap:5px}
+  .nav-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);flex-direction:column;gap:5px}
   .nav-logo img{height:40px}
   .nav-logo .wm{font-size:.58rem}
-  .burger{display:block;grid-column:3}
+  .burger{display:block;grid-column:2}
   .m-menu{display:block;position:fixed;inset:96px 0 auto 0;background:var(--ink);border-bottom:1px solid var(--line-dark);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:translateY(-130%);transition:transform .3s ease;z-index:55;padding:10px 0 28px;list-style:none;text-align:center}
   .m-menu.open{transform:none}
   .m-menu .btn{margin:14px auto 0;display:inline-block}
