@@ -83,21 +83,17 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 .m-menu{display:none}
 
-/* ---------- hero: the deck cover ---------- */
-.hero{background:var(--ink);color:var(--cream);padding:60px 0 90px;position:relative;overflow:hidden}
-.hide-l,.hide-r{position:absolute;top:8%;bottom:8%;width:clamp(90px,16vw,300px);background:url('assets/cowhide.jpg') center/cover;opacity:.9}
-.hide-l{left:0}
-.hide-r{right:0}
-.hero-stage{position:relative;max-width:680px;margin:0 auto;padding:0 28px}
-.hero-collage{width:100%;border:6px solid rgba(250,247,243,.06);will-change:transform}
-.hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);width:34%;opacity:.9;will-change:transform;pointer-events:none}
-.hero-mark{position:absolute;top:42%;left:0;width:100%;transform:translateY(-50%);text-align:center;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.4rem,8.6vw,7.2rem);line-height:.95;color:var(--cream);text-shadow:0 6px 40px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap}
-.hero-bottom{position:relative;text-align:center;margin-top:54px;padding:0 28px}
-.hero-ctas{margin-top:10px;display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:center}
+/* ---------- hero: the suede cover ---------- */
+.hero{background:var(--ink) url('assets/suede.jpg') center/cover;color:var(--cream);min-height:82vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:90px 28px}
+.hero-lockup{position:relative;text-align:center;width:100%}
+.hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:clamp(240px,34vw,440px);width:auto;z-index:1;will-change:transform;pointer-events:none}
+.hero-mark{position:relative;z-index:2;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.5rem,9vw,7.6rem);line-height:.95;color:var(--cream);text-shadow:0 4px 30px rgba(0,0,0,.25);white-space:nowrap}
+.hero-ctas{margin-top:64px;display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:center;position:relative;z-index:2}
 .link-cta{text-transform:uppercase;font-weight:700;font-size:.72rem;letter-spacing:.18em;color:var(--cream);border-bottom:1.5px solid var(--tan);padding-bottom:4px;transition:color .25s ease,border-color .25s ease}
 .link-cta:hover{color:var(--tan)}
 .hero-arrow{position:absolute;right:40px;bottom:26px;font-size:2rem;color:var(--cream);animation:bob 1.8s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(8px)}}
+
 
 /* ---------- intro (cream block) ---------- */
 .intro{background:var(--cream);padding:130px 0;position:relative;overflow:hidden}
@@ -274,7 +270,7 @@ footer nav a:hover{color:var(--tan)}
   .rv{opacity:1;transform:none;transition:none}
   .hero-arrow{animation:none}
   body::after{display:none}
-  .hero-collage,.hero-squiggle,.intro-logo,.ai-logo{transform:none!important}
+  .hero-squiggle,.intro-logo,.ai-logo{transform:none!important}
 }
 
 /* ---------- responsive ---------- */
@@ -287,7 +283,6 @@ footer nav a:hover{color:var(--tan)}
   .strip-imgs{grid-template-columns:1fr 1fr;gap:34px}
   .contact-grid{grid-template-columns:1fr;gap:44px}
   .bio-row{grid-template-columns:1fr;gap:16px;padding:40px 10px}
-  .hide-l,.hide-r{opacity:.45}
 }
 @media(max-width:760px){
   section{padding:70px 0}
@@ -304,8 +299,9 @@ footer nav a:hover{color:var(--tan)}
   .m-menu.open{transform:none}
   .m-menu .btn{margin:14px auto 0;display:inline-block}
   .m-menu a:not(.btn){display:block;padding:15px 0;color:var(--cream);text-transform:uppercase;font-weight:600;font-size:.72rem;letter-spacing:.22em}
-  .hero{padding:40px 0 80px}
-  .hero-mark{font-size:clamp(1.5rem,8vw,2.6rem);letter-spacing:.04em}
+  .hero{min-height:70vh;padding:70px 20px}
+  .hero-mark{font-size:clamp(1.9rem,9.5vw,3rem);letter-spacing:.04em}
+  .hero-squiggle{height:clamp(160px,52vw,260px)}
   .hero-arrow{right:22px;bottom:16px}
   }
 </style>
@@ -342,21 +338,16 @@ footer nav a:hover{color:var(--tan)}
   </ul>
 </header>
 
-<!-- ================= HERO — the deck cover ================= -->
+<!-- ================= HERO — the suede cover ================= -->
 <div class="hero" id="top">
-  <div class="hide-l" aria-hidden="true"></div>
-  <div class="hide-r" aria-hidden="true"></div>
-  <div class="hero-stage">
-    <img src="assets/collage.jpg" alt="Suede Studio moodboard collage" class="hero-collage" id="heroCollage">
+  <div class="hero-lockup">
     <img src="assets/logo-tan.png" alt="" class="hero-squiggle" id="heroSquiggle">
+    <h1 class="hero-mark" id="heroMark">Suede Studio</h1>
   </div>
-  <h1 class="hero-mark" id="heroMark">The Suede Studio</h1>
-  <div class="hero-bottom">
-    <div class="hero-ctas">
-      <!-- Replace YOUR-GOOGLE-FORM-LINK everywhere with the real Google Form URL (see client-questionnaire.md) -->
-      <a href="YOUR-GOOGLE-FORM-LINK" class="link-cta">Start with the questionnaire</a>
-      <a href="packages.html" class="link-cta">See packages</a>
-    </div>
+  <div class="hero-ctas">
+    <!-- Replace YOUR-GOOGLE-FORM-LINK everywhere with the real Google Form URL (see client-questionnaire.md) -->
+    <a href="YOUR-GOOGLE-FORM-LINK" class="link-cta">Start with the questionnaire</a>
+    <a href="packages.html" class="link-cta">See packages</a>
   </div>
   <span class="hero-arrow" aria-hidden="true">↓</span>
 </div>
@@ -694,9 +685,7 @@ mMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const progress = document.getElementById('progress');
-const heroCollage = document.getElementById('heroCollage');
 const heroSquiggle = document.getElementById('heroSquiggle');
-const heroMark = document.getElementById('heroMark');
 const introLogo = document.getElementById('introLogo');
 const aiLogo = document.getElementById('aiLogo');
 
@@ -706,9 +695,7 @@ addEventListener('scroll', () => {
   progress.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
   if (reduced) return;
   const y = scrollY;
-  heroCollage.style.transform = `scale(${1 + Math.min(y / 3000, .08)}) translateY(${y * .06}px)`;
-  heroSquiggle.style.transform = `translate(-50%,-52%) rotate(${y * .04}deg)`;
-  heroMark.style.transform = `translateY(calc(-50% + ${y * .16}px))`;
+  heroSquiggle.style.transform = `translate(-50%,-50%) rotate(${y * .04}deg)`;
   introLogo.style.transform = `translateY(-50%) rotate(${y * .015}deg)`;
   const ar = aiLogo.parentElement.getBoundingClientRect();
   aiLogo.style.transform = `translateY(${ar.top * -.1}px) rotate(${ar.top * -.01}deg)`;
