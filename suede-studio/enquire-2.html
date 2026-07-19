@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enquire — The Suede Studio</title>
+<meta name="description" content="Tell The Suede Studio about your business. A couple of minutes now, an honest recommendation back — usually within a day.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=La+Belle+Aurore&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THE SUEDE STUDIO — ENQUIRE (draft 2 design system)
+   ============================================================ */
+:root{
+  --cream:#FAF8F4;
+  --cream-2:#F1EDE5;
+  --ink:#161310;
+  --ink-soft:#242019;
+  --tan:#D9CFBF;
+  --tan-deep:#84705C;
+  --tan-soft:#EAE4D8;
+  --soft:#6E6257;
+  --line:#E8E0D5;
+  --sans:'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --r-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);background:var(--cream);color:var(--ink);
+  font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--sans);cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+::selection{background:var(--tan);color:var(--ink)}
+.serif-i{font-family:var(--serif);font-style:italic;font-weight:400;text-transform:none;letter-spacing:0}
+.script{font-family:'La Belle Aurore',var(--serif);font-weight:400;text-transform:none;letter-spacing:.02em}
+.text-link{
+  font-size:.82rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:inherit;border-bottom:1.5px solid var(--tan-deep);padding-bottom:3px;
+  transition:opacity .2s ease;
+}
+.text-link:hover{opacity:.65}
+.pill{
+  display:inline-flex;align-items:center;gap:10px;justify-content:center;
+  padding:15px 32px;border-radius:var(--r-pill);
+  font-size:.8rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  background:var(--ink);color:var(--cream);border:1.5px solid var(--ink);
+  transition:transform .25s ease,background .25s ease,border-color .25s ease;
+}
+.pill:hover{transform:translateY(-2px);background:#2E2925;border-color:#2E2925}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.22,.8,.3,1),transform .8s cubic-bezier(.22,.8,.3,1)}
+.rv.rv-l{transform:translateX(-36px)}
+.rv.rv-r{transform:translateX(36px)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
+
+/* ---------- header ---------- */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;transition:background .35s ease,box-shadow .35s ease}
+.hdr-in{
+  max-width:1280px;margin:0 auto;padding:0 32px;height:84px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.hdr.scrolled,.hdr.menu-open{
+  background:rgba(250,248,244,.9);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 1px 0 rgba(22,19,16,.08),0 10px 30px rgba(22,19,16,.06);
+}
+.hdr-logo{display:flex;align-items:center;gap:14px}
+.hdr-logo img{height:40px;width:auto}
+.hdr-wm{font-weight:800;text-transform:uppercase;letter-spacing:.22em;font-size:.86rem;color:var(--ink);white-space:nowrap}
+.hdr-nav{display:flex;align-items:center;gap:34px}
+.hdr-nav a{font-size:.74rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);transition:opacity .2s ease}
+.hdr-nav a:hover{opacity:.6}
+.hdr-nav .hdr-cta{border-bottom:1.5px solid currentColor;padding-bottom:3px}
+.burger{display:none;background:none;border:none;width:40px;height:40px;flex-direction:column;justify-content:center;align-items:center;gap:6px}
+.burger span{display:block;width:24px;height:2px;background:var(--ink);transition:all .3s ease}
+.hdr.menu-open .burger span:nth-child(1){transform:translateY(8px) rotate(45deg)}
+.hdr.menu-open .burger span:nth-child(2){opacity:0}
+.hdr.menu-open .burger span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
+.m-menu{
+  display:none;position:fixed;top:84px;left:0;right:0;z-index:99;
+  background:rgba(250,248,244,.96);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);padding:14px 32px 30px;
+}
+.m-menu.open{display:block}
+.m-menu a{
+  display:block;padding:14px 0;border-bottom:1px solid var(--line);
+  font-size:.8rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);
+}
+
+/* ---------- page hero ---------- */
+.phero{
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(1000px 600px at 85% 10%,rgba(250,247,243,.32),transparent 60%),
+    linear-gradient(150deg,#D3C9BA 0%,#C5BAA9 55%,#B4A896 100%);
+  padding:180px 0 90px;
+}
+.phero-squig{position:absolute;right:-4%;top:-14%;height:135%;width:auto;opacity:.14;pointer-events:none}
+.phero .script{font-size:1.5rem;color:#6E5B44;display:block;margin-bottom:16px}
+.phero h1{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.045em;
+  font-size:clamp(2.1rem,4.8vw,3.9rem);line-height:1.12;max-width:18ch;
+}
+.phero h1 .serif-i{color:#6E5B44}
+.phero p{margin-top:26px;max-width:520px;color:#55493D;font-size:.98rem;font-weight:300;line-height:1.9}
+
+/* ---------- enquire body ---------- */
+.enq{padding:110px 0 130px}
+.enq-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:70px;align-items:start}
+.enq-left h2{
+  font-family:var(--serif);font-weight:400;font-size:clamp(1.6rem,2.6vw,2.2rem);
+  line-height:1.3;letter-spacing:.02em;margin-bottom:34px;
+}
+.enq-left h2 em{font-style:italic;color:var(--tan-deep)}
+.steps{list-style:none;margin-bottom:44px}
+.steps li{position:relative;padding:0 0 26px 52px}
+.steps li::before{
+  content:counter(step) '';counter-increment:step;
+  position:absolute;left:0;top:2px;width:34px;height:34px;border-radius:50%;
+  background:var(--ink);color:var(--cream);
+  font-family:var(--serif);font-style:italic;font-size:.95rem;
+  display:flex;align-items:center;justify-content:center;
+}
+.steps{counter-reset:step}
+.steps li:not(:last-child)::after{
+  content:'';position:absolute;left:16px;top:42px;bottom:4px;width:2px;
+  background-image:linear-gradient(180deg,var(--tan-deep) 0 5px,transparent 5px 11px);
+  background-size:2px 11px;opacity:.5;
+}
+.steps h3{font-size:.86rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.steps p{font-size:.9rem;font-weight:300;color:var(--soft);line-height:1.75}
+.enq-meta{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:32px}
+.enq-meta a,.enq-meta span{
+  font-size:.82rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+}
+.enq-meta a{border-bottom:1.5px solid var(--tan-deep);align-self:flex-start;padding-bottom:3px}
+
+/* form card */
+.form-card{
+  background:var(--ink);border-radius:32px;padding:48px 44px 52px;color:var(--cream);
+  box-shadow:0 40px 90px rgba(22,19,16,.28);
+}
+.form-card h3{font-size:.8rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--tan);margin-bottom:6px}
+.form-card .fc-sub{font-family:var(--serif);font-style:italic;font-size:1.35rem;margin-bottom:30px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(250,248,244,.5);margin-bottom:8px;
+}
+.field input,.field textarea,.field select{
+  width:100%;background:rgba(250,248,244,.06);border:1px solid rgba(250,248,244,.16);
+  border-radius:14px;padding:14px 16px;color:var(--cream);font-family:var(--sans);
+  font-size:.92rem;font-weight:300;outline:none;transition:border-color .25s ease;resize:vertical;
+}
+.field select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,rgba(250,248,244,.6) 50%),linear-gradient(135deg,rgba(250,248,244,.6) 50%,transparent 50%);background-position:calc(100% - 21px) 50%,calc(100% - 16px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.field select option{color:var(--ink);background:var(--cream)}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--tan)}
+.form-card .pill{width:100%;margin-top:10px;background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.form-card .pill:hover{background:var(--tan);border-color:var(--tan)}
+.form-note{margin-top:16px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,248,244,.35);text-align:center}
+
+/* ---------- footer ---------- */
+.foot{background:var(--ink);color:var(--cream);border-radius:44px 44px 0 0;padding:80px 0 40px}
+.foot-grid{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;flex-wrap:wrap;margin-bottom:60px}
+.foot-brand img{height:64px;margin-bottom:18px}
+.foot-brand .wm{font-weight:800;text-transform:uppercase;letter-spacing:.24em;font-size:.9rem}
+.foot-brand p{margin-top:12px;font-size:.82rem;font-weight:300;color:rgba(250,248,244,.5);max-width:30ch}
+.foot-col h4{font-size:.66rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--tan);margin-bottom:18px}
+.foot-col a{display:block;padding:6px 0;font-size:.82rem;font-weight:400;color:rgba(250,248,244,.72);transition:color .2s ease}
+.foot-col a:hover{color:var(--cream)}
+.foot-base{
+  border-top:1px solid rgba(250,248,244,.12);padding-top:28px;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,248,244,.4);
+}
+
+/* ---------- responsive ---------- */
+@media(max-width:900px){
+  .hdr-nav{display:none}
+  .burger{display:flex}
+  .enq-grid{grid-template-columns:1fr;gap:50px}
+}
+@media(max-width:760px){
+  html{font-size:14px}
+  body{font-size:14.5px}
+  .wrap{padding:0 22px}
+  .hdr-in{height:72px;padding:0 22px}
+  .m-menu{top:72px}
+  .hdr-logo img{height:34px}
+  .phero{padding:130px 0 66px}
+  .enq{padding:76px 0 90px}
+  .form-card{padding:36px 26px 40px}
+  .form-row{grid-template-columns:1fr}
+  .foot{padding:64px 0 32px;border-radius:28px 28px 0 0}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="hdr" id="hdr">
+  <div class="hdr-in">
+    <a class="hdr-logo" href="draft-2.html" aria-label="The Suede Studio — home">
+      <img src="assets/logo-black.png" alt="The Suede Studio squiggle logo">
+      <span class="hdr-wm">The Suede Studio</span>
+    </a>
+    <nav class="hdr-nav">
+      <a href="draft-2.html">Home</a>
+      <a href="packages-2.html">Packages</a>
+      <a class="hdr-cta" href="enquire-2.html">Enquire</a>
+    </nav>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<div class="m-menu" id="mMenu">
+  <a href="draft-2.html">Home</a>
+  <a href="packages-2.html">Packages</a>
+  <a href="enquire-2.html">Enquire</a>
+</div>
+
+<!-- ================= PAGE HERO ================= -->
+<section class="phero">
+  <img class="phero-squig" src="assets/logo-espresso.png" alt="" aria-hidden="true">
+  <div class="wrap">
+    <span class="script rv in">go on — tell us everything</span>
+    <h1 class="rv in d1">Tell us about<br><span class="serif-i">your</span> business.</h1>
+    <p class="rv in d2">A couple of minutes now, an honest recommendation back — usually within a day. Two friends, one studio, a capped client list.</p>
+  </div>
+</section>
+
+<!-- ================= ENQUIRE ================= -->
+<section class="enq">
+  <div class="wrap">
+    <div class="enq-grid">
+      <div class="enq-left rv rv-l">
+        <h2>What happens <em>after</em> you press send</h2>
+        <ol class="steps">
+          <li>
+            <h3>We read it — properly</h3>
+            <p>Your enquiry lands with Elva and Laura, not an inbox robot. We look at your business, your socials and your store before replying.</p>
+          </li>
+          <li>
+            <h3>You get our honest take</h3>
+            <p>Usually within a day: which package fits, what we'd include in yours, and what it'd roughly cost. If a smaller option does the job, that's what we'll say.</p>
+          </li>
+          <li>
+            <h3>We only start when you're ready</h3>
+            <p>No pressure, no follow-up campaigns. If it's a yes, we scope it properly together. If it's not the right time, no hard feelings.</p>
+          </li>
+        </ol>
+        <div class="enq-meta">
+          <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a>
+          <span>+353 83 049 9445</span>
+          <span>Dublin, Ireland</span>
+        </div>
+      </div>
+      <form class="form-card rv rv-r" id="enquiryForm">
+        <h3>Start the conversation</h3>
+        <p class="fc-sub">usually answered within a day</p>
+        <div class="form-row">
+          <div class="field">
+            <label for="fName">Your name</label>
+            <input id="fName" name="name" type="text" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="fBiz">Business name</label>
+            <input id="fBiz" name="business" type="text">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="fEmail">Email</label>
+            <input id="fEmail" name="email" type="email" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="fPkg">Which package interests you?</label>
+            <select id="fPkg" name="package">
+              <option>Not sure yet</option>
+              <option>Content</option>
+              <option>Ecommerce</option>
+              <option>The Duo</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="fSocial">Website or Instagram (if you have one)</label>
+          <input id="fSocial" name="social" type="text" placeholder="@yourbrand or yourshop.ie">
+        </div>
+        <div class="field">
+          <label for="fMsg">What do you need a hand with?</label>
+          <textarea id="fMsg" name="message" rows="5" required></textarea>
+        </div>
+        <button class="pill" type="submit">Send enquiry</button>
+        <p class="form-note">Opens your email app — no data stored on this site</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="assets/logo-cream.png" alt="The Suede Studio logo">
+        <p class="wm">The Suede Studio</p>
+        <p>Ecommerce &amp; content for small Irish businesses. Dublin, est. 2026.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Site</h4>
+        <a href="draft-2.html">Home</a>
+        <a href="packages-2.html">Packages</a>
+        <a href="enquire-2.html">Enquire</a>
+      </div>
+      <div class="foot-col">
+        <h4>Say hello</h4>
+        <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a>
+        <a href="tel:+353830499445">+353 83 049 9445</a>
+      </div>
+      <div class="foot-col">
+        <h4>Follow</h4>
+        <a href="#" rel="noopener">Instagram</a>
+        <a href="#" rel="noopener">TikTok</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 The Suede Studio</span>
+      <span>Made with care in Dublin</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var hdr = document.getElementById('hdr');
+  function setHeader(){ hdr.classList.toggle('scrolled', window.scrollY > 40); }
+  window.addEventListener('scroll', setHeader, {passive:true});
+  setHeader();
+
+  var burger = document.getElementById('burger');
+  var mMenu = document.getElementById('mMenu');
+  burger.addEventListener('click', function(){
+    var open = mMenu.classList.toggle('open');
+    hdr.classList.toggle('menu-open', open);
+    burger.setAttribute('aria-expanded', open);
+  });
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:.12, rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+  document.getElementById('enquiryForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var f = e.target;
+    var subject = 'Enquiry from ' + (f.business.value || f.name.value);
+    var body = 'Name: ' + f.name.value +
+               '\nBusiness: ' + (f.business.value || '-') +
+               '\nEmail: ' + f.email.value +
+               '\nPackage: ' + f.package.value +
+               '\nWebsite/Instagram: ' + (f.social.value || '-') +
+               '\n\n' + f.message.value;
+    window.location.href = 'mailto:hello@thesuedestudio.com?subject=' +
+      encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  });
+})();
+</script>
+</body>
+</html>
