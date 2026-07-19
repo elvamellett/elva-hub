@@ -16,13 +16,14 @@
 :root{
   --cream:#FAF7F3;
   --cream-2:#F4EEE5;
-  --ink:#14100D;
-  --ink-soft:#241C15;
-  --espresso-deep:#2E1604;
-  --tan:#D6BC96;
+  --ink:#191512;
+  --ink-soft:#262019;
+  --espresso-deep:#332C25;
+  --tan:#D9C6A4;
   --tan-deep:#B99C72;
-  --tan-soft:#EFE3D2;
+  --tan-soft:#EFE5D6;
   --soft:#6E6257;
+  --ivory:#F0E9DD;
   --line:#E8E0D5;
   --tick:#5A7A4E;
   --cross:#A85B4B;
@@ -150,10 +151,9 @@ button{font-family:var(--sans);cursor:pointer}
 .hero{
   position:relative;min-height:100vh;
   background:
-    radial-gradient(1000px 600px at 85% 10%,rgba(214,188,150,.22),transparent 60%),
-    radial-gradient(800px 700px at 10% 90%,rgba(46,22,4,.85),transparent 65%),
-    linear-gradient(150deg,var(--espresso-deep) 0%,#1E1008 46%,var(--ink) 100%);
-  color:var(--cream);
+    radial-gradient(1000px 600px at 85% 10%,rgba(217,198,164,.14),transparent 60%),
+    linear-gradient(150deg,var(--espresso-deep) 0%,#211C17 48%,var(--ink) 100%);
+  color:var(--ivory);
   display:flex;flex-direction:column;justify-content:flex-end;
   overflow:hidden;
 }
@@ -173,14 +173,14 @@ button{font-family:var(--sans);cursor:pointer}
 }
 .hero-eyebrow::before{content:'';width:34px;height:1.5px;background:var(--tan)}
 .hero-h{
-  font-weight:800;text-transform:uppercase;
-  font-size:clamp(2.6rem,6.4vw,5.4rem);line-height:1.04;letter-spacing:.005em;
-  max-width:15ch;
+  font-weight:700;text-transform:uppercase;
+  font-size:clamp(2rem,4.6vw,3.8rem);line-height:1.08;letter-spacing:.01em;
+  max-width:16ch;color:var(--ivory);
 }
 .hero-h .serif-i{font-weight:400;color:var(--tan)}
 .hero-sub{
-  margin-top:30px;max-width:520px;color:rgba(250,247,243,.78);
-  font-size:1.02rem;font-weight:300;line-height:1.85;
+  margin-top:28px;max-width:500px;color:rgba(240,233,221,.62);
+  font-size:.98rem;font-weight:300;line-height:1.95;
 }
 .hero-ctas{margin-top:42px;display:flex;align-items:center;gap:26px;flex-wrap:wrap}
 .hero .text-link{color:var(--cream);border-bottom-color:var(--tan)}
@@ -209,8 +209,8 @@ button{font-family:var(--sans);cursor:pointer}
 .intro{padding:130px 0 120px;text-align:center}
 .intro-mark{width:54px;margin:0 auto 34px;opacity:.9}
 .intro p.big{
-  font-family:var(--serif);font-weight:400;font-size:clamp(1.5rem,2.9vw,2.3rem);
-  line-height:1.5;max-width:21em;margin:0 auto;
+  font-family:var(--serif);font-weight:300;font-size:clamp(1.35rem,2.6vw,2.05rem);
+  line-height:1.6;max-width:22em;margin:0 auto;color:#4E463C;
 }
 .intro p.big em{font-style:italic;color:var(--tan-deep)}
 .intro p.small{
@@ -258,22 +258,18 @@ button{font-family:var(--sans);cursor:pointer}
 .work-head .h-lg .serif-i{color:var(--tan);font-weight:400}
 .work-head p{margin:18px auto 0;max-width:480px;color:rgba(250,247,243,.6);font-size:.95rem;font-weight:300}
 .phones{
-  display:flex;justify-content:center;align-items:flex-start;gap:34px;
+  display:flex;justify-content:center;align-items:center;gap:34px;
 }
 .phone{
   position:relative;width:218px;flex:0 0 auto;
   border-radius:40px;background:#0B0908;
   border:1px solid rgba(250,247,243,.14);
   box-shadow:0 40px 80px rgba(0,0,0,.55),inset 0 0 0 8px #0B0908,inset 0 0 0 9px rgba(250,247,243,.08);
-  padding:8px;will-change:transform;
+  padding:8px;
 }
-.phone:nth-child(1){margin-top:64px;transform:rotate(-2.4deg)}
-.phone:nth-child(2){margin-top:0;transform:rotate(1.4deg)}
-.phone:nth-child(3){margin-top:88px;transform:rotate(-1.2deg)}
-.phone:nth-child(4){margin-top:26px;transform:rotate(2.2deg)}
 .phone-screen{
   position:relative;aspect-ratio:9/19.5;border-radius:32px;overflow:hidden;
-  background:linear-gradient(160deg,#3A2410 0%,#1E1008 55%,#14100D 100%);
+  background:linear-gradient(160deg,#332C25 0%,#211C17 55%,#191512 100%);
 }
 .phone-screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .phone-ph{
@@ -359,7 +355,7 @@ button{font-family:var(--sans);cursor:pointer}
 /* ============================================================
    TESTIMONIALS — full-width carousel
    ============================================================ */
-.tst{padding:140px 0;text-align:center;position:relative}
+.tst{padding:130px 0;text-align:center;position:relative;background:var(--tan-soft)}
 .tst .eyebrow{justify-content:center;margin-bottom:40px}
 .tst-viewport{position:relative;max-width:900px;margin:0 auto;min-height:280px}
 .tst-slide{
@@ -383,7 +379,7 @@ button{font-family:var(--sans);cursor:pointer}
   font-size:1.05rem;color:var(--ink);transition:all .25s ease;
 }
 .tst-arrow:hover{background:var(--ink);color:var(--cream)}
-.tst-note{margin-top:26px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#B7AA9B}
+.tst-note{margin-top:26px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#9A8C7A}
 
 /* ============================================================
    PACKAGES teaser
@@ -521,11 +517,8 @@ button{font-family:var(--sans);cursor:pointer}
   .svc-head,.pkg-head{margin-bottom:44px}
   .work{padding:0 0 96px}
   .work-head{margin-bottom:48px}
-  .phones{gap:18px}
+  .phones{gap:18px;flex-wrap:wrap}
   .phone{width:calc(50% - 9px);max-width:190px}
-  .phone:nth-child(1){margin-top:30px}
-  .phone:nth-child(3){margin-top:30px}
-  .phone:nth-child(4){margin-top:0}
   .vs{padding:90px 0}
   .vs-col{padding:34px 26px 38px}
   .proc{padding:84px 0 92px;margin:0 10px;border-radius:28px}
@@ -680,7 +673,7 @@ button{font-family:var(--sans);cursor:pointer}
       <p class="rv d2">Reels, product films and behind-the-scenes — shot for the brands we run.</p>
     </div>
     <div class="phones">
-      <div class="phone" data-speed="0.05">
+      <div class="phone">
         <div class="notch"></div>
         <div class="phone-screen">
           <div class="phone-ph">
@@ -693,7 +686,7 @@ button{font-family:var(--sans);cursor:pointer}
           </video>
         </div>
       </div>
-      <div class="phone" data-speed="-0.04">
+      <div class="phone">
         <div class="notch"></div>
         <div class="phone-screen">
           <div class="phone-ph">
@@ -706,7 +699,7 @@ button{font-family:var(--sans);cursor:pointer}
           </video>
         </div>
       </div>
-      <div class="phone" data-speed="0.07">
+      <div class="phone">
         <div class="notch"></div>
         <div class="phone-screen">
           <div class="phone-ph">
@@ -719,7 +712,7 @@ button{font-family:var(--sans);cursor:pointer}
           </video>
         </div>
       </div>
-      <div class="phone" data-speed="-0.06">
+      <div class="phone">
         <div class="notch"></div>
         <div class="phone-screen">
           <div class="phone-ph">
@@ -1018,39 +1011,18 @@ button{font-family:var(--sans);cursor:pointer}
 
   /* ---------- scroll-linked motion (rAF) ---------- */
   var squig = document.getElementById('heroSquig');
-  var phones = Array.prototype.slice.call(document.querySelectorAll('.phone'));
   var ticking = false;
   function onScroll(){
     if(ticking) return;
     ticking = true;
     requestAnimationFrame(function(){
       setHeader();
-      if(!reduced){
-        var y = window.scrollY;
-        if(squig) squig.style.transform = 'rotate(' + (y * 0.02) + 'deg)';
-        phones.forEach(function(p){
-          var r = p.getBoundingClientRect();
-          var mid = r.top + r.height/2 - window.innerHeight/2;
-          var speed = parseFloat(p.dataset.speed || 0);
-          var rot = p.dataset.rot || '';
-          var off = Math.max(-36, Math.min(36, mid * speed * -1));
-          p.style.transform = 'translateY(' + off + 'px)' + rot;
-        });
+      if(!reduced && squig){
+        squig.style.transform = 'rotate(' + (window.scrollY * 0.02) + 'deg)';
       }
       ticking = false;
     });
   }
-  // keep each phone's designed tilt while parallaxing
-  phones.forEach(function(p){
-    var m = getComputedStyle(p).transform;
-    if(m && m !== 'none'){
-      var v = m.match(/matrix\(([-\d.]+), ([-\d.]+)/);
-      if(v){
-        var angle = Math.atan2(parseFloat(v[2]), parseFloat(v[1])) * 180/Math.PI;
-        p.dataset.rot = ' rotate(' + angle.toFixed(2) + 'deg)';
-      }
-    }
-  });
   window.addEventListener('scroll', onScroll, {passive:true});
   setHeader();
   onScroll();
