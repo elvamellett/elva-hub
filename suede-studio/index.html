@@ -94,7 +94,9 @@ header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-f
 .hero-mark{position:absolute;top:42%;left:0;width:100%;transform:translateY(-50%);text-align:center;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.4rem,8.6vw,7.2rem);line-height:.95;color:var(--cream);text-shadow:0 6px 40px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap}
 .hero-bottom{position:relative;text-align:center;margin-top:54px;padding:0 28px}
 .hero-bottom .tag{color:var(--tan);max-width:46ch;margin:0 auto;font-size:clamp(1rem,1.9vw,1.2rem)}
-.hero-ctas{margin-top:34px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.hero-ctas{margin-top:34px;display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:center}
+.link-cta{text-transform:uppercase;font-weight:700;font-size:.72rem;letter-spacing:.18em;color:var(--cream);border-bottom:1.5px solid var(--tan);padding-bottom:4px;transition:color .25s ease,border-color .25s ease}
+.link-cta:hover{color:var(--tan)}
 .hero-arrow{position:absolute;right:40px;bottom:26px;font-size:2rem;color:var(--cream);animation:bob 1.8s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(8px)}}
 
@@ -354,7 +356,7 @@ footer nav a:hover{color:var(--tan)}
     <p class="tag">we take over your shopify store and your socials — the selling, the content, the busywork — so you can get back to the business you actually wanted to run.</p>
     <div class="hero-ctas">
       <!-- Replace YOUR-GOOGLE-FORM-LINK everywhere with the real Google Form URL (see client-questionnaire.md) -->
-      <a href="YOUR-GOOGLE-FORM-LINK" class="btn btn-ice">Start with the questionnaire</a>
+      <a href="YOUR-GOOGLE-FORM-LINK" class="link-cta">Start with the questionnaire</a>
       <a href="packages.html" class="btn btn-cream">See packages</a>
     </div>
   </div>
