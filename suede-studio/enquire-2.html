@@ -76,7 +76,8 @@ button{font-family:var(--sans);cursor:pointer}
 .hdr-nav{display:flex;align-items:center;gap:34px}
 .hdr-nav a{font-size:.74rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);transition:opacity .2s ease}
 .hdr-nav a:hover{opacity:.6}
-.hdr-nav .hdr-cta{border-bottom:1.5px solid currentColor;padding-bottom:3px}
+.hdr-nav a.on{border-bottom:1.5px solid currentColor;padding-bottom:3px}
+.m-menu a.on{font-weight:800}
 .burger{display:none;background:none;border:none;width:40px;height:40px;flex-direction:column;justify-content:center;align-items:center;gap:6px}
 .burger span{display:block;width:24px;height:2px;background:var(--ink);transition:all .3s ease}
 .hdr.menu-open .burger span:nth-child(1){transform:translateY(8px) rotate(45deg)}
@@ -300,7 +301,7 @@ button{font-family:var(--sans);cursor:pointer}
     <nav class="hdr-nav">
       <a href="draft-2.html">Home</a>
       <a href="packages-2.html">Packages</a>
-      <a class="hdr-cta" href="mailto:hello@thesuedestudio.com">Enquire</a>
+      <a class="on" href="enquire-2.html">Enquire</a>
     </nav>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -310,7 +311,7 @@ button{font-family:var(--sans);cursor:pointer}
 <div class="m-menu" id="mMenu">
   <a href="draft-2.html">Home</a>
   <a href="packages-2.html">Packages</a>
-  <a href="mailto:hello@thesuedestudio.com">Enquire</a>
+  <a class="on" href="enquire-2.html">Enquire</a>
 </div>
 
 <!-- ================= PAGE HERO ================= -->
@@ -428,7 +429,7 @@ button{font-family:var(--sans);cursor:pointer}
         <h4>Site</h4>
         <a href="draft-2.html">Home</a>
         <a href="packages-2.html">Packages</a>
-        <a href="enquire-2.html">Enquire</a>
+        <a class="on" href="enquire-2.html">Enquire</a>
       </div>
       <div class="foot-col">
         <h4>Say hello</h4>
