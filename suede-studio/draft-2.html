@@ -586,6 +586,86 @@ button{font-family:var(--sans);cursor:pointer}
   .phone,.hero-squig{transform:none!important}
   *{transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+/* ============================================================
+   THEME: olive mist / warm sand / beach linen / teal pops
+   ============================================================ */
+.hero{background:
+  radial-gradient(1000px 600px at 85% 10%,rgba(215,203,189,.1),transparent 60%),
+  linear-gradient(150deg,#746A5C 0%,#645B4E 55%,#4E4639 100%);
+  color:#D7CBBD;}
+.hero-h{color:#E9E2D6}
+.hero-h .serif-i{color:#8FB5B6}
+.hero-eyebrow{color:#BCAE9C}
+.hero-sub{color:rgba(215,203,189,.82)}
+.hero .text-link{color:#E9E2D6;border-bottom-color:#4A7C7E}
+.marq{border-top-color:rgba(215,203,189,.2)}
+.marq-card{background:rgba(215,203,189,.12);border-color:rgba(215,203,189,.3);color:#E2D9CC}
+.marq-card::before{background:#4A7C7E}
+.hdr.on-light:not(.scrolled):not(.menu-open) .hdr-wm{color:#E9E2D6}
+.hdr.on-light:not(.scrolled):not(.menu-open) .hdr-nav a{color:#E9E2D6}
+.hdr.on-light:not(.scrolled):not(.menu-open) .burger span{background:#E9E2D6}
+.hero-squig{opacity:.1}
+.intro{background:#EBE4D9}
+.intro p.big{color:#4E4639}
+.intro p.big em{color:#4A7C7E}
+.intro p.small{color:#6E6355}
+.svc{background:#AA9E90;color:#3E382E}
+.svc-head .eyebrow{color:#544C40}
+.svc-head .eyebrow::before{background:#4A7C7E}
+.svc-head .h-lg .serif-i{color:#3A6567}
+.svc .text-link{color:#3E382E;border-bottom-color:#4A7C7E}
+.svc-card{background:#E7E0D4;border-color:#C4B8A8}
+.svc-tag{background:#4A7C7E;color:#FFF9F2}
+.svc-body h3{color:#3E382E}
+.svc-body p{color:#5E564A}
+.work{background:#453E33}
+.work-head .eyebrow{color:#BCAE9C}
+.work-head .eyebrow::before{background:#4A7C7E}
+.work-head .h-lg{color:#E9E2D6}
+.work-head .h-lg .serif-i{color:#8FB5B6}
+.work-head p{color:rgba(215,203,189,.65)}
+.phone-ph span{color:rgba(215,203,189,.5)}
+.phone-ph code{color:#8FB5B6;background:rgba(215,203,189,.1)}
+.work-note{color:rgba(215,203,189,.4)}
+.vs{background:#EBE4D9}
+.vs-head .h-lg .serif-i{color:#4A7C7E}
+.vs-col.us{background:#645B4E}
+.vs-col.us .vs-sub{color:#8FB5B6}
+.vs-col.them{background:#DCD2C2;border-color:#C4B8A8}
+.vs-col.them .vs-sub{color:#6E6355}
+.proc{background:#DDD3C4}
+.proc-head .h-lg .serif-i{color:#4A7C7E}
+.proc-line{background-image:linear-gradient(90deg,#8A7E6E 0 6px,transparent 6px 14px)}
+.step-dot{background:#645B4E;color:#E9E2D6;box-shadow:0 0 0 8px #DDD3C4}
+.step h3{color:#3E382E}
+.step p{color:#5E564A}
+.tst{background:#CFC4B3}
+.tst-q{color:#3E382E}
+.tst-who{color:#5E564A}
+.tst-who b{color:#3E382E}
+.tst .pill{background:#645B4E;border-color:#645B4E;color:#E9E2D6}
+.tst-arrow{border-color:#3E382E;color:#3E382E}
+.tst-note{color:#8A7E6E}
+.pkg{background:#645B4E}
+.pkg-head .eyebrow{color:#BCAE9C}
+.pkg-head .h-lg{color:#E9E2D6}
+.pkg-head .h-lg .serif-i{color:#8FB5B6}
+.pkg .text-link{color:#E9E2D6;border-bottom-color:#4A7C7E}
+.pkg-card.s{background:#E9E2D6}
+.pkg-card.g{background:#BCAE9C}
+.pkg-card.p{background:#4E4639;border-color:rgba(215,203,189,.3)}
+.pkg-card.s .pkg-name,.pkg-card.g .pkg-name{color:#3E382E}
+.faq{display:none}
+.contact{background:#F0EAE0}
+.contact-left .h-lg em{color:#4A7C7E}
+.form-card{background:#4E4639}
+.form-card h3{color:#BCAE9C}
+.form-card .pill{background:#E9E2D6;color:#3E382E;border-color:#E9E2D6}
+.foot{background:#3E382E}
+.foot-col h4{color:#8FB5B6}
+.eyebrow::before{background:#4A7C7E}
+
 </style>
 <noscript><style>.rv{opacity:1!important;transform:none!important}</style></noscript>
 </head>
@@ -616,7 +696,7 @@ button{font-family:var(--sans);cursor:pointer}
 
 <!-- ================= HERO ================= -->
 <section class="hero" id="top">
-  <img class="hero-squig" src="assets/logo-espresso.png" alt="" aria-hidden="true" id="heroSquig">
+  <img class="hero-squig" src="assets/logo-cream.png" alt="" aria-hidden="true" id="heroSquig">
   <div class="hero-body">
     <p class="hero-eyebrow rv in">ecommerce &amp; content, made in Wicklow</p>
     <h1 class="hero-h rv in d1">Your store,<br>your&nbsp;content&nbsp;—<br><span class="serif-i">beautifully</span> run.</h1>
@@ -1034,7 +1114,6 @@ button{font-family:var(--sans);cursor:pointer}
         <a href="#work">Work</a>
         <a href="#packages">Packages</a>
         <a href="#process">Process</a>
-        <a href="#faq">FAQ</a>
       </div>
       <div class="foot-col">
         <h4>Say hello</h4>
@@ -1061,8 +1140,11 @@ button{font-family:var(--sans);cursor:pointer}
 
   /* ---------- header: transparent → frosted ---------- */
   var hdr = document.getElementById('hdr');
+  var hdrLogo = document.getElementById('hdrLogo');
   function setHeader(){
-    hdr.classList.toggle('scrolled', window.scrollY > 40);
+    var sc = window.scrollY > 40;
+    hdr.classList.toggle('scrolled', sc);
+    hdrLogo.src = (sc || hdr.classList.contains('menu-open')) ? 'assets/logo-black.png' : 'assets/logo-cream.png';
   }
 
   /* ---------- mobile menu ---------- */
