@@ -31,3 +31,6 @@ Decisions Elva has signed off. Do not change these without her say-so.
 - AI is a throwaway aside only, never a headline.
 - FAQ block on the homepage is hidden (kept in code).
 - Enquiry forms email hello@thesuedestudio.com with all fields + toggle selections.
+
+## Shape
+- Section blocks are STRAIGHT-EDGED and full-bleed — no rounded corners or inset margins on the big colour blocks. Cards, pills and form fields keep their rounding.
