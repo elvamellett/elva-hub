@@ -23,7 +23,7 @@ Decisions Elva has signed off. Do not change these without her say-so.
 
 ## Content rules
 - Location is Wicklow (never Dublin) everywhere.
-- Header nav is exactly: Home · Packages · Enquire (Enquire = mailto:hello@thesuedestudio.com).
+- Header nav is exactly: Home · Packages · Enquire (all page links; the ACTIVE page gets the underline, no permanent underline on Enquire).
 - Questionnaire takes "a couple of minutes" (never "15 minutes").
 - Packages: Content / Ecommerce / The Duo. Takeover exists in code but is hidden until launch.
 - Package lists are pick-and-choose menus ("What yours could include — you pick"),
