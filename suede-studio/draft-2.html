@@ -1063,7 +1063,7 @@ button{font-family:var(--sans);cursor:pointer}
           <textarea id="fMsg" name="message" rows="4" placeholder="What you sell, what's working, what's driving you mad — anything at all."></textarea>
         </div>
         <button class="pill" type="submit">Send enquiry</button>
-        <p class="form-note">Opens your email app — no data stored on this site</p>
+        <p class="form-note">Sends straight to us — no email app needed</p>
       </form>
     </div>
   </div>
@@ -1247,16 +1247,33 @@ button{font-family:var(--sans);cursor:pointer}
     var pains = Array.prototype.map.call(
       document.querySelectorAll('#painPanel .dd-opt.on'),
       function(o){ return o.dataset.v; });
-    var subject = 'Enquiry from ' + (f.business.value || f.name.value);
-    var body = 'Name: ' + f.name.value +
-               '\nBusiness: ' + (f.business.value || '-') +
-               '\nEmail: ' + f.email.value +
-               '\nWebsite/Instagram: ' + (f.social.value || '-') +
-               '\nLooking for: ' + (lane.length ? lane.join(', ') : '-') +
-               '\nSounds like them: ' + (pains.length ? pains.join('; ') : '-') +
-               '\n\n' + (f.message.value || '-');
-    window.location.href = 'mailto:hello@thesuedestudio.com?subject=' +
-      encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    var btn = f.querySelector('.pill');
+    var note = f.querySelector('.form-note');
+    btn.disabled = true; btn.textContent = 'Sending\u2026';
+    fetch('https://formsubmit.co/ajax/elvamellett05@gmail.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: 'Enquiry from ' + (f.business.value || f.name.value),
+        _template: 'table',
+        _captcha: 'false',
+        'Name': f.name.value,
+        'Business': f.business.value || '-',
+        'Email': f.email.value,
+        'Website / Instagram': f.social.value || '-',
+        'Looking for': lane.length ? lane.join(', ') : '-',
+        'Sounds like them': pains.length ? pains.join('; ') : '-',
+        'Message': f.message.value || '-'
+      })
+    }).then(function(r){ if(!r.ok) throw new Error(); return r.json(); })
+    .then(function(){
+      btn.textContent = 'Sent \u2014 talk soon!';
+      if(note) note.textContent = 'Thanks! Your enquiry is on its way to us.';
+    })
+    .catch(function(){
+      btn.disabled = false; btn.textContent = 'Send enquiry';
+      if(note) note.textContent = 'Hmm, that didn\u2019t send \u2014 try again, or email hello@thesuedestudio.com';
+    });
   });
 })();
 </script>
