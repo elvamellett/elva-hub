@@ -34,3 +34,7 @@ Decisions Elva has signed off. Do not change these without her say-so.
 
 ## Shape
 - Section blocks are STRAIGHT-EDGED and full-bleed — no rounded corners or inset margins on the big colour blocks. Cards, pills and form fields keep their rounding.
+
+## Hidden for launch (BRING BACK LATER — Elva wants these restored)
+- **Our Work reels section** (`<section class="work">` in draft-2.html): hidden with `style="display:none"` until real reels exist at videos/reel-1..4.mp4. Remove the attribute to restore.
+- **Testimonials section** (`<section class="tst">` in draft-2.html): hidden with `style="display:none"` until real client quotes replace the Sarah/Aoife/Ciara examples. Remove the attribute to restore.
