@@ -23,7 +23,7 @@ Decisions Elva has signed off. Do not change these without her say-so.
 
 ## Content rules
 - Location is Wicklow (never Dublin) everywhere.
-- Header nav is exactly: Home · Packages · Our Work · About · Enquire (all page links; the ACTIVE page gets the underline, no permanent underline on Enquire).
+- Header nav is exactly: Home · Packages · About · Enquire (all page links; the ACTIVE page gets the underline, no permanent underline on Enquire).
 - Questionnaire takes "a couple of minutes" (never "15 minutes").
 - Packages: Content / Ecommerce / The Duo. Takeover exists in code but is hidden until launch.
 - Package lists are pick-and-choose menus ("What yours could include — you pick"),
@@ -36,5 +36,5 @@ Decisions Elva has signed off. Do not change these without her say-so.
 - Section blocks are STRAIGHT-EDGED and full-bleed — no rounded corners or inset margins on the big colour blocks. Cards, pills and form fields keep their rounding.
 
 ## Hidden for launch (BRING BACK LATER — Elva wants these restored)
-- **Our Work reels section on the HOMEPAGE** (`<section class="work">` in draft-2.html): hidden with `style="display:none"`. A dedicated Our Work PAGE (work-2.html) now exists with the same phone mockups; drop real reels at videos/reel-1..4.mp4 and they play there automatically. Homepage section can be restored later if wanted.
+- **Our Work reels section** now lives at the BOTTOM of the homepage (after the enquiry block, before the footer) and is visible, showing 'fresh reels coming soon' placeholders. Drop real reels at videos/reel-1..4.mp4 and they autoplay in the phones. The separate work page was tried and removed — Elva prefers it on the homepage.
 - **Testimonials section** (`<section class="tst">` in draft-2.html): hidden with `style="display:none"` until real client quotes replace the Sarah/Aoife/Ciara examples. Remove the attribute to restore.
