@@ -336,6 +336,22 @@ button{font-family:var(--sans);cursor:pointer}
 .vs-col.us .vs-ic{background:rgba(90,122,78,.25);color:#9DC28C}
 .vs-col.them .vs-ic{background:rgba(168,91,75,.14);color:var(--cross)}
 
+/* sound-like-you question grid */
+.ask-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:0 60px;
+  max-width:980px;margin:0 auto;
+}
+.ask-item{
+  display:flex;gap:16px;align-items:flex-start;
+  padding:20px 4px;border-bottom:1px solid rgba(62,56,46,.14);
+  font-size:.96rem;font-weight:300;line-height:1.7;color:#4A443A;
+}
+.ask-ic{background:rgba(62,56,46,.08);color:#3E382E;margin-top:3px}
+.ask-close{text-align:center;margin-top:56px}
+.ask-close p{
+  font-family:var(--serif);font-style:italic;font-size:1.3rem;color:#2E2925;margin-bottom:26px;
+}
+
 /* ============================================================
    PROCESS — staggered dotted steps
    ============================================================ */
@@ -546,6 +562,7 @@ button{font-family:var(--sans);cursor:pointer}
   .hdr-nav{display:none}
   .burger{display:flex}
   .faq-grid,.contact-grid,.vs-grid{grid-template-columns:1fr;gap:44px}
+  .ask-grid{grid-template-columns:1fr;gap:0}
 }
 @media(max-width:760px){
   html{font-size:14px}
@@ -789,32 +806,26 @@ button{font-family:var(--sans);cursor:pointer}
   </div>
 </section>
 
-<!-- ================= COMPARISON ================= -->
+<!-- ================= SOUND LIKE YOU ================= -->
 <section class="vs">
   <div class="wrap">
     <div class="vs-head">
-      <p class="eyebrow rv">Why us</p>
-      <h2 class="h-lg rv d1">The Suede way vs <span class="serif-i">the hard way</span>.</h2>
+      <p class="eyebrow rv">Sound like you?</p>
+      <h2 class="h-lg rv d1">Any of this <span class="serif-i">ringing a bell</span>?</h2>
     </div>
-    <div class="vs-grid">
-      <div class="vs-col us rv rv-l">
-        <h3>With The Suede Studio</h3>
-        <p class="vs-sub">everything under one roof</p>
-        <ul>
-          <li><span class="vs-ic">✓</span>Your brand represented accurately — content made by people who actually know your business</li>
-          <li><span class="vs-ic">✓</span>You own every asset we make — photos, reels, all of it</li>
-          <li><span class="vs-ic">✓</span>Store and content handled together, so they always match</li>
-        </ul>
-      </div>
-      <div class="vs-col them rv rv-r">
-        <h3>Doing it the old way</h3>
-        <p class="vs-sub">freelancer roulette &amp; late nights</p>
-        <ul>
-          <li><span class="vs-ic">✕</span>Generic templates and stock-feel content that could be anyone's brand</li>
-          <li><span class="vs-ic">✕</span>Files scattered across five inboxes and a hard drive somewhere</li>
-          <li><span class="vs-ic">✕</span>A store person and a content person who've never spoken to each other</li>
-        </ul>
-      </div>
+    <div class="ask-grid">
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>Got a website that looks okay&hellip; but never gets any orders?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>Posting content nobody sees, likes or shares?</div>
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>Spending your evenings on captions instead of your actual business?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>People visit your shop online &mdash; then vanish without buying?</div>
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>Your Instagram doesn't look like your brand &mdash; and you know it?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>Nobody finds you when they Google what you sell?</div>
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>You want reels but hate making them?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>You've a brilliant business that just looks ordinary online?</div>
+    </div>
+    <div class="ask-close rv d2">
+      <p>If you nodded at even one of these &mdash; that's exactly what we fix.</p>
+      <a class="text-link" href="enquire-2.html">Start the questionnaire</a>
     </div>
   </div>
 </section>
