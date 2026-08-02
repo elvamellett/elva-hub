@@ -172,6 +172,20 @@ button{font-family:var(--sans);cursor:pointer}
 }
 .pk.dark .pk-tag{background:var(--tan);color:var(--ink)}
 
+/* ---------- website build tiers ---------- */
+.tiers-wrap{display:block;margin-top:64px}
+.tiers{border-top:1px solid #8F8374}
+.tier-row{
+  display:grid;grid-template-columns:1fr .8fr 1.6fr;gap:24px;align-items:baseline;
+  padding:18px 4px;border-bottom:1px solid #8F8374;
+}
+.tier-name{font-family:var(--serif);font-size:1.05rem;color:#2E2925}
+.tier-time{font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#645B4E}
+.tier-for{font-size:.92rem;font-weight:300;color:#4A443A}
+@media(max-width:760px){
+  .tier-row{grid-template-columns:1fr;gap:4px;padding:16px 4px}
+}
+
 /* ---------- chooser strip ---------- */
 .choose{padding:120px 0;text-align:center}
 .choose .script{font-size:.76rem;color:var(--tan-deep);display:block;margin-bottom:16px}
@@ -316,28 +330,28 @@ button{font-family:var(--sans);cursor:pointer}
   </div>
 </section>
 
-<!-- ================= 01 CONTENT ================= -->
+<!-- ================= 01 SOCIAL ================= -->
 <section class="pk white" id="content">
   <div class="wrap">
     <div class="rv rv-l">
       <span class="pk-num">01</span>
-      <span class="script">for your socials</span>
-      <h2 class="h-lg">The Content<br><span class="serif-i">package</span></h2>
+      <span class="script">for your socials &middot; laura's lane</span>
+      <h2 class="h-lg">The Social<br><span class="serif-i">package</span></h2>
       <div class="pk-tagrow" style="margin-top:22px">
         <span class="pk-tag">Stories</span><span class="pk-tag">Carousels</span><span class="pk-tag">Posts</span><span class="pk-tag">Reels</span>
       </div>
-      <p class="pk-desc">Your feed, planned and filled. We build the plan, meet up and shoot with your product, then hand everything over edited and ready to post — in your voice, on a schedule you can actually keep.</p>
+      <p class="pk-desc">Scroll-stopping content that reflects your business and connects with your audience. We build the plan, meet up and shoot with your product, then hand everything over edited and ready to post.</p>
       <div class="pk-links">
-        <a class="text-link" href="enquire-2.html">Enquire about Content</a>
+        <a class="text-link" href="enquire-2.html">Enquire about Social</a>
       </div>
-      <p class="pk-price">Tailored to your needs, goals &amp; budget — scoped from your questionnaire</p>
+      <p class="pk-price">Typical turnaround: 1&ndash;2 weeks from shoot day &middot; scoped from your questionnaire</p>
     </div>
     <div class="rv rv-r">
     <p class="pk-list-label">What yours could include — you pick</p>
     <ul class="pk-list">
       <li>A tailored <em>content plan</em> built around your brand and goals</li>
       <li>A monthly <em>content schedule</em> so you always know what's going out</li>
-      <li>Shoot days together — we meet up and create with your product, <em>with or without you</em> in front of the camera</li>
+      <li>Shoot days with your product — <em>with or without you</em> on camera</li>
       <li>Instagram stories that feel human, not templated</li>
       <li>Carousels and feed posts, designed and captioned</li>
       <li>Reels — filmed, edited and cut for how people actually watch</li>
@@ -351,12 +365,12 @@ button{font-family:var(--sans);cursor:pointer}
   <div class="wrap">
     <div class="rv rv-l">
       <span class="pk-num">02</span>
-      <span class="script">for your store</span>
+      <span class="script">for your store &middot; elva's lane</span>
       <h2 class="h-lg">The Ecommerce<br><span class="serif-i">package</span></h2>
       <div class="pk-tagrow" style="margin-top:22px">
         <span class="pk-tag">Shopify</span><span class="pk-tag">SEO</span><span class="pk-tag">Brand</span>
       </div>
-      <p class="pk-desc">The reason we exist. From a single product page that finally converts to a full website built from scratch — designed, written and set up to sell, with the brand pack to match.</p>
+      <p class="pk-desc">The reason we exist. Shopping experiences that feel effortless — organised, engaging and built to convert, from small updates to a full website built from scratch, with the brand pack to match.</p>
       <div class="pk-links">
         <a class="text-link" href="enquire-2.html">Enquire about Ecommerce</a>
       </div>
@@ -374,6 +388,31 @@ button{font-family:var(--sans);cursor:pointer}
     </ul>
     </div>
   </div>
+  <div class="wrap tiers-wrap rv">
+    <p class="pk-list-label">Building a website from the ground up? Four sizes:</p>
+    <div class="tiers">
+      <div class="tier-row">
+        <span class="tier-name">Showcase Site</span>
+        <span class="tier-time">2&ndash;3 weeks</span>
+        <span class="tier-for">Service businesses — no shop, just enquiries</span>
+      </div>
+      <div class="tier-row">
+        <span class="tier-name">Starter Store</span>
+        <span class="tier-time">3&ndash;4 weeks</span>
+        <span class="tier-for">Your first online shop, small product range</span>
+      </div>
+      <div class="tier-row">
+        <span class="tier-name">Signature Store</span>
+        <span class="tier-time">4&ndash;6 weeks</span>
+        <span class="tier-for">Established brands ready to sell properly</span>
+      </div>
+      <div class="tier-row">
+        <span class="tier-name">Flagship Store</span>
+        <span class="tier-time">6&ndash;10 weeks</span>
+        <span class="tier-for">Bigger catalogues, everything switched on</span>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ================= 03 DUO ================= -->
@@ -386,7 +425,7 @@ button{font-family:var(--sans);cursor:pointer}
       <div class="pk-tagrow" style="margin-top:22px">
         <span class="pk-tag">Content</span><span class="pk-tag">+</span><span class="pk-tag">Ecommerce</span>
       </div>
-      <p class="pk-desc">The store and the socials, built together — so the homepage, the product pages and the reels finally tell the same story. One strategy, one team, one brand.</p>
+      <p class="pk-desc">The store and the socials, booked together — one team, one story, one brand. And because it's one project, the Duo always works out better value than booking the two lanes separately.</p>
       <div class="pk-links">
         <a class="text-link" href="enquire-2.html">Enquire about the Duo</a>
       </div>
@@ -429,7 +468,7 @@ button{font-family:var(--sans);cursor:pointer}
       </div>
       <div class="foot-col">
         <h4>Packages</h4>
-        <a href="#content">Content</a>
+        <a href="#content">Social</a>
         <a href="#ecommerce">Ecommerce</a>
         <a href="#duo">The Duo</a>
       </div>
