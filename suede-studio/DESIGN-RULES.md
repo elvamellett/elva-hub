@@ -27,7 +27,7 @@ Decisions Elva has signed off. Do not change these without her say-so.
 - Questionnaire takes "a couple of minutes" (never "15 minutes").
 - Packages: Social (was "Content" — renamed Aug 2026 per Elva's sales deck) / Ecommerce / The Duo. Takeover exists in code but is hidden until launch.
 - Lanes: Social = Laura's lane, Ecommerce = Elva's lane (shown as small script lines on the packages page).
-- Ecommerce package includes the four website build tiers (Showcase / Starter / Signature / Flagship) with timelines and best-for — NO prices.
+- Website build tier NAMES (Showcase/Starter/Signature/Flagship) were tried and REMOVED from the site at Elva's request — they live only in her sales decks. NO prices on the site.
 - Prices exist in Elva's sales deck (Suede_Studio_Package_Slideshow.pptx) but stay OFF the website — reconfirmed Aug 2026.
 - Package lists are pick-and-choose menus ("What yours could include — you pick"),
   tailored to needs, goals & budget. No public prices.
