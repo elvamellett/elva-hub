@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Packages — The Suede Studio</title>
-<meta name="description" content="Four ways to work with The Suede Studio: Content, Ecommerce, the Duo, or the full Takeover. Each comes in different sizes at different price points, scoped to your business.">
+<title>Our Work — The Suede Studio</title>
+<meta name="description" content="Reels, product films and behind-the-scenes from The Suede Studio — shot by us in Wicklow, posted by small Irish brands like yours.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   THE SUEDE STUDIO — PACKAGES (draft 2 design system)
+   THE SUEDE STUDIO — OUR WORK (draft 2 design system)
    ============================================================ */
 :root{
   --cream:#FAF8F4;
@@ -100,81 +100,61 @@ button{font-family:var(--sans);cursor:pointer}
 /* ---------- page hero ---------- */
 .phero{
   position:relative;overflow:hidden;
-  background:
-    radial-gradient(1000px 600px at 85% 10%,rgba(250,247,243,.32),transparent 60%),
-    linear-gradient(150deg,#D3C9BA 0%,#C5BAA9 55%,#B4A896 100%);
   padding:190px 0 110px;
 }
 .phero-squig{position:absolute;right:-4%;top:-12%;height:130%;width:auto;opacity:.14;pointer-events:none}
-.phero .script{font-size:.76rem;color:#6E5B44;display:block;margin-bottom:18px}
+.phero .script{font-size:.76rem;display:block;margin-bottom:18px}
 .phero h1{
   font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.045em;
   font-size:clamp(2.1rem,4.8vw,3.9rem);line-height:1.12;max-width:18ch;
 }
-.phero h1 .serif-i{color:#6E5B44}
-.phero p{margin-top:26px;max-width:520px;color:#55493D;font-size:.98rem;font-weight:300;line-height:1.9}
-.phero-note{
-  margin-top:30px;display:inline-block;
-  font-size:.72rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#5C4F42;
-  border-bottom:1.5px solid #8A7A6C;padding-bottom:4px;
+.phero p{margin-top:26px;max-width:520px;font-size:.98rem;font-weight:300;line-height:1.9}
+
+/* ---------- work / phones ---------- */
+.work{padding:100px 0 140px}
+.work .wrap{position:relative}
+.work-head{text-align:center;margin-bottom:70px}
+.work-head .eyebrow{justify-content:center}
+.work-head .h-lg{margin-top:16px}
+.work-head p{margin:18px auto 0;max-width:480px;font-size:.95rem;font-weight:300}
+.phones{
+  display:flex;justify-content:center;align-items:center;gap:34px;
+}
+.phone{
+  position:relative;width:218px;flex:0 0 auto;
+  border-radius:40px;background:#0B0908;
+  border:1px solid rgba(250,247,243,.14);
+  box-shadow:0 40px 80px rgba(0,0,0,.55),inset 0 0 0 8px #0B0908,inset 0 0 0 9px rgba(250,247,243,.08);
+  padding:8px;
+}
+.phone-screen{
+  position:relative;aspect-ratio:9/19.5;border-radius:32px;overflow:hidden;
+  background:linear-gradient(160deg,#2B2A28 0%,#1D1C1A 55%,#151413 100%);
+}
+.phone-screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phone-ph{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;padding:20px;
+}
+.phone-ph img{width:44px;opacity:.55}
+.phone-ph span{
+  font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(250,247,243,.45);line-height:1.9;
+}
+.notch{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;
+  width:74px;height:22px;border-radius:14px;background:#0B0908;
+}
+.work-note{
+  margin-top:64px;text-align:center;
+  font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
 }
 
-/* ---------- package rows ---------- */
-.pk{padding:110px 0}
-.pk .wrap{display:grid;grid-template-columns:1fr 1.15fr;gap:70px;align-items:start}
-.pk-num{
-  font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--tan-deep);
-  display:inline-block;margin-bottom:18px;
-}
-.pk .script{font-size:.72rem;color:var(--tan-deep);display:block;margin-bottom:12px}
-.pk h2{margin-bottom:24px}
-.pk-desc{font-size:.98rem;font-weight:300;color:var(--soft);max-width:44ch;line-height:1.9}
-.pk-links{margin-top:34px;display:flex;gap:28px;flex-wrap:wrap;align-items:center}
-.pk-price{
-  margin-top:26px;font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#9A8C7A;
-}
-.pk-list-label{
-  font-size:.68rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#9A8C7A;
-  margin-bottom:14px;
-}
-.pk.dark .pk-list-label{color:rgba(250,248,244,.45)}
-.pk-list{list-style:none;border-top:1px solid var(--line)}
-.pk-list li{
-  position:relative;display:block;
-  padding:19px 4px 19px 30px;border-bottom:1px solid var(--line);
-  font-size:.95rem;font-weight:300;line-height:1.65;
-}
-.pk-list li::before{
-  content:'';position:absolute;left:4px;top:29px;width:8px;height:8px;border-radius:50%;background:var(--ink);
-}
-.pk-list li em{font-family:var(--serif);font-style:italic;color:var(--tan-deep)}
-.pk-list .aside{font-size:.84rem;color:var(--soft)}
-/* colour variants */
-.pk.white{background:var(--cream)}
-.pk.beige{background:var(--tan-soft);}
-.pk.dark{background:var(--ink);color:var(--cream)}
-.pk.dark .pk-desc{color:rgba(250,248,244,.68)}
-.pk.dark .pk-list{border-top-color:rgba(250,248,244,.14)}
-.pk.dark .pk-list li{border-bottom-color:rgba(250,248,244,.14)}
-.pk.dark .pk-list li::before{background:var(--tan)}
-.pk.dark .eyebrow{color:rgba(250,248,244,.6)}
-.pk.dark .text-link{color:var(--cream);border-bottom-color:var(--tan)}
-.pk.dark .script{color:var(--tan)}
-.pk.dark .pk-num{color:var(--tan)}
-.pk.dark .pk-price{color:rgba(250,248,244,.45)}
-.pk.dark .pk-list li em{color:var(--tan)}
-.pk-tagrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
-.pk-tag{
-  background:var(--ink);color:var(--cream);border-radius:var(--r-pill);
-  padding:7px 16px;font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
-}
-.pk.dark .pk-tag{background:var(--tan);color:var(--ink)}
-
-/* ---------- chooser strip ---------- */
+/* ---------- CTA strip ---------- */
 .choose{padding:120px 0;text-align:center}
-.choose .script{font-size:.76rem;color:var(--tan-deep);display:block;margin-bottom:16px}
+.choose .script{font-size:.76rem;display:block;margin-bottom:16px}
 .choose h2{max-width:22ch;margin:0 auto}
-.choose p{margin:26px auto 0;max-width:520px;color:var(--soft);font-size:.96rem;font-weight:300;line-height:1.9}
+.choose p{margin:26px auto 0;max-width:520px;font-size:.96rem;font-weight:300;line-height:1.9}
 .choose .text-link{display:inline-block;margin-top:34px}
 
 /* ---------- footer ---------- */
@@ -196,7 +176,8 @@ button{font-family:var(--sans);cursor:pointer}
 @media(max-width:900px){
   .hdr-nav{display:none}
   .burger{display:flex}
-  .pk .wrap{grid-template-columns:1fr;gap:40px}
+  .phones{flex-wrap:wrap;gap:26px}
+  .phone{width:200px}
 }
 @media(max-width:760px){
   html{font-size:14px}
@@ -206,9 +187,10 @@ button{font-family:var(--sans);cursor:pointer}
   .m-menu{top:72px}
   .hdr-logo img{height:34px}
   .phero{padding:140px 0 80px}
-  .pk{padding:76px 0}
-  .pk.beige{}
-
+  .work{padding:70px 0 96px}
+  .work-head{margin-bottom:48px}
+  .phones{gap:18px;flex-wrap:wrap}
+  .phone{width:calc(50% - 9px);max-width:190px}
   .choose{padding:84px 0}
   .foot{padding:64px 0 32px}
 }
@@ -219,7 +201,7 @@ button{font-family:var(--sans);cursor:pointer}
 }
 
 /* ============================================================
-   THEME: olive mist / warm sand / beach linen / teal pops
+   THEME: olive mist / warm sand / beach linen / ice pops
    ============================================================ */
 .phero{background:
   radial-gradient(1000px 600px at 85% 10%,rgba(215,203,189,.1),transparent 60%),
@@ -236,43 +218,20 @@ button{font-family:var(--sans);cursor:pointer}
 .foot-col h4{color:#E0F9FA}
 .eyebrow::before{background:#E0F9FA}
 
-.phero-note{color:#D7CBBD;border-bottom-color:#E0F9FA}
-.pk.white{background:#EBE4D9}
-.pk.beige{background:#AA9E90}
-.pk .script{color:#544C40}
-.pk.dark .script{color:#BCAE9C}
-.pk-num{color:#E0F9FA}
-.pk h2 .serif-i{color:#E0F9FA}
-.pk.dark{background:#4E4639}
-.pk.dark h2{color:#E9E2D6}
-.pk.dark h2 .serif-i{color:#E0F9FA}
-.pk.dark .pk-num,.pk.dark .script{color:#BCAE9C}
-.pk-tag{background:#E0F9FA;color:#2E3A3C}
-.pk.dark .pk-tag{background:#E0F9FA;color:#2E3A3C}
-.pk-desc{color:#5E564A}
-.pk.dark .pk-desc{color:rgba(215,203,189,.75)}
-.pk-list li::before{background:#645B4E}
-.pk.dark .pk-list li::before{background:#E0F9FA}
-.pk-list li em{color:#2E2925;font-weight:600}
-.pk.dark .pk-list li em{color:#F0EAE0;font-weight:600}
-.pk-list-label,.pk-price{color:#8A7E6E}
-.pk .text-link{border-bottom-color:#E0F9FA}
-.pk.dark .text-link{color:#E9E2D6;border-bottom-color:#E0F9FA}
-.pk.beige .pk-list{border-top-color:#8F8374}
-.pk.beige .pk-list li{border-bottom-color:#8F8374}
-.pk.beige .pk-desc{color:#4A443A}
-.pk.beige .pk-list-label,.pk.beige .pk-price{color:#645B4E}
+.work{background:#453E33}
+.work-head .eyebrow{color:#BCAE9C}
+.work-head .eyebrow::before{background:#E0F9FA}
+.work-head .h-lg{color:#E9E2D6}
+.work-head .h-lg .serif-i{color:#E0F9FA}
+.work-head p{color:rgba(215,203,189,.65)}
+.phone-ph span{color:rgba(215,203,189,.5)}
+.work-note{color:rgba(215,203,189,.4)}
+
 .choose{background:#DDD3C4}
 .choose .script{color:#544C40}
-.choose .h-lg .serif-i{color:#E0F9FA}
+.choose .h-lg .serif-i{color:#E0F9FA;text-shadow:0 1px 1px rgba(62,56,46,.3)}
 .choose p{color:#5E564A}
 .choose .text-link{border-bottom-color:#E0F9FA}
-
-
-/* legibility: soft shadow behind ice text on light backgrounds only */
-.pk.white .pk-num,.pk.beige .pk-num,
-.pk.white h2 .serif-i,.pk.beige h2 .serif-i,
-.choose .h-lg .serif-i{text-shadow:0 1px 1px rgba(62,56,46,.3);}
 </style>
 <noscript><style>.rv{opacity:1!important;transform:none!important}</style></noscript>
 </head>
@@ -287,8 +246,8 @@ button{font-family:var(--sans);cursor:pointer}
     </a>
     <nav class="hdr-nav">
       <a href="draft-2.html">Home</a>
-      <a class="on" href="packages-2.html">Packages</a>
-      <a href="work-2.html">Our Work</a>
+      <a href="packages-2.html">Packages</a>
+      <a class="on" href="work-2.html">Our Work</a>
       <a href="about-2.html">About</a>
       <a href="enquire-2.html">Enquire</a>
     </nav>
@@ -299,8 +258,8 @@ button{font-family:var(--sans);cursor:pointer}
 </header>
 <div class="m-menu" id="mMenu">
   <a href="draft-2.html">Home</a>
-  <a class="on" href="packages-2.html">Packages</a>
-  <a href="work-2.html">Our Work</a>
+  <a href="packages-2.html">Packages</a>
+  <a class="on" href="work-2.html">Our Work</a>
   <a href="about-2.html">About</a>
   <a href="enquire-2.html">Enquire</a>
 </div>
@@ -309,111 +268,79 @@ button{font-family:var(--sans);cursor:pointer}
 <section class="phero">
   <img class="phero-squig" src="assets/logo-cream.png" alt="" aria-hidden="true">
   <div class="wrap">
-    <span class="script rv in">pick your lane — or take both</span>
-    <h1 class="rv in d1">Packages, made<br>to <span class="serif-i">measure.</span></h1>
-    <p class="rv in d2">Content for your socials, ecommerce for your store, or the two together. Nothing here is off the shelf — you pick what goes into your package, and we tailor it to your business's needs, goals and budget.</p>
-    <span class="phero-note rv in d3">No surprise invoices — everything is scoped from your questionnaire first</span>
+    <span class="script rv in">our work</span>
+    <h1 class="rv in d1">Content,<br>in <span class="serif-i">motion.</span></h1>
+    <p class="rv in d2">Reels, product films and behind-the-scenes — shot by us, posted by brands like yours.</p>
   </div>
 </section>
 
-<!-- ================= 01 CONTENT ================= -->
-<section class="pk white" id="content">
+<!-- ================= PHONES ================= -->
+<section class="work" id="work">
   <div class="wrap">
-    <div class="rv rv-l">
-      <span class="pk-num">01</span>
-      <span class="script">for your socials</span>
-      <h2 class="h-lg">The Content<br><span class="serif-i">package</span></h2>
-      <div class="pk-tagrow" style="margin-top:22px">
-        <span class="pk-tag">Stories</span><span class="pk-tag">Carousels</span><span class="pk-tag">Posts</span><span class="pk-tag">Reels</span>
-      </div>
-      <p class="pk-desc">Your feed, planned and filled. We build the plan, meet up and shoot with your product, then hand everything over edited and ready to post — in your voice, on a schedule you can actually keep.</p>
-      <div class="pk-links">
-        <a class="text-link" href="enquire-2.html">Enquire about Content</a>
-      </div>
-      <p class="pk-price">Tailored to your needs, goals &amp; budget — scoped from your questionnaire</p>
+    <div class="work-head">
+      <p class="eyebrow rv">Straight off the camera roll</p>
+      <h2 class="h-lg rv d1">Made for how people<br><span class="serif-i">actually watch</span>.</h2>
     </div>
-    <div class="rv rv-r">
-    <p class="pk-list-label">What yours could include — you pick</p>
-    <ul class="pk-list">
-      <li>A tailored <em>content plan</em> built around your brand and goals</li>
-      <li>A monthly <em>content schedule</em> so you always know what's going out</li>
-      <li>Shoot days together — we meet up and create with your product, <em>with or without you</em> in front of the camera</li>
-      <li>Instagram stories that feel human, not templated</li>
-      <li>Carousels and feed posts, designed and captioned</li>
-      <li>Reels — filmed, edited and cut for how people actually watch</li>
-    </ul>
+    <div class="phones">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="phone-ph">
+            <img src="assets/logo-cream.png" alt="">
+            <span>Fresh reels<br>coming soon</span>
+          </div>
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="videos/reel-1.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="phone-ph">
+            <img src="assets/logo-cream.png" alt="">
+            <span>Fresh reels<br>coming soon</span>
+          </div>
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="videos/reel-2.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="phone-ph">
+            <img src="assets/logo-cream.png" alt="">
+            <span>Fresh reels<br>coming soon</span>
+          </div>
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="videos/reel-3.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="phone-ph">
+            <img src="assets/logo-cream.png" alt="">
+            <span>Fresh reels<br>coming soon</span>
+          </div>
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="videos/reel-4.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
     </div>
+    <p class="work-note rv">Shot in Ireland, for Irish brands</p>
   </div>
 </section>
 
-<!-- ================= 02 ECOMMERCE ================= -->
-<section class="pk beige" id="ecommerce">
-  <div class="wrap">
-    <div class="rv rv-l">
-      <span class="pk-num">02</span>
-      <span class="script">for your store</span>
-      <h2 class="h-lg">The Ecommerce<br><span class="serif-i">package</span></h2>
-      <div class="pk-tagrow" style="margin-top:22px">
-        <span class="pk-tag">Shopify</span><span class="pk-tag">SEO</span><span class="pk-tag">Brand</span>
-      </div>
-      <p class="pk-desc">The reason we exist. From a single product page that finally converts to a full website built from scratch — designed, written and set up to sell, with the brand pack to match.</p>
-      <div class="pk-links">
-        <a class="text-link" href="enquire-2.html">Enquire about Ecommerce</a>
-      </div>
-      <p class="pk-price">Tailored to your needs, goals &amp; budget — scoped from your questionnaire</p>
-    </div>
-    <div class="rv rv-r">
-    <p class="pk-list-label">What yours could include — you pick</p>
-    <ul class="pk-list">
-      <li>Product pages designed to <em>sell</em>, not just to list</li>
-      <li>Homepage design that makes the right first impression</li>
-      <li>Full website development on Shopify, end to end</li>
-      <li>SEO — so people searching for what you sell actually find you</li>
-      <li>Brand packs: logo, colours, type and templates that hold together</li>
-      <li class="aside">And if you fancy it, we'll quietly tuck a little AI into your day-to-day operations. Useful — never the headline.</li>
-    </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ================= 03 DUO ================= -->
-<section class="pk dark" id="duo">
-  <div class="wrap">
-    <div class="rv rv-l">
-      <span class="pk-num">03</span>
-      <span class="script">both lanes, one team</span>
-      <h2 class="h-lg">The Duo<br><span class="serif-i">package</span></h2>
-      <div class="pk-tagrow" style="margin-top:22px">
-        <span class="pk-tag">Content</span><span class="pk-tag">+</span><span class="pk-tag">Ecommerce</span>
-      </div>
-      <p class="pk-desc">The store and the socials, built together — so the homepage, the product pages and the reels finally tell the same story. One strategy, one team, one brand.</p>
-      <div class="pk-links">
-        <a class="text-link" href="enquire-2.html">Enquire about the Duo</a>
-      </div>
-      <p class="pk-price">Tailored to your needs, goals &amp; budget — scoped from your questionnaire</p>
-    </div>
-    <div class="rv rv-r">
-    <p class="pk-list-label">What yours could include — you pick</p>
-    <ul class="pk-list">
-      <li>Anything from Content and Ecommerce, <em>scoped together</em></li>
-      <li>One strategy across your store and your socials</li>
-      <li>A consistent brand from homepage to reels</li>
-      <li>Content shot around your products <em>as</em> the store is built — nothing out of step</li>
-      <li>Priority scheduling — one project, one timeline</li>
-    </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ================= 04 TAKEOVER (coming later — intentionally removed for launch) ================= -->
-
-<!-- ================= 04 TAKEOVER ================= -->
-<!-- ================= CHOOSER ================= -->
+<!-- ================= CTA ================= -->
 <section class="choose">
   <div class="wrap">
-    <span class="script rv">not sure which one?</span>
-    <h2 class="h-lg rv d1">Start with the questionnaire —<br><span class="serif-i">we'll tell you honestly.</span></h2>
-    <p class="rv d2">A couple of minutes about your business, and we'll come back with the package — and the size of it — that actually fits. If a smaller one does the job, that's the one we'll recommend.</p>
+    <span class="script rv">want yours up here?</span>
+    <h2 class="h-lg rv d1">Let's shoot <span class="serif-i">your</span> story.</h2>
+    <p class="rv d2">A couple of minutes about your business, and we'll come back with an honest plan for content that actually looks like you.</p>
     <a class="text-link rv d3" href="enquire-2.html">Start the questionnaire</a>
   </div>
 </section>
@@ -428,10 +355,10 @@ button{font-family:var(--sans);cursor:pointer}
         <p>Ecommerce &amp; content for small Irish businesses. Wicklow, est. 2025.</p>
       </div>
       <div class="foot-col">
-        <h4>Packages</h4>
-        <a href="#content">Content</a>
-        <a href="#ecommerce">Ecommerce</a>
-        <a href="#duo">The Duo</a>
+        <h4>Site</h4>
+        <a href="packages-2.html">Packages</a>
+        <a href="work-2.html">Our Work</a>
+        <a href="about-2.html">About</a>
       </div>
       <div class="foot-col">
         <h4>Say hello</h4>
@@ -479,6 +406,12 @@ button{font-family:var(--sans);cursor:pointer}
     });
   }, {threshold:.12, rootMargin:'0px 0px -6% 0px'});
   document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+  document.querySelectorAll('.phone-screen video').forEach(function(v){
+    var src = v.querySelector('source');
+    v.addEventListener('error', function(){ v.style.display = 'none'; }, true);
+    if(src) src.addEventListener('error', function(){ v.style.display = 'none'; });
+  });
 })();
 </script>
 </body>
