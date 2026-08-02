@@ -31,7 +31,7 @@ Decisions Elva has signed off. Do not change these without her say-so.
 - Prices exist in Elva's sales deck (Suede_Studio_Package_Slideshow.pptx) but stay OFF the website — reconfirmed Aug 2026.
 - Package lists are pick-and-choose menus ("What yours could include — you pick"),
   tailored to needs, goals & budget. No public prices.
-- AI is a throwaway aside only, never a headline.
+- AI: removed from the website entirely (Aug 2026 — the throwaway aside in the Ecommerce list is gone). If it ever returns, throwaway aside only, never a headline.
 - FAQ block on the homepage is hidden (kept in code).
 - Enquiry forms email hello@thesuedestudio.com with all fields + toggle selections.
 
