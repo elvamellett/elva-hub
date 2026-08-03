@@ -596,8 +596,9 @@ button{font-family:var(--sans);cursor:pointer}
   .form-card{padding:36px 26px 40px}
   .form-row{grid-template-columns:1fr}
   .foot{padding:64px 0 32px}
-  .foot-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px 28px}
-  .foot-brand{grid-column:1/-1}
+  .foot-grid{gap:44px 0}
+  .foot-brand,.foot-col:nth-child(3){flex:0 0 58%}
+  .foot-col:nth-child(2),.foot-col:nth-child(4){flex:0 0 38%}
 }
 
 /* ---------- reduced motion ---------- */
