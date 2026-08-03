@@ -5,7 +5,7 @@ Decisions Elva has signed off. Do not change these without her say-so.
 ## Palette
 - Blocks: Olive Mist #645B4E (heroes/dark blocks, deep variants #4E4639/#453E33/#3E382E),
   Warm Sand #AA9E90, Beach Linen #EBE4D9 / #F0EAE0. Backgrounds stay in this family.
-- Pop colour: ICE #E0F9FA — the one exact hex, but ONLY on dark backgrounds
+- Pop colour: POWDER BLUE #B8DFFF (was ice #B8DFFF until Aug 2026 — changed for vibrancy/readability) — the one exact hex, but ONLY on dark backgrounds
   (hero italics like "sorted."/"measure.", dark-row accents) and small accents
   (tag pills, link underlines, marquee dots, eyebrow dashes, footer headings).
 - Big display italics on LIGHT/SAND backgrounds are deep olive #645B4E, no shadow
