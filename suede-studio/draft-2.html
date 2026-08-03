@@ -164,7 +164,7 @@ button{font-family:var(--sans);cursor:pointer}
   display:flex;flex-direction:column;justify-content:flex-end;
   overflow:hidden;
 }
-.hero-main{position:relative;overflow:hidden}
+.hero-main{position:relative;overflow:hidden;min-height:676px;display:flex;align-items:center}
 .hero-squig{
   position:absolute;right:-4%;top:-12%;height:130%;width:auto;opacity:.14;
   pointer-events:none;
@@ -172,7 +172,7 @@ button{font-family:var(--sans);cursor:pointer}
 .hero-body{
   position:relative;z-index:2;
   max-width:1200px;margin:0 auto;width:100%;
-  padding:190px 32px 110px;
+  padding:84px 32px 40px;
   flex:1;display:flex;flex-direction:column;justify-content:center;
 }
 .hero-eyebrow{
@@ -572,7 +572,8 @@ button{font-family:var(--sans);cursor:pointer}
   .hdr-in{height:72px;padding:0 22px}
   .m-menu{top:72px}
   .hdr-logo img{height:34px}
-  .hero-body{padding:140px 22px 80px}
+  .hero-body{padding:72px 22px 32px}
+  .hero-main{min-height:560px}
   .hero-squig{top:72px;height:calc(100% - 72px)}
   .hero-sub{font-size:.95rem}
   .marq-card{padding:13px 20px}

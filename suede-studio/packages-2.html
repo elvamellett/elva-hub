@@ -105,9 +105,10 @@ button{font-family:var(--sans);cursor:pointer}
   background:
     radial-gradient(1000px 600px at 85% 10%,rgba(250,247,243,.32),transparent 60%),
     linear-gradient(150deg,#D3C9BA 0%,#C5BAA9 55%,#B4A896 100%);
-  padding:190px 0 110px;
+  padding:84px 0 40px;min-height:676px;display:flex;align-items:center;
 }
 .phero-squig{position:absolute;right:-4%;top:-12%;height:130%;width:auto;opacity:.14;pointer-events:none}
+.phero .wrap{width:100%}
 .phero .script{font-size:.76rem;color:#6E5B44;display:block;margin-bottom:18px}
 .phero h1{
   font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.045em;
@@ -210,7 +211,8 @@ button{font-family:var(--sans);cursor:pointer}
   .hdr-in{height:72px;padding:0 22px}
   .m-menu{top:72px}
   .hdr-logo img{height:34px}
-  .phero{padding:140px 0 80px}
+  .phero{padding:72px 0 32px;min-height:560px}
+  .phero-squig{top:72px;height:calc(100% - 72px)}
   .pk{padding:76px 0}
   .pk.beige{}
 

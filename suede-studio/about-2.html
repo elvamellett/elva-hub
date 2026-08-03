@@ -102,9 +102,10 @@ button{font-family:var(--sans);cursor:pointer}
 /* ---------- page hero ---------- */
 .phero{
   position:relative;overflow:hidden;
-  padding:270px 0 210px;
+  padding:84px 0 40px;min-height:676px;display:flex;align-items:center;
 }
 .phero-squig{position:absolute;right:-4%;top:-12%;height:130%;width:auto;opacity:.14;pointer-events:none}
+.phero .wrap{width:100%}
 .phero .script{font-size:.76rem;display:block;margin-bottom:18px}
 .phero h1{
   font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.045em;
@@ -179,7 +180,8 @@ button{font-family:var(--sans);cursor:pointer}
   .hdr-in{height:72px;padding:0 22px}
   .m-menu{top:72px}
   .hdr-logo img{height:34px}
-  .phero{padding:170px 0 120px}
+  .phero{padding:72px 0 32px;min-height:560px}
+  .phero-squig{top:72px;height:calc(100% - 72px)}
   .studio{padding:76px 0}
   .team{padding:76px 0 90px}
   .choose{padding:84px 0}
