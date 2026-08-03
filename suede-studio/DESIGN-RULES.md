@@ -5,11 +5,12 @@ Decisions Elva has signed off. Do not change these without her say-so.
 ## Palette
 - Blocks: Olive Mist #645B4E (heroes/dark blocks, deep variants #4E4639/#453E33/#3E382E),
   Warm Sand #AA9E90, Beach Linen #EBE4D9 / #F0EAE0. Backgrounds stay in this family.
-- Pop colour: ICE #E0F9FA — the one exact hex everywhere a pop appears
-  (big display italics like "package"/"measure"/"beautifully", tag pills, link
-  underlines, marquee dots, footer headings).
-- Legibility: ice text sitting on light backgrounds gets the "whisper" shadow only:
-  text-shadow: 0 1px 1px rgba(62,56,46,.3). Nothing heavier. No shadow on dark blocks.
+- Pop colour: ICE #E0F9FA — the one exact hex, but ONLY on dark backgrounds
+  (hero italics like "sorted."/"measure.", dark-row accents) and small accents
+  (tag pills, link underlines, marquee dots, eyebrow dashes, footer headings).
+- Big display italics on LIGHT/SAND backgrounds are deep olive #645B4E, no shadow
+  (changed Aug 2026 after reader feedback — ice was too hard to read on cream).
+  The whisper-shadow rule is retired.
 
 ## No blue in explanatory copy
 - Inside bullet points / list copy explaining what's in a package, keywords are
