@@ -165,8 +165,8 @@ button{font-family:var(--sans);cursor:pointer}
   overflow:hidden;
 }
 .hero-squig{
-  position:absolute;right:-4%;top:8%;height:74vh;width:auto;opacity:.14;
-  pointer-events:none;will-change:transform;
+  position:absolute;right:-4%;top:-12%;height:130%;width:auto;opacity:.14;
+  pointer-events:none;
 }
 .hero-body{
   position:relative;z-index:2;
@@ -573,7 +573,6 @@ button{font-family:var(--sans);cursor:pointer}
   .hdr-logo img{height:34px}
   .hero-body{padding:140px 22px 50px}
   .hero{min-height:92vh}
-  .hero-squig{height:44vh;opacity:.1;top:14%}
   .hero-sub{font-size:.95rem}
   .marq-card{padding:13px 20px}
   .intro{padding:90px 0 84px}
@@ -1151,9 +1150,6 @@ button{font-family:var(--sans);cursor:pointer}
     ticking = true;
     requestAnimationFrame(function(){
       setHeader();
-      if(!reduced && squig){
-        squig.style.transform = 'rotate(' + (window.scrollY * 0.02) + 'deg)';
-      }
       ticking = false;
     });
   }
