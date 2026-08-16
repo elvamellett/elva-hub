@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — The Suede Studio</title>
+<meta name="description" content="Meet Elva and Laura — the two friends behind The Suede Studio, a Wicklow ecommerce & content studio for small Irish businesses.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THE SUEDE STUDIO — ABOUT / MEET THE TEAM (draft 2 design system)
+   ============================================================ */
+:root{
+  --cream:#FAF8F4;
+  --cream-2:#F1EDE5;
+  --ink:#161310;
+  --ink-soft:#242019;
+  --tan:#D9CFBF;
+  --tan-deep:#84705C;
+  --tan-soft:#EAE4D8;
+  --soft:#6E6257;
+  --line:#E8E0D5;
+  --sans:'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --r-card:26px;
+  --r-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);background:var(--cream);color:var(--ink);
+  font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--sans);cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+::selection{background:var(--tan);color:var(--ink)}
+.serif-i{font-family:var(--serif);font-style:italic;font-weight:400;text-transform:none;letter-spacing:0}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:.72rem;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--soft);
+}
+.eyebrow::before{content:'';width:26px;height:1.5px;background:var(--tan-deep);display:inline-block}
+.h-lg{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.05em;
+  font-size:clamp(1.9rem,3.6vw,3rem);line-height:1.18;
+}
+.script{font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.32em}
+.text-link{
+  font-size:.82rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:inherit;border-bottom:1.5px solid var(--tan-deep);padding-bottom:3px;
+  transition:opacity .2s ease;
+}
+.text-link:hover{opacity:.65}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.22,.8,.3,1),transform .8s cubic-bezier(.22,.8,.3,1)}
+.rv.rv-l{transform:translateX(-36px)}
+.rv.rv-r{transform:translateX(36px)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
+
+/* ---------- header ---------- */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;transition:background .35s ease,box-shadow .35s ease}
+.hdr-in{
+  max-width:1280px;margin:0 auto;padding:0 32px;height:84px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.hdr.scrolled,.hdr.menu-open{
+  background:rgba(250,248,244,.9);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 1px 0 rgba(22,19,16,.08),0 10px 30px rgba(22,19,16,.06);
+}
+.hdr-logo{display:flex;align-items:center;gap:14px}
+.hdr-logo img{height:40px;width:auto}
+.hdr-wm{font-weight:800;text-transform:uppercase;letter-spacing:.22em;font-size:.86rem;color:var(--ink);white-space:nowrap}
+.hdr-nav{display:flex;align-items:center;gap:34px}
+.hdr-nav a{font-size:.74rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);transition:opacity .2s ease}
+.hdr-nav a:hover{opacity:.6}
+.hdr-nav a.on{border-bottom:1.5px solid currentColor;padding-bottom:3px}
+.m-menu a.on{font-weight:800}
+.burger{display:none;background:none;border:none;width:40px;height:40px;flex-direction:column;justify-content:center;align-items:center;gap:6px}
+.burger span{display:block;width:24px;height:2px;background:var(--ink);transition:all .3s ease}
+.hdr.menu-open .burger span:nth-child(1){transform:translateY(8px) rotate(45deg)}
+.hdr.menu-open .burger span:nth-child(2){opacity:0}
+.hdr.menu-open .burger span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
+.m-menu{
+  display:none;position:fixed;top:84px;left:0;right:0;z-index:99;
+  background:rgba(250,248,244,.96);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);padding:14px 32px 30px;
+}
+.m-menu.open{display:block}
+.m-menu a{
+  display:block;padding:14px 0;border-bottom:1px solid var(--line);
+  font-size:.8rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);
+}
+
+/* ---------- page hero ---------- */
+.phero{
+  position:relative;overflow:hidden;
+  padding:84px 0 40px;min-height:676px;display:flex;align-items:center;
+}
+.phero-squig{position:absolute;right:-4%;top:-12%;height:130%;width:auto;opacity:.14;pointer-events:none}
+.phero .wrap{width:100%}
+.phero .script{font-size:.76rem;display:block;margin-bottom:18px}
+.phero h1{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.045em;
+  font-size:clamp(2.1rem,4.8vw,3.9rem);line-height:1.12;max-width:18ch;
+}
+.phero p{margin-top:26px;max-width:520px;font-size:1.1rem;font-weight:400;line-height:1.8}
+
+/* ---------- studio intro (photo + statement) ---------- */
+.studio{padding:110px 0}
+.studio .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:70px;align-items:center}
+.studio-img{border-radius:var(--r-card);overflow:hidden;box-shadow:0 30px 70px rgba(40,35,28,.28)}
+.studio-img img{width:100%;height:100%;object-fit:cover}
+.studio .script{font-size:.72rem;display:block;margin-bottom:14px}
+.studio h2{margin-bottom:22px}
+.studio p{font-size:.98rem;font-weight:300;line-height:1.9;max-width:46ch}
+.studio p + p{margin-top:18px}
+
+/* ---------- team cards ---------- */
+.team{padding:110px 0 130px}
+.team-head{text-align:center;margin-bottom:64px}
+.team-head .script{font-size:.72rem;display:block;margin-bottom:14px}
+.team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:44px;max-width:980px;margin:0 auto}
+.tm-card{
+  background:#F0EAE0;border-radius:var(--r-card);overflow:hidden;
+  box-shadow:0 24px 60px rgba(40,35,28,.22);
+}
+.tm-card figure{aspect-ratio:4/4.6;overflow:hidden}
+.tm-card figure img{width:100%;height:100%;object-fit:cover;object-position:center top}
+.tm-body{padding:30px 32px 36px}
+.tm-name{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.06em;
+  font-size:1.5rem;line-height:1.2;
+}
+.tm-role{
+  margin-top:8px;font-size:.66rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+}
+.tm-bio{margin-top:16px;font-size:.92rem;font-weight:300;line-height:1.85}
+
+/* ---------- CTA strip ---------- */
+.choose{padding:120px 0;text-align:center}
+.choose .script{font-size:.76rem;display:block;margin-bottom:16px}
+.choose h2{max-width:22ch;margin:0 auto}
+.choose p{margin:26px auto 0;max-width:520px;font-size:.96rem;font-weight:300;line-height:1.9}
+.choose .text-link{display:inline-block;margin-top:34px}
+
+/* ---------- footer ---------- */
+.foot{background:var(--ink);color:var(--cream);padding:80px 0 40px}
+.foot-grid{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;flex-wrap:wrap;margin-bottom:60px}
+.foot-brand img{height:64px;margin-bottom:18px}
+.foot-brand .wm{font-weight:800;text-transform:uppercase;letter-spacing:.24em;font-size:.9rem}
+.foot-brand p{margin-top:12px;font-size:.82rem;font-weight:300;color:rgba(250,248,244,.5);max-width:30ch}
+.foot-col h4{font-size:.66rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--tan);margin-bottom:18px}
+.foot-col a{display:block;padding:6px 0;font-size:.82rem;font-weight:400;color:rgba(250,248,244,.72);transition:color .2s ease}
+.foot-col a:hover{color:var(--cream)}
+.foot-base{
+  border-top:1px solid rgba(250,248,244,.12);padding-top:28px;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,248,244,.4);
+}
+
+/* ---------- responsive ---------- */
+@media(max-width:900px){
+  .hdr-nav{display:none}
+  .burger{display:flex}
+  .studio .wrap{grid-template-columns:1fr;gap:40px}
+  .team-grid{grid-template-columns:1fr;gap:34px;max-width:520px}
+}
+@media(max-width:760px){
+  html{font-size:14px}
+  body{font-size:14.5px}
+  .wrap{padding:0 22px}
+  .hdr-in{height:72px;padding:0 22px}
+  .m-menu{top:72px}
+  .hdr-logo img{height:34px}
+  .phero{padding:72px 0 32px;min-height:560px}
+  .phero-squig{height:95%;width:auto;max-width:none;top:auto;bottom:-14%;right:-16%}
+  .studio{padding:76px 0}
+  .team{padding:76px 0 90px}
+  .choose{padding:84px 0}
+  .foot{padding:64px 0 32px}
+  .foot-grid{gap:44px 0}
+  .foot-brand,.foot-col:nth-child(3){flex:0 0 58%}
+  .foot-col:nth-child(2),.foot-col:nth-child(4){flex:0 0 32%}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+
+/* ============================================================
+   THEME: olive mist / warm sand / beach linen / ice pops
+   ============================================================ */
+.phero{background:
+  radial-gradient(1000px 600px at 85% 10%,rgba(215,203,189,.1),transparent 60%),
+  linear-gradient(150deg,#746A5C 0%,#645B4E 55%,#4E4639 100%);}
+.phero .script{color:#BCAE9C}
+.phero h1{color:#E9E2D6}
+.phero h1 .serif-i{color:#B8DFFF}
+.phero p{color:#EDE6DA}
+.phero-squig{opacity:.1}
+.hdr:not(.scrolled):not(.menu-open) .hdr-wm{color:#E9E2D6}
+.hdr:not(.scrolled):not(.menu-open) .hdr-nav a{color:#E9E2D6}
+.hdr:not(.scrolled):not(.menu-open) .burger span{background:#E9E2D6}
+.foot{background:#3E382E}
+.foot-col h4{color:#B8DFFF}
+.eyebrow::before{background:#B8DFFF}
+
+.studio{background:#EBE4D9}
+.studio .script{color:#544C40}
+.studio h2 .serif-i{color:#645B4E}
+.studio p{color:#5E564A}
+.studio p em{font-style:normal;font-weight:600;color:#2E2925}
+
+.team{background:#AA9E90}
+.team-head .script{color:#544C40}
+.team-head .h-lg{color:#2E2925}
+.team-head .h-lg .serif-i{color:#645B4E}
+.tm-name{color:#2E2925}
+.tm-role{color:#645B4E}
+.tm-bio{color:#4A443A}
+
+.choose{background:#DDD3C4}
+.choose .script{color:#544C40}
+.choose h2{color:#2E2925}
+.choose .h-lg .serif-i{color:#645B4E}
+.choose p{color:#5E564A}
+.choose .text-link{color:#2E2925;border-bottom-color:#B8DFFF}
+</style>
+<noscript><style>.rv{opacity:1!important;transform:none!important}</style></noscript>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-J9FXCTRLRB"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-J9FXCTRLRB');</script>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="hdr" id="hdr">
+  <div class="hdr-in">
+    <a class="hdr-logo" href="draft-2.html" aria-label="The Suede Studio — home">
+      <img src="assets/logo-cream.png" alt="The Suede Studio squiggle logo" id="hdrLogo">
+      <span class="hdr-wm">The Suede Studio</span>
+    </a>
+    <nav class="hdr-nav">
+      <a href="draft-2.html">Home</a>
+      <a href="packages-2.html">Packages</a>
+      <a class="on" href="about-2.html">About</a>
+      <a href="enquire-2.html">Enquire</a>
+    </nav>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<div class="m-menu" id="mMenu">
+  <a href="draft-2.html">Home</a>
+  <a href="packages-2.html">Packages</a>
+  <a class="on" href="about-2.html">About</a>
+  <a href="enquire-2.html">Enquire</a>
+</div>
+
+<!-- ================= PAGE HERO ================= -->
+<section class="phero">
+  <img class="phero-squig" src="assets/logo-cream.png" alt="" aria-hidden="true">
+  <div class="wrap">
+    <span class="script rv in">two friends, one studio</span>
+    <h1 class="rv in d1">Meet <span class="serif-i">the team.</span></h1>
+    <p class="rv in d2">The Suede Studio is Elva and Laura — two friends from Wicklow who got tired of watching brilliant small businesses look ordinary online.</p>
+  </div>
+</section>
+
+<!-- ================= STUDIO INTRO ================= -->
+<section class="studio">
+  <div class="wrap">
+    <div class="studio-img rv rv-l">
+      <img src="assets/team.jpg" alt="Elva and Laura, founders of The Suede Studio">
+    </div>
+    <div class="rv rv-r">
+      <span class="script">the studio</span>
+      <h2 class="h-lg">Small team.<br><span class="serif-i">Big standards.</span></h2>
+      <p>One idea: your store and your content, made by the same people — so they actually match.</p>
+      <p>We answer our own phone, we shoot the content ourselves, and we build every store with our own hands. Small on purpose — it means your shop always has our full attention.</p>
+      <p>We're also the pairing that just makes sense. People treat ecommerce and content like two separate worlds — they're not. One brings people to your shop, the other makes the sale. We run both together, at pace, and we adapt as fast as the trends do.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TEAM CARDS ================= -->
+<section class="team">
+  <div class="wrap">
+    <div class="team-head">
+      <span class="script rv">say hello</span>
+      <h2 class="h-lg rv d1">The two of <span class="serif-i">us</span>.</h2>
+    </div>
+    <div class="team-grid">
+      <div class="tm-card rv rv-l">
+        <figure><img src="assets/elva.jpg" alt="Elva Mellett, co-founder of The Suede Studio"></figure>
+        <div class="tm-body">
+          <p class="tm-name">Elva</p>
+          <p class="tm-role">Co-founder</p>
+          <p class="tm-bio">One half of The Suede Studio — a coffee in one hand, a plan in the other.</p>
+          <p class="tm-bio">Elva's been in ecommerce for years, growing from running stores into operations, stock control and the clever AI bits — having studied Information &amp; Communication Studies with Economics at UCD. She knows the kind of website people actually enjoy shopping on, and she builds exactly that.</p>
+        </div>
+      </div>
+      <div class="tm-card rv rv-r">
+        <figure><img src="assets/laura.jpg" alt="Laura Callaghan, co-founder of The Suede Studio"></figure>
+        <div class="tm-body">
+          <p class="tm-name">Laura</p>
+          <p class="tm-role">Co-founder</p>
+          <p class="tm-bio">The other half — a camera in one hand, sharp taste in the other. Nothing leaves the studio until it looks the part.</p>
+          <p class="tm-bio">Laura's been creating content for years — starting in makeup and production, moving through fashion and ecommerce, and sharpening the craft at every step. She's the best trend radar in the room: she knows what people stop scrolling for, what they share and what they buy — and she makes content that does all three.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="choose">
+  <div class="wrap">
+    <span class="script rv">fancy a chat?</span>
+    <h2 class="h-lg rv d1">Come say <span class="serif-i">hello.</span></h2>
+    <p class="rv d2">Fill in the questionnaire, or just ring us — either way you'll be talking to Elva or Laura.</p>
+    <a class="text-link rv d3" href="enquire-2.html">Start the questionnaire</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="assets/logo-cream.png" alt="The Suede Studio logo">
+        <p class="wm">The Suede Studio</p>
+        <p>Ecommerce &amp; content for small Irish businesses. Wicklow, est. 2025.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Site</h4>
+        <a href="packages-2.html">Packages</a>
+        <a href="about-2.html">About</a>
+      </div>
+      <div class="foot-col">
+        <h4>Say hello</h4>
+        <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a>
+        <a href="tel:+353830499445">+353 83 049 9445</a>
+        <a href="enquire-2.html">Enquiry form</a>
+      </div>
+      <div class="foot-col">
+        <h4>Follow</h4>
+        <a href="https://www.instagram.com/the.suede.studio/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.tiktok.com/@the.suede.studio" target="_blank" rel="noopener">TikTok</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 The Suede Studio</span>
+      <span>Made with care in Wicklow</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var hdr = document.getElementById('hdr');
+  var hdrLogo = document.getElementById('hdrLogo');
+  function setHeader(){
+    var sc = window.scrollY > 40;
+    hdr.classList.toggle('scrolled', sc);
+    hdrLogo.src = (sc || hdr.classList.contains('menu-open')) ? 'assets/logo-black.png' : 'assets/logo-cream.png';
+  }
+  window.addEventListener('scroll', setHeader, {passive:true});
+  setHeader();
+
+  var burger = document.getElementById('burger');
+  var mMenu = document.getElementById('mMenu');
+  burger.addEventListener('click', function(){
+    var open = mMenu.classList.toggle('open');
+    hdr.classList.toggle('menu-open', open);
+    burger.setAttribute('aria-expanded', open);
+    setHeader();
+  });
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:.12, rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+})();
+</script>
+</body>
+</html>
