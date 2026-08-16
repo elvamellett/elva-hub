@@ -118,6 +118,15 @@ section{padding-block:clamp(52px,8vw,110px)}
 .hero__frame{position:absolute;inset:0;will-change:transform}
 .hero__img{position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;object-position:center center}
+/* A second, smaller ombre at the top. The handover asks for one ombre only, but
+   the header sits directly on the photograph and white-on-bright-sky measures
+   about 1.6:1 — unreadable. This carries the logo and nav over any image while
+   leaving the building and the sky below it untouched. */
+.hero__cap{position:absolute;left:0;right:0;top:0;height:20%;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(42,49,35,.66),
+    rgba(42,49,35,.34) 46%,
+    rgba(42,49,35,0))}
 .hero__ombre{position:absolute;left:0;right:0;bottom:0;height:34%;z-index:1;
   background:linear-gradient(180deg,
     rgba(69,62,51,0),
@@ -627,6 +636,7 @@ function viewHome(){ return `
 <section class="hero" aria-label="Rego Property">
   <div class="hero__frame"><img class="hero__img" src="${HERO_IMG}"
     alt="Kings House, Hove seafront" fetchpriority="high" decoding="async"></div>
+  <div class="hero__cap" aria-hidden="true"></div>
   <div class="hero__ombre" aria-hidden="true"></div>
 
   <div class="hero__body">

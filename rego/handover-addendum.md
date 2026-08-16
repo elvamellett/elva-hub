@@ -127,7 +127,9 @@ Built to `hero-handover.html`, **approved option 3a**. The photographic hero rep
 
 **Height is the load-bearing decision.** `min(calc(100vw / 1.5), 960px)`, floor 600px — derived from the image's 3:2 ratio, never from `vh`. That is what keeps the whole building and the tops of the beach huts in frame. It is taller than the cover that was cut back earlier in the project; that was accepted deliberately, because height and the no-crop guarantee are the same decision. Changing one changes the other.
 
-A single ombre rises from the bottom edge and dies out at 34%. There is no overall scrim, no buttons, no fact strip, no scroll cue.
+A single ombre rises from the bottom edge and dies out at 34%. No buttons, no fact strip, no scroll cue.
+
+**A second, smaller ombre was added at the top**, against the handover's "one ombre" instruction. The header sits directly on the photograph, and chalk on that bright sky measured **1.6:1** — effectively invisible. The top gradient is 20% tall and fades to nothing well before the building, and it lifts the header band to **4.55:1 at the worst pixel and 7.5:1 on average**, measured by sampling the composited image behind it rather than by eye.
 
 ### Two tensions in the handover, resolved
 
