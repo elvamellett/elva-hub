@@ -92,19 +92,37 @@ Details worth knowing before editing it:
 
 - **Draft schemes** have no hero image, so their preview falls back to the same lettered panel the grid uses.
 - **Touch devices** get an inline thumbnail per row instead — there is no cursor to follow. The CSS and the JS are gated off the *same* media query via a `nopeek` class on `<body>`, so the two cannot disagree.
-- **Keyboard** focus anchors the preview to the row's right edge rather than to a cursor that is not there.
+- **Keyboard** focus pins the preview to the row's right edge rather than to a cursor that is not there. The loop re-reads the row's position every frame, because `focus()` can trigger a smooth scroll and a one-off measurement lands where the row *used to be*.
 - **Reduced motion** drops the easing and snaps the preview into place.
 - **The lifecycle trap:** `route()` replaces `main.innerHTML` on every navigation. All handlers are therefore bound as properties (`list.onpointermove = …`), never `addEventListener`, so they die with the node — and the animation loop checks `document.body.contains(list)` before scheduling another frame. If you add interactions here, follow that pattern or you will leak a loop per navigation.
 
 ---
 
-## 5. Home page and the top of Developments
+## 5. The split block, and where it now runs
 
-Both now open with **alternating full-height 50/50 split blocks** — image bleeding to one edge, copy panel opposite, sides flipping down the page — with an eyebrow, a Bodoni heading, one paragraph, a gold-underlined link and a pair of supporting thumbnails.
+The **alternating full-height 50/50 split block** is the site's core rhythm — image bleeding to one edge, copy panel opposite, sides flipping down the page, with an eyebrow, a Bodoni heading, prose and a gold-underlined link.
 
-On the home page these replace the three-card "Recent projects" grid, one block per populated scheme. On the developments page a single block leads the page above the filters and the index.
+It is a single `duo()` function, so every page shares one implementation:
 
-The supporting thumbnails are pulled automatically from each scheme's gallery, then its section and intro images, skipping the hero. A scheme with fewer than two spare images simply renders fewer — no placeholder padding.
+| Page | Where it runs |
+|---|---|
+| Home | One block per populated scheme, replacing the three-card "Recent projects" grid |
+| Developments | The featured scheme leads the page, above the filters and the index |
+| Scheme detail | Intro, the accommodation schedule (when it has an image), location, brochures |
+| About | One block per director — portrait one side, bio and email the other |
+| Contact | Address and both directors against the Ship Street signage photograph |
+
+Blocks alternate off **one running counter per page**, so whatever mix of blocks a scheme has, the left/right rhythm never breaks. On the detail pages, non-split sections (video, gallery) do not consume a side.
+
+A table block with no image stays a conventional section rather than becoming a half-empty split. On the home page the supporting thumbnails are pulled automatically from each scheme's gallery, then its section and intro images, skipping the hero; a scheme with fewer than two spare images renders fewer rather than padding with placeholders.
+
+### Other page changes
+
+- **Scheme detail** now ends on a four-up "Other projects" grid rather than a lone button, so the portfolio stays one click away. Draft pages do the same.
+- **Gallery images** now carry real alt text (`"Kings House, image 3"`) and the lightbox buttons announce "Open image 3 of 25". This was empty on the live site and flagged in §10 of the handover — it is no longer blank, though per-image descriptive alt still needs writing once the real photography is in.
+- **The 404 page** was a bare "Not found" heading; it now explains itself and routes to the portfolio.
+- **The enquiry form** is a real `<form>` with submit handling, required fields, focus moved to the first invalid field, an email sanity check, and a `role="status"` message so screen readers hear the result. It still hands off to `mailto:` — wiring a real handler and adding the privacy notice remains outstanding.
+- **About** dropped the two-up grid that showed the same placeholder portrait twice; alternating blocks make the missing headshots obvious instead of disguising them.
 
 ---
 
@@ -143,6 +161,8 @@ Switching the whole site to Direction B is a seven-line change to the `:root` bl
 
 ## 9. Verified
 
-Checked in Chromium at 1440px and 390px: four-column grid and its breakpoints; list view across all seventeen rows; cursor-follow preview tracking, easing and swapping image per row; Draft rows falling back to the placeholder; keyboard focus anchoring; touch showing thumbnails with the preview disabled; reduced-motion snapping; the animation loop stopping after navigation (three round trips, no leak, no console errors); and the pitch page switching A ↔ B with every colour, swatch, hex and ratio updating and the gold staying identical.
+Checked in Chromium at 1440px and 390px: four-column grid and its breakpoints; list view across all seventeen rows; cursor-follow preview tracking, easing and swapping image per row; Draft rows falling back to the placeholder; keyboard focus pinning to the row within a pixel; touch showing thumbnails with the preview disabled; reduced-motion snapping exactly rather than trailing; the animation loop stopping after navigation (three round trips, no leak, no console errors); and the pitch page switching A ↔ B with every colour, swatch, hex and ratio updating and the gold staying identical.
+
+Also checked across every page: split-block alternation holds (`LRL` on home and on both fully-populated scheme pages, `LR` on About); no split block ever renders an empty image half; the gallery lightbox still opens, counts 1/25, takes arrow keys and closes on Escape; form validation moves focus to the first invalid field; Draft and 404 pages render their fallbacks; and mobile stacks image-above-text with no horizontal overflow.
 
 Not verifiable here: the hot-linked client imagery, which the sandbox blocks. Check the pages once on a normal connection before the meeting.

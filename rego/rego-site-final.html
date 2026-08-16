@@ -228,7 +228,6 @@ body.nopeek .row:hover,body.nopeek .row:focus-visible{padding-left:2px}
   padding:15px 27px;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;
   transition:background .28s,color .28s}
 .btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.maplink{font-family:var(--label);display:inline-block;margin-top:20px;font-size:12px;letter-spacing:.15em;text-transform:uppercase;font-weight:500}
 
 /* ============ LIGHTBOX ============ */
 .lb{position:fixed;inset:0;z-index:120;background:rgba(25,24,20,.96);display:none;place-items:center;
@@ -240,8 +239,7 @@ body.nopeek .row:hover,body.nopeek .row:focus-visible{padding-left:2px}
 #lbC{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.18em}
 
 /* ============ ABOUT / CONTACT ============ */
-.bios{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,72px)}
-.bio img{aspect-ratio:4/3;object-fit:cover;width:100%;margin-bottom:22px;background:var(--stone)}
+.dirlist{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,40px);margin-top:8px}
 .quote{background:var(--stone);text-align:center}
 .quote .d3{max-width:23ch;margin:0 auto;text-wrap:balance}
 .form{display:grid;gap:15px;max-width:520px}
@@ -266,7 +264,7 @@ body.nopeek .row:hover,body.nopeek .row:focus-visible{padding-left:2px}
 @media(max-width:1200px){ .grid{grid-template-columns:repeat(3,1fr)} }
 @media(max-width:860px){
   .grid{grid-template-columns:repeat(2,1fr)}
-  .split,.bios,.ftr__grid{grid-template-columns:1fr}
+  .split,.ftr__grid,.dirlist{grid-template-columns:1fr}
   .gal{grid-template-columns:repeat(3,1fr)}
   .tags span{flex:1 1 50%;border-left:0}
   .row{grid-template-columns:minmax(0,1fr) auto;gap:5px 16px}
@@ -510,19 +508,26 @@ function thumbsOf(d){
   return pool.filter(Boolean).filter(src=>src!==d.hero).slice(0,2);
 }
 
-/* Full-height 50/50 block. `i` drives which side the image sits on. */
+/* Generic full-height 50/50 block — the page's core rhythm. `i` decides which
+   side the image sits on, so consecutive blocks alternate. Used by the home
+   page, the developments lead, the scheme detail pages, About and Contact. */
+function duo(i, imgHtml, bodyHtml, cls){
+  return `<section class="duo${cls?' '+cls:''}" data-flip="${i%2}">
+    <div class="duo__img">${imgHtml}</div>
+    <div class="duo__txt"><div class="duo__in fade">${bodyHtml}</div></div>
+  </section>`;
+}
+const duoImg = (src,alt) => `<img src="${src}" alt="${esc(alt||'')}" loading="lazy">`;
+
+/* A scheme, as a split block. */
 function splitBlock(d,i){
   const th = thumbsOf(d);
-  return `<section class="duo" data-flip="${i%2}">
-    <div class="duo__img"><img src="${d.hero}" alt="${esc(d.name)}, ${esc(d.place)}" loading="lazy"></div>
-    <div class="duo__txt"><div class="duo__in fade">
-      <p class="cap" style="opacity:.55">${esc(d.status)} · ${esc(d.place)}</p>
-      <h2 class="d2" style="margin:16px 0 22px">${esc(d.name)}</h2>
-      <div class="prose"><p>${esc(d.intro[0])}</p></div>
-      <p style="margin:22px 0 0"><a class="tell" href="#/developments/${d.slug}">See the development</a></p>
-      ${th.length?`<div class="duo__th">${th.map(t=>`<img src="${t}" alt="" loading="lazy">`).join('')}</div>`:''}
-    </div></div>
-  </section>`;
+  return duo(i, duoImg(d.hero, `${d.name}, ${d.place}`), `
+    <p class="cap" style="opacity:.55">${esc(d.status)} · ${esc(d.place)}</p>
+    <h2 class="d2" style="margin:16px 0 22px">${esc(d.name)}</h2>
+    <div class="prose"><p>${esc(d.intro[0])}</p></div>
+    <p style="margin:22px 0 0"><a class="tell" href="#/developments/${d.slug}">See the development</a></p>
+    ${th.length?`<div class="duo__th">${th.map(t=>`<img src="${t}" alt="" loading="lazy">`).join('')}</div>`:''}`);
 }
 
 /* ---------- PAGE 1 · HOME ---------- */
@@ -635,28 +640,40 @@ function viewIndex(){
 }
 
 /* ---------- PAGE 2b · DEVELOPMENT DETAIL ---------- */
-function block(s){
+/* `n` is the running block index for the page, so tables land on the opposite
+   side to the intro block above them and the alternation keeps going. */
+function block(s,n,d){
   if(s.type==='table'){
     const t = rows => `<table class="spec"><tbody>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>`;
-    return `<section class="wrap"><div class="split">
-      <div>${s.heading?`<h2 class="d4">${esc(s.heading)}</h2>`:'<p class="cap" style="opacity:.55">Accommodation</p>'}
-        ${s.image?`<img class="fade" style="margin-top:24px" src="${s.image}" alt="" loading="lazy">`:''}</div>
-      <div class="fade"><p>${esc(s.intro)}</p>${t(s.rows)}
-        ${s.intro2?`<p style="margin-top:32px">${esc(s.intro2)}</p>${t(s.rows2)}`:''}</div>
-    </div></section>`;
+    const body = `
+      <p class="cap" style="opacity:.55">Accommodation</p>
+      ${s.heading?`<h2 class="d3" style="margin:14px 0 24px">${esc(s.heading)}</h2>`:''}
+      <div class="prose"><p>${esc(s.intro)}</p></div>${t(s.rows)}
+      ${s.intro2?`<div class="prose" style="margin-top:34px"><p>${esc(s.intro2)}</p></div>${t(s.rows2)}`:''}`;
+    /* Without an image there is nothing to fill the other half, so it stays a
+       conventional section rather than a half-empty split. */
+    return s.image ? duo(n, duoImg(s.image, s.heading||'Accommodation'), body)
+      : `<section class="wrap"><div class="split"><div></div><div class="fade">${body}</div></div></section>`;
   }
   if(s.type==='video'){
     const p = s.embed
       ? `<iframe src="${s.embed}" title="${esc(s.heading||'Video')}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`
       : `<video src="${s.file}" controls playsinline preload="metadata"></video>`;
-    return `<section class="wrap"><h2 class="d3">${esc(s.heading||'')}</h2>
-      ${s.copy?`<div class="prose fade" style="margin-top:18px"><p>${esc(s.copy)}</p></div>`:''}
-      <div class="vid fade">${p}</div></section>`;
+    return `<section class="wrap"><div class="split">
+      <p class="cap fade" style="opacity:.55">Film</p>
+      <div><h2 class="d3 fade">${esc(s.heading||'')}</h2>
+        ${s.copy?`<div class="prose fade" style="margin-top:18px"><p>${esc(s.copy)}</p></div>`:''}</div>
+    </div><div class="vid fade">${p}</div></section>`;
   }
   if(s.type==='gallery'){
-    return `<section class="wrap"><h2 class="d3">${esc(s.heading||'Gallery')}</h2>
-      ${s.copy?`<div class="prose fade" style="margin-top:18px"><p>${esc(s.copy)}</p></div>`:''}
-      <div class="gal" data-gal>${s.images.map((im,i)=>`<button data-i="${i}" aria-label="Open image ${i+1}"><img src="${im}" alt="" loading="lazy"></button>`).join('')}</div>
+    const nm = d ? d.name : '';
+    return `<section class="wrap"><div class="split">
+      <p class="cap fade" style="opacity:.55">Gallery</p>
+      <div><h2 class="d3 fade">${esc(s.heading||'Gallery')}</h2>
+        ${s.copy?`<div class="prose fade" style="margin-top:18px"><p>${esc(s.copy)}</p></div>`:''}</div>
+    </div>
+      <div class="gal" data-gal>${s.images.map((im,i)=>
+        `<button data-i="${i}" aria-label="Open image ${i+1} of ${s.images.length}"><img src="${im}" alt="${esc(nm)}, image ${i+1}" loading="lazy"></button>`).join('')}</div>
     </section>`;
   }
   return '';
@@ -664,96 +681,152 @@ function block(s){
 
 function viewDetail(slug){
   const d = bySlug(slug);
-  if(!d) return `<section class="wrap pt"><h1 class="d2">Not found</h1>
-    <p style="margin-top:24px"><a class="btn" href="#/developments">All developments</a></p></section>`;
-  if(d.status==='Draft') return `<section class="wrap pt">
+  if(!d) return `<section class="wrap pt"><div class="split">
+    <p class="cap" style="opacity:.55">404</p>
+    <div><h1 class="d2">That page does not exist.</h1>
+      <div class="prose" style="margin-top:24px"><p>The link may be out of date. Everything Rego has built is in the portfolio.</p></div>
+      <p style="margin-top:28px"><a class="btn" href="#/developments">All developments</a></p></div>
+  </div></section>`;
+  if(d.status==='Draft') return `<section class="wrap pt"><div class="split">
     <p class="cap" style="opacity:.55">${esc(d.place)}</p>
-    <h1 class="d1" style="margin:12px 0 30px">${esc(d.name)}</h1>
-    <div class="prose"><p>This page is waiting on its content — copy, schedule, gallery, brochures and map link still to be ported from the current site.</p></div>
-    <p style="margin-top:30px"><a class="btn" href="#/developments">Other Projects</a></p></section>`;
+    <div>
+      <h1 class="d1">${esc(d.name)}</h1>
+      <div class="prose fade" style="margin-top:clamp(26px,3.4vw,42px)">
+        <p>This page is waiting on its content — copy, accommodation schedule, gallery,
+           brochures and map link still to come.</p>
+      </div>
+    </div>
+  </div></section>
+  <section class="wrap" style="padding-top:0">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:clamp(26px,4vw,44px)">
+      <h2 class="d3 fade">Other projects</h2>
+      <a class="cap fade" href="#/developments" style="text-decoration:none">All developments →</a>
+    </div>
+    <div class="grid">${DEVELOPMENTS.filter(o=>o.slug!==d.slug && o.status!=='Draft').slice(0,4).map(card).join('')}</div>
+  </section>`;
+
+  /* One running counter across every split block on the page keeps the
+     left/right alternation unbroken, whatever mix of blocks a scheme has. */
+  let n = 0;
+  const intro = duo(n++, duoImg(d.introImage||d.hero, `${d.name}, ${d.place}`), `
+    <p class="cap" style="opacity:.55">${esc(d.status)} · ${esc(d.place)}</p>
+    <h1 class="d2" style="margin:16px 0 24px">${esc(d.title)}</h1>
+    <div class="prose">${d.intro.map(p=>`<p>${esc(p)}</p>`).join('')}</div>`);
+
+  const sections = (d.sections||[]).map(s=>{
+    const html = block(s, n, d);
+    if(html.includes('class="duo')) n++;      /* only split blocks consume a side */
+    return html;
+  }).join('');
+
+  /* Reuse a gallery frame for the location block so it reads like the rest. */
+  const g = (d.sections||[]).find(s=>s.type==='gallery');
+  const locImg = g && g.images.length ? g.images[g.images.length-1] : d.hero;
+  const loc = duo(n++, duoImg(locImg, d.locTitle), `
+    <p class="cap" style="opacity:.55">Location</p>
+    <h2 class="d3" style="margin:14px 0 22px">${esc(d.locTitle)}</h2>
+    <div class="prose"><p>${esc(d.locCopy)}</p></div>
+    <p style="margin:22px 0 0"><a class="tell" href="${d.map}" target="_blank" rel="noopener">See on map</a></p>`);
+
+  const broch = d.brochures && d.brochures.length
+    ? duo(n++, duoImg(d.brochureImage||d.hero, `${d.name} brochure`), `
+        <p class="cap" style="opacity:.55">Brochures</p>
+        <h2 class="d3" style="margin:14px 0 20px">Download the brochures</h2>
+        <div class="prose"><p>${esc(d.brochureIntro)}</p></div>
+        <div class="dl">${d.brochures.map(([nm,href])=>
+          `<a href="${href}" target="_blank" rel="noopener" download>
+            <span class="cap">${esc(nm)}</span><span class="cap" style="opacity:.6">PDF ↓</span></a>`).join('')}</div>`)
+    : '';
+
+  /* End on the portfolio rather than a lone button. */
+  const others = DEVELOPMENTS.filter(o=>o.slug!==d.slug && o.status!=='Draft').slice(0,4);
 
   return `
-  <div class="dhero"><div class="par" data-par="0.14"><img src="${d.hero}" alt="${esc(d.name)}"></div></div>
-  <section class="wrap"><div class="split">
-    <div><p class="cap" style="opacity:.55">${esc(d.status)} · ${esc(d.place)}</p>
-      <h1 class="d2" style="margin-top:14px">${esc(d.title)}</h1></div>
-    <div class="prose fade">${d.intro.map(p=>`<p>${esc(p)}</p>`).join('')}</div>
-  </div>
-  ${d.introImage?`<img class="fade" style="margin-top:clamp(32px,5vw,60px)" src="${d.introImage}" alt="" loading="lazy">`:''}
-  </section>
-  ${(d.sections||[]).map(block).join('')}
+  <div class="dhero"><div class="par" data-par="0.14"><img src="${d.hero}" alt="${esc(d.name)}, ${esc(d.place)}"></div></div>
+  ${intro}
+  ${sections}
   <div class="wrap"><div class="tags fade">${d.tags.map(t=>`<span class="cap">${esc(t)}</span>`).join('')}</div></div>
-  <section class="wrap"><div class="split">
-    <h2 class="d3">${esc(d.locTitle)}</h2>
-    <div class="prose fade"><p>${esc(d.locCopy)}</p>
-      <a class="maplink" href="${d.map}" target="_blank" rel="noopener">See on Map →</a></div>
-  </div></section>
-  ${d.brochures && d.brochures.length ? `
-  <section class="wrap" style="border-top:1px solid rgba(0,0,0,.14)"><div class="split">
-    ${d.brochureImage?`<img class="fade" src="${d.brochureImage}" alt="Brochure" loading="lazy">`:'<div></div>'}
-    <div class="fade"><h2 class="d3">Download the Brochures</h2>
-      <p style="margin-top:16px">${esc(d.brochureIntro)}</p>
-      <div class="dl">${d.brochures.map(([nm,href])=>
-        `<a href="${href}" target="_blank" rel="noopener" download>
-          <span class="cap">${esc(nm)}</span><span class="cap" style="opacity:.6">PDF ↓</span></a>`).join('')}</div>
-    </div></div></section>`:''}
-  <section class="wrap" style="padding-top:0"><a class="btn" href="#/developments">Other Projects</a></section>`;
+  ${loc}
+  ${broch}
+  <section class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:clamp(26px,4vw,44px)">
+      <h2 class="d3 fade">Other projects</h2>
+      <a class="cap fade" href="#/developments" style="text-decoration:none">All developments →</a>
+    </div>
+    <div class="grid">${others.map(card).join('')}</div>
+  </section>`;
 }
 
 /* ---------- PAGE 3 · ABOUT ---------- */
+/* Both directors currently share one placeholder portrait — the real headshots
+   are on the outstanding list. Alternating blocks make that obvious rather than
+   hiding it behind a two-up grid of the same photograph. */
+const DIRECTORS = [
+  {name:'Ronan Mellett', role:'Director', img:PORTRAIT,
+   email:'ronan@regoproperty.com', tel:'07500 964177', telHref:'07500964177',
+   bio:['A qualified Certified Accountant (CPA), Ronan’s career commenced in 1997 in the Business and Corporate Banking sector in Ireland specializing in property lending and structured finance.',
+        'In 2005 Ronan moved into the property development sector and over the following 5 years delivered over 250 residential units and over 150,000 square feet of commercial space.',
+        'With the experience of both the Banking and Development sectors, Ronan joined forces with Alan in 2012 to push forward with their plans for Rego Property.']},
+  {name:'Alan Coleman', role:'Director', img:PORTRAIT,
+   email:'alan@regoproperty.com', tel:'07500 060904', telHref:'07500060904',
+   bio:['Qualifying as a chartered accountant in 2003, Alan commenced his career working in the Audit and Advisory section of Deloitte.',
+        'With a passion for property, Alan entered the property development sector in Dublin in 2008. Over a short 3-year period, he was involved in the construction of over 200 residential units and the management of a 100,000 square foot shopping centre.',
+        'With a passion to forge his own career in Property Development, Alan co-founded Rego Property in 2012 with a focus on the UK Residential property market.']}
+];
+
 function viewAbout(){ return `
 <section class="wrap pt"><div class="split">
-  <h1 class="d1">Rego Property</h1>
-  <div class="prose fade">
-    <p class="d4" style="font-family:var(--disp);margin-bottom:.7em">We currently have a wide range of active projects.</p>
-    <p>From master planning a complex regeneration site in the grounds of a listed hotel to more traditional housing developments on the South Coast, Rego Property will always bring their passion and expertise to every development opportunity. Our mission is simple, to continue to grow the business while developing complex projects with passionate stakeholders. We currently have an active pipeline of projects in the planning system and are always excited for what other opportunities may lie ahead.</p>
+  <p class="cap fade" style="opacity:.55">About</p>
+  <div>
+    <h1 class="d1 fade">Rego Property</h1>
+    <div class="prose fade" style="margin-top:clamp(26px,3.4vw,42px)">
+      <p class="d4" style="font-family:var(--disp);letter-spacing:var(--dispt);margin-bottom:.7em">We currently have a wide range of active projects.</p>
+      <p>From master planning a complex regeneration site in the grounds of a listed hotel to more traditional housing developments on the South Coast, Rego Property will always bring their passion and expertise to every development opportunity. Our mission is simple, to continue to grow the business while developing complex projects with passionate stakeholders. We currently have an active pipeline of projects in the planning system and are always excited for what other opportunities may lie ahead.</p>
+    </div>
   </div>
 </div></section>
-<section class="wrap" style="padding-top:0"><div class="bios">
-  <div class="bio fade"><img src="${PORTRAIT}" alt="Ronan Mellett" loading="lazy">
-    <h2 class="d4">Ronan Mellett</h2>
-    <div class="prose" style="margin-top:14px">
-      <p>A qualified Certified Accountant (CPA), Ronan’s career commenced in 1997 in the Business and Corporate Banking sector in Ireland specializing in property lending and structured finance.</p>
-      <p>In 2005 Ronan moved into the property development sector and over the following 5 years delivered over 250 residential units and over 150,000 square feet of commercial space.</p>
-      <p>With the experience of both the Banking and Development sectors, Ronan joined forces with Alan in 2012 to push forward with their plans for Rego Property.</p>
-    </div></div>
-  <div class="bio fade"><img src="${PORTRAIT}" alt="Alan Coleman" loading="lazy">
-    <h2 class="d4">Alan Coleman</h2>
-    <div class="prose" style="margin-top:14px">
-      <p>Qualifying as a chartered accountant in 2003, Alan commenced his career working in the Audit and Advisory section of Deloitte.</p>
-      <p>With a passion for property, Alan entered the property development sector in Dublin in 2008. Over a short 3-year period, he was involved in the construction of over 200 residential units and the management of a 100,000 square foot shopping centre.</p>
-      <p>With a passion to forge his own career in Property Development, Alan co-founded Rego Property in 2012 with a focus on the UK Residential property market.</p>
-    </div></div>
-</div></section>
+${DIRECTORS.map((p,i)=> duo(i, duoImg(p.img, p.name), `
+  <p class="cap" style="opacity:.55">${esc(p.role)}</p>
+  <h2 class="d2" style="margin:16px 0 22px">${esc(p.name)}</h2>
+  <div class="prose">${p.bio.map(t=>`<p>${esc(t)}</p>`).join('')}</div>
+  <p style="margin:24px 0 0"><a class="tell" href="mailto:${p.email}">${esc(p.email)}</a></p>`)).join('')}
 <section class="quote"><div class="wrap">
+  <p class="cap fade" style="opacity:.55;margin:0 0 26px">The founders</p>
   <h2 class="d3 fade">“As the scale and ambition of our company grows, we never forget the importance of working to the highest standards, creating places where people and business can thrive”</h2>
+  <p class="cap fade" style="margin-top:30px;opacity:.6">Ronan Mellett &amp; Alan Coleman</p>
 </div></section>`;
 }
 
 /* ---------- PAGE 4 · CONTACT ---------- */
+const SIGN = 'https://regoproperty.com/img/containers/assets/photos/rego_sign.jpg/3e86aadf12dc159325246f214cc56411.jpg';
+
 function viewContact(){ return `
-<section class="wrap pt">
+<section class="wrap pt" style="padding-bottom:clamp(30px,4vw,52px)"><div class="split">
   <p class="cap fade" style="opacity:.55">Get in touch</p>
-  <h1 class="d1 fade" style="margin:14px 0 clamp(30px,4.5vw,52px)">Contact</h1>
-  <img class="fade" src="https://regoproperty.com/img/containers/assets/photos/rego_sign.jpg/3e86aadf12dc159325246f214cc56411.jpg" alt="Rego Property signage" loading="lazy">
-</section>
-<section class="wrap" style="padding-top:0"><div class="split">
+  <h1 class="d1 fade" style="margin:0">Contact</h1>
+</div></section>
+${duo(0, duoImg(SIGN, 'Rego Property signage, 8-9 Ship Street, Brighton'), `
+  <p class="cap" style="opacity:.55">Rego Property</p>
+  <h2 class="d3" style="margin:14px 0 24px">8-9 Ship Street<br>Brighton BN1 1AD</h2>
+  <div class="dirlist">
+    ${DIRECTORS.map(p=>`<div>
+      <p class="cap" style="opacity:.55;margin:0 0 10px">${esc(p.role)}</p>
+      <p style="margin:0">${esc(p.name)}<br>
+        <a href="mailto:${p.email}">${esc(p.email)}</a><br>
+        <a href="tel:${p.telHref}">${esc(p.tel)}</a></p>
+    </div>`).join('')}
+  </div>`)}
+<section class="wrap"><div class="split">
+  <p class="cap fade" style="opacity:.55">Enquiries</p>
   <div class="fade">
-    <p class="cap" style="opacity:.55;margin-bottom:12px">Rego Property</p>
-    <p style="margin:0 0 28px">8-9 Ship Street<br>Brighton<br>BN1 1AD</p>
-    <p class="cap" style="opacity:.55;margin-bottom:12px">Directors</p>
-    <p style="margin:0 0 22px">Ronan Mellett<br><a href="mailto:ronan@regoproperty.com">ronan@regoproperty.com</a><br>Tel: <a href="tel:07500964177">07500 964177</a></p>
-    <p style="margin:0">Alan Coleman<br><a href="mailto:alan@regoproperty.com">alan@regoproperty.com</a><br>Tel: <a href="tel:07500060904">07500 060904</a></p>
-  </div>
-  <div class="fade">
-    <h2 class="d3" style="margin-bottom:24px">Send an enquiry</h2>
-    <div class="form">
-      <label>Name<input id="fName" type="text" autocomplete="name"></label>
-      <label>Email<input id="fEmail" type="email" autocomplete="email"></label>
-      <label>Message<textarea id="fMsg"></textarea></label>
-      <div><button class="btn" id="fSend">Send enquiry</button></div>
-      <p class="note" id="fNote">Opens your email app. Connect a form handler before launch so enquiries land in an inbox.</p>
-    </div>
+    <h2 class="d3">Send us a message</h2>
+    <form class="form" id="fForm" novalidate style="margin-top:26px">
+      <label>Name<input id="fName" name="name" type="text" autocomplete="name" required></label>
+      <label>Email<input id="fEmail" name="email" type="email" autocomplete="email" required></label>
+      <label>Message<textarea id="fMsg" name="message" required></textarea></label>
+      <div><button class="btn" id="fSend" type="submit">Send enquiry</button></div>
+      <p class="note" id="fNote" role="status">Opens your email app. Connect a form handler before launch so enquiries land in an inbox, and add a privacy notice — this collects an email address.</p>
+    </form>
   </div>
 </div></section>`;
 }
@@ -845,7 +918,7 @@ function wirePeek(){
   const list = document.querySelector('[data-list]');
   if(!list || !FINE.matches) return;
 
-  let tx = 0, ty = 0, x = 0, y = 0, live = false;
+  let tx = 0, ty = 0, x = 0, y = 0, live = false, focusRow = null, snap = false;
   const half = ()=>[peekIn.offsetWidth/2 + 12, peekIn.offsetHeight/2 + 12];
   const aim = (px,py)=>{ const [hw,hh] = half();
     tx = Math.min(Math.max(px,hw), innerWidth-hw); ty = Math.min(Math.max(py,hh), innerHeight-hh); };
@@ -859,24 +932,28 @@ function wirePeek(){
 
   const loop = ()=>{
     if(!document.body.contains(list)){ peekRAF = 0; peek.classList.remove('on'); return; }
-    const k = reduce ? 1 : .14;               /* reduced motion: snap, don't trail */
+    /* Keyboard: re-read the row every frame. focus() can trigger a smooth
+       scroll, so a one-off measurement lands where the row used to be. */
+    if(focusRow){ const r = focusRow.getBoundingClientRect(); aim(r.right-40, r.top+r.height/2); }
+    /* Cursor gets the trail; a keyboard-anchored preview stays glued to its row,
+       including while a smooth scroll is still moving it. */
+    const k = (reduce || snap || focusRow) ? 1 : .14;
+    snap = false;
     x += (tx-x)*k; y += (ty-y)*k;
     peek.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
     peekRAF = requestAnimationFrame(loop);
   };
   const start = ()=>{ if(!live){ live = true; x = tx; y = ty; loop(); } };
 
-  list.onpointermove = e =>{ if(e.pointerType!=='mouse') return; aim(e.clientX,e.clientY); start(); };
+  list.onpointermove = e =>{ if(e.pointerType!=='mouse') return;
+    focusRow = null; aim(e.clientX,e.clientY); start(); };
   list.onpointerleave = ()=> peek.classList.remove('on');
 
   list.querySelectorAll('.row').forEach(row=>{
     row.onpointerenter = e =>{ if(e.pointerType==='mouse') show(row); };
-    /* keyboard has no cursor to follow, so anchor the preview to the row */
-    row.onfocus = ()=>{ const r = row.getBoundingClientRect();
-      aim(r.right-40, r.top+r.height/2); x = tx; y = ty;
-      peek.style.transform = `translate3d(${x}px,${y}px,0)`;
-      show(row); start(); };
-    row.onblur = ()=> peek.classList.remove('on');
+    /* Keyboard has no cursor to follow, so pin the preview to the row itself. */
+    row.onfocus = ()=>{ focusRow = row; snap = true; show(row); start(); };
+    row.onblur = ()=>{ if(focusRow===row) focusRow = null; peek.classList.remove('on'); };
   });
 }
 FINE.addEventListener('change', wirePeek);
@@ -907,10 +984,18 @@ function wire(){
 
   wirePeek();
 
-  const send = document.getElementById('fSend');
-  if(send) send.onclick = ()=>{
+  /* Still a mailto handoff — swap this for a real form handler before launch. */
+  const form = document.getElementById('fForm');
+  if(form) form.onsubmit = ev =>{
+    ev.preventDefault();
     const n = fName.value.trim(), e = fEmail.value.trim(), m = fMsg.value.trim();
-    if(!n||!e||!m){ fNote.textContent = 'Add your name, email and a message, then send.'; return; }
+    if(!n || !e || !m){
+      fNote.textContent = 'Add your name, email and a message, then send.';
+      (!n ? fName : !e ? fEmail : fMsg).focus(); return;
+    }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){
+      fNote.textContent = 'That email address does not look right.'; fEmail.focus(); return;
+    }
     location.href = `mailto:ronan@regoproperty.com?subject=${encodeURIComponent('Website enquiry from '+n)}&body=${encodeURIComponent(m+'\n\n'+n+'\n'+e)}`;
   };
 }
