@@ -95,6 +95,8 @@ section{padding-block:clamp(52px,8vw,110px)}
   transform:scaleX(0);transform-origin:left;transition:transform .3s}
 .nav a:hover,.nav a[aria-current="page"]{opacity:1}
 .nav a:hover::after,.nav a[aria-current="page"]::after{transform:scaleX(1)}
+/* Gold marks the route you are on — driven by the attribute, not a class. */
+.nav a[aria-current="page"]::after{background:var(--accent)}
 .pill{font-family:var(--label);border:1px solid currentColor;padding:7px 14px;font-size:11px;letter-spacing:.16em;
   text-transform:uppercase;font-weight:500;opacity:.7;transition:opacity .3s}
 .pill:hover{opacity:1}
@@ -121,20 +123,6 @@ section{padding-block:clamp(52px,8vw,110px)}
     rgba(69,62,51,0),
     rgba(69,62,51,.55) 42%,
     rgba(69,62,51,.93))}
-.hero__bar{position:relative;z-index:2;
-  display:flex;align-items:flex-start;justify-content:space-between;
-  padding:34px clamp(20px,5vw,56px) 0;color:var(--paper)}
-.hero__logo img{height:clamp(40px,3.9vw,56px);width:auto;display:block}
-.hero__nav{display:flex;gap:clamp(20px,3vw,44px)}
-.hero__nav a{font-family:var(--label);font-size:11.5px;font-weight:500;
-  letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(244,242,233,.86);text-decoration:none;
-  padding-bottom:5px;border-bottom:1px solid transparent;
-  transition:color .28s cubic-bezier(.16,.84,.32,1),
-             border-color .28s cubic-bezier(.16,.84,.32,1)}
-.hero__nav a:hover{color:var(--paper)}
-/* Driven by the attribute, not a class — acceptance 6. */
-.hero__nav a[aria-current="page"]{color:var(--paper);border-bottom-color:var(--accent)}
 .hero__body{position:relative;z-index:2;flex:1;
   display:grid;grid-template-columns:minmax(0,1fr) 340px;
   gap:clamp(32px,6vw,96px);align-items:end;
@@ -163,13 +151,6 @@ section{padding-block:clamp(52px,8vw,110px)}
 .hero.is-in .hero__aside .hero__in:nth-child(1){transition-delay:.12s}
 .hero.is-in .hero__aside .hero__in:nth-child(2){transition-delay:.18s}
 
-/* The hero carries its own header, so the site bar is suppressed on this route
-   until the hero has scrolled away. visibility, not opacity — a hidden bar must
-   not sit in the tab order (acceptance 7). */
-body[data-herobar] .bar{visibility:hidden;opacity:0;
-  transition:opacity .28s cubic-bezier(.16,.84,.32,1),visibility 0s linear .28s}
-body[data-herobar] .bar.solid{visibility:visible;opacity:1;transition-delay:0s}
-
 /* ============ REVEAL ============ */
 .ln{display:block;overflow:hidden}
 .ln>i{display:block;font-style:normal;transform:translateY(106%);transition:transform .45s cubic-bezier(.16,.84,.32,1)}
@@ -183,25 +164,6 @@ body[data-herobar] .bar.solid{visibility:visible;opacity:1;transition-delay:0s}
 /* Optical alignment: a 10.5px cap label sits high against a 38px heading, so
    nudge it down to the heading's cap height rather than its box top. */
 .split>.cap:first-child{padding-top:clamp(5px,.6vw,11px)}
-
-/* ============ STICKY SCENE ============ */
-.scene{position:relative;height:320vh}
-.scene__pin{position:sticky;top:0;height:100svh;overflow:hidden;background:var(--stone)}
-.scene__layer{position:absolute;inset:0;opacity:0;transition:opacity .45s ease}
-.scene__layer.on{opacity:1}
-.scene__layer img{width:100%;height:100%;object-fit:cover;transform:scale(1.07);transition:transform 8s ease-out}
-.scene__layer.on img{transform:scale(1)}
-.scene__txt{position:absolute;inset:0;z-index:3;display:flex;align-items:flex-end}
-.scene__txt .wrap{width:100%;padding-bottom:clamp(32px,7vh,80px)}
-.scene__hold{position:relative;min-height:clamp(220px,29vh,280px)}
-.scene__step{position:absolute;inset:auto auto 0 0;max-width:min(560px,86vw);
-  background:var(--paper);color:var(--ink);padding:clamp(22px,3.2vw,38px);
-  opacity:0;transform:translateY(20px);transition:opacity .42s,transform .42s cubic-bezier(.16,.84,.32,1)}
-.scene__step.on{opacity:1;transform:none}
-.scene__step p{margin:14px 0 0;max-width:42ch}
-.scene__idx{position:absolute;right:clamp(20px,5vw,72px);bottom:clamp(38px,7vh,84px);z-index:4;display:flex;gap:8px}
-.scene__idx b{width:32px;height:2px;background:var(--paper);opacity:.35;transition:opacity .4s cubic-bezier(.16,.84,.32,1)}
-.scene__idx b.on{opacity:1}
 
 /* ============ GRID / CARDS ============
    Layout deliberately follows the live site rather than the earlier build:
@@ -373,8 +335,6 @@ body.nopeek .row:hover,body.nopeek .row:focus-visible{padding-left:2px}
 @media(max-width:699px){
   /* Reuse the site's existing mobile menu rather than building a second one:
      the hero's own header stands down and the fixed bar takes over. */
-  .hero__bar{display:none}
-  body[data-herobar] .bar{visibility:visible;opacity:1;transition-delay:0s}
   .hero__body{padding:0 20px 28px}
   .hero__ombre{height:46%}
   .hero__title{font-size:34px}
@@ -406,13 +366,12 @@ body.nopeek .row:hover,body.nopeek .row:focus-visible{padding-left:2px}
     transition:transform .45s cubic-bezier(.16,.84,.32,1)}
   .nav.open{transform:none}
   .nav a{font-size:15px;letter-spacing:.1em}
-  .scene__hold{min-height:290px}
 }
 @media(max-width:560px){ .grid{grid-template-columns:1fr} .gal{grid-template-columns:repeat(2,1fr)} .themes{grid-template-columns:1fr} }
 @media(prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation:none!important}
   html{scroll-behavior:auto}
-  .ln>i,.fade,.scene__step{transform:none;opacity:1}
+  .ln>i,.fade{transform:none;opacity:1}
 }
 </style>
 </head>
@@ -479,7 +438,12 @@ document.getElementById('logo').innerHTML =
   `<img class="lw" src="${LOGO_WHITE}" alt="Rego Property"><img class="lg" src="${LOGO_GOLD}" alt="Rego Property">`;
 
 const IMG = 'https://regoproperty.com/img/containers/assets/developments/';
-const PORTRAIT = 'https://regoproperty.com/img/containers/assets/photos/rego_glass.jpg/3f523b36a8786944411abc776fbcd0b2.jpg';
+/* PLACEHOLDER. The interior shot supplied for this block was pasted into the
+   conversation rather than provided as a file, so it could not be saved. This
+   is a Kings House interior from the client's own gallery standing in for it —
+   swap the URL when the intended image arrives. */
+const ABOUT_IMG = IMG + 'kings-house/residents-lounge-0006.jpg/1caff97e144812a39371a3b9336b2496.jpg';
+const PORTRAIT ='https://regoproperty.com/img/containers/assets/photos/rego_glass.jpg/3f523b36a8786944411abc776fbcd0b2.jpg';
 
 /* ===================== CONTENT =====================
    All copy below is Rego's own, ported verbatim.
@@ -664,16 +628,6 @@ function viewHome(){ return `
     alt="Kings House, Hove seafront" fetchpriority="high" decoding="async"></div>
   <div class="hero__ombre" aria-hidden="true"></div>
 
-  <header class="hero__bar">
-    <a class="hero__logo" href="#/"><img src="${LOGO_WHITE}" alt="Rego Property"></a>
-    <nav class="hero__nav">
-      <a href="#/" aria-current="page">Home</a>
-      <a href="#/developments">Developments</a>
-      <a href="#/about">About</a>
-      <a href="#/contact">Contact</a>
-    </nav>
-  </header>
-
   <div class="hero__body">
     <div class="hero__lead">
       <p class="hero__eyebrow hero__in">Property development · Brighton</p>
@@ -687,38 +641,15 @@ function viewHome(){ return `
   </div>
 </section>
 
-<section class="wrap"><div class="split">
-  <p class="cap fade" style="opacity:.55">What we do</p>
-  <div>
-    <!-- Back to h2: the hero above now carries the page's only h1. -->
-    <h2 class="d3 fade">Rego Property is a developer with vast and varied experience in the property development sector in the UK.</h2>
-    <div class="prose fade" style="margin-top:clamp(26px,2.6vw,38px)">
-      <p>We work in challenging urban settings, with developments ranging from complex refurbishments of Grade II listed Buildings to the construction of first time buyer housing developments. Established in 2012, the company has been grown organically and successfully by its two founders, Alan Coleman and Ronan Mellett.</p>
-      <p>From master planning a complex regeneration site in the grounds of a listed hotel to more traditional housing developments on the South Coast, Rego Property will always bring their passion and expertise to every development opportunity.</p>
-    </div>
-    <p class="fade" style="margin:clamp(30px,3.2vw,44px) 0 0"><a class="btn" href="#/about">About Rego</a></p>
+${duo(1, duoImg(ABOUT_IMG, 'A restored apartment interior at Kings House, Hove'), `
+  <p class="cap" style="opacity:.55">What we do</p>
+  <!-- h2, not h1: the hero above carries the page's only h1. -->
+  <h2 class="d3" style="margin:16px 0 0">Rego Property is a developer with vast and varied experience in the property development sector in the UK.</h2>
+  <div class="prose" style="margin-top:clamp(24px,2.4vw,34px)">
+    <p>We work in challenging urban settings, with developments ranging from complex refurbishments of Grade II listed Buildings to the construction of first time buyer housing developments. Established in 2012, the company has been grown organically and successfully by its two founders, Alan Coleman and Ronan Mellett.</p>
+    <p>From master planning a complex regeneration site in the grounds of a listed hotel to more traditional housing developments on the South Coast, Rego Property will always bring their passion and expertise to every development opportunity.</p>
   </div>
-</div></section>
-
-<section class="scene" id="scene" style="padding:0">
-  <div class="scene__pin">
-    <div class="scene__layer on"><img src="${IMG}kings-house/kings-hopuse-external-4.jpg/2666d0d8e0a41fc07067c51a1a9537da.jpg" alt=""></div>
-    <div class="scene__layer"><img src="${IMG}kings-house/residents-lounge-0006.jpg/1caff97e144812a39371a3b9336b2496.jpg" alt=""></div>
-    <div class="scene__layer"><img src="${IMG}kings-house/kings-house-2-bed-50.jpg/1be0a1eca11984d89c011b4c20a7a238.jpg" alt=""></div>
-    <div class="scene__txt"><div class="wrap"><div class="scene__hold">
-      <div class="scene__step on"><p class="cap" style="opacity:.55">What we have done · Kings House</p>
-        <h2 class="d3" style="margin-top:12px">A Grade II listed building</h2>
-        <p>The most prominent listed building in the Avenues Conservation area, standing on Hove Lawns for almost 150 years.</p></div>
-      <div class="scene__step"><p class="cap" style="opacity:.55">What we have done · Kings House</p>
-        <h2 class="d3" style="margin-top:12px">Sympathetically restored</h2>
-        <p>Designed with its original 19th Century form in mind. Many of its period architectural features have been replicated or reinstated.</p></div>
-      <div class="scene__step"><p class="cap" style="opacity:.55">What we have done · Kings House</p>
-        <h2 class="d3" style="margin-top:12px">Returned to residential use</h2>
-        <p>The same sense of grandeur envisioned by the original Victorian architects.</p></div>
-    </div></div></div>
-    <div class="scene__idx"><b class="on"></b><b></b><b></b></div>
-  </div>
-</section>
+  <p style="margin:clamp(28px,3vw,40px) 0 0"><a class="btn" href="#/about">About Rego</a></p>`)}
 
 <section class="wrap" style="padding-bottom:clamp(24px,3vw,40px)">
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap">
@@ -988,11 +919,6 @@ function route(){
     if(a.getAttribute('href')==='#/'+parts.join('/')) a.setAttribute('aria-current','page');
   });
   document.body.dataset.dark = dark ? '1' : '';
-  /* The hero carries its own header, so suppress the fixed bar on that route
-     until the hero has scrolled away — the handover is explicit that the two
-     must not both be on screen. */
-  const heroBar = !!main.querySelector('.hero__bar');
-  if(heroBar) document.body.dataset.herobar = '1'; else delete document.body.dataset.herobar;
   nav.classList.remove('open'); burger.setAttribute('aria-expanded','false'); burger.textContent = 'Menu';
   wire(); frame();
 }
@@ -1006,7 +932,7 @@ burger.onclick = ()=>{
 };
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let io, pars = [], scene = null, layers = [], steps = [], dots = [], cur = 0, ticking = false, lead = null, heroFrame = null;
+let io, pars = [], ticking = false, lead = null, heroFrame = null;
 
 /* lightbox */
 let gal = [], gi = 0;
@@ -1120,11 +1046,6 @@ function wire(){
      reduced motion and no-JS both land on it immediately. */
   if(hero){ if(reduce) hero.classList.add('is-in');
     else requestAnimationFrame(()=>requestAnimationFrame(()=>hero.classList.add('is-in'))); }
-  scene = document.getElementById('scene');
-  layers = scene ? [...scene.querySelectorAll('.scene__layer')] : [];
-  steps  = scene ? [...scene.querySelectorAll('.scene__step')] : [];
-  dots   = scene ? [...scene.querySelectorAll('.scene__idx b')] : [];
-  cur = 0;
 
   document.querySelectorAll('[data-gal]').forEach(g=>{
     const list = [...g.querySelectorAll('img')].map(i=>i.src);
@@ -1159,7 +1080,11 @@ function frame(){
   const vh = innerHeight;
   prog.style.width = (scrollY / Math.max(1,document.body.scrollHeight - vh) * 100) + '%';
   /* The fixed bar arrives once the hero is ~70% gone, per the handover. */
-  bar.classList.toggle('solid', lead ? scrollY > lead.offsetHeight * .7 : true);
+  /* One nav, present the whole way down. It rides transparently over the hero
+     photograph at rest and turns solid as soon as you start scrolling, rather
+     than waiting for the hero to clear — that is what makes the header feel
+     like one continuous thing rather than something that leaves and returns. */
+  bar.classList.toggle('solid', lead ? scrollY > 80 : true);
 
   /* Hero parallax: DOWNWARD ONLY, starting from zero, capped at 6% of block
      height. At rest the image is at inset:0 so the photograph is uncropped
@@ -1179,18 +1104,6 @@ function frame(){
     el.style.transform = `translate3d(0,${(c*el.dataset.par*100).toFixed(2)}px,0)`;
   });
 
-  if(scene){
-    const sr = scene.getBoundingClientRect();
-    if(sr.top <= 0 && sr.bottom >= vh){
-      const p = -sr.top / (scene.offsetHeight - vh);
-      const n = Math.min(steps.length-1, Math.floor(p*steps.length + .001));
-      if(n !== cur){ cur = n;
-        layers.forEach((l,i)=>l.classList.toggle('on', i===n));
-        steps.forEach((s,i)=>s.classList.toggle('on', i===n));
-        dots.forEach((b,i)=>b.classList.toggle('on', i===n));
-      }
-    }
-  }
 }
 addEventListener('scroll',()=>{ if(!ticking){ ticking = true; requestAnimationFrame(frame); } },{passive:true});
 addEventListener('resize',()=>requestAnimationFrame(frame));

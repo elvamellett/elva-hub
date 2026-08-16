@@ -103,7 +103,7 @@ Three hard rules, all enforced and verified in the browser:
 - **Text links** are olive with a 1px gold underline 4px below the baseline; hover moves the underline to olive.
 - **Form fields** are Paper with a 1px Rule border and a caps label above — they were bottom-border-only before.
 
-**Motion** is 280–450ms on `cubic-bezier(.16,.84,.32,1)` for every state change. One judgement call: the pinned scene's slow image drift and the cover parallax are ambient, scroll-linked motion rather than state changes, and `prefers-reduced-motion` already disables them, so they were left alone. If §04 was meant to cover those too, they are a one-line removal.
+**Motion** is 280–450ms on `cubic-bezier(.16,.84,.32,1)` for every state change. The only scroll-linked motion left is the hero's parallax, which is ambient rather than a state change and is capped at 6% of block height; `prefers-reduced-motion` disables it.
 
 **Voice:** locations are now bare — `Hove Sussex` became `Hove` on Kings House and Grand Avenue.
 
@@ -132,7 +132,7 @@ A single ombre rises from the bottom edge and dies out at 34%. There is no overa
 ### Two tensions in the handover, resolved
 
 1. **Parallax versus "no vertical crop."** §05 asks for parallax; §01 and §08 forbid cropping. Any overscan crops. The image therefore translates **downward only, starting from zero**: at rest it sits at `inset:0` so nothing is cropped, and as the page scrolls by `S` it moves down `0.06 × S`, putting the gap it opens at the image's top edge permanently above the fold. Both hold, with no compromise. This does **not** use the generic `[data-par]` path, which is centred and bidirectional and would crop.
-2. **Two headers.** The hero carries its own transparent header, so the site's fixed `.bar` is suppressed on the home route until the hero is ~70% scrolled away. It is hidden with `visibility`, not `opacity`, so it stays out of the tab order. This also cleared a live defect: the previous hero's link row collided with the fixed bar's logo between scrollY 480 and 584.
+2. **Two headers.** The handover gave the hero its own transparent header and suppressed the site's fixed bar until scroll. **That has since been superseded by a client instruction to make the navigation follow all the way down.** The hero's own header was therefore removed and the site's single fixed bar now serves every route: transparent over the photograph at rest, solid past 80px of scroll. One nav, always present. The active route is marked with a gold underline driven by `aria-current`, matching the treatment the handover specified. This also cleared a live defect where the previous hero's link row collided with the fixed bar's logo between scrollY 480 and 584.
 
 ### Deviations from the brand pack, both required by the handover
 
@@ -147,7 +147,21 @@ The approved photograph is inlined as a **JPEG q78 data URI** — 1024×681, a t
 
 ### Below 700px
 
-The hero's own header stands down and the site's existing fixed bar and burger take over, rather than a second mobile menu being built. Body padding 20px, ombre 46%, headline floor 34px, and the deliberate line break is suppressed.
+Body padding 20px, ombre 46%, headline floor 34px, and the deliberate line break is suppressed. The burger menu is the site's existing one — no second mobile menu was built.
+
+---
+
+## 3d. The pinned scroll scene — removed
+
+The homepage's scroll-jacked scene, which pinned a Kings House image and advanced through three captions as you scrolled roughly three screens, has been **deleted entirely** at the client's request: they did not want an interactive block that has to be scrolled through to reach the next picture, and did not want the chalk caption panels sitting over the photographs.
+
+Its CSS, markup and the scroll-position JS that drove it are all gone. The homepage now reads: hero → what we do → recent projects → three scheme blocks → quote → footer.
+
+## 3e. "What we do" — now a split block
+
+Converted from a narrow label-plus-column layout into the alternating split block used everywhere else, with **text on the left and image on the right**. This puts it into the chequerboard rhythm the client likes: the page now alternates image-right, image-left, image-right, image-left down its length.
+
+**One placeholder to swap.** The interior photograph intended for this block was pasted into the conversation rather than supplied as a file, so it could not be saved. A Kings House interior from the client's own gallery is standing in — see `ABOUT_IMG` near the top of the script block. Replace that one URL when the intended image arrives.
 
 ---
 
