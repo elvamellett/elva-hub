@@ -22,6 +22,7 @@
   --bark:#453E33;    /* bark */
   --accent:#CAA669;  /* brand gold */
   --accent2:#DCC9A0; /* champagne */
+  --sage:#B9C4A8;    /* sage — proposed 11th colour, on-dark accent only */
   --disp:'Instrument Serif',Didot,Georgia,serif; --dispw:400; --dispt:-.005em;
   --body:Jost,'Helvetica Neue',sans-serif;
   --long:Archivo,sans-serif;
@@ -236,6 +237,16 @@ body.nopeek .row:hover{padding-left:2px}
           brand hex, so it is flagged here rather than taken.</p>
       </div>
       <div class="note" style="margin-top:16px">
+        <span class="cap">One to approve — an eleventh colour</span>
+        <p style="margin:0"><b>Sage <code style="font-family:var(--long)">#B9C4A8</code></b> was added
+          for the homepage hero, which sits on Bark and needed a green accent. The pack's own greens
+          cannot do that job: Olive measures 1.09:1 on Bark and Bay 1.27:1 — both invisible — and the
+          mid-greens the pack bans fail anyway at 2.77:1. Sage clears 5.79:1. Its scope is
+          deliberately narrow: <b>accent on dark grounds only</b> — the hero payoff line, small caps
+          and rules on dark. Never body text on chalk, never a fill. On chalk it measures 1.62:1 and
+          must not be used. If it is not approved, the hero falls back to champagne in one line.</p>
+      </div>
+      <div class="note" style="margin-top:16px">
         <span class="cap">The gold rule</span>
         <p style="margin:0">Gold on chalk is 2.04:1 and fails. It is decorative only — underlines,
           hover rules, the focus ring, the mark. Never text under 18px. On the darks it passes, which
@@ -365,7 +376,8 @@ const ROLES = [
   ['Fills','Linen','#E5E1D2'], ['Hairlines','Rule','#D5D0BE'],
   ['Secondary text','Lichen','#6B7261'], ['Primary','Olive','#3F4733'],
   ['Dark','Bay','#2A3123'], ['Warm dark','Bark','#453E33'],
-  ['Accent','Brand gold','#CAA669'], ['Accent 2','Champagne','#DCC9A0']
+  ['Accent','Brand gold','#CAA669'], ['Accent 2','Champagne','#DCC9A0'],
+  ['Proposed · on dark only','Sage','#B9C4A8']
 ];
 
 /* Ratios computed here, in the page, from WCAG relative luminance — so the
@@ -381,7 +393,8 @@ const PAIRS = [
   ['Chalk on bay','#F4F2E9','#2A3123'],   ['Champagne on bay','#DCC9A0','#2A3123'],
   ['Chalk on bark','#F4F2E9','#453E33'],  ['Champagne on bark','#DCC9A0','#453E33'],
   ['Gold on bark','#CAA669','#453E33'],   ['Gold on bay','#CAA669','#2A3123'],
-  ['Gold on chalk','#CAA669','#F4F2E9']
+  ['Gold on chalk','#CAA669','#F4F2E9'],
+  ['Sage on bark','#B9C4A8','#453E33'],   ['Sage on chalk','#B9C4A8','#F4F2E9']
 ];
 
 const IMG = 'https://regoproperty.com/img/containers/assets/developments/';

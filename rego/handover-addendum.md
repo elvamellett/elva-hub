@@ -39,6 +39,9 @@ Ten colours, and nothing outside them. Role names are stable; the hexes belong t
 | Warm dark | Bark | `#453E33` | Footer, image overlays |
 | Accent | **Brand gold** | `#CAA669` | Underlines, hover rules, focus ring, the mark |
 | Accent 2 | Champagne | `#DCC9A0` | Small caps and rules on the darks only |
+| **Proposed 11th** | **Sage** | **`#B9C4A8`** | **On-dark accent only — see below** |
+
+**Sage is an addition to the pack and needs sign-off.** The homepage hero sits on Bark and called for a green accent, which the pack's own greens cannot provide: Olive measures **1.09:1** on Bark and Bay **1.27:1** — both invisible — and the mid-greens the pack bans fail anyway at 2.77:1. Sage clears **5.79:1**. Its scope is deliberately narrow: **accent on dark grounds only** — the hero payoff line, its link underlines, small caps and rules on dark. Never body text on chalk (it measures 1.62:1 there), never a fill. If it is not approved, the hero falls back to champagne in one line.
 
 Hold roughly **70% chalk · 18% olive · 8% linen · 4% gold**. If a page feels unfinished it needs a photograph, not more gold.
 
@@ -104,6 +107,34 @@ Three hard rules, all enforced and verified in the browser:
 **Motion** is 280–450ms on `cubic-bezier(.16,.84,.32,1)` for every state change. One judgement call: the pinned scene's slow image drift and the cover parallax are ambient, scroll-linked motion rather than state changes, and `prefers-reduced-motion` already disables them, so they were left alone. If §04 was meant to cover those too, they are a one-line removal.
 
 **Voice:** locations are now bare — `Hove Sussex` became `Hove` on Kings House and Grand Avenue.
+
+---
+
+## 3c. The homepage hero
+
+The photographic cover is gone. The homepage now opens on a **typographic block on Bark**: eyebrow, two caps lines in Instrument Serif, an italic payoff line in Sage, a supporting sentence and two underlined links — with a large `R` monogram bleeding off the right in Bay.
+
+```
+PROPERTY DEVELOPMENT · BRIGHTON
+
+DIFFICULT SITES &
+LISTED BUILDINGS,
+delivered.                      ← Instrument Serif italic, Sage
+
+From Grade II listed refurbishments on Hove seafront
+to first time buyer housing on the South Coast, we
+work where development is hardest.
+
+SEE THE DEVELOPMENTS    ABOUT REGO
+```
+
+Three things this fixes or depends on:
+
+- **It keeps the page to one dark family.** Bark for the hero and the footer, never adjacent — which is what the pack requires. Bay survives on the detail-page scrim and the lightbox, and as the hero watermark.
+- **The `R` is set in type, not the logo.** The supplied logo is a 319×158 PNG and would soften badly at 720px. Swap it for the vector when it arrives — the watermark is one element.
+- **The nav bar no longer guesses.** It used to go solid at a fixed 88% of viewport height, tuned to the old cover. It now measures whatever dark element opens the page (`.hero` or `.dhero`), so it stays correct as those heights change.
+
+The copy is drawn from Rego's own words — they describe working in "challenging urban settings" on "complex refurbishments of Grade II listed Buildings" alongside "first time buyer housing developments". No figures.
 
 ---
 

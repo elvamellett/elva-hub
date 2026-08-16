@@ -30,6 +30,14 @@
   --bark:#453E33;    /* warm dark — footer, photographic overlays */
   --accent:#CAA669;  /* brand gold — lines, states, the mark. Never a fill */
   --accent2:#DCC9A0; /* champagne — gold's stand-in on dark grounds */
+  /* ELEVENTH COLOUR, added beyond the pack's ten and pending sign-off.
+     The pack's own greens are unusable as an accent on a dark ground — Olive
+     measures 1.09:1 on Bark and Bay 1.27:1 — and the mid-greens it bans fail
+     anyway (2.77:1). Sage is pale and desaturated enough to avoid reading
+     municipal, and clears 5.79:1 on Bark.
+     Scope: accent on DARK grounds only — the hero payoff line, small caps and
+     rules on dark. Never body text on chalk, never a fill. */
+  --sage:#B9C4A8;    /* sage — on-dark green accent */
   /* Instrument Serif has ONE weight. Never fake bold, never set it below 21px
      — anything smaller that needs emphasis goes to Jost 500 caps. */
   --disp:'Instrument Serif',Didot,Georgia,serif; --dispw:400; --dispt:-.005em;
@@ -101,18 +109,37 @@ section{padding-block:clamp(52px,8vw,110px)}
 .burger{display:none}
 .prog{position:fixed;top:0;left:0;height:2px;background:var(--accent);z-index:90;width:0}
 
-/* ============ COVER ============ */
-.cover{position:relative;height:55svh;min-height:380px;overflow:hidden;background:var(--stone)}
-.cover__img{position:absolute;inset:-8% 0;will-change:transform}
-.cover__img img{width:100%;height:100%;object-fit:cover}
-.cover::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(42,49,35,.34),rgba(42,49,35,0) 34%,rgba(42,49,35,.46))}
-.cover__in{position:absolute;inset:auto 0 0;z-index:3;color:var(--paper);padding-bottom:clamp(34px,6vh,78px)}
-.cover__in .d1{max-width:16ch}
-.cue{position:absolute;right:clamp(20px,5vw,72px);bottom:clamp(34px,6vh,78px);z-index:4;color:var(--paper);
-  display:flex;align-items:center;gap:12px}
-.cue span{display:block;width:1px;height:46px;background:currentColor;opacity:.6;animation:drop 2.4s ease-in-out infinite}
-@keyframes drop{0%,100%{transform:scaleY(.35);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}}
+/* ============ HERO ============
+   Typographic opener on Bark, replacing the photographic cover. That keeps the
+   homepage to a single dark family — hero and footer, never adjacent — which is
+   what the pack requires. Bay survives on the detail-page scrim and lightbox. */
+.hero{position:relative;overflow:hidden;background:var(--bark);color:var(--paper);
+  display:flex;align-items:center;min-height:clamp(470px,68svh,700px);
+  padding-block:clamp(72px,10vh,124px)}
+.hero .wrap{position:relative;z-index:2;width:100%}
+.hero .cap{color:var(--sage)}
+/* Lines are set deliberately rather than left to wrap: this is a composed
+   headline, not flowing copy. If the display face ever changes, re-read them. */
+.hero__h{font-family:var(--disp);font-weight:var(--dispw);letter-spacing:var(--dispt);
+  font-size:clamp(33px,5.4vw,76px);line-height:1.04;margin:clamp(15px,1.9vw,24px) 0 0}
+/* Caps on the statement lines, sentence case in the source — §05 is a
+   copywriting rule, §03 governs the treatment. Tracking stays tight: the pack
+   reserves WIDE tracking for labels. */
+.hero__h span{display:block;text-transform:uppercase;letter-spacing:.012em}
+.hero__h em{display:block;font-style:italic;color:var(--sage)}
+.hero__p{margin:clamp(22px,2.8vw,34px) 0 0;max-width:46ch;color:rgba(244,242,233,.72)}
+.hero__links{display:flex;flex-wrap:wrap;gap:clamp(20px,3vw,42px);margin-top:clamp(28px,3.6vw,46px)}
+.hero__links a{font-family:var(--label);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
+  font-weight:500;text-decoration:none;padding-bottom:6px;border-bottom:1px solid var(--sage);
+  transition:border-color .3s cubic-bezier(.16,.84,.32,1)}
+.hero__links a:hover{border-bottom-color:var(--paper)}
+/* Monogram watermark set in Bay — the olive-family dark — so it reads as a
+   green cast over Bark rather than introducing another colour. Typographic
+   until the vector logo arrives: the supplied 319×158 PNG would soften badly
+   at this size. */
+.hero__mark{position:absolute;right:-.05em;bottom:-.3em;z-index:1;pointer-events:none;user-select:none;
+  font-family:var(--disp);font-weight:var(--dispw);color:var(--deep);
+  font-size:clamp(320px,44vw,720px);line-height:.78}
 
 /* ============ REVEAL ============ */
 .ln{display:block;overflow:hidden}
@@ -580,22 +607,27 @@ function splitBlock(d,i){
 
 /* ---------- PAGE 1 · HOME ---------- */
 function viewHome(){ return `
-<section class="cover" style="padding:0">
-  <div class="cover__img" data-par="0.2">
-    <img src="${IMG}kings-house/kingshouse-main.jpg/ac982c4141ae2862cb8dd53920597ff6.jpg" alt="Kings House, Hove seafront">
+<section class="hero">
+  <span class="hero__mark" aria-hidden="true">R</span>
+  <div class="wrap">
+    <p class="cap">Property development · Brighton</p>
+    <h1 class="hero__h">
+      <span>Difficult sites &amp;</span><span>listed buildings,</span><em>delivered.</em>
+    </h1>
+    <p class="hero__p">From Grade II listed refurbishments on Hove seafront to first time
+      buyer housing on the South Coast, we work where development is hardest.</p>
+    <div class="hero__links">
+      <a href="#/developments">See the developments</a>
+      <a href="#/about">About Rego</a>
+    </div>
   </div>
-  <div class="cover__in wrap is-in">
-    <p class="cap" style="opacity:.85"><span class="ln"><i>Established 2012 · Brighton</i></span></p>
-  </div>
-  <div class="cue"><span></span><p class="cap" style="margin:0">Scroll</p></div>
 </section>
 
 <section class="wrap"><div class="split">
   <p class="cap fade" style="opacity:.55">What we do</p>
   <div>
-    <!-- The cover carries no headline, so this is the page's h1. Every page needs
-         exactly one, and an image-only cover would otherwise leave home without. -->
-    <h1 class="d3 fade">Rego Property is a developer with vast and varied experience in the property development sector in the UK.</h1>
+    <!-- Back to h2: the hero above now carries the page's only h1. -->
+    <h2 class="d3 fade">Rego Property is a developer with vast and varied experience in the property development sector in the UK.</h2>
     <div class="prose fade" style="margin-top:clamp(26px,2.6vw,38px)">
       <p>We work in challenging urban settings, with developments ranging from complex refurbishments of Grade II listed Buildings to the construction of first time buyer housing developments. Established in 2012, the company has been grown organically and successfully by its two founders, Alan Coleman and Ronan Mellett.</p>
       <p>From master planning a complex regeneration site in the grounds of a listed hotel to more traditional housing developments on the South Coast, Rego Property will always bring their passion and expertise to every development opportunity.</p>
@@ -905,7 +937,7 @@ burger.onclick = ()=>{
 };
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let io, pars = [], scene = null, layers = [], steps = [], dots = [], cur = 0, ticking = false;
+let io, pars = [], scene = null, layers = [], steps = [], dots = [], cur = 0, ticking = false, lead = null;
 
 /* lightbox */
 let gal = [], gi = 0;
@@ -1009,6 +1041,10 @@ function wire(){
   document.querySelectorAll('.fade').forEach(el=>io.observe(el));
 
   pars = [...document.querySelectorAll('[data-par]')];
+  /* The bar reverses out over whatever dark element opens the page, so measure
+     that element rather than assuming a fixed fraction of the viewport — the
+     hero and the detail-page hero are different heights. */
+  lead = document.querySelector('.hero,.dhero');
   scene = document.getElementById('scene');
   layers = scene ? [...scene.querySelectorAll('.scene__layer')] : [];
   steps  = scene ? [...scene.querySelectorAll('.scene__step')] : [];
@@ -1047,7 +1083,7 @@ function frame(){
   ticking = false;
   const vh = innerHeight;
   prog.style.width = (scrollY / Math.max(1,document.body.scrollHeight - vh) * 100) + '%';
-  bar.classList.toggle('solid', document.body.dataset.dark ? scrollY > vh*.88 : true);
+  bar.classList.toggle('solid', lead ? scrollY > lead.offsetHeight - 72 : true);
 
   if(!reduce) pars.forEach(el=>{
     const r = el.parentElement.getBoundingClientRect();
