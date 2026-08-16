@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-dir="a">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rego Property — brand directions</title>
+<meta name="description" content="Two colour directions and a type system for Rego Property, built from navy, espresso and their existing brand gold.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600;6..96,700&family=Archivo:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ THE TWO DIRECTIONS ============
+   Same six roles, same gold. Only the rank of navy and espresso changes.
+   Every colour on this page reads from these vars, so the switcher is honest —
+   nothing is hardcoded to one direction. */
+:root,[data-dir="a"]{
+  --paper:#F3EFE5; --ink:#16283C; --deep:#453E33; --mid:#5F6B78;
+  --stone:#E4E0D6; --accent:#CAA669; --accent2:#A8823F;
+}
+[data-dir="b"]{
+  --paper:#F4F1E9; --ink:#453E33; --deep:#16283C; --mid:#77675A;
+  --stone:#E7E1D4; --accent:#CAA669; --accent2:#A8823F;
+}
+:root{
+  --disp:'Bodoni Moda',Didot,Georgia,serif; --dispw:600; --dispt:-.005em;
+  --body:Archivo,sans-serif; --label:Jost,Archivo,sans-serif;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  transition:background .55s ease,color .55s ease}
+img{display:block;max-width:100%}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+:focus-visible{outline:1px solid var(--accent);outline-offset:4px}
+.wrap{max-width:1360px;margin:0 auto;padding:0 clamp(20px,5vw,72px)}
+section{padding-block:clamp(56px,8vw,116px)}
+h1,h2,h3{font-family:var(--disp);font-weight:var(--dispw);letter-spacing:var(--dispt);margin:0;line-height:1.05}
+.d1{font-size:clamp(40px,7.2vw,104px)}
+.d2{font-size:clamp(30px,4.8vw,64px)}
+.d3{font-size:clamp(24px,3.2vw,42px);line-height:1.14}
+.d4{font-size:clamp(20px,2.2vw,28px);line-height:1.2}
+.cap{font-family:var(--label);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:500}
+.prose p{max-width:62ch;margin:0 0 1.15em}
+.prose p:last-child{margin-bottom:0}
+.lede{font-size:clamp(17px,1.5vw,20px);line-height:1.6;max-width:56ch}
+.rule{border:0;border-top:1px solid rgba(0,0,0,.14);margin:0}
+.split{display:grid;grid-template-columns:minmax(0,.34fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:start}
+
+/* ============ SWITCHER ============ */
+.sw{position:fixed;z-index:90;right:clamp(14px,3vw,32px);top:clamp(14px,3vw,26px);
+  display:flex;gap:1px;background:var(--paper);box-shadow:0 6px 26px rgba(0,0,0,.16)}
+.sw button{font-family:var(--label);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:500;padding:11px 18px;border:1px solid rgba(0,0,0,.16);
+  transition:background .3s,color .3s,border-color .3s}
+.sw button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ============ COVER ============ */
+.cover{background:var(--deep);color:#fff;padding-block:clamp(96px,17vh,190px)}
+.cover .d1{max-width:15ch;margin-top:18px}
+.cover .lede{margin-top:clamp(26px,3.4vw,42px);opacity:.84}
+.cover .dirname{color:var(--accent)}
+
+/* ============ SWATCHES ============ */
+.sws{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(12px,1.6vw,20px);margin-top:clamp(28px,4vw,46px)}
+.sw1{border:1px solid rgba(0,0,0,.1)}
+.sw1 .chip{height:clamp(96px,11vw,148px);transition:background .55s ease}
+.sw1 .meta{padding:14px 15px 17px;background:var(--paper);transition:background .55s}
+.sw1 .nm{font-family:var(--disp);font-size:19px;font-weight:var(--dispw);line-height:1.15}
+.sw1 .role{display:block;margin-bottom:9px;opacity:.5}
+.sw1 .hex{font-family:var(--label);font-size:12px;letter-spacing:.1em;margin-top:7px;opacity:.62}
+
+/* ============ CONTRAST TABLE ============ */
+.tbl{width:100%;border-collapse:collapse;margin-top:26px;max-width:760px}
+.tbl th{font-family:var(--label);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:500;text-align:left;opacity:.5;padding:0 0 12px}
+.tbl td{border-top:1px solid rgba(0,0,0,.14);padding:14px 0;vertical-align:middle}
+.tbl td+td{text-align:right;padding-left:18px;white-space:nowrap}
+.dot{display:inline-block;width:15px;height:15px;margin-right:10px;vertical-align:-2px;
+  border:1px solid rgba(0,0,0,.18);transition:background .55s}
+.pass{color:var(--accent2);font-weight:600}
+
+/* ============ TYPE SPECIMEN ============ */
+.spec{border-top:1px solid rgba(0,0,0,.14);padding-top:clamp(24px,3vw,38px);margin-top:clamp(28px,4vw,46px)}
+.spec:first-of-type{border-top:0;padding-top:0;margin-top:clamp(24px,3.4vw,40px)}
+.glyphs{font-family:var(--disp);font-weight:var(--dispw);font-size:clamp(26px,4.2vw,58px);
+  line-height:1.2;letter-spacing:var(--dispt);word-spacing:.08em}
+.specmeta{display:flex;gap:clamp(16px,3vw,46px);flex-wrap:wrap;margin-top:20px}
+.specmeta span{opacity:.6}
+
+/* ============ COMPARE ============ */
+.cmp{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(16px,2.4vw,32px);margin-top:clamp(26px,3.6vw,44px)}
+.cmp>div{border:1px solid rgba(0,0,0,.12);padding:clamp(20px,2.6vw,32px)}
+.bars{display:flex;margin-top:18px;height:44px}
+.bars i{flex:1}
+
+/* ============ DEMO · DEVELOPMENTS ============ */
+.demo{background:var(--stone);transition:background .55s}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;
+  margin-bottom:clamp(24px,3.4vw,40px)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.pill{font-family:var(--label);border:1px solid rgba(0,0,0,.2);padding:9px 17px;font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;font-weight:500;
+  transition:background .25s,color .25s,border-color .25s}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(24px,3vw,42px) clamp(14px,1.8vw,26px)}
+.card{display:block;text-decoration:none}
+.card__img{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--paper)}
+.card__img img{width:100%;height:100%;object-fit:cover;transition:transform .9s cubic-bezier(.2,.7,.3,1)}
+.card:hover .card__img img{transform:scale(1.045)}
+.card__ph{position:absolute;inset:0;display:grid;place-content:center;gap:6px;text-align:center;opacity:.4}
+.card__ph b{font-family:var(--disp);font-size:38px;font-weight:var(--dispw)}
+.card__tag{position:absolute;top:12px;left:12px;background:var(--paper);padding:5px 11px}
+.card__nm{display:block;margin-top:17px;font-family:var(--label);font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;font-size:clamp(13px,1vw,15px);line-height:1.3;
+  padding-bottom:13px;border-bottom:1px solid rgba(0,0,0,.24)}
+.card__pl{display:block;margin-top:12px;font-size:11px;opacity:.62}
+.list{border-top:1px solid rgba(0,0,0,.16)}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,.48fr) auto;gap:clamp(10px,2vw,28px);
+  align-items:center;text-decoration:none;padding:clamp(14px,1.8vw,20px) 2px;
+  border-bottom:1px solid rgba(0,0,0,.16);
+  transition:padding-left .45s cubic-bezier(.16,.84,.32,1),border-color .35s}
+.row:hover,.row:focus-visible{padding-left:16px;border-bottom-color:var(--accent)}
+.row__i{font-family:var(--label);font-size:11px;letter-spacing:.14em;opacity:.38}
+.row__nm{font-family:var(--disp);font-weight:var(--dispw);letter-spacing:var(--dispt);
+  font-size:clamp(19px,2.1vw,30px);line-height:1.1}
+.row__pl,.row__st{font-family:var(--label);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.6}
+.row__st{text-align:right;white-space:nowrap}
+.row__th{display:none;width:64px;aspect-ratio:4/3;object-fit:cover;background:var(--paper)}
+.peek{position:fixed;top:0;left:0;z-index:70;margin:0;pointer-events:none;will-change:transform}
+.peek__in{width:clamp(200px,20vw,300px);aspect-ratio:4/3;overflow:hidden;background:var(--paper);
+  position:relative;opacity:0;transform:translate(-50%,-50%) scale(.94);
+  transition:opacity .3s ease,transform .45s cubic-bezier(.16,.84,.32,1);
+  box-shadow:0 22px 55px rgba(0,0,0,.26)}
+.peek.on .peek__in{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.peek img{width:100%;height:100%;object-fit:cover}
+body.nopeek .peek{display:none}
+body.nopeek .row{grid-template-columns:64px minmax(0,1fr) minmax(0,.48fr) auto}
+body.nopeek .row__i{display:none}
+body.nopeek .row__th{display:block}
+body.nopeek .row:hover{padding-left:2px}
+.hint{margin-top:18px;opacity:.55}
+
+/* ============ FOOTER ============ */
+.ftr{background:var(--deep);color:#fff;padding:clamp(52px,8vh,104px) 0 34px;transition:background .55s}
+.ftr__base{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  margin-top:clamp(34px,5vw,64px);padding-top:22px;border-top:1px solid rgba(255,255,255,.18);opacity:.6}
+.ol{counter-reset:n;list-style:none;padding:0;margin:26px 0 0;max-width:64ch}
+.ol li{counter-increment:n;position:relative;padding:16px 0 16px 44px;border-top:1px solid rgba(255,255,255,.16)}
+.ol li::before{content:counter(n,decimal-leading-zero);position:absolute;left:0;top:18px;
+  font-family:var(--label);font-size:11px;letter-spacing:.14em;color:var(--accent)}
+
+@media(max-width:1100px){ .sws{grid-template-columns:repeat(2,1fr)} .grid{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:860px){
+  .split,.cmp{grid-template-columns:1fr}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .row{grid-template-columns:minmax(0,1fr) auto;gap:5px 16px}
+  .row__i{display:none}
+  .row__nm{grid-column:1;grid-row:1}
+  .row__st{grid-column:2;grid-row:1}
+  .row__pl{grid-column:1/-1;grid-row:2}
+  body.nopeek .row{grid-template-columns:64px minmax(0,1fr);gap:4px 14px}
+  body.nopeek .row__th{grid-column:1;grid-row:1/span 3;align-self:start}
+  body.nopeek .row__nm{grid-column:2;grid-row:1}
+  body.nopeek .row__pl{grid-column:2;grid-row:2}
+  body.nopeek .row__st{grid-column:2;grid-row:3;text-align:left}
+}
+@media(max-width:560px){ .sws,.grid{grid-template-columns:1fr} }
+@media(prefers-reduced-motion:reduce){ *{transition-duration:.01ms!important;animation:none!important} html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+
+<div class="sw" id="sw">
+  <button data-d="a" aria-pressed="true">A · Harbour</button>
+  <button data-d="b" aria-pressed="false">B · Ship Street</button>
+</div>
+
+<header class="cover">
+  <div class="wrap">
+    <img id="logo" alt="Rego Property" style="height:44px;width:auto;margin-bottom:clamp(30px,5vh,58px)">
+    <p class="cap" style="opacity:.7">Brand directions · August 2026</p>
+    <h1 class="d1">Two ways to wear the same three colours.</h1>
+    <p class="lede">Navy, espresso and the gold already in your logo. What changes between the
+      two directions is not the palette — it is which colour leads. You are looking at
+      <b class="dirname" id="coverName">Harbour</b>.</p>
+  </div>
+</header>
+
+<section class="wrap">
+  <div class="split">
+    <p class="cap" style="opacity:.55">Why navy</p>
+    <div>
+      <h2 class="d3">You are a Brighton and Hove developer. Navy is the argument, not the decoration.</h2>
+      <div class="prose" style="margin-top:30px">
+        <p>The office is on Ship Street. Kings House stands on Hove Lawns with uninterrupted sea
+          views. Montpelier Place sits in the heart of Brighton and Hove. The next developments
+          are coastal. Navy carries all of that at once — sea, Regency ironwork, and the register
+          a developer is expected to hold — without a word of explanation in the copy.</p>
+        <p>Espresso keeps it warm. A navy-and-white site drifts corporate very quickly; a warm
+          dark brown in the deep sections and the footer stops that happening, and it gives the
+          gold something to sit against.</p>
+        <p><b>The gold does not change.</b> It is sampled directly from your existing logo. That
+          matters commercially as much as visually: this is a new ground for a mark you already
+          own, not a rebrand that throws away what people recognise.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" style="padding-top:0">
+  <div class="split">
+    <p class="cap" style="opacity:.55">The palette</p>
+    <div>
+      <h2 class="d2" id="palName">Harbour</h2>
+      <p class="lede" id="palLede" style="margin-top:16px;opacity:.72"></p>
+    </div>
+  </div>
+  <div class="sws" id="sws"></div>
+</section>
+
+<section class="wrap" style="padding-top:0">
+  <div class="split">
+    <p class="cap" style="opacity:.55">Legibility</p>
+    <div>
+      <h2 class="d3">Checked, not assumed.</h2>
+      <div class="prose" style="margin-top:22px">
+        <p>Every pairing below is measured against WCAG AA, which asks for 4.5:1 on body text.
+          This is why the secondary grey is darker than it looks like it wants to be — a paler
+          grey fails, and the failure only shows up once real copy is in.</p>
+      </div>
+      <table class="tbl" id="tbl">
+        <thead><tr><th>Pairing</th><th>Ratio</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="prose" style="margin-top:24px"><span class="cap" style="opacity:.55">One rule</span><br>
+        The gold reaches about 2:1 on the light ground. It is an accent, a rule and a hover
+        colour — never body text. On the dark sections it passes, which is where the footer
+        call-to-action lives.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" style="padding-top:0">
+  <div class="split">
+    <p class="cap" style="opacity:.55">Type</p>
+    <div>
+      <h2 class="d3">Your logo is a Didone. The headings should be too.</h2>
+      <div class="prose" style="margin-top:22px">
+        <p>The current site sets headings in a typeface unrelated to the wordmark, so the logo and
+          the headlines never quite speak to each other. Bodoni Moda is the same species as your
+          logo — high contrast, sharp serifs — which resolves that in one line of code.</p>
+        <p>It is set at 600 and above throughout. The thin-heading problem flagged earlier was a
+          weight problem, not a Didone problem.</p>
+        <p>All three families are on Google Fonts under the Open Font Licence. Free, self-hostable,
+          no licence fee in any direction. Type licensing is a cost that catches people out — this
+          avoids it entirely.</p>
+      </div>
+
+      <div class="spec">
+        <p class="cap" style="opacity:.5">Display · Bodoni Moda</p>
+        <p class="glyphs" style="margin:14px 0 0">Kings House<br>Hove Lawns</p>
+        <div class="specmeta cap"><span>Weights 600 · 700</span><span>Headings, scheme titles, pull quotes</span><span>Tracking −0.005em</span></div>
+      </div>
+
+      <div class="spec">
+        <p class="cap" style="opacity:.5">Labels · Jost</p>
+        <p style="font-family:var(--label);font-weight:500;font-size:clamp(15px,1.8vw,22px);
+           letter-spacing:.18em;text-transform:uppercase;margin:16px 0 0">
+          Completed · Hove Sussex</p>
+        <div class="specmeta cap"><span>Weights 400 · 500</span><span>Navigation, captions, buttons, scheme cards</span></div>
+      </div>
+
+      <div class="spec">
+        <p class="cap" style="opacity:.5">Body · Archivo</p>
+        <p style="margin:14px 0 0;max-width:56ch">Rego Property is a developer with vast and varied
+          experience in the property development sector in the UK, working in challenging urban
+          settings from Grade II listed refurbishments to first time buyer housing.</p>
+        <div class="specmeta cap"><span>Weights 400 · 500 · 600</span><span>All body copy · 16px / 1.68</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" style="padding-top:0">
+  <div class="split">
+    <p class="cap" style="opacity:.55">The size of the ask</p>
+    <div>
+      <h2 class="d3">What actually changes.</h2>
+      <div class="prose" style="margin-top:22px">
+        <p>The ground stays warm and light. The gold is untouched. The type scale is unchanged.
+          Only the primary colour and the dark-section tone move.</p>
+      </div>
+      <div class="cmp">
+        <div>
+          <p class="cap" style="opacity:.5">Previously · Ironwork</p>
+          <p class="d4" style="margin-top:10px">Olive-black</p>
+          <div class="bars"><i style="background:#F3EFE5"></i><i style="background:#38362D"></i><i style="background:#2B2A23"></i><i style="background:#E3DDCD"></i><i style="background:#CAA669"></i></div>
+        </div>
+        <div>
+          <p class="cap" style="opacity:.5">Proposed · <span id="cmpName">Harbour</span></p>
+          <p class="d4" style="margin-top:10px" id="cmpLead">Navy-led</p>
+          <div class="bars" id="cmpBars"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <div class="wrap">
+    <div class="split" style="margin-bottom:clamp(28px,4vw,48px)">
+      <p class="cap" style="opacity:.55">Developments</p>
+      <div>
+        <h2 class="d2">Seventeen schemes, two ways to read them.</h2>
+        <div class="prose" style="margin-top:22px">
+          <p>The grid keeps the layout of the current site — four across, name, location — because
+            it works. The list is the addition. Hover any row and the scheme previews under the
+            cursor, so the whole portfolio can be scanned in one screen.</p>
+          <p>This is what replaced the statistics block. It shows the scale of the portfolio
+            without publishing a single figure.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tools">
+      <div class="chips" id="fchips"></div>
+      <div class="chips" id="vchips"></div>
+    </div>
+    <div id="demoBody"></div>
+    <p class="cap hint" id="hint"></p>
+  </div>
+</section>
+
+<footer class="ftr">
+  <div class="wrap">
+    <p class="cap" style="opacity:.6">Next</p>
+    <h2 class="d2" style="margin-top:16px;max-width:16ch">Pick a direction and the rest follows.</h2>
+    <ol class="ol">
+      <li>Confirm Harbour or Ship Street. Everything downstream reads from seven variables, so the
+        switch is one line either way.</li>
+      <li>The logo as vector — SVG, EPS or AI. What is embedded here is a 319×158 PNG that softens
+        on retina and cannot be recoloured.</li>
+      <li>Original image files at full resolution. Every image is currently hot-linked off the live
+        site — fine for review, not for launch.</li>
+      <li>Copy and images for the fourteen remaining schemes, or confirmation to lift them from the
+        live site as they stand.</li>
+      <li>Where enquiry form submissions should go, plus a privacy notice — the form collects an
+        email address, so one is required.</li>
+    </ol>
+    <div class="ftr__base cap">
+      <span>Rego Property · 8-9 Ship Street, Brighton BN1 1AD</span>
+      <a href="#" onclick="scrollTo({top:0});return false" style="text-decoration:none">Back to top</a>
+    </div>
+  </div>
+</footer>
+
+<figure class="peek" id="peek" aria-hidden="true"><div class="peek__in" id="peekIn"></div></figure>
+
+<script>
+const LOGO_WHITE = "data:image/png;base64,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";
+document.getElementById('logo').src = LOGO_WHITE;
+
+/* ===================== THE DIRECTIONS ===================== */
+const DIRS = {
+  a:{ name:'Harbour', lead:'Navy-led',
+      lede:'Navy is the primary. Espresso carries the dark sections and the footer. The gold is unchanged.',
+      roles:[['Page ground','Bone','#F3EFE5'],['Primary','Harbour navy','#16283C'],
+             ['Dark sections','Espresso','#453E33'],['Secondary text','Mist','#5F6B78'],
+             ['Section fills','Oyster','#E4E0D6'],['Accent','Brand gold','#CAA669'],
+             ['Secondary accent','Brass','#A8823F']],
+      pairs:[['Navy on bone','#16283C','#F3EFE5','13.0:1'],
+             ['Mist on bone','#5F6B78','#F3EFE5','4.7:1'],
+             ['Gold on espresso','#CAA669','#453E33','4.6:1'],
+             ['Bone on espresso','#F3EFE5','#453E33','9.2:1']] },
+  b:{ name:'Ship Street', lead:'Espresso-led',
+      lede:'Espresso is the primary. Navy carries the dark sections and the footer. The gold is unchanged.',
+      roles:[['Page ground','Chalk','#F4F1E9'],['Primary','Espresso','#453E33'],
+             ['Dark sections','Harbour navy','#16283C'],['Secondary text','Clay grey','#77675A'],
+             ['Section fills','Oat','#E7E1D4'],['Accent','Brand gold','#CAA669'],
+             ['Secondary accent','Brass','#A8823F']],
+      pairs:[['Espresso on chalk','#453E33','#F4F1E9','9.4:1'],
+             ['Clay grey on chalk','#77675A','#F4F1E9','4.8:1'],
+             ['Gold on navy','#CAA669','#16283C','6.5:1'],
+             ['Chalk on navy','#F4F1E9','#16283C','13.3:1']] }
+};
+
+/* ===================== DEMO CONTENT ===================== */
+const IMG = 'https://regoproperty.com/img/containers/assets/developments/';
+const SCHEMES = [
+  {slug:'the-meads',name:'The Meads Collection',place:'Eastbourne',status:'In Construction',
+   hero:'https://regoproperty.com/img-process/asset/YXNzZXRzL2RldmVsb3BtZW50cy90aGUtbWVhZHMvbWVhZHMtbWFpbi5qcGc=?dpr=2&fit=crop&h=1050&q=50&w=1400&s=0ca943d77057eac06a8e137913568777'},
+  {slug:'kings-house',name:'Kings House',place:'Hove Sussex',status:'Completed',
+   hero:IMG+'kings-house/kingshouse-main.jpg/ac982c4141ae2862cb8dd53920597ff6.jpg'},
+  {slug:'montpelier-place',name:'Montpelier Place',place:'Brighton & Hove',status:'Completed',
+   hero:IMG+'montpelier-place/montpelier_place_8.jpg/2447c8c7a8b385c904d2ccf49ff2f783.jpg'},
+  {slug:'queens-hotel',name:'Queens Hotel',place:'Portsmouth',status:'Draft'},
+  {slug:'highdown',name:'Highdown',place:'Ferring',status:'Draft'},
+  {slug:'park-place',name:'Park Place',place:'Stevenage',status:'Draft'},
+  {slug:'grand-avenue',name:'Grand Avenue',place:'Hove Sussex',status:'Draft'},
+  {slug:'marling-house',name:'Marling House',place:'Wadhurst',status:'Draft'},
+  {slug:'oldcourt',name:'Oldcourt House',place:'Bray',status:'Draft'},
+  {slug:'shinfield',name:'Shinfield',place:'Reading',status:'Draft'},
+  {slug:'tide-mills',name:'Tide Mills',place:'Newhaven',status:'Draft'},
+  {slug:'quiet-waters',name:'Quiet Waters',place:'Angmering',status:'Draft'},
+  {slug:'royal-oak',name:'Royal Oak',place:'Ditchling',status:'Draft'},
+  {slug:'symbister',name:'Symbister',place:'Brighton',status:'Draft'},
+  {slug:'rothbury-mews',name:'Rothbury Mews',place:'Portslade',status:'Draft'},
+  {slug:'holywell-business-park',name:'Holywell Business Park',place:'Southam',status:'Draft'},
+  {slug:'network-oxford',name:'Network Oxford',place:'Oxford',status:'Draft'}
+];
+
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ph = d => `<div class="card__ph"><b>${esc(d.name[0])}</b><span class="cap">Image to add</span></div>`;
+
+/* Imagery is hot-linked off the live site, so it can fail — offline in a meeting,
+   or a moved file. Degrade to the placeholder rather than a broken-image icon. */
+addEventListener('error', e=>{
+  const img = e.target;
+  if(!(img instanceof HTMLImageElement)) return;
+  if(img.classList.contains('row__th')){
+    const box = document.createElement('div'); box.className = 'row__th';
+    img.replaceWith(box); return;
+  }
+  const holder = img.closest('.card__img,.peek__in');
+  if(!holder) return;
+  const initial = (img.alt||'·').trim()[0] || '·';
+  img.remove();
+  holder.insertAdjacentHTML('beforeend',
+    `<div class="card__ph"><b>${esc(initial)}</b><span class="cap">Image unavailable</span></div>`);
+}, true);
+
+/* ===================== RENDER · BRAND ===================== */
+function paintBrand(k){
+  const D = DIRS[k];
+  document.documentElement.dataset.dir = k;
+  coverName.textContent = D.name;
+  palName.textContent = D.name;
+  palLede.textContent = D.lede;
+  cmpName.textContent = D.name;
+  cmpLead.textContent = D.lead;
+
+  sws.innerHTML = D.roles.map(([role,nm,hex])=>`
+    <div class="sw1"><div class="chip" style="background:${hex}"></div>
+      <div class="meta"><span class="role cap">${esc(role)}</span>
+        <span class="nm">${esc(nm)}</span>
+        <span class="hex">${hex.toUpperCase()}</span></div></div>`).join('');
+
+  tbl.querySelector('tbody').innerHTML = D.pairs.map(([label,fg,bg,ratio])=>`
+    <tr><td><span class="dot" style="background:${bg}"></span>
+      <span class="dot" style="background:${fg};margin-left:-6px"></span>${esc(label)}</td>
+      <td>${ratio} <span class="pass">AA</span></td></tr>`).join('');
+
+  cmpBars.innerHTML = [D.roles[0][2],D.roles[1][2],D.roles[2][2],D.roles[4][2],D.roles[5][2]]
+    .map(h=>`<i style="background:${h}"></i>`).join('');
+
+  document.querySelectorAll('#sw button').forEach(b=>
+    b.setAttribute('aria-pressed', String(b.dataset.d===k)));
+}
+document.querySelectorAll('#sw button').forEach(b=> b.onclick = ()=> paintBrand(b.dataset.d));
+
+/* ===================== RENDER · DEMO ===================== */
+let filterState = 'All', viewState = 'grid';
+const FINE = matchMedia('(hover: hover) and (pointer: fine)');
+const peek = document.getElementById('peek'), peekIn = document.getElementById('peekIn');
+let peekRAF = 0;
+
+const card = d => `<a class="card" href="#" onclick="return false">
+  <div class="card__img">${d.hero?`<img src="${d.hero}" alt="${esc(d.name)}" loading="lazy">`:ph(d)}
+    <span class="card__tag cap">${esc(d.status)}</span></div>
+  <span class="card__nm">${esc(d.name)}</span><span class="card__pl cap">${esc(d.place)}</span></a>`;
+
+const row = (d,i) => `<a class="row" href="#" onclick="return false"
+  data-hero="${d.hero||''}" data-nm="${esc(d.name)}">
+  <span class="row__i">${String(i+1).padStart(2,'0')}</span>
+  ${d.hero?`<img class="row__th" src="${d.hero}" alt="" loading="lazy">`:'<div class="row__th"></div>'}
+  <span class="row__nm">${esc(d.name)}</span>
+  <span class="row__pl">${esc(d.place)}</span>
+  <span class="row__st">${esc(d.status)}</span></a>`;
+
+function paintDemo(){
+  const filters = ['All','In Construction','Completed','Draft'];
+  const set = filterState==='All' ? SCHEMES : SCHEMES.filter(d=>d.status===filterState);
+  fchips.innerHTML = filters.map(f=>
+    `<button class="pill" data-f="${f}" aria-pressed="${f===filterState}">${f}</button>`).join('');
+  vchips.innerHTML = ['grid','list'].map(v=>
+    `<button class="pill" data-v="${v}" aria-pressed="${v===viewState}">${v}</button>`).join('');
+  demoBody.innerHTML = viewState==='list'
+    ? `<div class="list" data-list>${set.map(row).join('')}</div>`
+    : `<div class="grid">${set.map(card).join('')}</div>`;
+  hint.textContent = viewState==='list'
+    ? (FINE.matches ? 'Move the cursor down the rows' : 'Thumbnails shown — no cursor to follow on touch')
+    : 'Switch to list to see the preview';
+  document.querySelectorAll('.pill').forEach(p=> p.onclick = ()=>{
+    if(p.dataset.f) filterState = p.dataset.f; else viewState = p.dataset.v;
+    paintDemo();
+  });
+  wirePeek();
+}
+
+/* Same mechanism as the site build: property-bound handlers so they die with the
+   node, and a loop that stops itself once the list is gone. */
+function wirePeek(){
+  document.body.classList.toggle('nopeek', !FINE.matches);
+  peek.classList.remove('on');
+  if(peekRAF){ cancelAnimationFrame(peekRAF); peekRAF = 0; }
+
+  const list = document.querySelector('[data-list]');
+  if(!list || !FINE.matches) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let tx=0, ty=0, x=0, y=0, live=false;
+  const half = ()=>[peekIn.offsetWidth/2+12, peekIn.offsetHeight/2+12];
+  const aim = (px,py)=>{ const [hw,hh]=half();
+    tx = Math.min(Math.max(px,hw), innerWidth-hw); ty = Math.min(Math.max(py,hh), innerHeight-hh); };
+  const show = r =>{
+    peekIn.innerHTML = r.dataset.hero
+      ? `<img src="${r.dataset.hero}" alt="${esc(r.dataset.nm)}">`
+      : `<div class="card__ph"><b>${esc(r.dataset.nm[0])}</b><span class="cap">Image to add</span></div>`;
+    peek.classList.add('on');
+  };
+  const loop = ()=>{
+    if(!document.body.contains(list)){ peekRAF = 0; peek.classList.remove('on'); return; }
+    const k = reduce ? 1 : .14;
+    x += (tx-x)*k; y += (ty-y)*k;
+    peek.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
+    peekRAF = requestAnimationFrame(loop);
+  };
+  const start = ()=>{ if(!live){ live = true; x = tx; y = ty; loop(); } };
+
+  list.onpointermove = e =>{ if(e.pointerType!=='mouse') return; aim(e.clientX,e.clientY); start(); };
+  list.onpointerleave = ()=> peek.classList.remove('on');
+  list.querySelectorAll('.row').forEach(r=>{
+    r.onpointerenter = e =>{ if(e.pointerType==='mouse') show(r); };
+    r.onfocus = ()=>{ const b = r.getBoundingClientRect();
+      aim(b.right-40, b.top+b.height/2); x = tx; y = ty;
+      peek.style.transform = `translate3d(${x}px,${y}px,0)`; show(r); start(); };
+    r.onblur = ()=> peek.classList.remove('on');
+  });
+}
+FINE.addEventListener('change', paintDemo);
+
+paintBrand('a');
+paintDemo();
+</script>
+</body>
+</html>
