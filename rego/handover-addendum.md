@@ -39,13 +39,12 @@ Ten colours, and nothing outside them. Role names are stable; the hexes belong t
 | Warm dark | Bark | `#453E33` | Footer, image overlays |
 | Accent | **Brand gold** | `#CAA669` | Underlines, hover rules, focus ring, the mark |
 | Accent 2 | Champagne | `#DCC9A0` | Small caps and rules on the darks only |
-| **Proposed 11th** | **Sage** | **`#B9C4A8`** | **On-dark accent only — see below** |
 
-**Sage is an addition to the pack and needs sign-off.** The homepage hero sits on Bark and called for a green accent, which the pack's own greens cannot provide: Olive measures **1.09:1** on Bark and Bay **1.27:1** — both invisible — and the mid-greens the pack bans fail anyway at 2.77:1. Sage clears **5.79:1**. Its scope is deliberately narrow: **accent on dark grounds only** — the hero payoff line, its link underlines, small caps and rules on dark. Never body text on chalk (it measures 1.62:1 there), never a fill. If it is not approved, the hero falls back to champagne in one line.
+**Ten colours, and nothing outside them.** A Sage `#B9C4A8` was briefly added as an eleventh, for a green accent on the Bark typographic hero — the pack's own greens cannot do that job, measuring 1.09:1 and 1.27:1 on Bark. That hero has since been replaced by the photographic one, so Sage has been removed and the palette is back to the pack's ten exactly. No sign-off is needed.
 
 Hold roughly **70% chalk · 18% olive · 8% linen · 4% gold**. If a page feels unfinished it needs a photograph, not more gold.
 
-**Bay and Bark are both darks — one per page, never adjacent.** In this build Bay takes the cover scrim and lightbox; Bark takes the footer. They never meet.
+**Bay and Bark are both darks — one per page, never adjacent.** Bay takes the detail-page scrim and the lightbox; Bark takes the footer and the homepage hero's ombre. They never meet.
 
 ### Contrast — measured against the built pages
 
@@ -110,31 +109,45 @@ Three hard rules, all enforced and verified in the browser:
 
 ---
 
-## 3c. The homepage hero
+## 3c. The homepage hero — block 1
 
-The photographic cover is gone. The homepage now opens on a **typographic block on Bark**: eyebrow, two caps lines in Instrument Serif, an italic payoff line in Sage, a supporting sentence and two underlined links — with a large `R` monogram bleeding off the right in Bay.
+Built to `hero-handover.html`, **approved option 3a**. The photographic hero replaces the Bark typographic block that briefly stood here.
 
 ```
-PROPERTY DEVELOPMENT · BRIGHTON
+[ Kings House photograph, uncropped at 3:2 ]
 
-DIFFICULT SITES &
-LISTED BUILDINGS,
-delivered.                      ← Instrument Serif italic, Sage
+  REGO PROPERTY                Home  Developments  About  Contact
+                                     ▔▔▔▔ gold underline on the active route
 
-From Grade II listed refurbishments on Hove seafront
-to first time buyer housing on the South Coast, we
-work where development is hardest.
-
-SEE THE DEVELOPMENTS    ABOUT REGO
+  PROPERTY DEVELOPMENT · BRIGHTON        Kings House, Hove seafront. A 1930s
+  Listed buildings,                      office block restored and returned
+  returned to use.                       to residential use.
+                                         SEE THE DEVELOPMENT
 ```
 
-Three things this fixes or depends on:
+**Height is the load-bearing decision.** `min(calc(100vw / 1.5), 960px)`, floor 600px — derived from the image's 3:2 ratio, never from `vh`. That is what keeps the whole building and the tops of the beach huts in frame. It is taller than the cover that was cut back earlier in the project; that was accepted deliberately, because height and the no-crop guarantee are the same decision. Changing one changes the other.
 
-- **It keeps the page to one dark family.** Bark for the hero and the footer, never adjacent — which is what the pack requires. Bay survives on the detail-page scrim and the lightbox, and as the hero watermark.
-- **The `R` is set in type, not the logo.** The supplied logo is a 319×158 PNG and would soften badly at 720px. Swap it for the vector when it arrives — the watermark is one element.
-- **The nav bar no longer guesses.** It used to go solid at a fixed 88% of viewport height, tuned to the old cover. It now measures whatever dark element opens the page (`.hero` or `.dhero`), so it stays correct as those heights change.
+A single ombre rises from the bottom edge and dies out at 34%. There is no overall scrim, no buttons, no fact strip, no scroll cue.
 
-The copy is drawn from Rego's own words — they describe working in "challenging urban settings" on "complex refurbishments of Grade II listed Buildings" alongside "first time buyer housing developments". No figures.
+### Two tensions in the handover, resolved
+
+1. **Parallax versus "no vertical crop."** §05 asks for parallax; §01 and §08 forbid cropping. Any overscan crops. The image therefore translates **downward only, starting from zero**: at rest it sits at `inset:0` so nothing is cropped, and as the page scrolls by `S` it moves down `0.06 × S`, putting the gap it opens at the image's top edge permanently above the fold. Both hold, with no compromise. This does **not** use the generic `[data-par]` path, which is centred and bidirectional and would crop.
+2. **Two headers.** The hero carries its own transparent header, so the site's fixed `.bar` is suppressed on the home route until the hero is ~70% scrolled away. It is hidden with `visibility`, not `opacity`, so it stays out of the tab order. This also cleared a live defect: the previous hero's link row collided with the fixed bar's logo between scrollY 480 and 584.
+
+### Deviations from the brand pack, both required by the handover
+
+- **The eyebrow is chalk, not champagne.** Acceptance 4 states it explicitly, overriding the pack's "small caps on dark go to champagne". Chalk on the ombre measures 9.41:1.
+- **`--sage` has been removed.** The eleventh colour existed only for the Bark typographic hero. Nothing consumes it now, so it is gone rather than left as an orphan token. The sign-off question it raised is moot.
+
+### The image
+
+The approved photograph is inlined as a **JPEG q78 data URI** — 1024×681, a true 3:2, re-encoded from the handover bundle. Inlining keeps this file self-contained, which matters because it gets opened and forwarded directly, guarantees the ratio the layout depends on, and means the homepage renders with no network at all. It takes the file from ~90KB to ~261KB.
+
+**Still outstanding:** the real **2880×1920** original from the client's library (this is the prototype-resolution file), plus `rego-logo-white.svg` — the logo is still the 319×158 PNG.
+
+### Below 700px
+
+The hero's own header stands down and the site's existing fixed bar and burger take over, rather than a second mobile menu being built. Body padding 20px, ombre 46%, headline floor 34px, and the deliberate line break is suppressed.
 
 ---
 
