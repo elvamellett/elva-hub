@@ -7,7 +7,7 @@
 <meta name="description" content="Two colour directions and a type system for Rego Property, built from navy, espresso and their existing brand gold.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600;6..96,700&family=Archivo:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800;6..96,900&family=Archivo:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ============ THE TWO DIRECTIONS ============
    Same six roles, same gold. Only the rank of navy and espresso changes.
@@ -22,7 +22,7 @@
   --stone:#E7E1D4; --accent:#CAA669; --accent2:#A8823F;
 }
 :root{
-  --disp:'Bodoni Moda',Didot,Georgia,serif; --dispw:600; --dispt:-.005em;
+  --disp:'Bodoni Moda',Didot,Georgia,serif; --dispw:800; --dispt:-.005em;
   --body:Archivo,sans-serif; --label:Jost,Archivo,sans-serif;
 }
 
@@ -35,13 +35,16 @@ img{display:block;max-width:100%}
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 :focus-visible{outline:1px solid var(--accent);outline-offset:4px}
-.wrap{max-width:1360px;margin:0 auto;padding:0 clamp(20px,5vw,72px)}
+/* padding-inline, not the shorthand — see the note in rego-site-final.html.
+   The shorthand zeroes padding-block and outranks the `section` rule. */
+.wrap{max-width:1360px;margin:0 auto;padding-inline:clamp(20px,5vw,72px)}
 section{padding-block:clamp(56px,8vw,116px)}
 h1,h2,h3{font-family:var(--disp);font-weight:var(--dispw);letter-spacing:var(--dispt);margin:0;line-height:1.05}
-.d1{font-size:clamp(40px,7.2vw,104px)}
-.d2{font-size:clamp(30px,4.8vw,64px)}
-.d3{font-size:clamp(24px,3.2vw,42px);line-height:1.14}
-.d4{font-size:clamp(20px,2.2vw,28px);line-height:1.2}
+.d1{font-size:clamp(34px,5vw,72px)}
+.d2{font-size:clamp(28px,3.8vw,54px)}
+.d3{font-size:clamp(23px,2.9vw,38px);line-height:1.16}
+.d4{font-size:clamp(19px,2.1vw,26px);line-height:1.2}
+h1,h2,h3{max-width:24ch;text-wrap:balance}
 .cap{font-family:var(--label);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:500}
 .prose p{max-width:62ch;margin:0 0 1.15em}
 .prose p:last-child{margin-bottom:0}
@@ -252,8 +255,9 @@ body.nopeek .row:hover{padding-left:2px}
         <p>The current site sets headings in a typeface unrelated to the wordmark, so the logo and
           the headlines never quite speak to each other. Bodoni Moda is the same species as your
           logo — high contrast, sharp serifs — which resolves that in one line of code.</p>
-        <p>It is set at 600 and above throughout. The thin-heading problem flagged earlier was a
-          weight problem, not a Didone problem.</p>
+        <p>It is set at <b>800</b> throughout. A Didone's thin strokes are drawn hair-fine by
+          design, and at display sizes the lighter grades break up on screen — the heaviest
+          grades keep the Didone character while giving those thins enough body to hold.</p>
         <p>All three families are on Google Fonts under the Open Font Licence. Free, self-hostable,
           no licence fee in any direction. Type licensing is a cost that catches people out — this
           avoids it entirely.</p>
@@ -262,7 +266,7 @@ body.nopeek .row:hover{padding-left:2px}
       <div class="spec">
         <p class="cap" style="opacity:.5">Display · Bodoni Moda</p>
         <p class="glyphs" style="margin:14px 0 0">Kings House<br>Hove Lawns</p>
-        <div class="specmeta cap"><span>Weights 600 · 700</span><span>Headings, scheme titles, pull quotes</span><span>Tracking −0.005em</span></div>
+        <div class="specmeta cap"><span>Weight 800</span><span>Headings, scheme titles, pull quotes</span><span>Tracking −0.005em</span></div>
       </div>
 
       <div class="spec">

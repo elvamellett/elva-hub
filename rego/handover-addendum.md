@@ -70,11 +70,13 @@ Closes the open display-typeface decision in §9 of the handover.
 
 | Role | Typeface | Weights | Notes |
 |---|---|---|---|
-| Display | **Bodoni Moda** | 600, 700 | Replaces Spectral. A true Didone — the same species as their logo, so wordmark and headlines finally agree. Tracking relaxed from `-0.018em` to `-0.005em`; Didones need more air. |
+| Display | **Bodoni Moda** | 800 | Replaces Spectral. A true Didone — the same species as their logo, so wordmark and headlines finally agree. Tracking relaxed from `-0.018em` to `-0.005em`; Didones need more air. |
 | Labels / nav | **Jost** | 400, 500 | Uppercase, wide tracking. This is what makes the scheme cards read like the live site. |
 | Body | **Archivo** | 400, 500, 600 | Unchanged. The most readable of the three at 16px. |
 
-Never below 600 on the display face. The earlier "thin headings are hard to read" flag was a weight problem, not a Didone problem — it does not block this change.
+**Set at 800, not 600.** A Didone draws its thin strokes hair-fine by design, and at display sizes the lighter grades genuinely break up on screen — this was tested and rejected on the first build. The heaviest grades keep the Didone character while giving the thins enough body to hold. Do not drop the display weight below 800 without looking at it at 60px first.
+
+Display sizes were also cut roughly in half from the first build (`.d1` from a 42–116px range to 32–64px, and the rest in proportion), and headings now carry a `22ch` measure with `text-wrap:balance` so they wrap on their own rather than relying on hardcoded line breaks.
 
 All three are Google Fonts under the Open Font Licence: free, self-hostable, no licence fee in any direction.
 

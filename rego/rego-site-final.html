@@ -11,7 +11,7 @@
 <meta property="og:url" content="https://regoproperty.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600;6..96,700&family=Archivo:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800;6..96,900&family=Archivo:wght@400;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ============ BRAND · A · HARBOUR ============
    Navy leads, espresso carries the dark sections, the gold is untouched —
@@ -27,7 +27,10 @@
   --stone:#E4E0D6;   /* section fills — oyster */
   --accent:#CAA669;  /* brand gold — sampled from their logo, unchanged */
   --accent2:#A8823F; /* brass */
-  --disp:'Bodoni Moda',Didot,Georgia,serif; --dispw:600; --dispt:-.005em;
+  /* 800, not 600. A Didone's thin strokes are meant to be hair-fine, which
+     breaks up badly at display sizes — the heaviest grades keep the Didone
+     character but give the thins enough body to survive. */
+  --disp:'Bodoni Moda',Didot,Georgia,serif; --dispw:800; --dispt:-.005em;
   --body:Archivo,sans-serif; --label:Jost,Archivo,sans-serif; --capt:.2em;
 }
 
@@ -41,13 +44,19 @@ img{display:block;max-width:100%}
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 :focus-visible{outline:1px solid var(--accent);outline-offset:4px}
-.wrap{max-width:1360px;margin:0 auto;padding:0 clamp(20px,5vw,72px)}
+/* padding-inline, NOT the `padding` shorthand: the shorthand also sets
+   padding-block:0, and .wrap outranks the `section` rule below it, so every
+   <section class="wrap"> was silently rendering with no vertical padding. */
+.wrap{max-width:1360px;margin:0 auto;padding-inline:clamp(20px,5vw,72px)}
 .cap{font-family:var(--label);font-size:10.5px;letter-spacing:var(--capt);text-transform:uppercase;font-weight:500}
 h1,h2,h3{font-family:var(--disp);font-weight:var(--dispw);letter-spacing:var(--dispt);margin:0;line-height:1.05}
-.d1{font-size:clamp(42px,8vw,116px)}
-.d2{font-size:clamp(32px,5.2vw,72px)}
-.d3{font-size:clamp(26px,3.4vw,46px);line-height:1.14}
-.d4{font-size:clamp(21px,2.4vw,30px);line-height:1.2}
+.d1{font-size:clamp(32px,4.4vw,64px)}
+.d2{font-size:clamp(28px,3.8vw,54px)}
+.d3{font-size:clamp(23px,2.9vw,38px);line-height:1.16}
+.d4{font-size:clamp(19px,2.1vw,26px);line-height:1.2}
+/* Display type needs a measure too — an unconstrained heading runs past where
+   the prose stops and the block stops looking like a block. */
+h1,h2,h3{max-width:22ch;text-wrap:balance}
 .prose p{max-width:60ch;margin:0 0 1.15em}
 .prose p:last-child{margin-bottom:0}
 .rule{border:0;border-top:1px solid rgba(0,0,0,.14);margin:0}
@@ -81,13 +90,13 @@ section{padding-block:clamp(52px,8vw,110px)}
 .prog{position:fixed;top:0;left:0;height:2px;background:var(--accent);z-index:90;width:0}
 
 /* ============ COVER ============ */
-.cover{position:relative;height:94svh;min-height:500px;overflow:hidden;background:var(--stone)}
+.cover{position:relative;height:55svh;min-height:380px;overflow:hidden;background:var(--stone)}
 .cover__img{position:absolute;inset:-8% 0;will-change:transform}
 .cover__img img{width:100%;height:100%;object-fit:cover}
 .cover::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(20,20,16,.34),rgba(20,20,16,0) 34%,rgba(20,20,16,.46))}
 .cover__in{position:absolute;inset:auto 0 0;z-index:3;color:#fff;padding-bottom:clamp(34px,6vh,78px)}
-.cover__in .d1{max-width:12ch}
+.cover__in .d1{max-width:16ch}
 .cue{position:absolute;right:clamp(20px,5vw,72px);bottom:clamp(34px,6vh,78px);z-index:4;color:#fff;
   display:flex;align-items:center;gap:12px}
 .cue span{display:block;width:1px;height:46px;background:currentColor;opacity:.6;animation:drop 2.4s ease-in-out infinite}
@@ -102,7 +111,10 @@ section{padding-block:clamp(52px,8vw,110px)}
 .fade.is-in{opacity:1;transform:none}
 
 /* ============ SPLIT ============ */
-.split{display:grid;grid-template-columns:minmax(0,.38fr) minmax(0,1fr);gap:clamp(26px,6vw,88px);align-items:start}
+.split{display:grid;grid-template-columns:minmax(0,.34fr) minmax(0,1fr);gap:clamp(26px,5vw,76px);align-items:start}
+/* Optical alignment: a 10.5px cap label sits high against a 38px heading, so
+   nudge it down to the heading's cap height rather than its box top. */
+.split>.cap:first-child{padding-top:clamp(5px,.6vw,11px)}
 
 /* ============ STICKY SCENE ============ */
 .scene{position:relative;height:320vh}
@@ -538,9 +550,6 @@ function viewHome(){ return `
   </div>
   <div class="cover__in wrap is-in">
     <p class="cap" style="opacity:.85"><span class="ln"><i>Established 2012 · Brighton</i></span></p>
-    <h1 class="d1" style="margin-top:16px">
-      <span class="ln"><i>Buildings</i></span><span class="ln"><i>that were</i></span><span class="ln"><i>already here.</i></span>
-    </h1>
   </div>
   <div class="cue"><span></span><p class="cap" style="margin:0">Scroll</p></div>
 </section>
@@ -548,16 +557,14 @@ function viewHome(){ return `
 <section class="wrap"><div class="split">
   <p class="cap fade" style="opacity:.55">What we do</p>
   <div>
-    <h2 class="d3 fade">
-      <span class="ln"><i>Rego Property is a developer with vast</i></span>
-      <span class="ln"><i>and varied experience in the property</i></span>
-      <span class="ln"><i>development sector in the UK.</i></span>
-    </h2>
-    <div class="prose fade" style="margin-top:32px">
+    <!-- The cover carries no headline, so this is the page's h1. Every page needs
+         exactly one, and an image-only cover would otherwise leave home without. -->
+    <h1 class="d3 fade">Rego Property is a developer with vast and varied experience in the property development sector in the UK.</h1>
+    <div class="prose fade" style="margin-top:clamp(26px,2.6vw,38px)">
       <p>We work in challenging urban settings, with developments ranging from complex refurbishments of Grade II listed Buildings to the construction of first time buyer housing developments. Established in 2012, the company has been grown organically and successfully by its two founders, Alan Coleman and Ronan Mellett.</p>
       <p>From master planning a complex regeneration site in the grounds of a listed hotel to more traditional housing developments on the South Coast, Rego Property will always bring their passion and expertise to every development opportunity.</p>
-      <p style="margin-top:26px"><a class="btn" href="#/about">About Rego</a></p>
     </div>
+    <p class="fade" style="margin:clamp(30px,3.2vw,44px) 0 0"><a class="btn" href="#/about">About Rego</a></p>
   </div>
 </div></section>
 
