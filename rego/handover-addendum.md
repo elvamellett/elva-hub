@@ -3,82 +3,107 @@
 **Date:** 16 August 2026
 **Supersedes:** §3 (colour), §4 (fonts), §6 (developments page), and the first two items of §9 (open decisions) of `rego-handover.md`. Everything else in that document still stands.
 
+> ## ⚠️ Route changed: Olive, not Harbour
+>
+> **`brand-pack-olive.html` is the single source of truth for colour and type.** The client chose **Olive (Route B)**, which supersedes the Harbour / navy route this addendum originally described. The site has been migrated; §2 and §3 below have been rewritten to match.
+>
+> Harbour is gone — navy `#16283C` is no longer in the build, and `rego-brand-directions-v4.html` (the Harbour-vs-Ship-Street pitch) has been retired. The one thing that carried across is the espresso `#453E33`, which is now **Bark**, the warm dark used for the footer.
+>
+> **One defect found in the pack, not fixed:** it records Lichen `#6B7261` on Chalk as **4.6:1** and marks it a pass for body text. Measured, it is **4.45:1** — a hair under the AA threshold of 4.5:1, and it is used for locations, captions and form hints. Darkening lichen three points to `#686F5E` measures 4.65:1 and makes the pack's own claim true. That is a change to a brand hex, so it is flagged for sign-off rather than taken unilaterally.
+
 ---
 
 ## 1. What changed and why
 
 Two things moved since the handover.
 
-**The palette is back open.** Ironwork was chosen, but the client is now considering a full rebrand, so the direction has been rebuilt around navy, espresso and their existing gold. The navy is not decorative: the office is on Ship Street, Kings House stands on Hove Lawns, Montpelier Place is in the middle of Brighton and Hove, and the schemes coming next are coastal. Navy carries sea, Regency ironwork and the developer register at once — and it leads naturally into the seafront work. Espresso stops it drifting corporate. **The gold is untouched**, still sampled from their own logo, so the pitch is "a new ground for the mark you already own".
+**The palette changed twice.** Ironwork was the original choice; a navy route (Harbour) was pitched against an espresso one; the client then settled on **Olive**, and `brand-pack-olive.html` was issued as the governing document. Olive is near-black and warm, set against chalk rather than white, so the pages stay quiet enough that the buildings carry them. **The gold is untouched** through all of it — still sampled from their own logo, which makes every one of these routes a new ground under a mark they already own rather than a rebrand.
 
 **The developments layout now follows the live site, not the previous build.** The client likes the current Proworx index — four across, name in wide-tracked caps, hairline rule, location beneath — so that layout has been adopted rather than replaced. The new work sits underneath it.
 
 ---
 
-## 2. The two directions
+## 2. Colour — Olive
 
-Same six roles in both. Only the rank of navy and espresso changes — that is the pitch: one brand, two temperaments.
+Ten colours, and nothing outside them. Role names are stable; the hexes belong to this route.
 
-### A · Harbour — navy-led (built as the default)
-
-| Role | Name | Hex |
-|---|---|---|
-| Page ground | Bone | `#F3EFE5` |
-| Primary | Harbour navy | `#16283C` |
-| Dark sections / footer | Espresso | `#453E33` |
-| Secondary text | Mist | `#5F6B78` |
-| Section fills | Oyster | `#E4E0D6` |
-| Accent | **Brand gold** (unchanged) | `#CAA669` |
-| Secondary accent | Brass | `#A8823F` |
-
-### B · Ship Street — espresso-led
-
-| Role | Name | Hex |
-|---|---|---|
-| Page ground | Chalk | `#F4F1E9` |
-| Primary | Espresso | `#453E33` |
-| Dark sections / footer | Harbour navy | `#16283C` |
-| Secondary text | Clay grey | `#77675A` |
-| Section fills | Oat | `#E7E1D4` |
-| Accent | **Brand gold** (unchanged) | `#CAA669` |
-| Secondary accent | Brass | `#A8823F` |
-
-Espresso `#453E33` is a warm dark taupe-brown rather than a coffee espresso. Worth saying out loud in the meeting: it sits close to the Ironwork `#38362D` they already approved, so Direction B reads as a warmer evolution of a palette they have already said yes to — not a second rebrand.
-
-### Contrast — measured, not estimated
-
-Computed against WCAG 2.1 relative luminance. AA wants 4.5:1 for body text.
-
-| Direction | Pairing | Ratio | |
+| Role | Name | Hex | Where it goes |
 |---|---|---|---|
-| A | Navy on bone | 13.04:1 | AA |
-| A | Mist on bone | 4.74:1 | AA |
-| A | Bone on espresso | 9.19:1 | AA |
-| A | Gold on espresso | 4.61:1 | AA |
-| B | Espresso on chalk | 9.35:1 | AA |
-| B | Clay grey on chalk | 4.80:1 | AA |
-| B | Chalk on navy | 13.26:1 | AA |
-| B | Gold on navy | 6.54:1 | AA |
+| Page ground | Chalk | `#F4F2E9` | Every page background |
+| Cards | Paper | `#FBF9F2` | Cards, solid nav bar, form fields |
+| Fills | Linen | `#E5E1D2` | Alternating sections, image placeholders |
+| Hairlines | Rule | `#D5D0BE` | All 1px borders and dividers — the only border colour |
+| Secondary text | Lichen | `#6B7261` | Locations, dates, captions, form hints |
+| Primary | Olive | `#3F4733` | Body copy, headings, buttons, chips |
+| Dark | Bay | `#2A3123` | Cover scrim, lightbox |
+| Warm dark | Bark | `#453E33` | Footer, image overlays |
+| Accent | **Brand gold** | `#CAA669` | Underlines, hover rules, focus ring, the mark |
+| Accent 2 | Champagne | `#DCC9A0` | Small caps and rules on the darks only |
 
-**One rule to enforce:** gold on the light ground is **1.99:1** and fails. It is an accent, a rule and a hover colour — never body text. On the dark sections it passes, which is where the footer call-to-action lives. The secondary greys are deliberately darker than they look like they want to be; a paler grey fails, and that only surfaces once real copy is in.
+Hold roughly **70% chalk · 18% olive · 8% linen · 4% gold**. If a page feels unfinished it needs a photograph, not more gold.
+
+**Bay and Bark are both darks — one per page, never adjacent.** In this build Bay takes the cover scrim and lightbox; Bark takes the footer. They never meet.
+
+### Contrast — measured against the built pages
+
+Computed from WCAG relative luminance, not taken from the pack on trust.
+
+| Pairing | Measured | Pack claims | Verdict |
+|---|---|---|---|
+| Olive on chalk | 8.67:1 | 9.6 | Pass |
+| Lichen on chalk | **4.45:1** | 4.6 | **Misses AA — see the note at the top** |
+| Chalk on bay | 11.99:1 | 12.9 | Pass |
+| Champagne on bay | 8.26:1 | 7.9 | Pass |
+| Chalk on bark | 9.41:1 | 9.6 | Pass |
+| Champagne on bark | 6.49:1 | 6.7 | Pass |
+| Gold on bark | 4.61:1 | 4.6 | Pass |
+| Gold on bay | 5.87:1 | 7.9 | Pass |
+| Gold on chalk | 2.04:1 | 2.0 | Fails — decorative only |
+
+**Gold is never a fill.** Not a button, not a background behind text. It is a 1px underline, a hover rule, the focus ring and the mark. On the darks, small text goes to champagne instead — it clears 4.5:1 where the gold is marginal.
 
 ---
 
 ## 3. Type
 
-Closes the open display-typeface decision in §9 of the handover.
-
-| Role | Typeface | Weights | Notes |
+| Role | Typeface | Weight | Notes |
 |---|---|---|---|
-| Display | **Bodoni Moda** | 800 | Replaces Spectral. A true Didone — the same species as their logo, so wordmark and headlines finally agree. Tracking relaxed from `-0.018em` to `-0.005em`; Didones need more air. |
-| Labels / nav | **Jost** | 400, 500 | Uppercase, wide tracking. This is what makes the scheme cards read like the live site. |
-| Body | **Archivo** | 400, 500, 600 | Unchanged. The most readable of the three at 16px. |
+| Display | **Instrument Serif** | 400 — the only one | Headings, scheme names, pull quotes. Tracking −0.005em |
+| Body / labels | **Jost** | 300, 400, 500 | Body copy, navigation, buttons, captions |
+| Long-form / tables | **Archivo** | 400, 500, 600 | Accommodation schedules and anything dense |
 
-**Set at 800, not 600.** A Didone draws its thin strokes hair-fine by design, and at display sizes the lighter grades genuinely break up on screen — this was tested and rejected on the first build. The heaviest grades keep the Didone character while giving the thins enough body to hold. Do not drop the display weight below 800 without looking at it at 60px first.
+Three hard rules, all enforced and verified in the browser:
 
-Display sizes were also cut roughly in half from the first build (`.d1` from a 42–116px range to 32–64px, and the rest in proportion), and headings now carry a `22ch` measure with `text-wrap:balance` so they wrap on their own rather than relying on hardcoded line breaks.
+- **Never above weight 400 on display type.** Instrument Serif has one weight; faking bold is forbidden.
+- **Never below 21px on display type** — it thins out. Both `.d4` and the list-view scheme names had 19px floors and were raised. Anything smaller that needs emphasis goes to Jost 500 caps.
+- **Archivo, not Jost, for tables.** Jost's round forms tire at length, so the accommodation schedules use `--long`.
 
-All three are Google Fonts under the Open Font Licence: free, self-hostable, no licence fee in any direction.
+**Scale** keeps the halved sizes from the previous round rather than the pack's table. The pack lists `.d1` at `clamp(42px, 8vw, 116px)` and describes it as "unchanged from the current build" — but that describes the build *before* the halving instruction, so it is a stale reading rather than a decision to go back up. Line heights are the pack's.
+
+| Class | Size | Line height |
+|---|---|---|
+| `.d1` | `clamp(32px, 4.4vw, 64px)` | 1.02 |
+| `.d2` | `clamp(28px, 3.8vw, 54px)` | 1.06 |
+| `.d3` | `clamp(23px, 2.9vw, 38px)` | 1.14 |
+| `.d4` | `clamp(21px, 2.1vw, 26px)` | 1.20 |
+
+**On nav and buttons:** the pack says "Jost 500 caps" in §03 and "sentence case for buttons and menus" in §05. Read §05 as a copywriting rule — write "Send enquiry", not "Send Enquiry" — so §03 governs the visual treatment. Nav and buttons stay uppercase; the source text is sentence case.
+
+---
+
+## 3b. Surfaces
+
+- **Square corners everywhere.** No border-radius on anything.
+- **No shadows.** Both were removed — the nav bar's became a 1px rule border, the cursor preview's a 1px border. Depth comes only from ground shifts and hairlines. **One border weight: 1px Rule.**
+- **Cards** sit on Paper with a hairline border, image 4:3, name in Jost caps under a rule, location in Lichen. The border goes gold on hover.
+- **Status tags invert:** chalk-on-olive when passive ("Completed"), olive-on-chalk when active ("In construction").
+- **Two button styles, no third.** Primary is an olive fill with chalk text, hovering to Bay; `.btn--out` is the olive outline, hovering to a fill.
+- **Text links** are olive with a 1px gold underline 4px below the baseline; hover moves the underline to olive.
+- **Form fields** are Paper with a 1px Rule border and a caps label above — they were bottom-border-only before.
+
+**Motion** is 280–450ms on `cubic-bezier(.16,.84,.32,1)` for every state change. One judgement call: the pinned scene's slow image drift and the cover parallax are ambient, scroll-linked motion rather than state changes, and `prefers-reduced-motion` already disables them, so they were left alone. If §04 was meant to cover those too, they are a one-line removal.
+
+**Voice:** locations are now bare — `Hove Sussex` became `Hove` on Kings House and Grand Avenue.
 
 ---
 
@@ -153,11 +178,14 @@ Also still open: whether GDV and unit counts should stay stripped. They are curr
 
 | File | What |
 |---|---|
-| `rego-site-final.html` | The site. Four pages, Harbour palette, new type, new developments page, split blocks. |
-| `rego-brand-directions-v4.html` | The pitch. Both directions live-switchable, swatches, measured contrast, type specimen, and a working developments demo to drive in the meeting. |
+| `brand-pack-olive.html` | **The source of truth.** The client's brand pack as supplied — self-contained, fonts embedded, renders offline. Anything that contradicts it is out of date. |
+| `rego-site-final.html` | The site. Four pages, Olive throughout, split blocks, developments grid/list. |
+| `rego-brand-olive.html` | Olive applied — palette, contrast measured live in the page, type specimen and a working developments demo to drive in a meeting. |
 | `rego-handover.md` | The original handover. Still accurate apart from the sections this addendum supersedes. |
 
-Switching the whole site to Direction B is a seven-line change to the `:root` block at the top of `rego-site-final.html` — the values are in §2 above, and every colour on both pages reads from those variables.
+`rego-brand-directions-v4.html` (the Harbour-vs-Ship-Street pitch) was retired when Olive was chosen; it is in the git history if the reasoning is ever needed.
+
+Every colour and face on both pages reads from the `:root` block at the top of each file, so a future route change is a token swap, not a rewrite.
 
 ---
 
