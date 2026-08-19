@@ -1552,7 +1552,20 @@ Pages.venueDetail = (venueName) => {
     const booked = allRows.filter(r => r.upcoming).sort((a, b) => key(a) < key(b) ? -1 : 1);
     const noAppt = allRows.filter(r => !r.upcoming && !r.last).sort((a, b) => (a.o.eventDate || '9999') < (b.o.eventDate || '9999') ? -1 : 1);
     const visited = allRows.filter(r => !r.upcoming && r.last).sort((a, b) => key(a) < key(b) ? -1 : 1);
+    const venueArg = encodeURIComponent(v.venue).replace(/'/g, '%27');
     body = `
+      ${dayChips.length ? `<div class="card" style="margin-bottom:16px; padding-top:12px; padding-bottom:8px">
+        <h2 style="margin-top:0; margin-bottom:4px">🖨 Print event sheets</h2>
+        <p class="small muted" style="margin:0 0 4px">Everything for the day in one go — an A4 customer sheet for every customer booked at this venue on that date, plus the staff run sheet.</p>
+        ${dayChips.map(dc => `
+          <div class="flex" style="padding:9px 0; border-top:1px solid var(--line); flex-wrap:wrap; align-items:center">
+            <b>${esc(dc.label)}</b>
+            <span class="small muted">${dc.count} customer${dc.count === 1 ? '' : 's'}</span>
+            <span style="flex:1"></span>
+            <button class="small primary" onclick="Actions.printCustomerSheets('${venueArg}','${dc.date}')">🖨 Customer sheets (${dc.count})</button>
+            <button class="small" onclick="Actions.printRunSheet('${venueArg}','${dc.date}')">🖨 Staff run sheet</button>
+          </div>`).join('')}
+      </div>` : ''}
       ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
         ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '—')}</span>`, r.upcoming)).join('')}</div>` : ''}
       ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
