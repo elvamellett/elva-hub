@@ -1301,6 +1301,7 @@ const App = {
       ['dashboard', '⌂', 'Dashboard'],
       ['customers', '👥', 'Customers', () => DB.customers.length],
       ['venues', '📍', 'Venues'],
+      ['import', '⇪', 'Connect data'],
     ];
     document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
       `<a href="#/${key}" class="${page === key ? 'active' : ''}"><span>${icon}</span> ${label}${cnt ? `<span class="cnt">${cnt()}</span>` : ''}</a>`).join('');
@@ -1308,6 +1309,7 @@ const App = {
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
       venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
+      import: Pages.importPage,
     };
     main.innerHTML = (pages[page] || Pages.dashboard)();
     main.scrollTop = 0;
@@ -1340,7 +1342,8 @@ Pages.dashboard = () => {
       <button onclick="App.go('#/customers')">Customer directory</button>
       <button onclick="App.go('#/venues')">Venues</button>
     </div>
-    ${ShopifyService.isLive() && AppointlyService.isLive() ? '' : `<div class="seam">🔌 Mock mode — showing seeded sample data. Add the Shopify + Appointly credentials at the LIVE CREDENTIAL SEAM near the top of this file and these same screens fill with the real customers and booking answers.</div>`}
+    ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">✅ Showing your imported Shopify + Appointly data — last import ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Refresh it on the Connect data page →</a></div>`
+      : `<div class="seam">🔌 Sample data — nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly →</b></a> Export a CSV from each app, drop it in, and these screens fill with the real customers and booking answers.</div>`}
     <div class="cols2">
       <div>
         <h2>Next appointments</h2>
@@ -1617,7 +1620,7 @@ Pages.customerDetail = (id) => {
               <ul>${(qa.a || '—').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')
               : '<div class="small muted">Event-day slot — no booking questions.</div>'}
           </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here once the customer books through the site.</p>'}
-        ${AppointlyService.isLive() ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — mock mode. Add the Appointly API key at the LIVE CREDENTIAL SEAM near the top of this file to sync real booking answers.</div>'}
+        ${AppointlyService.isLive() || DB.importInfo ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — sample data. Bring in the real booking answers on the <a class="plain" href="#/import">Connect data</a> page.</div>'}
       </div>
       <div>
         <h2 style="margin-top:0">Orders (${orders.length})</h2>
@@ -1637,6 +1640,285 @@ Pages.customerDetail = (id) => {
 };
 </script>
 <script>
+/* =============================== CONNECT DATA (CSV import) =============================== */
+/* "Connecting" Shopify + Appointly without a server: both apps have
+   Export buttons, and this page turns those CSV files into the same
+   shape as the seeded sample data. Browsers can't call the Shopify
+   Admin API directly (blocked for security, and the token would be
+   exposed), so a fully automatic sync needs this dashboard hosted with
+   a small backend — the LIVE CREDENTIAL SEAMs above mark where that
+   plugs in when the time comes. */
+
+function parseCsv(text) {
+  text = String(text || '').replace(/^\uFEFF/, '');
+  const rows = []; let row = [], cell = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+      else cell += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.length > 1 || row[0].trim() !== '') rows.push(row);
+      row = [];
+    } else cell += ch;
+  }
+  row.push(cell);
+  if (row.length > 1 || row[0].trim() !== '') rows.push(row);
+  if (!rows.length) return { headers: [], records: [] };
+  const headers = rows[0].map(h => h.trim());
+  const records = rows.slice(1).map(r => { const o = {}; headers.forEach((h, i) => o[h] = (r[i] || '').trim()); return o; });
+  return { headers, records };
+}
+
+const ImportService = {
+  state: { customers: null, orders: null, appointly: null },
+
+  async fileChosen(kind, input) {
+    try {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const parsed = parseCsv(text);
+      if (!parsed.records.length) throw new Error('No data rows found in ' + file.name + ' — is it a CSV export?');
+      ImportService.state[kind] = { name: file.name, headers: parsed.headers, records: parsed.records };
+      App.route();
+    } catch (e) { input.value = ''; UI.err(e); }
+  },
+  clear(kind) { ImportService.state[kind] = null; App.route(); },
+
+  // First header equal to a candidate wins; then first header containing one.
+  _col(headers, ...cands) {
+    for (const cand of cands) { const h = headers.find(x => x.toLowerCase() === cand); if (h) return h; }
+    for (const cand of cands) { const h = headers.find(x => x.toLowerCase().includes(cand)); if (h) return h; }
+    return null;
+  },
+  _digits: s => String(s || '').replace(/\D/g, ''),
+  _normDate(str) {
+    const s = String(str || '').trim();
+    if (!s) return '';
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[0];
+    m = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/); // Irish exports: day first
+    if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+    const d = new Date(s);
+    return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  },
+  _normTime(str) {
+    const m = String(str || '').match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+    if (!m) return '';
+    let h = parseInt(m[1], 10);
+    if (m[3]) { const pm = m[3].toLowerCase() === 'pm'; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+    return String(h).padStart(2, '0') + ':' + m[2];
+  },
+
+  // Turn whatever files are loaded into { customers, orders, orderItems, appointments }.
+  build() {
+    const s = ImportService.state;
+    const col = ImportService._col, normDate = ImportService._normDate, normTime = ImportService._normTime;
+    const customers = [], orders = [], orderItems = [], appointments = [], warnings = [];
+    const byEmail = new Map(), byPhone = new Map();
+    const findOrCreateCustomer = (name, email, phone, extra) => {
+      const e = String(email || '').toLowerCase();
+      const p = ImportService._digits(phone);
+      let c = (e && byEmail.get(e)) || (p && byPhone.get(p)) || null;
+      if (!c) {
+        c = { id: uid(), name: (name || email || 'Unknown customer').trim(), daughterName: '', email: email || '',
+          phone: phone || '', address: '', notes: '', createdAt: nowIso() };
+        customers.push(c);
+      }
+      if (e) byEmail.set(e, c);
+      if (p) byPhone.set(p, c);
+      if (extra) for (const k of Object.keys(extra)) if (extra[k] && !c[k]) c[k] = extra[k];
+      return c;
+    };
+
+    /* ---- Shopify customers export ---- */
+    if (s.customers) {
+      const H = s.customers.headers;
+      const first = col(H, 'first name'), last = col(H, 'last name');
+      const email = col(H, 'email'), phone = col(H, 'phone');
+      const addr1 = col(H, 'address1'), city = col(H, 'city'), prov = col(H, 'province name', 'province'), zip = col(H, 'zip');
+      const note = col(H, 'note');
+      if (!email && !first) warnings.push('Customers file: the usual Shopify columns (First Name, Email…) weren\'t found — imported what was possible.');
+      for (const r of s.customers.records) {
+        const name = [first ? r[first] : '', last ? r[last] : ''].filter(Boolean).join(' ').trim();
+        if (!name && !(email && r[email])) continue;
+        findOrCreateCustomer(name, email ? r[email] : '', phone ? r[phone] : '', {
+          address: [addr1, city, prov, zip].map(h => h ? r[h] : '').filter(Boolean).join(', '),
+          notes: note ? r[note] : '',
+        });
+      }
+    }
+
+    /* ---- Shopify orders export (one row per line item) ---- */
+    if (s.orders) {
+      const H = s.orders.headers;
+      const ref = col(H, 'name'), email = col(H, 'email'), created = col(H, 'created at');
+      const lineName = col(H, 'lineitem name'), lineQty = col(H, 'lineitem quantity'), linePrice = col(H, 'lineitem price'), lineSku = col(H, 'lineitem sku');
+      const bName = col(H, 'billing name'), phone = col(H, 'phone', 'billing phone');
+      const notes = col(H, 'notes'), noteAttr = col(H, 'note attributes'), cancelled = col(H, 'cancelled at');
+      if (!ref || !lineName) warnings.push('Orders file: expected Shopify columns (Name, Lineitem name…) weren\'t all found — imported what was possible.');
+      const groups = new Map();
+      for (const r of s.orders.records) {
+        const key = ref ? r[ref] : String(groups.size);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+      }
+      for (const [reference, rows] of groups) {
+        const head = rows.find(r => (email && r[email]) || (bName && r[bName])) || rows[0];
+        const cust = findOrCreateCustomer(bName ? head[bName] : '', email ? head[email] : '', phone ? head[phone] : '');
+        // Appointly writes booking details onto the order as note attributes
+        // ("Key: value" lines) — pull out the booking + questions.
+        const attrs = [];
+        String(noteAttr ? head[noteAttr] : '').split(/\n+/).forEach(line => {
+          const m = line.match(/^([^:]{1,120}):\s*(.*)$/);
+          if (m && m[2].trim()) attrs.push([m[1].trim(), m[2].trim()]);
+        });
+        let eventHotel = '', eventDate = '', bDate = '', bTime = '', bService = '', bStaff = '';
+        const qas = [];
+        for (const [k, val] of attrs) {
+          const kl = k.toLowerCase();
+          if (/booking date|appointment date/.test(kl) || kl === 'date') bDate = normDate(val);
+          else if (/booking time|appointment time|start time/.test(kl) || kl === 'time') bTime = normTime(val);
+          else if (/^(service|appointment type)$/.test(kl)) bService = val;
+          else if (/^(staff|employee)$/.test(kl)) bStaff = val;
+          else if (/event date|ceremony date/.test(kl)) eventDate = normDate(val);
+          else if (/^(event|occasion|venue|hotel|location)$/.test(kl)) eventHotel = eventHotel || val;
+          else qas.push({ q: k, a: val });
+        }
+        const createdAt = (() => { const d = new Date(created ? head[created] : ''); return isNaN(d) ? nowIso() : d.toISOString(); })();
+        const order = { id: uid(), customerId: cust.id, reference: reference || ('IMP-' + (orders.length + 1)),
+          status: cancelled && head[cancelled] ? 'cancelled' : 'confirmed', createdAt,
+          eventHotel, eventDate, planType: null, staffNotes: notes ? head[notes] : '' };
+        orders.push(order);
+        for (const r of rows) {
+          const t0 = lineName ? r[lineName] : '';
+          if (!t0) continue;
+          let title = t0, colour = '', size = '';
+          const dash = t0.split(' - ');
+          if (dash.length > 1) {
+            title = dash[0].trim();
+            const vp = dash.slice(1).join(' - ').split(' / ').map(x => x.trim());
+            colour = vp[0] || ''; size = vp[1] || '';
+          }
+          orderItems.push({ id: uid(), orderId: order.id, productId: null, title,
+            styleCode: lineSku ? r[lineSku] : '', category: /dress|gown/i.test(title) ? 'dress' : 'accessory',
+            colour, size, quantity: parseInt(lineQty ? r[lineQty] : '1', 10) || 1,
+            retailPriceCents: parseEuros(linePrice ? r[linePrice] : '') || 0 });
+        }
+        if (bDate || qas.length) {
+          const at = bDate || normDate(createdAt.slice(0, 10)) || todayStr();
+          appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: bService || 'Booking',
+            time: bTime, staffName: bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
+            bookedAt: createdAt, syncedAt: nowIso(), questions: qas });
+        }
+      }
+    }
+
+    /* ---- Appointly bookings export ---- */
+    if (s.appointly) {
+      const H = s.appointly.headers;
+      const email = col(H, 'email'), name = col(H, 'customer name', 'client name', 'name'), phone = col(H, 'phone');
+      const date = col(H, 'appointment date', 'booking date', 'start date', 'date');
+      const time = col(H, 'start time', 'appointment time', 'booking time', 'time');
+      const service = col(H, 'service', 'appointment type', 'type');
+      const staff = col(H, 'staff', 'employee', 'team member', 'assigned');
+      const statusCol = col(H, 'status'), location = col(H, 'location', 'venue');
+      const known = new Set([email, name, phone, date, time, service, staff, statusCol, location].filter(Boolean));
+      // Question columns: headers with a "?" if any exist, otherwise every
+      // leftover column that isn't an obvious id/timestamp/money field.
+      const withQ = H.filter(h => h.includes('?'));
+      const qCols = withQ.length ? withQ
+        : H.filter(h => h && !known.has(h) && !/\bid\b|created|updated|duration|price|amount|currency|order|payment|end time|timezone/i.test(h));
+      if (!qCols.length) warnings.push('Appointly file: no question columns found — booking answers may be missing.');
+      for (const r of s.appointly.records) {
+        if (!((email && r[email]) || (name && r[name]))) continue;
+        if (statusCol && /cancel/i.test(r[statusCol])) continue;
+        const cust = findOrCreateCustomer(name ? r[name] : '', email ? r[email] : '', phone ? r[phone] : '');
+        const d = normDate(date ? r[date] : '');
+        appointments.push({ id: uid(), customerId: cust.id, source: 'appointly',
+          service: [service ? r[service] : '', location ? r[location] : ''].filter(Boolean).join(' — ') || 'Appointment',
+          appointmentAt: d || todayStr(), time: normTime(time ? r[time] : ''),
+          status: (d || todayStr()) >= todayStr() ? 'upcoming' : 'completed',
+          bookedAt: nowIso(), syncedAt: nowIso(), staffName: staff ? r[staff] : '',
+          questions: qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a) });
+      }
+    }
+
+    return { customers, orders, orderItems, appointments, warnings };
+  },
+
+  preview() {
+    try {
+      const b = ImportService.build();
+      if (!b.customers.length) throw new Error('Nothing to import yet — add at least one CSV file first.');
+      const answers = b.appointments.filter(a => a.questions.some(qa => qa.a)).length;
+      UI.modal(`
+        <h3>Ready to import</h3>
+        <ul style="line-height:1.9">
+          <li><b>${b.customers.length}</b> customer${b.customers.length === 1 ? '' : 's'}</li>
+          <li><b>${b.orders.length}</b> order${b.orders.length === 1 ? '' : 's'} (${b.orderItems.length} item${b.orderItems.length === 1 ? '' : 's'})</li>
+          <li><b>${b.appointments.length}</b> booking${b.appointments.length === 1 ? '' : 's'} — <b>${answers}</b> with question answers</li>
+        </ul>
+        ${b.warnings.map(w => `<div class="note">${esc(w)}</div>`).join('')}
+        <p class="small muted">Importing replaces the sample data with your real data. It's stored only in this browser — nothing is uploaded anywhere. “Reset demo data” (bottom left) brings the samples back.</p>
+        <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+          <button class="primary" onclick="ImportService.apply()">Import now</button></div>`);
+    } catch (e) { UI.err(e); }
+  },
+  apply() {
+    const b = ImportService.build();
+    if (!b.customers.length) return;
+    DB.customers = b.customers; DB.orders = b.orders; DB.orderItems = b.orderItems; DB.appointments = b.appointments;
+    for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
+      if (Array.isArray(DB[k])) DB[k] = [];
+    DB.importInfo = { at: nowIso(), counts: { customers: b.customers.length, orders: b.orders.length, bookings: b.appointments.length } };
+    Store.save(); Domain.refreshAll();
+    ImportService.state = { customers: null, orders: null, appointly: null };
+    UI.closeModal();
+    App.go('#/dashboard'); App.route();
+    UI.toast('Imported ' + DB.importInfo.counts.customers + ' customers, ' + DB.importInfo.counts.orders + ' orders and ' + DB.importInfo.counts.bookings + ' bookings.');
+  },
+};
+
+Pages.importPage = () => {
+  const st = ImportService.state;
+  const slot = (kind, title, help) => `
+    <div class="card" style="margin-bottom:12px">
+      <div class="flex" style="justify-content:space-between; flex-wrap:wrap; align-items:center">
+        <div style="flex:1; min-width:240px"><b>${title}</b><br><span class="small muted">${help}</span></div>
+        <div style="text-align:right">
+          ${st[kind] ? `<span class="badge b-green">✓ ${esc(st[kind].name)} — ${st[kind].records.length} rows</span>
+            <button class="small" onclick="ImportService.clear('${kind}')">✕ Remove</button>`
+          : `<label class="btn small primary" style="cursor:pointer; display:inline-block">Choose CSV<input type="file" accept=".csv,text/csv" style="display:none" onchange="ImportService.fileChosen('${kind}', this)"></label>`}
+        </div>
+      </div>
+    </div>`;
+  const any = st.customers || st.orders || st.appointly;
+  return `
+    <h1>Connect Shopify &amp; Appointly</h1>
+    <p class="sub">Two ways to get the real data in — CSV import works today, with no technical setup.</p>
+    ${DB.importInfo ? `<div class="note ok" style="margin-bottom:16px">✅ Connected via CSV import — last import ${fmtDateTime(DB.importInfo.at)}: ${DB.importInfo.counts.customers} customers, ${DB.importInfo.counts.orders} orders, ${DB.importInfo.counts.bookings} bookings. Import again any time to refresh.</div>` : ''}
+    <h2>Route 1 — CSV import (works now)</h2>
+    <p class="small muted" style="max-width:780px">Export from each app, then add the files below. Any one file works on its own; together they build the full picture. Everything stays in this browser — nothing is uploaded anywhere.</p>
+    ${slot('customers', '1 · Shopify customers', 'Shopify admin → Customers → Export → “Plain CSV file”. Names, emails, phones and addresses.')}
+    ${slot('orders', '2 · Shopify orders', 'Shopify admin → Orders → Export → “Plain CSV file”. What each customer ordered — and if Appointly saved the booking onto the order, the booking questions come in too.')}
+    ${slot('appointly', '3 · Appointly bookings', 'Appointly app → Appointments → Export. Any CSV with a customer email and date works; question columns become the booking answers.')}
+    <div class="toolbar">
+      <button class="primary" ${any ? '' : 'disabled'} onclick="ImportService.preview()">Preview import…</button>
+      <button onclick="App.resetDemo()">↺ Back to sample data</button>
+    </div>
+    <h2 style="margin-top:28px">Route 2 — automatic live sync (needs hosting)</h2>
+    <div class="card" style="max-width:780px">
+      <p class="small" style="margin-top:0">A web page opened as a file can't talk to the Shopify Admin API directly — Shopify blocks it for security, and the API key would be visible to anyone with the file. When you want bookings appearing here by themselves, this dashboard needs a small server behind it (or to run as a Shopify custom app). The <b>LIVE CREDENTIAL SEAM</b> blocks near the top of this file mark exactly where the Shopify + Appointly credentials plug in at that point — the screens themselves won't change.</p>
+      <p class="small muted" style="margin-bottom:0">Until then, a fresh CSV import takes about a minute whenever you want to refresh.</p>
+    </div>`;
+};
+
 /* =============================== PRINTING (the only actions) =============================== */
 /* This build is a viewing platform: staff browse what Shopify + Appointly
    feed in, and the only thing it DOES is print — A4 customer sheets
