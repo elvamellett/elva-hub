@@ -1339,11 +1339,12 @@ Pages.dashboard = () => {
     </div>
     <div class="toolbar">
       <button class="primary" onclick="Actions.printAllCustomerSheets()">🖨 Print all customer sheets (details + booking answers)</button>
+      ${typeof LiveSync !== 'undefined' && LiveSync.available() ? '<button onclick="LiveSync.sync()">⟳ Sync from Shopify</button>' : ''}
       <button onclick="App.go('#/customers')">Customer directory</button>
       <button onclick="App.go('#/venues')">Venues</button>
     </div>
-    ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">✅ Showing your imported Shopify + Appointly data — last import ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Refresh it on the Connect data page →</a></div>`
-      : `<div class="seam">🔌 Sample data — nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly →</b></a> Export a CSV from each app, drop it in, and these screens fill with the real customers and booking answers.</div>`}
+    ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">✅ Showing your ${DB.importInfo.live ? 'live Shopify + Appointly data — last sync' : 'imported Shopify + Appointly data — last import'} ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Connect data →</a></div>`
+      : `<div class="seam">🔌 Sample data — nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly →</b></a> Sync live via the free Google web app, or drop in CSV exports — either fills these screens with the real customers and booking answers.</div>`}
     <div class="cols2">
       <div>
         <h2>Next appointments</h2>
@@ -1714,6 +1715,24 @@ const ImportService = {
     if (m[3]) { const pm = m[3].toLowerCase() === 'pm'; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
     return String(h).padStart(2, '0') + ':' + m[2];
   },
+  // Sort an order's attribute [key, value] pairs into booking details,
+  // event info and question answers. Shared by the CSV importer and the
+  // live Shopify sync (Appointly writes bookings onto orders this way).
+  _classifyAttrs(pairs) {
+    const normDate = ImportService._normDate, normTime = ImportService._normTime;
+    const out = { eventHotel: '', eventDate: '', bDate: '', bTime: '', bService: '', bStaff: '', qas: [] };
+    for (const [k, val] of pairs) {
+      const kl = k.toLowerCase();
+      if (/booking date|appointment date/.test(kl) || kl === 'date') out.bDate = normDate(val);
+      else if (/booking time|appointment time|start time/.test(kl) || kl === 'time') out.bTime = normTime(val);
+      else if (/^(service|appointment type)$/.test(kl)) out.bService = val;
+      else if (/^(staff|employee)$/.test(kl)) out.bStaff = val;
+      else if (/event date|ceremony date/.test(kl)) out.eventDate = normDate(val);
+      else if (/^(event|occasion|venue|hotel|location)$/.test(kl)) out.eventHotel = out.eventHotel || val;
+      else out.qas.push({ q: k, a: val });
+    }
+    return out;
+  },
 
   // Turn whatever files are loaded into { customers, orders, orderItems, appointments }.
   build() {
@@ -1778,22 +1797,11 @@ const ImportService = {
           const m = line.match(/^([^:]{1,120}):\s*(.*)$/);
           if (m && m[2].trim()) attrs.push([m[1].trim(), m[2].trim()]);
         });
-        let eventHotel = '', eventDate = '', bDate = '', bTime = '', bService = '', bStaff = '';
-        const qas = [];
-        for (const [k, val] of attrs) {
-          const kl = k.toLowerCase();
-          if (/booking date|appointment date/.test(kl) || kl === 'date') bDate = normDate(val);
-          else if (/booking time|appointment time|start time/.test(kl) || kl === 'time') bTime = normTime(val);
-          else if (/^(service|appointment type)$/.test(kl)) bService = val;
-          else if (/^(staff|employee)$/.test(kl)) bStaff = val;
-          else if (/event date|ceremony date/.test(kl)) eventDate = normDate(val);
-          else if (/^(event|occasion|venue|hotel|location)$/.test(kl)) eventHotel = eventHotel || val;
-          else qas.push({ q: k, a: val });
-        }
+        const cls = ImportService._classifyAttrs(attrs);
         const createdAt = (() => { const d = new Date(created ? head[created] : ''); return isNaN(d) ? nowIso() : d.toISOString(); })();
         const order = { id: uid(), customerId: cust.id, reference: reference || ('IMP-' + (orders.length + 1)),
           status: cancelled && head[cancelled] ? 'cancelled' : 'confirmed', createdAt,
-          eventHotel, eventDate, planType: null, staffNotes: notes ? head[notes] : '' };
+          eventHotel: cls.eventHotel, eventDate: cls.eventDate, planType: null, staffNotes: notes ? head[notes] : '' };
         orders.push(order);
         for (const r of rows) {
           const t0 = lineName ? r[lineName] : '';
@@ -1810,11 +1818,11 @@ const ImportService = {
             colour, size, quantity: parseInt(lineQty ? r[lineQty] : '1', 10) || 1,
             retailPriceCents: parseEuros(linePrice ? r[linePrice] : '') || 0 });
         }
-        if (bDate || qas.length) {
-          const at = bDate || normDate(createdAt.slice(0, 10)) || todayStr();
-          appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: bService || 'Booking',
-            time: bTime, staffName: bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
-            bookedAt: createdAt, syncedAt: nowIso(), questions: qas });
+        if (cls.bDate || cls.qas.length) {
+          const at = cls.bDate || normDate(createdAt.slice(0, 10)) || todayStr();
+          appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || 'Booking',
+            time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
+            bookedAt: createdAt, syncedAt: nowIso(), questions: cls.qas });
         }
       }
     }
@@ -1885,6 +1893,81 @@ const ImportService = {
   },
 };
 
+/* ---- Live sync: this same file, served as a Google Apps Script web
+   app (see Code.gs), gains a server that calls the Shopify Admin API
+   with the token kept in Script properties. The page detects that
+   environment and pulls live data through google.script.run. ---- */
+const LiveSync = {
+  syncing: false,
+  available: () => typeof google !== 'undefined' && google.script && google.script.run,
+  sync() {
+    if (!LiveSync.available()) { UI.err(new Error('Live sync only works when the dashboard is opened from its Google Apps Script web-app link — see Connect data.')); return; }
+    if (LiveSync.syncing) return;
+    LiveSync.syncing = true;
+    UI.toast('Syncing from Shopify…');
+    google.script.run
+      .withSuccessHandler(payload => {
+        LiveSync.syncing = false;
+        try { LiveSync.applyPayload(JSON.parse(payload)); } catch (e) { UI.err(e); }
+      })
+      .withFailureHandler(e => { LiveSync.syncing = false; UI.err(e); })
+      .syncShopify();
+  },
+  // Shopify Admin API JSON → the dashboard's own shape.
+  applyPayload(p) {
+    if (p.error) throw new Error(p.error);
+    const customers = [], orders = [], orderItems = [], appointments = [];
+    const byEmail = new Map(), byPhone = new Map(), bySrcId = new Map();
+    for (const sc of p.customers || []) {
+      const name = [sc.first_name, sc.last_name].filter(Boolean).join(' ').trim() || sc.email || 'Unknown customer';
+      const da = sc.default_address || {};
+      const c = { id: uid(), name, daughterName: '', email: sc.email || '',
+        phone: sc.phone || da.phone || '', address: [da.address1, da.city, da.province, da.zip].filter(Boolean).join(', '),
+        notes: sc.note || '', createdAt: sc.created_at || nowIso() };
+      customers.push(c);
+      if (sc.id != null) bySrcId.set(String(sc.id), c);
+      if (c.email) byEmail.set(c.email.toLowerCase(), c);
+      const digits = ImportService._digits(c.phone);
+      if (digits) byPhone.set(digits, c);
+    }
+    for (const so of p.orders || []) {
+      let cust = (so.customer && so.customer.id != null && bySrcId.get(String(so.customer.id)))
+        || (so.email && byEmail.get(String(so.email).toLowerCase())) || null;
+      if (!cust) {
+        cust = { id: uid(), name: (so.customer && [so.customer.first_name, so.customer.last_name].filter(Boolean).join(' ').trim()) || so.email || 'Unknown customer',
+          daughterName: '', email: so.email || '', phone: '', address: '', notes: '', createdAt: so.created_at || nowIso() };
+        customers.push(cust);
+        if (cust.email) byEmail.set(cust.email.toLowerCase(), cust);
+      }
+      const pairs = (so.note_attributes || []).map(a => [String(a.name || '').trim(), String(a.value || '').trim()]).filter(x => x[0] && x[1]);
+      const cls = ImportService._classifyAttrs(pairs);
+      const order = { id: uid(), customerId: cust.id, reference: so.name || ('SHOP-' + (orders.length + 1)),
+        status: so.cancelled_at ? 'cancelled' : 'confirmed', createdAt: so.created_at || nowIso(),
+        eventHotel: cls.eventHotel, eventDate: cls.eventDate, planType: null, staffNotes: so.note || '' };
+      orders.push(order);
+      for (const li of so.line_items || []) {
+        const vp = String(li.variant_title || '').split(' / ').map(s => s.trim());
+        orderItems.push({ id: uid(), orderId: order.id, productId: null, title: li.title || 'Item',
+          styleCode: li.sku || '', category: /dress|gown/i.test(li.title || '') ? 'dress' : 'accessory',
+          colour: vp[0] || '', size: vp[1] || '', quantity: li.quantity || 1, retailPriceCents: parseEuros(li.price) || 0 });
+      }
+      if (cls.bDate || cls.qas.length) {
+        const at = cls.bDate || ImportService._normDate(order.createdAt.slice(0, 10)) || todayStr();
+        appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || 'Booking',
+          time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
+          bookedAt: order.createdAt, syncedAt: nowIso(), questions: cls.qas });
+      }
+    }
+    if (!customers.length) throw new Error('Shopify returned no customers — check the token scopes (read_customers, read_orders).');
+    DB.customers = customers; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
+      if (Array.isArray(DB[k])) DB[k] = [];
+    DB.importInfo = { at: nowIso(), live: true, counts: { customers: customers.length, orders: orders.length, bookings: appointments.length } };
+    Store.save(); Domain.refreshAll(); App.route();
+    UI.toast('Live sync complete — ' + customers.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings.');
+  },
+};
+
 Pages.importPage = () => {
   const st = ImportService.state;
   const slot = (kind, title, help) => `
@@ -1912,11 +1995,27 @@ Pages.importPage = () => {
       <button class="primary" ${any ? '' : 'disabled'} onclick="ImportService.preview()">Preview import…</button>
       <button onclick="App.resetDemo()">↺ Back to sample data</button>
     </div>
-    <h2 style="margin-top:28px">Route 2 — automatic live sync (needs hosting)</h2>
+    <h2 style="margin-top:28px">Route 2 — live dashboard (free, via Google Apps Script)</h2>
+    ${LiveSync.available() ? `
     <div class="card" style="max-width:780px">
-      <p class="small" style="margin-top:0">A web page opened as a file can't talk to the Shopify Admin API directly — Shopify blocks it for security, and the API key would be visible to anyone with the file. When you want bookings appearing here by themselves, this dashboard needs a small server behind it (or to run as a Shopify custom app). The <b>LIVE CREDENTIAL SEAM</b> blocks near the top of this file mark exactly where the Shopify + Appointly credentials plug in at that point — the screens themselves won't change.</p>
-      <p class="small muted" style="margin-bottom:0">Until then, a fresh CSV import takes about a minute whenever you want to refresh.</p>
-    </div>`;
+      <p class="small" style="margin-top:0">✅ This copy is running as your Google Apps Script web app — it can pull straight from Shopify, and the booking answers come with the orders.</p>
+      <button class="primary" onclick="LiveSync.sync()">⟳ Sync from Shopify now</button>
+      ${DB.importInfo && DB.importInfo.live ? `<span class="small muted" style="margin-left:10px">Last sync ${fmtDateTime(DB.importInfo.at)}</span>` : ''}
+      <p class="small muted" style="margin-bottom:0; margin-top:10px">It also syncs by itself every time the page opens. If a sync fails, check the two Script properties (SHOPIFY_STORE, SHOPIFY_TOKEN) in the Apps Script project settings.</p>
+    </div>`
+    : `
+    <div class="card" style="max-width:780px">
+      <p class="small" style="margin-top:0">A file opened straight from the computer can't call Shopify — browsers block it, and the API key would be visible to anyone with the file. The free fix: run this same file as a <b>Google Apps Script web app</b>. Google's servers make the Shopify calls, the token stays private, and only your Google account can open the page. The dashboard then syncs itself every time you open it. One-time setup, about 10 minutes:</p>
+      <ol class="small" style="line-height:1.8; padding-left:20px; margin:10px 0">
+        <li><b>Get a Shopify token:</b> Shopify admin → Settings → Apps and sales channels → Develop apps → Create app (call it “Darcybow dashboard”) → Configure Admin API scopes → tick <b>read_customers</b> and <b>read_orders</b> → Install app → reveal and copy the Admin API access token (starts <b>shpat_</b>).</li>
+        <li>Go to <b>script.new</b> in the browser (signed in to your Google account).</li>
+        <li>Replace the contents of <b>Code.gs</b> with the <b>darcybow-Code.gs</b> file that comes with this dashboard.</li>
+        <li>Click <b>+</b> next to Files → HTML → name it <b>index</b> → paste this entire dashboard file into it (replacing what's there).</li>
+        <li>⚙ Project Settings → Script properties → add <b>SHOPIFY_STORE</b> (e.g. darcybow.myshopify.com) and <b>SHOPIFY_TOKEN</b> (the shpat_… token).</li>
+        <li><b>Deploy → New deployment → Web app</b> → Execute as <b>Me</b> · Who has access <b>Only myself</b> → Deploy. Open the web-app link and bookmark it — that link IS the live dashboard.</li>
+      </ol>
+      <p class="small muted" style="margin-bottom:0">Appointly's booking answers ride along on the Shopify orders, so the one connection covers both apps. Until it's set up, CSV import above does the same job manually.</p>
+    </div>`}`;
 };
 
 /* =============================== PRINTING (the only actions) =============================== */
@@ -2132,6 +2231,8 @@ const Actions = {
   Domain.refreshAll();
   window.addEventListener('hashchange', App.route);
   App.route();
+  // Served as the Apps Script web app → refresh from Shopify on every open.
+  if (LiveSync.available()) LiveSync.sync();
 })();
 </script>
 </body>
