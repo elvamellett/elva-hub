@@ -2001,7 +2001,7 @@ Pages.importPage = () => {
       <p class="small" style="margin-top:0">✅ This copy is running as your Google Apps Script web app — it can pull straight from Shopify, and the booking answers come with the orders.</p>
       <button class="primary" onclick="LiveSync.sync()">⟳ Sync from Shopify now</button>
       ${DB.importInfo && DB.importInfo.live ? `<span class="small muted" style="margin-left:10px">Last sync ${fmtDateTime(DB.importInfo.at)}</span>` : ''}
-      <p class="small muted" style="margin-bottom:0; margin-top:10px">It also syncs by itself every time the page opens. If a sync fails, check the two Script properties (SHOPIFY_STORE, SHOPIFY_TOKEN) in the Apps Script project settings.</p>
+      <p class="small muted" style="margin-bottom:0; margin-top:10px">It also syncs by itself every time the page opens. If a sync fails, check the Script properties in the Apps Script project settings: SHOPIFY_STORE plus either SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET or SHOPIFY_TOKEN.</p>
     </div>`
     : `
     <div class="card" style="max-width:780px">
@@ -2011,7 +2011,7 @@ Pages.importPage = () => {
         <li>Go to <b>script.new</b> in the browser (signed in to your Google account).</li>
         <li>Replace the contents of <b>Code.gs</b> with the <b>darcybow-Code.gs</b> file that comes with this dashboard.</li>
         <li>Click <b>+</b> next to Files → HTML → name it <b>index</b> → paste this entire dashboard file into it (replacing what's there).</li>
-        <li>⚙ Project Settings → Script properties → add <b>SHOPIFY_STORE</b> (e.g. darcybow.myshopify.com) and <b>SHOPIFY_TOKEN</b> (the shpat_… token).</li>
+        <li>⚙ Project Settings → Script properties → add <b>SHOPIFY_STORE</b> (e.g. darcybow.myshopify.com) plus the app's credentials: <b>SHOPIFY_CLIENT_ID</b> and <b>SHOPIFY_CLIENT_SECRET</b> (Dev Dashboard → your app → Settings → Credentials), or <b>SHOPIFY_TOKEN</b> if you have a legacy shpat_… token.</li>
         <li><b>Deploy → New deployment → Web app</b> → Execute as <b>Me</b> · Who has access <b>Only myself</b> → Deploy. Open the web-app link and bookmark it — that link IS the live dashboard.</li>
       </ol>
       <p class="small muted" style="margin-bottom:0">Appointly's booking answers ride along on the Shopify orders, so the one connection covers both apps. Until it's set up, CSV import above does the same job manually.</p>

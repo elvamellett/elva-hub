@@ -9,9 +9,13 @@
  *  1. In this Apps Script project, add an HTML file named "index" and
  *     paste the entire darcybow-dashboard.html file into it.
  *  2. ⚙ Project Settings → Script properties → add:
- *       SHOPIFY_STORE  = darcybow.myshopify.com   (your .myshopify.com domain)
- *       SHOPIFY_TOKEN  = shpat_...                (custom app Admin API token
- *                                                  with read_customers + read_orders)
+ *       SHOPIFY_STORE      = darcybow.myshopify.com  (your .myshopify.com domain)
+ *     plus EITHER (from the Dev Dashboard app's Settings → Credentials):
+ *       SHOPIFY_CLIENT_ID     = d7d8e8c2...
+ *       SHOPIFY_CLIENT_SECRET = (click the eye icon to reveal, then copy)
+ *     OR, for a legacy custom app:
+ *       SHOPIFY_TOKEN      = shpat_...  (Admin API token with
+ *                                        read_customers + read_orders)
  *  3. Deploy → New deployment → Web app →
  *       Execute as: Me · Who has access: Only myself → Deploy.
  *     The web app link is the live dashboard — bookmark it.
@@ -34,12 +38,12 @@ function doGet() {
 function syncShopify() {
   try {
     var props = PropertiesService.getScriptProperties();
-    var store = (props.getProperty('SHOPIFY_STORE') || '').trim();
-    var token = (props.getProperty('SHOPIFY_TOKEN') || '').trim();
-    if (!store || !token) {
-      return JSON.stringify({ error: 'Not configured yet — add SHOPIFY_STORE and SHOPIFY_TOKEN in ⚙ Project Settings → Script properties, then sync again.' });
+    var store = (props.getProperty('SHOPIFY_STORE') || '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!store) {
+      return JSON.stringify({ error: 'Not configured yet — add SHOPIFY_STORE (your .myshopify.com domain) in ⚙ Project Settings → Script properties, then sync again.' });
     }
-    var base = 'https://' + store.replace(/^https?:\/\//, '').replace(/\/.*$/, '') + '/admin/api/2024-10/';
+    var token = getAccessToken_(store);
+    var base = 'https://' + store + '/admin/api/2024-10/';
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
@@ -48,6 +52,44 @@ function syncShopify() {
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });
   }
+}
+
+/**
+ * Gets an Admin API access token, two ways:
+ *  - SHOPIFY_TOKEN set → use it directly (legacy custom app shpat_ token).
+ *  - Otherwise SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET → exchange them
+ *    via OAuth client credentials (Dev Dashboard apps). Tokens are cached
+ *    until shortly before they expire.
+ */
+function getAccessToken_(store) {
+  var props = PropertiesService.getScriptProperties();
+  var token = (props.getProperty('SHOPIFY_TOKEN') || '').trim();
+  if (token) return token;
+  var id = (props.getProperty('SHOPIFY_CLIENT_ID') || '').trim();
+  var secret = (props.getProperty('SHOPIFY_CLIENT_SECRET') || '').trim();
+  if (!id || !secret) {
+    throw new Error('Not configured yet — in ⚙ Project Settings → Script properties add either SHOPIFY_TOKEN, or SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET (from the app\'s Settings → Credentials in the Shopify Dev Dashboard).');
+  }
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('shopify_cc_token');
+  if (cached) return cached;
+  var resp = UrlFetchApp.fetch('https://' + store + '/admin/oauth/access_token', {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ client_id: id, client_secret: secret, grant_type: 'client_credentials' }),
+    muteHttpExceptions: true,
+  });
+  var code = resp.getResponseCode();
+  if (code !== 200) {
+    throw new Error('Shopify would not issue an access token from the client credentials (HTTP ' + code + '): ' +
+      resp.getContentText().slice(0, 300) +
+      ' — check SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET, and make sure the app version is released and the app is installed on the store.');
+  }
+  var body = JSON.parse(resp.getContentText());
+  if (!body.access_token) throw new Error('Shopify replied without an access token — response: ' + resp.getContentText().slice(0, 300));
+  var ttl = Math.max(60, Math.min(21540, (Number(body.expires_in) || 86400) - 300));
+  cache.put('shopify_cc_token', body.access_token, ttl);
+  return body.access_token;
 }
 
 /** Follows Shopify's Link-header pagination, 250 records per page. */
