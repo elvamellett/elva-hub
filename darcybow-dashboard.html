@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Darcybow — Orders & Balances</title>
+<title>Darcybow — Customers & Events</title>
 <style>
   :root {
     --brand: #9b2c4d;
@@ -227,12 +227,8 @@
 </head>
 <body>
   <aside id="sidebar">
-    <div class="logo"><b>Darcybow</b><span>Orders &amp; Balances</span></div>
+    <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
-    <div class="staffbox">
-      <label for="staffsel">Signed in as</label>
-      <select id="staffsel" onchange="App.setStaff(this.value)"></select>
-    </div>
     <div class="demo"><button onclick="App.resetDemo()">↺ Reset demo data</button></div>
   </aside>
   <main id="main"></main>
@@ -241,18 +237,19 @@
 <script>
 "use strict";
 /* =====================================================================
-   Darcybow Orders & Balances dashboard — single-file working slice.
+   Darcybow Customers & Events — single-file VIEWING platform.
+
+   Phase 1 is deliberately read-only: Shopify (customers, orders,
+   products) and Appointly (bookings + the questions each customer
+   answered) are pulled together into one place for staff to browse.
+   The ONLY actions are printing — A4 customer sheets (details + the
+   Appointly booking answers) and the staff run sheet for an event day.
 
    Runs fully offline on seeded mock data (persisted in localStorage).
-   External integrations (Shopify catalogue, Gmail sending) are isolated
-   in ShopifyService / GmailService below, each with a clearly marked
-   LIVE CREDENTIAL SEAM where a real API key / OAuth credential plugs in.
-
-   NOTE FOR THE LIVE BUILD: in this offline slice the "domain" module
-   plays the role of the server. When this is wired to a real backend,
-   every function in Domain (totals, balances, instalment maths, plan
-   validation, payment allocation) must run server-side — never trust
-   amounts or "paid" flags posted from the browser.
+   External integrations are isolated in ShopifyService /
+   AppointlyService below, each with a clearly marked LIVE CREDENTIAL
+   SEAM where the real API credentials plug in — once filled, the same
+   screens fill with real data and nothing else changes.
    ===================================================================== */
 
 /* ---------------------- small utilities ---------------------- */
@@ -1185,18 +1182,6 @@ const Credentials = {
   appointly: {
     apiKey: '',
   },
-  // ------------------------------------------------------------------
-  // LIVE CREDENTIAL SEAM — Gmail API (OAuth2)
-  // To go live, complete the OAuth consent flow for the sending mailbox
-  // and store the client id/secret + refresh token here (in the real
-  // deployment these live server-side, never in the browser).
-  // ------------------------------------------------------------------
-  gmail: {
-    clientId: '',
-    clientSecret: '',
-    refreshToken: '',
-    senderAddress: '',      // e.g. 'hello@darcybow.ie'
-  },
 };
 
 const ShopifyService = {
@@ -1241,207 +1226,6 @@ const AppointlyService = {
   },
 };
 
-const GmailService = {
-  isLive: () => !!(Credentials.gmail.clientId && Credentials.gmail.refreshToken),
-  // Sends an email. In mock mode the message is recorded to the outbox
-  // exactly as it would have been sent, so the whole flow is testable.
-  async send({ to, subject, body, kind, meta }) {
-    let status = 'mock_sent';
-    if (GmailService.isLive()) {
-      // LIVE CREDENTIAL SEAM — real send goes here, e.g.:
-      //   POST https://gmail.googleapis.com/gmail/v1/users/me/messages/send
-      //   Authorization: Bearer {access token from refreshToken}
-      //   body: base64url RFC 2822 message
-      // Set status = 'sent' on 200, 'failed' otherwise.
-      throw new Error('Live Gmail send not wired in this offline slice.');
-    }
-    const rec = { id: uid(), recipient: to, subject, body, kind, status,
-      meta: meta || {}, sentAt: nowIso() };
-    DB.outbox.unshift(rec);
-    Store.save();
-    return rec;
-  },
-};
-
-/* ---------------------- template rendering ---------------------- */
-function renderTemplate(tpl, vars) {
-  return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] != null ? vars[k] : '');
-}
-
-function reminderVars(order) {
-  const cust = Domain.customer(order.customerId);
-  const next = Domain.nextUnpaidInstalment(order.id);
-  return {
-    customerName: cust.name,
-    orderReference: order.reference,
-    invoiceNumber: Domain.invoiceNumber(order, 'customer'),
-    orderTotal: eur(Domain.orderTotalCents(order.id)),
-    totalPaid: eur(Domain.paidCents(order.id)),
-    remainingBalance: eur(Domain.balanceCents(order.id)),
-    dueDate: next ? fmtDate(next.dueDate) : '—',
-    // LIVE CREDENTIAL SEAM — when a payment provider link is available
-    // (e.g. a Shopify draft-order invoice URL or payment link), inject it
-    // here; until then the line reads as plain contact instructions.
-    paymentLink: 'You can pay by card over the phone, by bank transfer, or in the shop.',
-  };
-}
-
-/* ---------------------- invoices ----------------------
-   Two invoices per order, styled after the Shopify order-invoice layout.
-   variant 'customer'  → shows what the customer paid / owes.
-   variant 'accountant'→ additionally shows the full retail price of each
-   item alongside what was actually paid.
-   Internal staff notes are NEVER rendered on either variant. */
-function invoiceHtml(orderId, variant) {
-  const order = Domain.order(orderId);
-  const cust = Domain.customer(order.customerId);
-  const items = Domain.itemsOf(orderId);
-  const shop = DB.settings.shop;
-  const total = Domain.orderTotalCents(orderId);
-  const paid = Domain.paidCents(orderId);
-  const credits = Domain.creditCents(orderId);
-  const balance = total - paid - credits;
-  const payments = Domain.paymentsOf(orderId).filter(p => !p.voided);
-  const adjustments = DB.adjustments.filter(a => a.orderId === orderId && (a.type === 'discount' || a.type === 'write_off'));
-  const invNo = Domain.invoiceNumber(order, variant);
-  const isAcc = variant === 'accountant';
-  const methodLabel = m => ({ shopify_deposit: 'Deposit (Shopify)', cash: 'Cash', card: 'Card',
-    bank_transfer: 'Bank transfer', revolut: 'Revolut', other: 'Other' }[m] || m);
-
-  const itemRows = items.map(it => `
-      <tr>
-        <td>
-          <b>${esc(it.title)}</b><br>
-          <span class="m">Style ${esc(it.styleCode)} · Colour: ${esc(it.colour || '—')} · Size: ${esc(it.size || '—')}</span>
-        </td>
-        <td class="n">${it.quantity}</td>
-        ${isAcc ? `<td class="n">${eur(it.retailPriceCents)}</td>` : ''}
-        <td class="n">${eur(it.retailPriceCents * it.quantity)}</td>
-      </tr>`).join('');
-
-  const paymentRows = payments.map(p => `
-      <tr><td>${fmtDateTime(p.receivedAt)}</td><td>${esc(methodLabel(p.method))}</td><td class="n">${eur(p.amountCents)}</td></tr>`).join('');
-  const adjRows = adjustments.map(a => `
-      <tr><td>${fmtDateTime(a.createdAt)}</td><td>${a.type === 'write_off' ? 'Balance written off' : 'Discount applied'}</td><td class="n">${eur(a.amountCents)}</td></tr>`).join('');
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(invNo)}</title><style>
-    body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; padding: 34px 42px; font-size: 13.5px; }
-    .top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #9b2c4d; padding-bottom: 18px; }
-    .shop b { font-size: 24px; letter-spacing: .04em; color: #9b2c4d; }
-    .shop div { color: #555; margin-top: 4px; line-height: 1.5; }
-    .inv { text-align: right; }
-    .inv h1 { margin: 0; font-size: 19px; letter-spacing: .08em; }
-    .inv .m { color: #666; }
-    .tag { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
-           background: ${isAcc ? '#fde8e8; color:#b91c1c' : '#e7edfd; color:#1d4ed8'}; }
-    .cols { display: flex; gap: 40px; margin: 22px 0; }
-    .cols h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #888; }
-    .cols div { line-height: 1.55; }
-    table { border-collapse: collapse; width: 100%; margin-top: 6px; }
-    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #777;
-         border-bottom: 2px solid #ddd; padding: 7px 8px; }
-    td { padding: 9px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
-    td.n, th.n { text-align: right; white-space: nowrap; }
-    .m { color: #666; font-size: 12px; }
-    .totals { margin-left: auto; width: 300px; margin-top: 14px; }
-    .totals td { padding: 5px 8px; border: none; }
-    .totals tr.grand td { border-top: 2px solid #1f2229; font-weight: 700; font-size: 15px; padding-top: 9px; }
-    .totals tr.due td { color: ${balance > 0 ? '#b91c1c' : '#157347'}; font-weight: 700; }
-    h3 { font-size: 13px; margin: 26px 0 2px; }
-    .foot { margin-top: 38px; border-top: 1px solid #ddd; padding-top: 14px; color: #777; font-size: 12px; line-height: 1.6; }
-    @media print { body { padding: 0; } }
-  </style></head><body>
-    <div class="top">
-      <div class="shop"><b>${esc(shop.name)}</b>
-        <div>${esc(shop.addressLine)}<br>${esc(shop.phone)} · ${esc(shop.email)}<br>${esc(shop.web)} · VAT ${esc(shop.vat)}</div>
-      </div>
-      <div class="inv">
-        <h1>INVOICE</h1>
-        <div class="m">${esc(invNo)}<br>Order ${esc(order.reference)}<br>Date: ${fmtDate(todayStr())}</div>
-        <span class="tag">${isAcc ? 'ACCOUNTANT COPY — includes retail pricing' : 'CUSTOMER COPY'}</span>
-      </div>
-    </div>
-    <div class="cols">
-      <div><h4>Billed to</h4>
-        <b>${esc(cust.name)}</b><br>${esc(cust.address).replace(/, /g, '<br>')}<br>${esc(cust.phone)}<br>${esc(cust.email)}
-      </div>
-      <div><h4>Order details</h4>
-        ${cust.daughterName ? 'For: ' + esc(cust.daughterName) + '<br>' : ''}
-        ${order.eventHotel ? esc(order.eventHotel) + '<br>' : ''}
-        ${order.eventDate ? 'Event date: ' + fmtDate(order.eventDate) : ''}
-      </div>
-    </div>
-    <table>
-      <thead><tr><th>Item</th><th class="n">Qty</th>${isAcc ? '<th class="n">Retail price</th>' : ''}<th class="n">Line total</th></tr></thead>
-      <tbody>${itemRows}</tbody>
-    </table>
-    <table class="totals">
-      <tr class="grand"><td>Order total</td><td class="n">${eur(total)}</td></tr>
-      <tr><td>Payments received</td><td class="n">−${eur(paid)}</td></tr>
-      ${credits ? `<tr><td>Credits &amp; adjustments</td><td class="n">−${eur(credits)}</td></tr>` : ''}
-      <tr class="due"><td>${balance > 0 ? 'Balance due' : 'Balance'}</td><td class="n">${eur(Math.max(balance, 0))}</td></tr>
-    </table>
-    <h3>Payments received</h3>
-    <table><thead><tr><th>Date</th><th>Method</th><th class="n">Amount</th></tr></thead>
-      <tbody>${paymentRows || '<tr><td colspan="3" class="m">No payments recorded yet.</td></tr>'}${isAcc ? adjRows : ''}</tbody></table>
-    <div class="foot">
-      The €25 booking deposit is taken online at ${esc(shop.web)}; all remaining balances are payable directly to ${esc(shop.name)}.
-      Thank you for choosing ${esc(shop.name)}.${isAcc ? '<br><b>Accountant copy:</b> retail prices shown per item alongside amounts actually received.' : ''}
-    </div>
-  </body></html>`;
-}
-
-/* ---------------------- CSV export ---------------------- */
-function downloadCsv(filename, rows) {
-  const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const csv = rows.map(r => r.map(cell).join(',')).join('\r\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = filename;
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-}
-
-function stockCsvRows() {
-  const rows = [['Style code', 'Product', 'Category', 'Colour', 'Size', 'Quantity ordered']];
-  for (const s of Domain.stockRows())
-    for (const [vk, qty] of s.variants) {
-      const [colour, size] = vk.split(' / ');
-      rows.push([s.styleCode, s.title, s.category, colour, size, qty]);
-    }
-  return rows;
-}
-function stockSummaryCsvRows() {
-  const rows = [['Style code', 'Product', 'Category', 'Total ordered']];
-  for (const s of Domain.stockRows()) rows.push([s.styleCode, s.title, s.category, s.total]);
-  return rows;
-}
-
-/* ---------------------- daily summary email ---------------------- */
-function buildDailySummary() {
-  const rows = Domain.balanceRows();
-  const pick = f => rows.filter(f);
-  const sect = (title, list) => !list.length ? '' :
-    '\n' + title + '\n' + '-'.repeat(title.length) + '\n' + list.map(r =>
-      '• ' + r.customer.name + (r.customer.daughterName ? ' (for ' + r.customer.daughterName + ')' : '') +
-      ' — ' + r.customer.phone + ' · ' + r.customer.email +
-      '\n  Amount due: ' + eur(r.next ? r.next.amountDueCents - r.next.amountPaidCents : r.balanceCents) +
-      ' · Due: ' + (r.next ? fmtDate(r.next.dueDate) : '—') +
-      (r.daysUntilDue < 0 ? ' · ' + Math.abs(r.daysUntilDue) + ' days overdue' : '') +
-      '\n  Record: [dashboard]/#/order/' + r.order.id + '  (secure link — sign-in required)'
-    ).join('\n');
-  const dueSoon = pick(r => r.daysUntilDue != null && r.daysUntilDue > 0 && r.daysUntilDue <= DB.settings.reminderOffsets.dueSoon);
-  const dueToday = pick(r => r.daysUntilDue === 0);
-  const overdue = pick(r => r.daysUntilDue != null && r.daysUntilDue < 0);
-  const s = Domain.balanceSummary(rows);
-  return {
-    subject: 'Darcybow daily balance summary — ' + fmtDate(todayStr()),
-    body: 'Good morning,\n\nOutstanding balances at a glance: ' + eur(s.totalOutstanding) + ' across ' + s.customersOwing +
-      ' customers. ' + s.dueSoonCount + ' due within ' + DB.settings.reminderOffsets.dueSoon + ' days, ' + s.overdueCount + ' overdue.\n' +
-      sect('OVERDUE', overdue) + sect('DUE TODAY', dueToday) + sect('DUE WITHIN ' + DB.settings.reminderOffsets.dueSoon + ' DAYS', dueSoon) +
-      '\n\n(Automated summary. Customer contact details are included for follow-up; no further personal detail is sent by email.)',
-  };
-}
 </script>
 <script>
 /* =====================================================================
@@ -1500,21 +1284,6 @@ const UI = {
 };
 
 const App = {
-  staff: null,
-
-  setStaff(name) {
-    App.staff = DB.settings.staff.find(s => s.name === name) || DB.settings.staff[0];
-    localStorage.setItem('darcybow-staff', App.staff.name);
-    App.renderStaff();
-  },
-  renderStaff() {
-    const sel = document.getElementById('staffsel');
-    sel.innerHTML = DB.settings.staff.map(s =>
-      `<option value="${esc(s.name)}" ${App.staff.name === s.name ? 'selected' : ''}>${esc(s.name)} (${s.role})</option>`).join('');
-  },
-  requireAdmin() {
-    if (App.staff.role !== 'admin') throw new Error('This action needs an admin — switch the signed-in staff member (bottom left) to an admin account.');
-  },
   resetDemo() {
     if (!confirm('Reset all demo data back to the seeded sample set?')) return;
     Store.reset(); Domain.refreshAll(); App.route();
@@ -1530,27 +1299,18 @@ const App = {
     const arg = (argRaw || '').split('?')[0];
     const nav = [
       ['dashboard', '⌂', 'Dashboard'],
-      ['customers', '👥', 'Customers'],
+      ['customers', '👥', 'Customers', () => DB.customers.length],
       ['venues', '📍', 'Venues'],
-      ['balances', '€', 'Outstanding balances', () => Domain.balanceRows().length],
-      ['reminders', '🔔', 'Reminders', () => Domain.openTasks().length],
-      ['stock', '📦', 'Stock export'],
-      ['outbox', '✉', 'Email outbox', () => DB.outbox.length],
-      ['settings', '⚙', 'Settings'],
     ];
     document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
       `<a href="#/${key}" class="${page === key ? 'active' : ''}"><span>${icon}</span> ${label}${cnt ? `<span class="cnt">${cnt()}</span>` : ''}</a>`).join('');
     const main = document.getElementById('main');
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
-      order: () => Pages.orderDetail(arg), 'order-form': () => Pages.orderForm(arg),
       venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
-      balances: Pages.balances, reminders: Pages.reminders, stock: Pages.stock,
-      outbox: Pages.outbox, settings: Pages.settingsPage,
     };
     main.innerHTML = (pages[page] || Pages.dashboard)();
     main.scrollTop = 0;
-    if (document.getElementById('of-lines')) Actions.renderLines(); // order form product lines
 
     const s = document.getElementById('pagesearch');
     if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
@@ -1558,73 +1318,51 @@ const App = {
   go(hash) { if (location.hash === hash) App.route(); else location.hash = hash; },
 };
 
-/* ---------- shared banner ---------- */
-function bannerHtml() {
-  const rows = Domain.balanceRows();
-  const s = Domain.balanceSummary(rows);
-  if (!rows.length) return `<div id="banner" class="quiet" onclick="App.go('#/balances')"><span class="bell">✓</span><b>No outstanding balances.</b></div>`;
-  return `<div id="banner" onclick="App.go('#/balances')">
-    <span class="bell">🔔</span>
-    <b>${s.customersOwing} customer${s.customersOwing === 1 ? ' has' : 's have'} outstanding balances.</b>
-    <span class="pill">${s.dueSoonCount} due within ${DB.settings.reminderOffsets.dueSoon} days</span>
-    <span class="pill">${s.overdueCount} overdue</span>
-    <span class="pill">${s.remindersNeeded} reminder${s.remindersNeeded === 1 ? '' : 's'} needing action</span>
-    <span style="margin-left:auto; font-size:.85rem; opacity:.9">View balances →</span>
-  </div>`;
-}
-
 const Pages = {};
 
 /* =============================== DASHBOARD =============================== */
 Pages.dashboard = () => {
-  const rows = Domain.balanceRows();
-  const s = Domain.balanceSummary(rows);
-  const tasks = Domain.openTasks();
-  const recentPay = DB.payments.filter(p => !p.voided).sort((a, b) => a.receivedAt < b.receivedAt ? 1 : -1).slice(0, 6);
+  const upcomingAppts = DB.appointments.filter(a => a.appointmentAt >= todayStr())
+    .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1);
+  const withAnswers = new Set(DB.appointments.filter(a => a.questions.some(qa => qa.a)).map(a => a.customerId));
+  const nextVenues = venueGroups().filter(v => v.nextDate).slice(0, 6);
   return `
-    ${bannerHtml()}
     <h1>Dashboard</h1>
-    <p class="sub">Orders, balances and payment plans — everything outside the €25 Shopify deposit lives here.</p>
+    <p class="sub">Everything Shopify + Appointly know, side by side: customers, what they ordered, when they're booked in and the answers they gave. Viewing only — printing is the one action.</p>
     <div class="statrow">
-      <div class="stat"><div class="l">Total outstanding</div><div class="v">${eur(s.totalOutstanding)}</div></div>
-      <div class="stat warn"><div class="l">Due within ${DB.settings.reminderOffsets.dueSoon} days</div><div class="v">${eur(s.dueSoonAmount)}</div></div>
-      <div class="stat bad"><div class="l">Overdue</div><div class="v">${eur(s.overdueAmount)}</div></div>
-      <div class="stat"><div class="l">Customers owing</div><div class="v">${s.customersOwing}</div></div>
-      <div class="stat warn"><div class="l">Reminders needing action</div><div class="v">${s.remindersNeeded}</div></div>
+      <div class="stat"><div class="l">Customers</div><div class="v">${DB.customers.length}</div></div>
+      <div class="stat"><div class="l">Orders</div><div class="v">${DB.orders.length}</div></div>
+      <div class="stat good"><div class="l">Upcoming appointments</div><div class="v">${upcomingAppts.length}</div></div>
+      <div class="stat"><div class="l">Customers with booking answers</div><div class="v">${withAnswers.size}</div></div>
     </div>
     <div class="toolbar">
-      <button class="primary" onclick="App.go('#/order-form')">+ New order</button>
+      <button class="primary" onclick="Actions.printAllCustomerSheets()">🖨 Print all customer sheets (details + booking answers)</button>
       <button onclick="App.go('#/customers')">Customer directory</button>
-      <button onclick="App.go('#/balances')">Outstanding balances</button>
+      <button onclick="App.go('#/venues')">Venues</button>
     </div>
+    ${ShopifyService.isLive() && AppointlyService.isLive() ? '' : `<div class="seam">🔌 Mock mode — showing seeded sample data. Add the Shopify + Appointly credentials at the LIVE CREDENTIAL SEAM near the top of this file and these same screens fill with the real customers and booking answers.</div>`}
     <div class="cols2">
       <div>
-        <h2>Follow-up tasks (${tasks.length})</h2>
-        ${tasks.length ? `<div class="tablewrap"><table>
-          <thead><tr><th>Customer</th><th>Stage</th><th class="num">Balance</th><th>Due</th></tr></thead>
-          <tbody>${tasks.slice(0, 8).map(t => {
-            const o = Domain.order(t.orderId); const c = Domain.customer(o.customerId);
-            const inst = DB.instalments.find(i => i.id === t.instalmentId);
-            return `<tr class="click" onclick="App.go('#/order/${o.id}')">
-              <td><b>${esc(c.name)}</b><br><span class="muted small">${esc(c.daughterName)}</span></td>
-              <td>${UI.badge(t.stage === 'overdue' ? 'overdue' : t.stage === 'due_today' ? 'due_soon' : 'scheduled')}
-                  <span class="small muted">${t.stage.replace('upcoming_', 'due in ≤').replace('_', ' ')}${t.stage.startsWith('upcoming') ? 'd' : ''}</span></td>
-              <td class="num">${eur(Domain.balanceCents(o.id))}</td>
-              <td>${inst ? fmtDate(inst.dueDate) : '—'} ${inst ? UI.dueBadge(daysUntil(inst.dueDate)) : ''}</td></tr>`;
-          }).join('')}</tbody></table></div>
-          ${tasks.length > 8 ? `<p class="small"><a class="plain" href="#/reminders">All ${tasks.length} tasks →</a></p>` : ''}`
-        : `<div class="card muted">Nothing needs following up right now.</div>`}
+        <h2>Next appointments</h2>
+        ${upcomingAppts.length ? `<div class="tablewrap"><table>
+          <thead><tr><th>When</th><th>Customer</th><th>Type</th><th>Staff</th></tr></thead>
+          <tbody>${upcomingAppts.slice(0, 8).map(a => {
+            const c = Domain.customer(a.customerId);
+            return `<tr class="click" onclick="App.go('#/customer/${a.customerId}')">
+              <td><b>${fmtDate(a.appointmentAt)}</b>${a.time ? ' · <span class="vclock" style="font-size:.95rem">' + esc(a.time) + '</span>' : ''}</td>
+              <td><b>${esc(c ? c.name : '—')}</b>${c && c.daughterName ? `<br><span class="muted small">for ${esc(c.daughterName)}</span>` : ''}</td>
+              <td class="small">${esc(a.service)}</td>
+              <td class="small">${esc(a.staffName || '—')}</td></tr>`;
+          }).join('')}</tbody></table></div>`
+        : '<div class="card muted">No upcoming appointments.</div>'}
       </div>
       <div>
-        <h2>Recent payments</h2>
-        <div class="tablewrap"><table>
-          <thead><tr><th>Customer</th><th>When</th><th>Method</th><th class="num">Amount</th></tr></thead>
-          <tbody>${recentPay.map(p => {
-            const o = Domain.order(p.orderId); const c = Domain.customer(o.customerId);
-            return `<tr class="click" onclick="App.go('#/order/${o.id}')">
-              <td>${esc(c.name)}</td><td class="small">${fmtDateTime(p.receivedAt)}</td>
-              <td class="small">${esc(p.method.replace('_', ' '))}</td><td class="num">${eur(p.amountCents)}</td></tr>`;
-          }).join('') || '<tr><td colspan="4" class="muted">No payments yet.</td></tr>'}</tbody></table></div>
+        <h2>Next event days</h2>
+        ${nextVenues.length ? `<div class="tablewrap"><table>
+          <thead><tr><th>Venue</th><th>Next date</th><th class="num">Customers</th></tr></thead>
+          <tbody>${nextVenues.map(v => `<tr class="click" onclick="App.go('#/venue/${encodeURIComponent(v.venue).replace(/'/g, '%27')}')">
+            <td><b>${esc(v.venue)}</b></td><td>${fmtWd(v.nextDate)}</td><td class="num">${v.orders.length}</td></tr>`).join('')}</tbody></table></div>`
+        : '<div class="card muted">No upcoming event days.</div>'}
       </div>
     </div>`;
 };
@@ -1649,12 +1387,10 @@ Pages.customers = () => {
     return q.split(/\s+/).every(w => hay.includes(w));
   }).sort((a, b) => a.name.localeCompare(b.name));
   return `
-    ${bannerHtml()}
     <div class="flex" style="justify-content:space-between; margin-bottom:14px">
       <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
       <div class="flex">
-        <button onclick="App.go('#/order-form')">+ New order</button>
-        <button class="primary" onclick="Actions.newCustomer()">+ New customer</button>
+        <button class="primary" onclick="Actions.printAllCustomerSheets()">🖨 Print all customer sheets</button>
       </div>
     </div>
     <div class="flex" style="margin-bottom:16px">
@@ -1671,21 +1407,24 @@ Pages.customers = () => {
       ${customerEventFilter || customerDressFilter || customerQuery ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; App.route()">✕ Clear</button>` : ''}
     </div>
     <div class="tablewrap"><table class="roomy">
-      <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th class="num">Balance</th><th>Status</th></tr></thead>
+      <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th>Next appointment</th><th>Booking answers</th></tr></thead>
       <tbody>
         ${matches.map(c => {
           const orders = Domain.ordersOf(c.id);
-          const bal = orders.filter(o => o.status !== 'cancelled' && o.status !== 'written_off').reduce((s, o) => s + Math.max(Domain.balanceCents(o.id), 0), 0);
           const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
           const items = orders.flatMap(o => Domain.itemsOf(o.id));
           const firstItem = items[0];
+          const appts = AppointlyService.bookingsFor(c.id);
+          const upcoming = appts.filter(a => a.appointmentAt >= todayStr())
+            .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+          const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
             <td><span class="cname">${esc(c.name)}</span>${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
-            <td class="num">${bal > 0 ? '<b style="font-size:1.02rem">' + eur(bal) + '</b>' : '<span class="muted">—</span>'}</td>
-            <td>${latest ? UI.badge(latest.status) : ''}</td></tr>`;
+            <td class="small">${upcoming ? `<b>${fmtDate(upcoming.appointmentAt)}</b>${upcoming.time ? ' · <span class="vclock" style="font-size:.9rem">' + esc(upcoming.time) + '</span>' : ''}` : '<span class="muted">—</span>'}</td>
+            <td>${answered ? `<span class="badge b-brand">${answered} booking${answered === 1 ? '' : 's'}</span>` : '<span class="muted small">none yet</span>'}</td></tr>`;
         }).join('') || '<tr><td colspan="6" class="muted">No customers match.</td></tr>'}
       </tbody></table></div>`;
 };
@@ -1716,7 +1455,6 @@ function venueGroups() {
 Pages.venues = () => {
   const cards = venueGroups();
   return `
-    ${bannerHtml()}
     <h1 style="margin-bottom:2px">Venues <span class="muted" style="font-size:1rem; font-weight:400">${cards.length}</span></h1>
     <p class="sub">In date order — tap a venue to see everyone booked for it and when they're coming in.</p>
     <div class="venuegrid">
@@ -1743,9 +1481,8 @@ Pages.venueDetail = (venueName) => {
     const appts = AppointlyService.bookingsFor(c.id);
     const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
     const last = appts[0];
-    const bal = Domain.balanceCents(o.id);
     const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
-    return { o, c, upcoming, last, bal, dress };
+    return { o, c, upcoming, last, dress };
   });
   const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
   const dayChips = v.dates.map(d => ({
@@ -1754,11 +1491,6 @@ Pages.venueDetail = (venueName) => {
     count: allRows.filter(r => r.o.eventDate === d).length,
   }));
   const key = r => r.upcoming ? r.upcoming.appointmentAt + 'T' + (r.upcoming.time || '00:00') : (r.last ? r.last.appointmentAt + 'T' + (r.last.time || '00:00') : '');
-  const staffSelect = a => `
-    <select class="mini" onclick="event.stopPropagation()" onchange="Actions.assignStaff('${a.id}', this.value)">
-      <option value="">— Assign staff —</option>
-      ${DB.settings.staff.map(s => `<option ${a.staffName === s.name ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
-    </select>`;
   const row = (r, timeHtml, appt) => `
     <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
       <div class="vtime">${timeHtml}</div>
@@ -1766,10 +1498,9 @@ Pages.venueDetail = (venueName) => {
         <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
         <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
       </div>
-      ${appt ? `<div>${staffSelect(appt)}</div>` : ''}
+      ${appt && appt.staffName ? `<div><span class="badge b-grey">${esc(appt.staffName)}</span></div>` : ''}
       <div style="text-align:right">
         ${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}
-        ${r.bal > 0 ? `<span class="badge b-red">${eur(r.bal)} due</span>` : UI.badge(r.o.status)}
       </div>
     </div>`;
 
@@ -1808,11 +1539,11 @@ Pages.venueDetail = (venueName) => {
         ${b.rows.length ? `<div class="card" style="padding-top:2px; padding-bottom:2px; margin-bottom:10px">
           ${b.rows.map(s => row(s, `<span class="vclock">${esc(s.a.time)}</span>`, s.a)).join('')}</div>` : ''}`).join('')}
       ${unscheduled.length ? `<h2>Booked, no time set (${unscheduled.length})</h2><div class="card" style="padding-top:2px; padding-bottom:2px">
-        ${unscheduled.map(s => row(s, `<span class="badge b-amber">Set time</span>`, s.a)).join('')}</div>` : ''}
+        ${unscheduled.map(s => row(s, `<span class="badge b-amber">No time</span>`, s.a)).join('')}</div>` : ''}
       ${notBooked.length ? `<h2>Not booked in yet (${notBooked.length})</h2><div class="card" style="padding-top:2px; padding-bottom:2px">
         ${notBooked.map(r => `
           <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
-            <div class="vtime"><button class="small primary" onclick="event.stopPropagation(); Actions.logAppointment('${r.c.id}', '', '${day}', 'Private appointment — ${esc(v.venue).replace(/'/g, '&#39;')}')">Book slot</button></div>
+            <div class="vtime"><span class="badge b-amber">No slot</span></div>
             <div style="flex:1"><span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
               <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}</span></div>
             <div>${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}</div>
@@ -1825,12 +1556,11 @@ Pages.venueDetail = (venueName) => {
       ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
         ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '—')}</span>`, r.upcoming)).join('')}</div>` : ''}
       ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
-        ${noAppt.map(r => row(r, `<span class="badge b-amber">Book in</span>`)).join('')}</div>` : ''}
+        ${noAppt.map(r => row(r, `<span class="badge b-amber">Not booked</span>`)).join('')}</div>` : ''}
       ${visited.length ? `<h2>Already visited (${visited.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
         ${visited.map(r => row(r, `<span class="muted small">${fmtWd(r.last.appointmentAt)}</span><br><span class="vclock" style="color:var(--muted)">${esc(r.last.time || '—')}</span>`)).join('')}</div>` : ''}`;
   }
   return `
-    ${bannerHtml()}
     <p><a class="plain" href="#/venues">← Venues</a></p>
     <h1 style="margin-bottom:2px">📍 ${esc(v.venue)}</h1>
     <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> · ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · slot times from Appointly, in time order.</p>
@@ -1846,64 +1576,47 @@ Pages.customerDetail = (id) => {
   if (!c) return '<h1>Customer not found</h1>';
   const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
   return `
-    ${bannerHtml()}
     <p><a class="plain" href="#/customers">← Customers</a></p>
     <h1>${esc(c.name)}</h1>
     <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> · ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
     <div class="toolbar">
-      <button class="primary" onclick="App.go('#/order-form?customer=${c.id}')">+ New order for ${esc(c.name.split(' ')[0])}</button>
-      <button onclick="Actions.editCustomer('${c.id}')">Edit details</button>
+      <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">🖨 Print this customer's sheet (details + booking answers)</button>
     </div>
     <div class="cols2">
       <div class="card">
-        <h2 style="margin-top:0">Details <span class="small muted" style="font-weight:400; text-transform:none; letter-spacing:0">— tap a row to edit</span></h2>
-        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','email',this)"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span><span class="editpen">✎</span></div>
-        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','phone',this)"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span><span class="editpen">✎</span></div>
-        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','address',this)"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span><span class="editpen">✎</span></div>
-        <div class="dl-row editable" onclick="Actions.inlineEdit('${c.id}','notes',this)"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes || '—')} <span class="small muted">(internal — never on invoices)</span></span><span class="editpen">✎</span></div>
+        <h2 style="margin-top:0">Details</h2>
+        <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
+        ${c.notes ? `<div class="dl-row"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes)} <span class="small muted">(internal)</span></span></div>` : ''}
       </div>
       <div class="card" style="grid-row: span 2">
-        <div class="flex" style="justify-content:space-between">
-          <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
-          <button class="small primary" onclick="Actions.logAppointment('${c.id}')">+ Add answers</button>
-        </div>
+        <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
         ${AppointlyService.bookingsFor(c.id).map(a => `
           <div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
             <div class="flex" style="margin-bottom:10px">
               <b>${esc(a.service)}</b>
               <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
               <span class="small muted">${fmtDate(a.appointmentAt)}${a.time ? ' · <b>' + esc(a.time) + '</b>' : ''}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
-              <span class="spacer" style="flex:1"></span>
-              <select class="mini" onchange="Actions.assignStaff('${a.id}', this.value)" title="Staff member looking after this customer">
-                <option value="">— Staff —</option>
-                ${DB.settings.staff.map(s => `<option ${a.staffName === s.name ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
-              </select>
-              <button class="small" onclick="Actions.logAppointment('${c.id}','${a.id}')">✎ Edit</button>
             </div>
             ${a.staffName ? `<div class="small" style="margin-bottom:8px">Looked after by <b>${esc(a.staffName)}</b></div>` : ''}
             ${a.questions.length ? a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
               <ul>${(qa.a || '—').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')
               : '<div class="small muted">Event-day slot — no booking questions.</div>'}
-          </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here when the customer books through the site, or add them after a phone booking.</p>'}
-        ${AppointlyService.isLive() ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — mock mode. Add the Appointly API key at the LIVE CREDENTIAL SEAM (Settings → Integrations) to sync real booking answers from Shopify.</div>'}
+          </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here once the customer books through the site.</p>'}
+        ${AppointlyService.isLive() ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — mock mode. Add the Appointly API key at the LIVE CREDENTIAL SEAM near the top of this file to sync real booking answers.</div>'}
       </div>
       <div>
         <h2 style="margin-top:0">Orders (${orders.length})</h2>
         ${orders.map(o => {
           const items = Domain.itemsOf(o.id);
-          const bal = Domain.balanceCents(o.id);
-          return `<div class="card" style="margin-bottom:12px; cursor:pointer" onclick="App.go('#/order/${o.id}')">
+          return `<div class="card" style="margin-bottom:12px">
             <div class="flex" style="justify-content:space-between">
-              <b>${esc(o.reference)}</b> ${UI.badge(o.status)} ${o.planType ? `<span class="badge b-brand">${o.planType.replace('_', '/').replace('fifty/fifty', '50/50').replace('paid/in_full', 'paid in full')}</span>` : UI.badge('no_plan')}
-              <span style="margin-left:auto" class="num">${bal > 0 ? '<b>' + eur(bal) + ' due</b>' : '<span class="muted">settled</span>'}</span>
+              <b>${esc(o.reference)}</b>
+              <span style="margin-left:auto" class="small muted">${fmtDateTime(o.createdAt).split(',')[0]}</span>
             </div>
             <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + ' (' + esc(i.colour) + ', ' + esc(i.size) + ')').join(' · ')}</div>
             <div class="small" style="margin-top:6px">${UI.eventBadge(o.eventHotel).replace('<br>', ' ')}${o.eventDate ? ' <span class="muted">· ' + fmtDate(o.eventDate) + '</span>' : ''}</div>
-            <div class="flex" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--line)">
-              <button class="small" onclick="event.stopPropagation(); Actions.viewInvoice('${o.id}','customer')">🧾 Customer invoice</button>
-              <button class="small" onclick="event.stopPropagation(); Actions.viewInvoice('${o.id}','accountant')">🧾 Accountant invoice</button>
-              <button class="small primary" onclick="event.stopPropagation(); Actions.sendInvoice('${o.id}')">✉ Send invoice</button>
-            </div>
           </div>`;
         }).join('') || '<div class="card muted">No orders yet.</div>'}
       </div>
@@ -1911,1104 +1624,18 @@ Pages.customerDetail = (id) => {
 };
 </script>
 <script>
-/* =============================== ORDER DETAIL =============================== */
-Pages.orderDetail = (id) => {
-  const o = Domain.order(id);
-  if (!o) return '<h1>Order not found</h1>';
-  const c = Domain.customer(o.customerId);
-  const items = Domain.itemsOf(o.id);
-  const insts = Domain.instalmentsOf(o.id);
-  const activeInsts = insts.filter(i => i.status !== 'cancelled');
-  const payments = Domain.paymentsOf(o.id);
-  const total = Domain.orderTotalCents(o.id);
-  const paid = Domain.paidCents(o.id);
-  const credits = Domain.creditCents(o.id);
-  const balance = total - paid - credits;
-  const adjustments = DB.adjustments.filter(a => a.orderId === o.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
-  const sentReminders = DB.customerReminders.filter(r => r.orderId === o.id).sort((a, b) => a.sentAt < b.sentAt ? 1 : -1);
-  const contact = DB.contactLog.filter(l => l.orderId === o.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
-  const planLabel = { paid_in_full: 'Paid in full', fifty_fifty: '50/50 plan', custom: 'Custom plan' }[o.planType];
-  const allocsFor = pid => DB.allocations.filter(a => a.paymentId === pid);
-
-  return `
-    ${bannerHtml()}
-    <p><a class="plain" href="#/customer/${c.id}">← ${esc(c.name)}</a></p>
-    <div class="flex" style="justify-content:space-between; align-items:flex-start">
-      <div>
-        <h1>Order ${esc(o.reference)} ${UI.badge(o.status)} ${o.planType ? `<span class="badge b-brand">${planLabel}</span>` : UI.badge('no_plan')}</h1>
-        <p class="sub">${esc(c.name)}${c.daughterName ? ' — for ' + esc(c.daughterName) : ''} · ${esc(o.eventHotel || 'No event set')}${o.eventDate ? ' · ' + fmtDate(o.eventDate) : ''}</p>
-      </div>
-      <div class="flex">
-        <button onclick="Actions.viewInvoice('${o.id}','customer')">Customer invoice</button>
-        <button onclick="Actions.viewInvoice('${o.id}','accountant')">Accountant invoice</button>
-        <button class="primary" onclick="Actions.sendInvoice('${o.id}')">✉ Send invoice</button>
-      </div>
-    </div>
-    <div class="statrow">
-      <div class="stat"><div class="l">Order total</div><div class="v">${eur(total)}</div></div>
-      <div class="stat good"><div class="l">Paid</div><div class="v">${eur(paid)}</div></div>
-      ${credits ? `<div class="stat"><div class="l">Credits / write-off</div><div class="v">${eur(credits)}</div></div>` : ''}
-      <div class="stat ${balance > 0 ? 'bad' : 'good'}"><div class="l">Balance</div><div class="v">${eur(Math.max(balance, 0))}</div></div>
-      ${o.promisedPaymentDate ? `<div class="stat warn"><div class="l">Promised payment</div><div class="v" style="font-size:1rem">${fmtDate(o.promisedPaymentDate)}</div></div>` : ''}
-    </div>
-
-    <h2>Items</h2>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Item</th><th>Style</th><th>Colour</th><th>Size</th><th class="num">Qty</th><th class="num">Retail</th><th class="num">Line total</th></tr></thead>
-      <tbody>${items.map(i => `<tr><td><b>${esc(i.title)}</b></td><td class="mono">${esc(i.styleCode)}</td>
-        <td>${esc(i.colour)}</td><td>${esc(i.size)}</td><td class="num">${i.quantity}</td>
-        <td class="num">${eur(i.retailPriceCents)}</td><td class="num">${eur(i.retailPriceCents * i.quantity)}</td></tr>`).join('')}
-      </tbody></table></div>
-    <div class="toolbar" style="margin-top:8px">
-      ${activeInsts.length ? '<span class="small muted">To change items, cancel the payment plan first (Adjustments) — instalments must always sum to the balance.</span>'
-        : `<button class="small" onclick="App.go('#/order-form?id=${o.id}')">Edit items</button>`}
-    </div>
-
-    <h2>Payment plan</h2>
-    ${activeInsts.length ? `
-      <div class="tablewrap"><table>
-        <thead><tr><th>#</th><th class="num">Due</th><th class="num">Paid</th><th>Due date</th><th></th><th>Status</th><th>Reminder</th><th>Notes</th><th></th></tr></thead>
-        <tbody>${activeInsts.map(i => `<tr>
-          <td>${i.instalmentNumber}</td>
-          <td class="num">${eur(i.amountDueCents)}</td>
-          <td class="num">${eur(i.amountPaidCents)}</td>
-          <td>${fmtDate(i.dueDate)}</td>
-          <td>${i.status !== 'paid' ? UI.dueBadge(daysUntil(i.dueDate)) : ''}</td>
-          <td>${UI.badge(i.status)}</td>
-          <td>${UI.badge(i.reminderStatus)}${i.lastReminderSentAt ? '<br><span class="small muted">' + fmtDateTime(i.lastReminderSentAt) + '</span>' : ''}</td>
-          <td class="small muted">${esc(i.notes)}</td>
-          <td>${i.status !== 'paid' ? `<button class="small" onclick="Actions.changeDueDate('${i.id}')">Change date</button>` : (i.paidAt ? '<span class="small muted">paid ' + fmtDate(i.paidAt.slice(0, 10)) + '</span>' : '')}</td>
-        </tr>`).join('')}</tbody></table></div>`
-      : o.status === 'cancelled' ? '<div class="card muted">Order cancelled — no active plan.</div>'
-      : Pages._planPicker(o, balance)}
-
-    <div class="cols2" style="margin-top:22px">
-      <div>
-        <h2>Payments ledger</h2>
-        <div class="toolbar">
-          <button class="primary" onclick="Actions.recordPayment('${o.id}')" ${balance <= 0 || o.status === 'cancelled' ? 'disabled' : ''}>+ Record payment</button>
-          <span class="small muted">An order is only ever marked paid by matching payments or an audited adjustment — never a checkbox.</span>
-        </div>
-        <div class="tablewrap"><table>
-          <thead><tr><th>Received</th><th>Method</th><th class="num">Amount</th><th>Allocated to</th><th>By</th><th></th></tr></thead>
-          <tbody>${payments.map(p => `<tr ${p.voided ? 'style="opacity:.5;text-decoration:line-through"' : ''}>
-            <td class="small">${fmtDateTime(p.receivedAt)}${p.notes ? '<br><span class="muted">' + esc(p.notes) + '</span>' : ''}${p.voided ? '<br><span class="badge b-red" style="text-decoration:none">Voided: ' + esc(p.voidReason) + '</span>' : ''}</td>
-            <td class="small">${esc(p.method.replace('_', ' '))}</td>
-            <td class="num">${eur(p.amountCents)}</td>
-            <td class="small">${allocsFor(p.id).map(a => { const inst = DB.instalments.find(i => i.id === a.instalmentId); return 'Inst ' + (inst ? inst.instalmentNumber : '?') + ': ' + eur(a.amountCents); }).join('<br>') || '<span class="muted">unallocated</span>'}</td>
-            <td class="small">${esc(p.recordedBy)}</td>
-            <td>${!p.voided && p.method !== 'shopify_deposit' ? `<button class="small danger" onclick="Actions.voidPayment('${p.id}')">Correct</button>` : ''}</td>
-          </tr>`).join('') || '<tr><td colspan="6" class="muted">No payments recorded.</td></tr>'}</tbody></table></div>
-
-        <h2>Adjustments &amp; audit</h2>
-        <div class="toolbar">
-          <button onclick="Actions.addAdjustment('${o.id}')">+ Adjustment (admin)</button>
-          ${activeInsts.length && o.status !== 'fully_paid' ? `<button class="danger" onclick="Actions.cancelPlan('${o.id}')">Cancel plan (admin)</button>` : ''}
-        </div>
-        ${adjustments.length ? `<ul class="timeline">${adjustments.map(a => `<li>
-            <b>${esc(a.type.replace(/_/g, ' '))}</b>${a.amountCents ? ' · ' + eur(a.amountCents) : ''} — ${esc(a.staff)}, ${fmtDateTime(a.createdAt)}<br>
-            <span class="muted">Reason: ${esc(a.reason)}</span>
-            ${a.previousValue ? `<br><span class="small muted">Was: ${esc(a.previousValue)} → Now: ${esc(a.newValue)}</span>` : ''}
-          </li>`).join('')}</ul>` : '<p class="small muted">No adjustments.</p>'}
-      </div>
-      <div>
-        <h2>Reminders &amp; contact</h2>
-        <div class="toolbar">
-          <button class="primary" onclick="Actions.customerReminder('${o.id}')" ${o.status === 'cancelled' ? 'disabled' : ''}>✉ Send customer reminder…</button>
-          <button onclick="Actions.logContact('${o.id}')">+ Log contact</button>
-          <button onclick="Actions.promisedDate('${o.id}')">Promised date…</button>
-          <button onclick="Actions.toggleFlag('${o.id}','remindersPaused')">${o.remindersPaused ? '▶ Resume reminders' : '⏸ Pause reminders'}</button>
-          <button onclick="Actions.toggleFlag('${o.id}','needsReview')">${o.needsReview ? '✓ Clear review flag' : '⚑ Flag for review'}</button>
-        </div>
-        ${o.remindersPaused ? '<div class="note">Reminders are paused for this order — nothing will be flagged and customer reminders are blocked.</div>' : ''}
-        ${o.needsReview ? '<div class="note">Flagged as needing review — customer reminders are blocked until cleared.</div>' : ''}
-        ${sentReminders.length ? `<h2 class="small" style="margin-bottom:6px">Sent to customer</h2>
-          <ul class="timeline">${sentReminders.map(r => `<li>
-            <b>${esc(r.method)}</b> to ${esc(r.recipient)} — ${esc(r.sentBy)}, ${fmtDateTime(r.sentAt)} ${UI.badge(r.deliveryStatus === 'delivered' ? 'sent' : r.deliveryStatus)}
-            <br><a class="plain small" href="javascript:void(0)" onclick="Actions.viewReminderCopy('${r.id}')">View copy sent</a>
-            ${r.customerResponse ? '<br><span class="small">Response: ' + esc(r.customerResponse) + '</span>'
-              : ` · <a class="plain small" href="javascript:void(0)" onclick="Actions.recordResponse('${r.id}')">Record response</a>`}
-          </li>`).join('')}</ul>` : ''}
-        <h2 class="small" style="margin-bottom:6px">Internal contact log</h2>
-        ${contact.length ? `<ul class="timeline">${contact.map(l => `<li>
-            <b>${esc(l.action.replace(/_/g, ' '))}</b> — ${esc(l.staff)}, ${fmtDateTime(l.createdAt)}
-            ${l.note ? '<br><span class="muted">' + esc(l.note) + '</span>' : ''}</li>`).join('')}</ul>`
-          : '<p class="small muted">No contact logged yet.</p>'}
-        <h2 class="small" style="margin-bottom:6px">Staff notes <span class="muted">(internal — never on invoices or reminders)</span></h2>
-        <textarea id="ordnotes" style="width:100%" rows="3">${esc(o.staffNotes)}</textarea>
-        <div style="margin-top:6px"><button class="small" onclick="Actions.saveOrderNotes('${o.id}')">Save notes</button></div>
-      </div>
-    </div>`;
-};
-
-/* ---- plan picker (shown while an order has no active plan) ---- */
-Pages._planPicker = (o, balance) => {
-  const total = Domain.orderTotalCents(o.id);
-  const [half] = splitCents(total, 2);
-  return `
-  <div class="card">
-    <b>No payment plan yet.</b> <span class="muted">Outstanding balance: ${eur(balance)} (of ${eur(total)} total — the €25 Shopify deposit is already recorded).</span>
-    <div class="note info" style="margin-top:10px">All plan maths is validated by the app (server-side in the live build): custom instalments must sum exactly to the outstanding balance, and rounding differences always land on the final instalment.</div>
-    <div class="flex" style="margin-top:12px">
-      <button class="primary" onclick="Actions.planPaidInFull('${o.id}')">Paid in full</button>
-      <button class="primary" onclick="Actions.planFiftyFifty('${o.id}')">50 / 50 plan (first ${eur(half)})</button>
-      <button class="primary" onclick="Actions.planCustom('${o.id}')">Custom plan…</button>
-    </div>
-  </div>`;
-};
-
-/* =============================== ORDER FORM =============================== */
-Pages.orderForm = () => {
-  const params = new URLSearchParams((location.hash.split('?')[1] || ''));
-  const editId = params.get('id');
-  const presetCustomer = params.get('customer');
-  const o = editId ? Domain.order(editId) : null;
-  const items = o ? Domain.itemsOf(o.id) : [];
-  OrderFormState.lines = items.length ? items.map(i => ({ productId: i.productId, colour: i.colour, size: i.size, qty: i.quantity, priceCents: i.retailPriceCents }))
-    : [{ productId: App.catalogue[0].id, colour: App.catalogue[0].colours[0], size: App.catalogue[0].sizes[0], qty: 1, priceCents: App.catalogue[0].retailPriceCents }];
-  OrderFormState.editId = editId;
-  const custOptions = DB.customers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(c =>
-    `<option value="${c.id}" ${(o ? o.customerId : presetCustomer) === c.id ? 'selected' : ''}>${esc(c.name)}${c.daughterName ? ' — ' + esc(c.daughterName) : ''}</option>`).join('');
-  return `
-    ${bannerHtml()}
-    <p><a class="plain" href="javascript:history.back()">← Back</a></p>
-    <h1>${o ? 'Edit order ' + esc(o.reference) : 'New order'}</h1>
-    <p class="sub">Products are selected from the Shopify catalogue (mock until credentials are added) — add as many lines as needed for dresses plus accessories.</p>
-    <div class="card">
-      <div class="formgrid">
-        <div><label class="f">Customer</label>
-          <select id="of-customer" ${o ? 'disabled' : ''}>${custOptions}</select>
-          ${o ? '' : '<div style="margin-top:6px"><button class="small" onclick="Actions.newCustomer(true)">+ New customer</button></div>'}
-        </div>
-        <div><label class="f">Appointment event / hotel</label>
-          <input id="of-event" placeholder="e.g. Communion — Rochestown Park Hotel" value="${esc(o ? o.eventHotel : '')}"></div>
-        <div><label class="f">Event date</label>
-          <input id="of-eventdate" type="date" value="${o && o.eventDate ? o.eventDate : ''}"></div>
-      </div>
-      <label class="f">Staff notes (internal only)</label>
-      <textarea id="of-notes" rows="2" style="width:100%">${esc(o ? o.staffNotes : '')}</textarea>
-      <h2>Products</h2>
-      <div id="of-lines"></div>
-      <div class="toolbar"><button onclick="Actions.addLine()">+ Add product / accessory</button>
-        <span class="spacer"></span><b id="of-total"></b></div>
-      ${o ? '' : `<label class="f"><input type="checkbox" id="of-deposit" checked style="width:auto;margin-right:6px">Record the €25 Shopify deposit as already paid (taken at online booking)</label>`}
-      <div class="modalfoot" style="justify-content:flex-start">
-        <button class="primary" onclick="Actions.saveOrder()">${o ? 'Save changes' : 'Create order'}</button>
-        <button onclick="history.back()">Cancel</button>
-      </div>
-    </div>`;
-};
-
-const OrderFormState = { lines: [], editId: null };
-
-/* =============================== ACTIONS =============================== */
+/* =============================== PRINTING (the only actions) =============================== */
+/* This build is a viewing platform: staff browse what Shopify + Appointly
+   feed in, and the only thing it DOES is print — A4 customer sheets
+   (contact details + the Appointly booking answers) and the staff run
+   sheet for an event day. Editing, payments, invoicing and reminders
+   come back in a later phase. */
 const Actions = {
-  /* ---- customers ---- */
-  newCustomer(fromOrderForm) {
-    UI.modal(`
-      <h3>New customer</h3>
-      <div class="formgrid">
-        <div><label class="f">Customer name *</label><input id="nc-name"></div>
-        <div><label class="f">Daughter’s name</label><input id="nc-daughter"></div>
-        <div><label class="f">Email</label><input id="nc-email" type="email"></div>
-        <div><label class="f">Phone</label><input id="nc-phone"></div>
-      </div>
-      <label class="f">Delivery address</label><input id="nc-address" style="width:100%">
-      <label class="f">Staff notes (internal)</label><textarea id="nc-notes" rows="2" style="width:100%"></textarea>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.saveNewCustomer(${!!fromOrderForm})">Save customer</button></div>`);
-  },
-  saveNewCustomer(fromOrderForm) {
-    const v = id => document.getElementById(id).value.trim();
-    if (!v('nc-name')) return UI.err(new Error('Customer name is required.'));
-    const c = { id: uid(), name: v('nc-name'), daughterName: v('nc-daughter'), email: v('nc-email'),
-      phone: v('nc-phone'), address: v('nc-address'), notes: v('nc-notes'), createdAt: nowIso(), updatedAt: nowIso() };
-    DB.customers.push(c); Store.save(); UI.closeModal();
-    if (fromOrderForm) {
-      App.route();
-      setTimeout(() => { const sel = document.getElementById('of-customer'); if (sel) sel.value = c.id; }, 0);
-    } else App.go('#/customer/' + c.id);
-    UI.toast('Customer added.');
-  },
-  editCustomer(id) {
-    const c = Domain.customer(id);
-    UI.modal(`
-      <h3>Edit customer</h3>
-      <div class="formgrid">
-        <div><label class="f">Customer name *</label><input id="nc-name" value="${esc(c.name)}"></div>
-        <div><label class="f">Daughter’s name</label><input id="nc-daughter" value="${esc(c.daughterName)}"></div>
-        <div><label class="f">Email</label><input id="nc-email" value="${esc(c.email)}"></div>
-        <div><label class="f">Phone</label><input id="nc-phone" value="${esc(c.phone)}"></div>
-      </div>
-      <label class="f">Delivery address</label><input id="nc-address" style="width:100%" value="${esc(c.address)}">
-      <label class="f">Staff notes (internal)</label><textarea id="nc-notes" rows="2" style="width:100%">${esc(c.notes)}</textarea>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.saveEditCustomer('${id}')">Save</button></div>`);
-  },
-  saveEditCustomer(id) {
-    const c = Domain.customer(id);
-    const v = k => document.getElementById(k).value.trim();
-    if (!v('nc-name')) return UI.err(new Error('Customer name is required.'));
-    Object.assign(c, { name: v('nc-name'), daughterName: v('nc-daughter'), email: v('nc-email'),
-      phone: v('nc-phone'), address: v('nc-address'), notes: v('nc-notes'), updatedAt: nowIso() });
-    Store.save(); UI.closeModal(); App.route(); UI.toast('Customer updated.');
-  },
-
-  /* ---- order form lines ---- */
-  renderLines() {
-    const wrap = document.getElementById('of-lines');
-    if (!wrap) return;
-    wrap.innerHTML = OrderFormState.lines.map((ln, i) => {
-      const p = App.catalogue.find(x => x.id === ln.productId) || App.catalogue[0];
-      return `<div class="flex" style="border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px">
-        <select onchange="Actions.setLine(${i},'productId',this.value)" style="min-width:220px">
-          ${App.catalogue.map(x => `<option value="${x.id}" ${x.id === p.id ? 'selected' : ''}>${esc(x.title)} · ${eur(x.retailPriceCents)}</option>`).join('')}
-        </select>
-        <select onchange="Actions.setLine(${i},'colour',this.value)">
-          ${p.colours.map(col => `<option ${col === ln.colour ? 'selected' : ''}>${esc(col)}</option>`).join('')}
-        </select>
-        <select onchange="Actions.setLine(${i},'size',this.value)">
-          ${p.sizes.map(sz => `<option ${sz === ln.size ? 'selected' : ''}>${esc(sz)}</option>`).join('')}
-        </select>
-        <label class="small muted">Qty <input type="number" min="1" value="${ln.qty}" style="width:60px" onchange="Actions.setLine(${i},'qty',this.value)"></label>
-        <label class="small muted">Retail € <input value="${(ln.priceCents / 100).toFixed(2)}" style="width:90px" onchange="Actions.setLine(${i},'priceCents',this.value)"></label>
-        <button class="small danger" onclick="Actions.removeLine(${i})" ${OrderFormState.lines.length === 1 ? 'disabled' : ''}>✕</button>
-      </div>`;
-    }).join('');
-    const total = OrderFormState.lines.reduce((s, ln) => s + ln.priceCents * ln.qty, 0);
-    document.getElementById('of-total').textContent = 'Order total: ' + eur(total);
-  },
-  setLine(i, key, val) {
-    const ln = OrderFormState.lines[i];
-    if (key === 'productId') {
-      const p = App.catalogue.find(x => x.id === val);
-      Object.assign(ln, { productId: val, colour: p.colours[0], size: p.sizes[0], priceCents: p.retailPriceCents });
-    } else if (key === 'qty') ln.qty = Math.max(1, parseInt(val, 10) || 1);
-    else if (key === 'priceCents') {
-      const cents = parseEuros(val);
-      if (cents == null || cents <= 0) { UI.err(new Error('Enter a valid price.')); }
-      else ln.priceCents = cents;
-    } else ln[key] = val;
-    Actions.renderLines();
-  },
-  addLine() {
-    const p = App.catalogue[0];
-    OrderFormState.lines.push({ productId: p.id, colour: p.colours[0], size: p.sizes[0], qty: 1, priceCents: p.retailPriceCents });
-    Actions.renderLines();
-  },
-  removeLine(i) { OrderFormState.lines.splice(i, 1); Actions.renderLines(); },
-
-  saveOrder() {
-    try {
-      const custSel = document.getElementById('of-customer');
-      const customerId = custSel.value;
-      if (!customerId) throw new Error('Choose a customer.');
-      if (!OrderFormState.lines.length) throw new Error('Add at least one product.');
-      const eventHotel = document.getElementById('of-event').value.trim();
-      const eventDate = document.getElementById('of-eventdate').value || null;
-      const staffNotes = document.getElementById('of-notes').value.trim();
-      let order;
-      if (OrderFormState.editId) {
-        order = Domain.order(OrderFormState.editId);
-        if (Domain.instalmentsOf(order.id).some(i => i.status !== 'cancelled'))
-          throw new Error('This order has an active plan — cancel the plan before changing items.');
-        DB.orderItems = DB.orderItems.filter(i => i.orderId !== order.id);
-        Object.assign(order, { eventHotel, eventDate, staffNotes, updatedAt: nowIso() });
-      } else {
-        DB.counters.order += 1;
-        order = { id: uid(), reference: 'DB-' + DB.counters.order, customerId, status: 'confirmed', planType: null,
-          eventHotel, eventDate, staffNotes, remindersPaused: false, needsReview: false, refundProcessing: false,
-          promisedPaymentDate: null, createdAt: nowIso(), updatedAt: nowIso() };
-        DB.orders.push(order);
-      }
-      for (const ln of OrderFormState.lines) {
-        const p = App.catalogue.find(x => x.id === ln.productId);
-        DB.orderItems.push({ id: uid(), orderId: order.id, productId: p.id, title: p.title, styleCode: p.styleCode,
-          category: p.category, colour: ln.colour, size: ln.size, quantity: ln.qty, retailPriceCents: ln.priceCents });
-      }
-      const dep = document.getElementById('of-deposit');
-      if (dep && dep.checked) {
-        DB.payments.push({ id: uid(), orderId: order.id, amountCents: 2500, method: 'shopify_deposit', reference: '',
-          receivedAt: nowIso(), recordedBy: App.staff.name, notes: 'Shopify deposit product', voided: false, voidReason: '', createdAt: nowIso() });
-      }
-      Store.save(); Domain.refreshAll();
-      App.go('#/order/' + order.id);
-      UI.toast(OrderFormState.editId ? 'Order updated.' : 'Order ' + order.reference + ' created — now choose a payment plan.');
-    } catch (e) { UI.err(e); }
-  },
-
-  /* ---- plans ---- */
-  planPaidInFull(orderId) {
-    try { Domain.createPlan(orderId, 'paid_in_full', {}, App.staff.name); App.route(); UI.toast('Plan set: paid in full. Record the payment when it is received.'); }
-    catch (e) { UI.err(e); }
-  },
-  planFiftyFifty(orderId) {
-    const total = Domain.orderTotalCents(orderId);
-    const [first] = splitCents(total, 2);
-    UI.modal(`
-      <h3>50 / 50 plan</h3>
-      <p class="muted small">First payment is 50% of the order total (${eur(total)}). The remaining balance — recalculated after all valid payments and credits — falls due one calendar month after the first payment by default; the rounding cent, if any, sits on the final instalment.</p>
-      <table style="max-width:420px"><tr><td>Instalment 1 (now)</td><td class="num"><b>${eur(first)}</b></td></tr>
-        <tr><td>Instalment 2 (final)</td><td class="num"><b>${eur(total - first)}</b></td></tr></table>
-      <label class="f">Final balance due date (editable)</label>
-      <input type="date" id="ff-due" value="${addCalendarMonths(todayStr(), 1)}">
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmFiftyFifty('${orderId}')">Confirm plan</button></div>`);
-  },
-  confirmFiftyFifty(orderId) {
-    try {
-      Domain.createPlan(orderId, 'fifty_fifty', { finalDueDate: document.getElementById('ff-due').value }, App.staff.name);
-      UI.closeModal(); App.route(); UI.toast('50/50 plan created.');
-    } catch (e) { UI.err(e); }
-  },
-  planCustom(orderId) {
-    Actions._customRows = [{ amount: '', dueDate: todayStr(), notes: '' }, { amount: '', dueDate: addCalendarMonths(todayStr(), 1), notes: '' }];
-    Actions._customOrder = orderId;
-    Actions.renderCustomPlan();
-  },
-  renderCustomPlan() {
-    const orderId = Actions._customOrder;
-    const outstanding = Domain.balanceCents(orderId);
-    const sum = Actions._customRows.reduce((s, r) => s + (parseEuros(r.amount) || 0), 0);
-    UI.modal(`
-      <h3>Custom payment plan</h3>
-      <p class="muted small">Outstanding balance to schedule: <b>${eur(outstanding)}</b>. Instalments must sum to it exactly.</p>
-      ${Actions._customRows.map((r, i) => `
-        <div class="flex" style="margin-bottom:8px">
-          <b style="width:26px">${i + 1}.</b>
-          <label class="small muted">€ <input style="width:110px" value="${esc(r.amount)}" onchange="Actions._customRows[${i}].amount = this.value; Actions.renderCustomPlan()"></label>
-          <input type="date" value="${r.dueDate}" onchange="Actions._customRows[${i}].dueDate = this.value">
-          <input placeholder="notes (optional)" style="flex:1" value="${esc(r.notes)}" onchange="Actions._customRows[${i}].notes = this.value">
-          <button class="small danger" onclick="Actions._customRows.splice(${i},1); Actions.renderCustomPlan()" ${Actions._customRows.length === 1 ? 'disabled' : ''}>✕</button>
-        </div>`).join('')}
-      <div class="flex">
-        <button class="small" onclick="Actions._customRows.push({amount:'', dueDate: '${addCalendarMonths(todayStr(), 2)}', notes:''}); Actions.renderCustomPlan()">+ Add instalment</button>
-        <span class="spacer"></span>
-        <span class="${sum === outstanding ? '' : 'muted'}" style="${sum === outstanding ? 'color:var(--green);font-weight:600' : sum ? 'color:var(--red)' : ''}">
-          Scheduled: ${eur(sum)} ${sum && sum !== outstanding ? '(' + (sum > outstanding ? '+' : '−') + eur(Math.abs(sum - outstanding)) + ')' : sum === outstanding ? '✓' : ''}</span>
-      </div>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmCustomPlan()">Confirm plan</button></div>`);
-  },
-  confirmCustomPlan() {
-    try {
-      const rows = Actions._customRows.map(r => ({ amountCents: parseEuros(r.amount), dueDate: r.dueDate, notes: r.notes }));
-      Domain.createPlan(Actions._customOrder, 'custom', { instalments: rows }, App.staff.name);
-      UI.closeModal(); App.route(); UI.toast('Custom plan created.');
-    } catch (e) { UI.err(e); }
-  },
-  cancelPlan(orderId) {
-    try {
-      App.requireAdmin();
-      const reason = prompt('Reason for cancelling this payment plan (required, audited):');
-      if (!reason || !reason.trim()) return;
-      Domain.cancelPlan(orderId, reason.trim(), App.staff.name);
-      App.route(); UI.toast('Plan cancelled — set up a new one when ready.');
-    } catch (e) { UI.err(e); }
-  },
-
-  /* ---- payments ---- */
-  recordPayment(orderId) {
-    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled' && i.amountPaidCents < i.amountDueCents);
-    const balance = Domain.balanceCents(orderId);
-    const next = insts[0];
-    UI.modal(`
-      <h3>Record payment</h3>
-      <p class="muted small">Outstanding balance ${eur(balance)}${next ? ' · next instalment ' + eur(next.amountDueCents - next.amountPaidCents) + ' due ' + fmtDate(next.dueDate) : ''}.</p>
-      <div class="formgrid">
-        <div><label class="f">Amount (€)</label><input id="pay-amt" value="${next ? ((next.amountDueCents - next.amountPaidCents) / 100).toFixed(2) : ''}"></div>
-        <div><label class="f">Method</label><select id="pay-method">
-          <option value="card">Card</option><option value="cash">Cash</option>
-          <option value="bank_transfer">Bank transfer</option><option value="revolut">Revolut</option><option value="other">Other</option>
-        </select></div>
-        <div><label class="f">Received date</label><input id="pay-date" type="date" value="${todayStr()}"></div>
-      </div>
-      <label class="f">Notes</label><input id="pay-notes" style="width:100%">
-      <label class="f">Allocation</label>
-      <select id="pay-alloc">
-        <option value="auto">Automatic — oldest instalment first (allocation recorded for audit)</option>
-        ${insts.map(i => `<option value="${i.id}">All to instalment ${i.instalmentNumber} (owes ${eur(i.amountDueCents - i.amountPaidCents)}, due ${fmtDate(i.dueDate)})</option>`).join('')}
-      </select>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmPayment('${orderId}')">Record payment</button></div>`);
-  },
-  confirmPayment(orderId) {
-    try {
-      const amountCents = parseEuros(document.getElementById('pay-amt').value);
-      if (amountCents == null) throw new Error('Enter a valid amount.');
-      const allocSel = document.getElementById('pay-alloc').value;
-      const dateVal = document.getElementById('pay-date').value || todayStr();
-      const receivedAt = new Date(dateVal + 'T' + new Date().toTimeString().slice(0, 8)).toISOString();
-      Domain.recordPayment(orderId, {
-        amountCents, method: document.getElementById('pay-method').value, receivedAt,
-        notes: document.getElementById('pay-notes').value.trim(), recordedBy: App.staff.name,
-        allocations: allocSel === 'auto' ? null : [{ instalmentId: allocSel, amountCents }],
-      });
-      UI.closeModal(); App.route();
-      const bal = Domain.balanceCents(orderId);
-      UI.toast(bal <= 0 ? '🎉 Final payment recorded — order fully paid, reminders stopped, history retained.' : 'Payment recorded. Remaining balance ' + eur(bal) + '.');
-    } catch (e) { UI.err(e); }
-  },
-  voidPayment(paymentId) {
-    try {
-      App.requireAdmin();
-      const reason = prompt('Reason for correcting (voiding) this payment — required, audited:');
-      if (!reason || !reason.trim()) return;
-      Domain.voidPayment(paymentId, reason.trim(), App.staff.name);
-      App.route(); UI.toast('Payment voided and balances recalculated.');
-    } catch (e) { UI.err(e); }
-  },
-
-  /* ---- adjustments ---- */
-  addAdjustment(orderId) {
-    UI.modal(`
-      <h3>Adjustment (admin only, always audited)</h3>
-      <div class="formgrid">
-        <div><label class="f">Type</label><select id="adj-type">
-          <option value="discount">Approved discount</option>
-          <option value="write_off">Write off balance</option>
-        </select></div>
-        <div><label class="f">Amount (€)</label><input id="adj-amt" value="${(Domain.balanceCents(orderId) / 100).toFixed(2)}"></div>
-      </div>
-      <label class="f">Reason (required)</label><input id="adj-reason" style="width:100%">
-      <p class="small muted">Write-offs stay visible in financial reporting and are never shown as customer payments.</p>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmAdjustment('${orderId}')">Apply</button></div>`);
-  },
-  confirmAdjustment(orderId) {
-    try {
-      App.requireAdmin();
-      const amountCents = parseEuros(document.getElementById('adj-amt').value);
-      const type = document.getElementById('adj-type').value;
-      const reason = document.getElementById('adj-reason').value.trim();
-      if (amountCents == null || amountCents <= 0) throw new Error('Enter a valid amount.');
-      const bal = Domain.balanceCents(orderId);
-      if (amountCents > bal) throw new Error('Amount exceeds the outstanding balance (' + eur(bal) + ').');
-      Domain.applyAdjustment(orderId, { type, amountCents, reason, staff: App.staff.name,
-        previousValue: 'balance ' + eur(bal), newValue: 'balance ' + eur(bal - amountCents) });
-      UI.closeModal(); App.route(); UI.toast(type === 'write_off' ? 'Balance written off (kept in reporting).' : 'Discount applied.');
-    } catch (e) { UI.err(e); }
-  },
-  changeDueDate(instalmentId) {
-    try {
-      App.requireAdmin();
-      const inst = DB.instalments.find(i => i.id === instalmentId);
-      const nd = prompt('New due date for instalment ' + inst.instalmentNumber + ' (YYYY-MM-DD):', inst.dueDate);
-      if (!nd) return;
-      const reason = prompt('Reason for the change (required, audited):');
-      if (!reason || !reason.trim()) return;
-      Domain.changeDueDate(instalmentId, nd.trim(), reason.trim(), App.staff.name);
-      App.route(); UI.toast('Due date changed.');
-    } catch (e) { UI.err(e); }
-  },
-
-  saveOrderNotes(orderId) {
-    const o = Domain.order(orderId);
-    o.staffNotes = document.getElementById('ordnotes').value.trim();
-    o.updatedAt = nowIso(); Store.save(); UI.toast('Notes saved.');
-  },
-  toggleFlag(orderId, flag) {
-    const o = Domain.order(orderId);
-    o[flag] = !o[flag]; o.updatedAt = nowIso(); Store.save(); Domain.refreshAll(); App.route();
-  },
-  promisedDate(orderId) {
-    const o = Domain.order(orderId);
-    const d = prompt('Customer promised to pay by (YYYY-MM-DD) — blank to clear:', o.promisedPaymentDate || daysFromNow(7));
-    if (d === null) return;
-    o.promisedPaymentDate = d.trim() || null; o.updatedAt = nowIso();
-    if (o.promisedPaymentDate) DB.contactLog.push({ id: uid(), orderId, reminderTaskId: null, action: 'promised_date',
-      note: 'Customer promised payment by ' + fmtDate(o.promisedPaymentDate) + '.', staff: App.staff.name, createdAt: nowIso() });
-    Store.save(); Domain.refreshAll(); App.route();
-  },
-  logContact(orderId) {
-    UI.modal(`
-      <h3>Log customer contact</h3>
-      <div class="formgrid">
-        <div><label class="f">How</label><select id="lc-action">
-          <option value="called">Called</option><option value="emailed">Emailed</option>
-          <option value="texted">Texted</option><option value="whatsapp">WhatsApp</option><option value="note">Note only</option>
-        </select></div>
-      </div>
-      <label class="f">Note</label><textarea id="lc-note" rows="3" style="width:100%"></textarea>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmLogContact('${orderId}')">Save</button></div>`);
-  },
-  confirmLogContact(orderId) {
-    DB.contactLog.push({ id: uid(), orderId, reminderTaskId: null,
-      action: document.getElementById('lc-action').value, note: document.getElementById('lc-note').value.trim(),
-      staff: App.staff.name, createdAt: nowIso() });
-    Store.save(); UI.closeModal(); App.route(); UI.toast('Contact logged.');
-  },
-
-  /* ---- invoices ---- */
-  viewInvoice(orderId, variant) {
-    const html = invoiceHtml(orderId, variant);
-    Actions._invoiceHtml = html; Actions._invoiceOrder = orderId; Actions._invoiceVariant = variant;
-    UI.modal(`
-      <h3>${variant === 'accountant' ? 'Accountant invoice (includes retail pricing)' : 'Customer invoice'}</h3>
-      <p class="small muted">Styled after the Shopify invoice layout. Internal staff notes never appear on either invoice.</p>
-      <iframe class="invoice-frame" id="invframe"></iframe>
-      <div class="modalfoot">
-        <button onclick="Actions.viewInvoice('${orderId}','${variant === 'accountant' ? 'customer' : 'accountant'}')">Switch to ${variant === 'accountant' ? 'customer' : 'accountant'} copy</button>
-        <button onclick="document.getElementById('invframe').contentWindow.print()">🖨 Print / save PDF</button>
-        <button class="primary" onclick="Actions.sendInvoice('${orderId}','${variant}')">✉ Send by email…</button>
-      </div>`, true);
-    document.getElementById('invframe').srcdoc = html;
-  },
-
-  /* ---- send invoice via Gmail seam (preview → confirm) ---- */
-  sendInvoice(orderId, variant = 'customer') {
-    const o = Domain.order(orderId); const c = Domain.customer(o.customerId);
-    const invNo = Domain.invoiceNumber(o, variant);
-    UI.modal(`
-      <h3>Send invoice ${esc(invNo)} by email</h3>
-      <div class="seam">✉ Gmail integration — running in <b>mock mode</b> (no credentials present). The email below is recorded to the outbox exactly as it would be sent. Plug real credentials into the LIVE CREDENTIAL SEAM in GmailService to go live.</div>
-      <div class="formgrid">
-        <div><label class="f">To</label><input id="si-to" value="${esc(c.email)}"></div>
-        <div><label class="f">Copy</label><select id="si-variant">
-          <option value="customer" ${variant === 'customer' ? 'selected' : ''}>Customer invoice</option>
-          <option value="accountant" ${variant === 'accountant' ? 'selected' : ''}>Accountant invoice (internal use)</option>
-        </select></div>
-      </div>
-      <label class="f">Subject</label><input id="si-subject" style="width:100%" value="Your Darcybow invoice ${esc(invNo)} — order ${esc(o.reference)}">
-      <label class="f">Message</label>
-      <textarea id="si-body" rows="6" style="width:100%">Hi ${esc(c.name)},
-
-Please find your Darcybow invoice attached for order ${esc(o.reference)}.
-
-If anything doesn’t look right, just reply to this email or call us on ${esc(DB.settings.shop.phone)}.
-
-Warm regards,
-Darcybow</textarea>
-      <p class="small muted">The rendered invoice HTML is attached/inlined on send.</p>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmSendInvoice('${orderId}')">Confirm &amp; send</button></div>`);
-  },
-  async confirmSendInvoice(orderId) {
-    try {
-      const to = document.getElementById('si-to').value.trim();
-      if (!to || !to.includes('@')) throw new Error('Enter a valid recipient email.');
-      const variant = document.getElementById('si-variant').value;
-      const o = Domain.order(orderId);
-      const rec = await GmailService.send({
-        to, subject: document.getElementById('si-subject').value.trim(),
-        body: document.getElementById('si-body').value + '\n\n[invoice ' + Domain.invoiceNumber(o, variant) + ' attached]\n\n' + invoiceHtml(orderId, variant),
-        kind: 'invoice', meta: { orderId, variant },
-      });
-      UI.closeModal(); App.route();
-      UI.toast(rec.status === 'mock_sent' ? 'Invoice recorded to outbox (mock mode — add Gmail credentials to send for real).' : 'Invoice sent.');
-    } catch (e) { UI.err(e); }
-  },
-
-  /* ---- customer payment reminders (manual only) ---- */
-  customerReminder(orderId, overrideDuplicate) {
-    const o = Domain.order(orderId); const c = Domain.customer(o.customerId);
-    const blocks = Domain.reminderBlocks(orderId);
-    if (blocks.length) {
-      UI.modal(`<h3>Reminder blocked</h3>
-        <div class="note err"><b>This reminder can’t be sent:</b><ul>${blocks.map(b => '<li>' + esc(b) + '</li>').join('')}</ul></div>
-        <p class="small muted">These same conditions guarantee nothing is ever sent automatically. Resolve them on the order record first.</p>
-        <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">OK</button></div>`);
-      return;
-    }
-    const dup = Domain.duplicateReminderWarning(orderId);
-    if (dup && !overrideDuplicate) {
-      UI.modal(`<h3>Possible duplicate reminder</h3>
-        <div class="note">${esc(dup)}</div>
-        <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-          <button class="primary" onclick="Actions.overrideDuplicate('${orderId}')">Authorised override — continue</button></div>`);
-      return;
-    }
-    const tpl = DB.settings.reminderTemplate;
-    const vars = reminderVars(o);
-    UI.modal(`
-      <h3>Send payment reminder — ${esc(c.name)}</h3>
-      <p class="small muted">Preview and edit before sending. Reminders are <b>never sent automatically</b>; internal staff notes are never included.</p>
-      <div class="formgrid">
-        <div><label class="f">Method</label><select id="cr-method" onchange="document.getElementById('cr-subj-wrap').style.display = this.value === 'email' ? '' : 'none'">
-          <option value="email">Email</option><option value="sms">SMS / text</option><option value="whatsapp">WhatsApp</option><option value="phone">Phone script</option>
-        </select></div>
-        <div><label class="f">Recipient</label><input id="cr-recipient" value="${esc(c.email)}"></div>
-      </div>
-      <div id="cr-subj-wrap"><label class="f">Subject</label><input id="cr-subject" style="width:100%" value="${esc(renderTemplate(tpl.subject, vars))}"></div>
-      <label class="f">Message (editable)</label>
-      <textarea id="cr-body" rows="12" style="width:100%">${esc(renderTemplate(tpl.body, vars))}</textarea>
-      <div class="note info">Confirm before sending: recipient <b>${esc(c.email)}</b> / <b>${esc(c.phone)}</b> · remaining balance <b>${vars.remainingBalance}</b> · due <b>${vars.dueDate}</b>.</div>
-      <div class="seam">✉ Email sends run through the Gmail LIVE CREDENTIAL SEAM (mock mode records to the outbox). SMS/WhatsApp are logged for the record — wire a provider at the same seam if wanted later.</div>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.confirmCustomerReminder('${orderId}')">Confirm &amp; send</button></div>`, true);
-  },
-  overrideDuplicate(orderId) {
-    try { App.requireAdmin(); Actions.customerReminder(orderId, true); }
-    catch (e) { UI.err(e); }
-  },
-  async confirmCustomerReminder(orderId) {
-    try {
-      const o = Domain.order(orderId);
-      const method = document.getElementById('cr-method').value;
-      const recipient = document.getElementById('cr-recipient').value.trim();
-      const subject = method === 'email' ? document.getElementById('cr-subject').value.trim() : '';
-      const body = document.getElementById('cr-body').value;
-      if (!recipient) throw new Error('Enter a recipient.');
-      const inst = Domain.nextUnpaidInstalment(orderId);
-      let deliveryStatus = 'logged';
-      if (method === 'email') {
-        const rec = await GmailService.send({ to: recipient, subject, body, kind: 'customer_reminder', meta: { orderId } });
-        deliveryStatus = rec.status === 'mock_sent' ? 'mock_sent' : rec.status;
-      }
-      DB.customerReminders.push({ id: uid(), orderId, instalmentId: inst ? inst.id : null, method, recipient,
-        subject, body, sentBy: App.staff.name, sentAt: nowIso(), deliveryStatus, customerResponse: '' });
-      if (inst) { inst.reminderStatus = 'sent'; inst.lastReminderSentAt = nowIso(); inst.updatedAt = nowIso(); }
-      DB.contactLog.push({ id: uid(), orderId, reminderTaskId: null, action: method === 'email' ? 'emailed' : method,
-        note: 'Payment reminder sent (' + method + ').', staff: App.staff.name, createdAt: nowIso() });
-      Store.save(); UI.closeModal(); App.route();
-      UI.toast('Reminder recorded' + (method === 'email' ? ' and queued via Gmail seam (mock mode).' : '.'));
-    } catch (e) { UI.err(e); }
-  },
-  viewReminderCopy(id) {
-    const r = DB.customerReminders.find(x => x.id === id);
-    UI.modal(`<h3>Reminder sent ${fmtDateTime(r.sentAt)}</h3>
-      <p class="small muted">${esc(r.method)} to ${esc(r.recipient)} — sent by ${esc(r.sentBy)} · delivery: ${esc(r.deliveryStatus)}</p>
-      ${r.subject ? '<p><b>' + esc(r.subject) + '</b></p>' : ''}
-      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:14px; border-radius:8px; font-family:inherit">${esc(r.body)}</pre>
-      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">Close</button></div>`);
-  },
-  recordResponse(id) {
-    const r = DB.customerReminders.find(x => x.id === id);
-    const resp = prompt('Customer response to this reminder:');
-    if (resp === null) return;
-    r.customerResponse = resp.trim(); Store.save(); App.route();
-  },
-};
-</script>
-<script>
-/* =============================== OUTSTANDING BALANCES =============================== */
-const BalState = {
-  preset: '', search: '', event: '', due: 'all', from: '', to: '',
-  planType: 'all', status: 'all', minBal: '', maxBal: '', reminder: 'all', paidState: 'all', showPaid: false,
-};
-function balPreset(name) {
-  Object.assign(BalState, { preset: name, search: '', event: '', due: 'all', from: '', to: '',
-    planType: 'all', status: 'all', minBal: '', maxBal: '', reminder: 'all', paidState: 'all', showPaid: false });
-  if (name === 'week') BalState.due = 'week';
-  if (name === 'nextweek') BalState.due = 'nextweek';
-  if (name === 'overdue') BalState.due = 'overdue';
-  if (name === 'fifty') { BalState.planType = 'fifty_fifty'; BalState.paidState = 'awaiting_final'; }
-  if (name === 'reminder') BalState.paidState = 'reminder_required';
-  if (name === 'noresponse') BalState.paidState = 'no_response';
-  if (name === 'recentpaid') BalState.showPaid = true;
-  App.route();
-}
-function balFilter(rows) {
-  const q = BalState.search.trim().toLowerCase();
-  const ev = BalState.event.trim().toLowerCase();
-  const min = parseEuros(BalState.minBal), max = parseEuros(BalState.maxBal);
-  return rows.filter(r => {
-    const du = r.daysUntilDue;
-    if (BalState.due === '7' && !(du != null && du >= 0 && du <= 7)) return false;
-    if (BalState.due === '14' && !(du != null && du >= 0 && du <= 14)) return false;
-    if (BalState.due === 'week' && !(du != null && du >= 0 && du <= 7)) return false;
-    if (BalState.due === 'nextweek' && !(du != null && du > 7 && du <= 14)) return false;
-    if (BalState.due === 'overdue' && !(du != null && du < 0)) return false;
-    if (BalState.due === 'month' && !(r.next && r.next.dueDate.slice(0, 7) === todayStr().slice(0, 7))) return false;
-    if (BalState.due === 'range') {
-      if (!r.next) return false;
-      if (BalState.from && r.next.dueDate < BalState.from) return false;
-      if (BalState.to && r.next.dueDate > BalState.to) return false;
-    }
-    if (q && !((r.customer.name + ' ' + r.customer.daughterName).toLowerCase().includes(q))) return false;
-    if (ev && !(r.order.eventHotel || '').toLowerCase().includes(ev)) return false;
-    if (BalState.planType !== 'all' && r.order.planType !== BalState.planType) return false;
-    if (BalState.status !== 'all' && r.order.status !== BalState.status) return false;
-    if (min != null && r.balanceCents < min) return false;
-    if (max != null && r.balanceCents > max) return false;
-    if (BalState.reminder === 'sent' && !r.lastReminder) return false;
-    if (BalState.reminder === 'not_sent' && r.lastReminder) return false;
-    if (BalState.paidState === 'partial' && !(r.next && r.next.amountPaidCents > 0)) return false;
-    if (BalState.paidState === 'awaiting_final') {
-      const insts = Domain.instalmentsOf(r.order.id).filter(i => i.status !== 'cancelled');
-      if (!(r.next && insts.length === 2 && r.next.instalmentNumber === 2)) return false;
-    }
-    if (BalState.paidState === 'reminder_required' && !r.reminderRequired) return false;
-    if (BalState.paidState === 'no_response' && !(r.lastReminder && !r.lastReminder.customerResponse && r.balanceCents > 0)) return false;
-    if (BalState.paidState === 'follow_up' && !(r.reminderRequired || r.order.needsReview || Domain.openTasks().some(t => t.orderId === r.order.id))) return false;
-    return true;
-  });
-}
-const BAL_GROUPS = [
-  ['overdue', 'Overdue'], ['partially_paid_overdue', 'Partially paid — overdue'], ['due_today', 'Due today'],
-  ['due_7', 'Due within 7 days'], ['due_14', 'Due within 14 days'], ['due_later', 'Due later'], ['no_plan', 'No plan agreed yet'],
-];
-Pages.balances = () => {
-  const all = Domain.balanceRows();
-  const s = Domain.balanceSummary(all);
-  const rows = balFilter(all);
-  const reminderGroup = rows.filter(r => r.reminderRequired);
-  const presets = [
-    ['week', 'Due this week'], ['nextweek', 'Due next week'], ['overdue', 'Overdue'],
-    ['fifty', '50/50 awaiting final payment'], ['reminder', 'Reminder required'],
-    ['noresponse', 'No response after reminder'], ['recentpaid', 'Recently paid'],
-  ];
-  const recentlyPaid = DB.orders.filter(o => o.status === 'fully_paid').map(o => {
-    const lastPay = Domain.paymentsOf(o.id).filter(p => !p.voided).slice(-1)[0];
-    return { order: o, customer: Domain.customer(o.customerId), lastPay };
-  }).filter(x => x.lastPay && (Date.now() - new Date(x.lastPay.receivedAt)) / 86400000 <= 14)
-    .sort((a, b) => a.lastPay.receivedAt < b.lastPay.receivedAt ? 1 : -1);
-
-  const rowHtml = r => {
-    const nextOwes = r.next ? r.next.amountDueCents - r.next.amountPaidCents : null;
-    return `<tr class="click" onclick="App.go('#/order/${r.order.id}')">
-      <td><b>${esc(r.customer.name)}</b><br><span class="small muted">${esc(r.customer.daughterName || '')}</span></td>
-      <td class="small">${esc(r.customer.phone)}<br><span class="muted">${esc(r.customer.email)}</span></td>
-      <td class="small">${esc(r.dress)}<br><span class="muted">${esc(r.order.eventHotel)}</span></td>
-      <td class="num">${eur(r.totalCents)}</td>
-      <td class="num">${eur(r.paidCents)}</td>
-      <td class="num"><b>${eur(r.balanceCents)}</b></td>
-      <td class="num">${nextOwes != null ? eur(nextOwes) : '—'}</td>
-      <td>${r.next ? fmtDate(r.next.dueDate) : '—'} ${UI.dueBadge(r.daysUntilDue)}</td>
-      <td>${UI.badge(r.planStatus)}${r.order.planType ? '<br><span class="small muted">' + r.order.planType.replace('fifty_fifty', '50/50').replace('_', ' ') + '</span>' : ''}</td>
-      <td class="small">${r.lastReminder ? fmtDate(r.lastReminder.sentAt.slice(0, 10)) + '<br><span class="muted">' + esc(r.lastReminder.method) + ' · ' + esc(r.lastReminder.sentBy) + '</span>' : (r.reminderRequired ? '<span class="badge b-red">Required</span>' : '<span class="muted">—</span>')}</td>
-      <td class="small muted" style="max-width:180px">${esc(r.order.staffNotes)}</td>
-    </tr>`;
-  };
-  const groupsHtml = BAL_GROUPS.map(([key, label]) => {
-    const g = rows.filter(r => r.group === key);
-    if (!g.length) return '';
-    return `<tr class="grouphead"><td colspan="11">${label} · ${g.length} — ${eur(g.reduce((x, r) => x + r.balanceCents, 0))} outstanding</td></tr>` +
-      g.sort((a, b) => (a.daysUntilDue ?? 999) - (b.daysUntilDue ?? 999)).map(rowHtml).join('');
-  }).join('');
-
-  return `
-    ${bannerHtml()}
-    <h1>Outstanding balances</h1>
-    <p class="sub">Every customer with an unpaid balance, grouped by urgency. Written-off balances (${eur(s.writtenOffCents)} to date) stay in financial reporting but are never shown as payments.</p>
-    <div class="statrow">
-      <div class="stat"><div class="l">Total outstanding</div><div class="v">${eur(s.totalOutstanding)}</div></div>
-      <div class="stat warn"><div class="l">Due within 7 days</div><div class="v">${eur(s.dueSoonAmount)}</div></div>
-      <div class="stat bad"><div class="l">Overdue</div><div class="v">${eur(s.overdueAmount)}</div></div>
-      <div class="stat"><div class="l">Customers owing</div><div class="v">${s.customersOwing}</div></div>
-      <div class="stat warn"><div class="l">Reminders needing action</div><div class="v">${s.remindersNeeded}</div></div>
-    </div>
-    <div class="chips">${presets.map(([k, label]) =>
-      `<button class="chip ${BalState.preset === k ? 'on' : ''}" onclick="balPreset('${BalState.preset === k ? '' : k}')">${label}</button>`).join('')}</div>
-    <div class="card" style="margin-bottom:14px">
-      <div class="flex">
-        <input id="pagesearch" placeholder="Customer / daughter name…" value="${esc(BalState.search)}" oninput="BalState.search=this.value; BalState.preset=''; App.route()">
-        <input placeholder="Event / hotel…" value="${esc(BalState.event)}" oninput="BalState.event=this.value; App.route()">
-        <select onchange="BalState.due=this.value; App.route()">
-          ${[['all', 'Any due date'], ['7', 'Due within 7 days'], ['14', 'Due within 14 days'], ['month', 'Due this month'], ['overdue', 'Overdue'], ['range', 'Due-date range…']]
-            .map(([v, l]) => `<option value="${v}" ${BalState.due === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-        ${BalState.due === 'range' ? `<input type="date" value="${BalState.from}" onchange="BalState.from=this.value; App.route()">
-          <span class="muted">to</span> <input type="date" value="${BalState.to}" onchange="BalState.to=this.value; App.route()">` : ''}
-        <select onchange="BalState.planType=this.value; App.route()">
-          ${[['all', 'Any plan'], ['fifty_fifty', '50/50'], ['custom', 'Custom'], ['paid_in_full', 'Paid in full']]
-            .map(([v, l]) => `<option value="${v}" ${BalState.planType === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-        <select onchange="BalState.status=this.value; App.route()">
-          ${[['all', 'Any order status'], ['confirmed', 'Active'], ['fully_paid', 'Fully paid'], ['written_off', 'Written off']]
-            .map(([v, l]) => `<option value="${v}" ${BalState.status === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-        <select onchange="BalState.reminder=this.value; App.route()">
-          ${[['all', 'Reminder: any'], ['sent', 'Reminder sent'], ['not_sent', 'No reminder sent']]
-            .map(([v, l]) => `<option value="${v}" ${BalState.reminder === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-        <select onchange="BalState.paidState=this.value; App.route()">
-          ${[['all', 'Any payment state'], ['partial', 'Partially paid instalment'], ['awaiting_final', '50/50 awaiting final'], ['reminder_required', 'Reminder required'], ['no_response', 'No response after reminder'], ['follow_up', 'Follow-up required']]
-            .map(([v, l]) => `<option value="${v}" ${BalState.paidState === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-        <label class="small muted">Balance € <input style="width:80px" placeholder="min" value="${esc(BalState.minBal)}" onchange="BalState.minBal=this.value; App.route()">
-          – <input style="width:80px" placeholder="max" value="${esc(BalState.maxBal)}" onchange="BalState.maxBal=this.value; App.route()"></label>
-      </div>
-    </div>
-    ${BalState.showPaid ? `
-      <h2>Recently paid (last 14 days)</h2>
-      <div class="tablewrap"><table>
-        <thead><tr><th>Customer</th><th>Order</th><th class="num">Total</th><th>Final payment</th><th>Status</th></tr></thead>
-        <tbody>${recentlyPaid.map(x => `<tr class="click" onclick="App.go('#/order/${x.order.id}')">
-          <td><b>${esc(x.customer.name)}</b> <span class="small muted">${esc(x.customer.daughterName)}</span></td>
-          <td>${esc(x.order.reference)}</td><td class="num">${eur(Domain.orderTotalCents(x.order.id))}</td>
-          <td class="small">${fmtDateTime(x.lastPay.receivedAt)} · ${esc(x.lastPay.method.replace('_', ' '))}</td>
-          <td>${UI.badge('fully_paid')}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing fully paid in the last 14 days.</td></tr>'}
-        </tbody></table></div>` : `
-      ${reminderGroup.length && !BalState.paidState.includes('reminder') ? `<div class="note">⚠ ${reminderGroup.length} customer${reminderGroup.length === 1 ? '' : 's'} in this list need${reminderGroup.length === 1 ? 's' : ''} a reminder — use the “Reminder required” preset to work through them.</div>` : ''}
-      <div class="tablewrap"><table>
-        <thead><tr><th>Customer</th><th>Contact</th><th>Dress / event</th><th class="num">Total</th><th class="num">Paid</th>
-          <th class="num">Balance</th><th class="num">Next inst.</th><th>Next due</th><th>Plan</th><th>Last reminder</th><th>Staff notes</th></tr></thead>
-        <tbody>${groupsHtml || '<tr><td colspan="11" class="muted">No balances match these filters.</td></tr>'}</tbody>
-      </table></div>
-      <p class="small muted">${rows.length} of ${all.length} outstanding orders shown.</p>`}`;
-};
-
-/* =============================== REMINDERS (internal) =============================== */
-Pages.reminders = () => {
-  Domain.refreshAll();
-  const open = Domain.openTasks().sort((a, b) => {
-    const rank = { overdue: 0, due_today: 1, upcoming_7: 2, upcoming_14: 3 };
-    return (rank[a.stage] ?? 9) - (rank[b.stage] ?? 9);
-  });
-  const snoozed = DB.reminderTasks.filter(t => t.status === 'snoozed' && t.snoozedUntil && t.snoozedUntil > todayStr());
-  const stageLabel = { upcoming_14: 'Due within 14 days', upcoming_7: 'Due within 7 days', due_today: 'Due today', overdue: 'Overdue' };
-  const stageBadge = { upcoming_14: 'scheduled', upcoming_7: 'due_soon', due_today: 'due_soon', overdue: 'overdue' };
-  const taskRow = (t, isSnoozed) => {
-    const o = Domain.order(t.orderId); const c = Domain.customer(o.customerId);
-    const inst = DB.instalments.find(i => i.id === t.instalmentId);
-    const owed = inst ? inst.amountDueCents - inst.amountPaidCents : Domain.balanceCents(o.id);
-    return `<tr>
-      <td><b><a class="plain" href="#/order/${o.id}">${esc(c.name)}</a></b><br><span class="small muted">${esc(c.daughterName)} · ${esc(o.reference)}</span></td>
-      <td>${UI.badge(stageBadge[t.stage])} <span class="small">${stageLabel[t.stage]}</span>${t.status === 'reviewed' ? '<br>' + UI.badge('reviewed') : ''}${isSnoozed ? '<br>' + UI.badge('snoozed') + ' <span class="small muted">until ' + fmtDate(t.snoozedUntil) + '</span>' : ''}</td>
-      <td class="num"><b>${eur(owed)}</b><br><span class="small muted">of ${eur(Domain.balanceCents(o.id))} total</span></td>
-      <td>${inst ? fmtDate(inst.dueDate) : '—'} ${inst ? UI.dueBadge(daysUntil(inst.dueDate)) : ''}</td>
-      <td class="small">${o.promisedPaymentDate ? '<span class="badge b-blue">Promised ' + fmtDate(o.promisedPaymentDate) + '</span>' : ''}
-        ${inst && inst.lastReminderSentAt ? '<br><span class="muted">Customer reminded ' + fmtDate(inst.lastReminderSentAt.slice(0, 10)) + '</span>' : ''}</td>
-      <td style="white-space:nowrap">
-        <button class="small" onclick="Actions.taskReviewed('${t.id}')" ${t.status === 'reviewed' ? 'disabled' : ''}>✓ Reviewed</button>
-        <button class="small" onclick="Actions.taskSnooze('${t.id}')">Snooze…</button>
-        <button class="small" onclick="Actions.logContact('${o.id}')">Contact…</button>
-        <button class="small" onclick="Actions.promisedDate('${o.id}')">Promised…</button>
-        <button class="small" onclick="Actions.customerReminder('${o.id}')">✉ Remind</button>
-        <button class="small primary" onclick="Actions.recordPayment('${o.id}')">€ Payment</button>
-      </td></tr>`;
-  };
-  return `
-    ${bannerHtml()}
-    <h1>Internal reminders &amp; follow-ups</h1>
-    <p class="sub">Payments are flagged ${DB.settings.reminderOffsets.upcoming} days before, ${DB.settings.reminderOffsets.dueSoon} days before, on the due date and when overdue (change in Settings). Reviewing keeps the task visible — it only clears when the balance hits zero, the plan is cancelled, or the balance is written off.</p>
-    <h2>Needs attention (${open.length})</h2>
-    ${open.length ? `<div class="tablewrap"><table>
-      <thead><tr><th>Customer</th><th>Stage</th><th class="num">Amount due</th><th>Due date</th><th>Context</th><th>Actions</th></tr></thead>
-      <tbody>${open.map(t => taskRow(t, false)).join('')}</tbody></table></div>`
-      : '<div class="card muted">Nothing needs attention right now. 🎉</div>'}
-    ${snoozed.length ? `<h2>Snoozed (${snoozed.length})</h2>
-      <div class="tablewrap"><table><tbody>${snoozed.map(t => taskRow(t, true)).join('')}</tbody></table></div>` : ''}
-    <h2>Daily email summary</h2>
-    <div class="card">
-      <p class="small" style="margin-top:0">A daily digest of customers due within ${DB.settings.reminderOffsets.dueSoon} days, due today and overdue is emailed to the owner/authorised staff. Currently <b>${DB.settings.dailySummary.enabled ? 'ON — ' + esc(DB.settings.dailySummary.recipients.join(', ')) + ' at ' + DB.settings.dailySummary.sendHour + ':00' : 'OFF'}</b> (configure in Settings). Emails include contact details and amounts with a secure link back to the record — no unnecessary personal detail.</p>
-      <div class="flex">
-        <button onclick="Actions.previewDailySummary()">Preview today’s summary</button>
-        <button class="primary" onclick="Actions.sendDailySummary()">Send now (via Gmail seam)</button>
-      </div>
-    </div>`;
-};
-
-/* =============================== STOCK EXPORT =============================== */
-Pages.stock = () => {
-  const rows = Domain.stockRows();
-  return `
-    ${bannerHtml()}
-    <h1>Stock export</h1>
-    <p class="sub">How many of each dress/style have been ordered (cancelled orders excluded) — download as sheets for the manufacturer and stock tracking.</p>
-    <div class="toolbar">
-      <button class="primary" onclick="downloadCsv('darcybow-stock-by-variant-${todayStr()}.csv', stockCsvRows())">⬇ Download variant breakdown (CSV)</button>
-      <button onclick="downloadCsv('darcybow-stock-summary-${todayStr()}.csv', stockSummaryCsvRows())">⬇ Download style summary (CSV)</button>
-    </div>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Style</th><th>Product</th><th>Category</th><th class="num">Total ordered</th><th>Breakdown (colour / size)</th></tr></thead>
-      <tbody>${rows.map(r => `<tr>
-        <td class="mono">${esc(r.styleCode)}</td><td><b>${esc(r.title)}</b></td><td>${esc(r.category)}</td>
-        <td class="num"><b>${r.total}</b></td>
-        <td class="small">${[...r.variants].map(([vk, q]) => esc(vk) + ' × ' + q).join(' · ')}</td></tr>`).join('')}
-      </tbody></table></div>`;
-};
-
-/* =============================== OUTBOX =============================== */
-Pages.outbox = () => `
-    ${bannerHtml()}
-    <h1>Email outbox</h1>
-    <p class="sub">Every email the dashboard has sent. With no Gmail credentials present, messages are recorded here in <b>mock mode</b> exactly as they would be sent.</p>
-    <div class="seam">✉ LIVE CREDENTIAL SEAM — add the Gmail OAuth credentials in <span class="mono">GmailService</span> (see Settings → Integrations) and these switch from “Mock sent” to real sends.</div>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Sent</th><th>To</th><th>Subject</th><th>Kind</th><th>Status</th><th></th></tr></thead>
-      <tbody>${DB.outbox.map(m => `<tr>
-        <td class="small">${fmtDateTime(m.sentAt)}</td><td class="small">${esc(m.recipient)}</td>
-        <td>${esc(m.subject)}</td><td class="small">${esc(m.kind.replace('_', ' '))}</td>
-        <td>${UI.badge(m.status)}</td>
-        <td><button class="small" onclick="Actions.viewOutbox('${m.id}')">View</button></td></tr>`).join('')
-        || '<tr><td colspan="6" class="muted">Nothing sent yet — try “Send invoice” on an order.</td></tr>'}
-      </tbody></table></div>`;
-
-/* =============================== SETTINGS =============================== */
-Pages.settingsPage = () => {
-  const st = DB.settings;
-  return `
-    ${bannerHtml()}
-    <h1>Settings</h1>
-    <div class="cols2">
-      <div>
-        <div class="card">
-          <h2 style="margin-top:0">Reminder timings</h2>
-          <p class="small muted">Payments are flagged this many days before the due date, on the day, and when overdue.</p>
-          <div class="formgrid">
-            <div><label class="f">First flag (days before)</label><input id="st-upcoming" type="number" min="1" value="${st.reminderOffsets.upcoming}"></div>
-            <div><label class="f">Due-soon flag (days before)</label><input id="st-duesoon" type="number" min="1" value="${st.reminderOffsets.dueSoon}"></div>
-            <div><label class="f">Duplicate-send warning window (days)</label><input id="st-dupwin" type="number" min="0" value="${st.duplicateReminderWindowDays}"></div>
-          </div>
-        </div>
-        <div class="card" style="margin-top:14px">
-          <h2 style="margin-top:0">Daily email summary</h2>
-          <label class="f"><input type="checkbox" id="st-ds-enabled" ${st.dailySummary.enabled ? 'checked' : ''} style="width:auto;margin-right:6px"> Enabled</label>
-          <label class="f">Recipients (comma separated)</label>
-          <input id="st-ds-recipients" style="width:100%" value="${esc(st.dailySummary.recipients.join(', '))}">
-          <label class="f">Send at (hour, 24h)</label>
-          <input id="st-ds-hour" type="number" min="0" max="23" value="${st.dailySummary.sendHour}">
-          <p class="small muted">In this offline slice the scheduler runs while the page is open (and can be triggered from the Reminders page). In the live build this becomes a server-side cron.</p>
-        </div>
-        <div class="card" style="margin-top:14px">
-          <h2 style="margin-top:0">Default customer reminder template</h2>
-          <p class="small muted">Placeholders: {{customerName}} {{orderReference}} {{invoiceNumber}} {{orderTotal}} {{totalPaid}} {{remainingBalance}} {{dueDate}} {{paymentLink}}</p>
-          <label class="f">Subject</label><input id="st-tpl-subject" style="width:100%" value="${esc(st.reminderTemplate.subject)}">
-          <label class="f">Body</label><textarea id="st-tpl-body" rows="12" style="width:100%">${esc(st.reminderTemplate.body)}</textarea>
-        </div>
-        <div class="modalfoot" style="justify-content:flex-start">
-          <button class="primary" onclick="Actions.saveSettings()">Save settings</button>
-        </div>
-      </div>
-      <div>
-        <div class="card">
-          <h2 style="margin-top:0">Integrations</h2>
-          <b>Shopify product catalogue</b> ${UI.badge(ShopifyService.isLive() ? 'confirmed' : 'mock_sent')}
-          <div class="seam">🛍 LIVE CREDENTIAL SEAM — <span class="mono">Credentials.shopify</span> in the source: set <span class="mono">storeDomain</span> + <span class="mono">adminApiAccessToken</span> (read_products) and the catalogue is pulled from Shopify instead of the seeded mock. Only the catalogue comes from Shopify: checkout is used solely for the €25 deposit product, so every balance, instalment, invoice and payment calculation stays in this dashboard.</div>
-          <b>Appointly appointment bookings</b> ${UI.badge(AppointlyService.isLive() ? 'confirmed' : 'mock_sent')}
-          <div class="seam">📅 LIVE CREDENTIAL SEAM — <span class="mono">Credentials.appointly</span> in the source: set the Appointly API key (Appointly app → Settings → API) alongside the Shopify credentials above, and each booking's three question answers sync from Shopify and appear on the customer page, matched by email/phone. Until then, seeded sample bookings are shown and staff can log answers manually on the customer sheet.</div>
-          <b>Gmail sending</b> ${UI.badge(GmailService.isLive() ? 'confirmed' : 'mock_sent')}
-          <div class="seam">✉ LIVE CREDENTIAL SEAM — <span class="mono">Credentials.gmail</span> in the source: complete the OAuth flow for the sending mailbox and set clientId / clientSecret / refreshToken / senderAddress. Until then every send is recorded to the outbox in mock mode. (In the live deployment these credentials live server-side, never in the browser.)</div>
-          <p class="small muted">The app runs fully on mock data with no keys present — switching to live requires only supplying credentials at these two seams.</p>
-        </div>
-        <div class="card" style="margin-top:14px">
-          <h2 style="margin-top:0">Staff</h2>
-          <p class="small muted">Adjustments, write-offs, plan cancellations and duplicate-reminder overrides need an <b>admin</b>. Every audited action records who did it.</p>
-          <table>${st.staff.map(s => `<tr><td>${esc(s.name)}</td><td>${UI.badge(s.role === 'admin' ? 'confirmed' : 'scheduled')} ${esc(s.role)}</td></tr>`).join('')}</table>
-        </div>
-        <div class="card" style="margin-top:14px">
-          <h2 style="margin-top:0">Shop details (shown on invoices)</h2>
-          ${['name', 'addressLine', 'phone', 'email', 'web', 'vat'].map(k =>
-            `<label class="f">${k}</label><input id="st-shop-${k}" style="width:100%" value="${esc(st.shop[k])}">`).join('')}
-        </div>
-      </div>
-    </div>`;
-};
-
-/* ---- remaining actions ---- */
-Object.assign(Actions, {
-  // Tap-to-edit on the customer sheet: the row becomes an input in place.
-  // Enter saves (Ctrl+Enter for notes), Esc cancels, clicking away saves.
-  inlineEdit(customerId, field, rowEl) {
-    if (rowEl.querySelector('input, textarea')) return; // already editing
-    const c = Domain.customer(customerId);
-    const valEl = rowEl.querySelector('.dl-value');
-    const isNotes = field === 'notes';
-    const cur = c[field] || '';
-    valEl.innerHTML = '';
-    const input = document.createElement(isNotes ? 'textarea' : 'input');
-    input.value = cur;
-    input.style.width = '100%';
-    if (isNotes) input.rows = 3;
-    input.onclick = e => e.stopPropagation();
-    let done = false;
-    const save = () => {
-      if (done) return; done = true;
-      const v = input.value.trim();
-      if (v !== cur.trim()) {
-        c[field] = v; c.updatedAt = nowIso(); Store.save();
-        UI.toast('Saved.');
-      }
-      App.route();
-    };
-    const cancel = () => { if (done) return; done = true; App.route(); };
-    input.onblur = save;
-    input.onkeydown = e => {
-      if (e.key === 'Escape') { e.preventDefault(); cancel(); }
-      else if (e.key === 'Enter' && (!isNotes || e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
-    };
-    valEl.appendChild(input);
-    const hint = document.createElement('div');
-    hint.className = 'small muted';
-    hint.textContent = (isNotes ? 'Ctrl+Enter' : 'Enter') + ' to save · Esc to cancel';
-    valEl.appendChild(hint);
-    input.focus();
-    if (!isNotes) input.setSelectionRange(input.value.length, input.value.length);
-  },
-  logAppointment(customerId, apptId, prefillDate, prefillService) {
-    const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
-    const QS = existing ? existing.questions.map(qa => qa.q) : DB.settings.appointlyQuestions;
-    const isSlot = !!prefillService; // booking an event-day slot: no questions form
-    UI.modal(`
-      <h3>${existing ? 'Edit appointment' : isSlot ? 'Book event-day slot' : 'Add appointment answers'}</h3>
-      <p class="small muted">${existing || isSlot ? '' : 'For bookings taken over the phone or in the shop. Online bookings sync automatically once Appointly is connected.'}</p>
-      <div class="formgrid">
-        <div><label class="f">Appointment type</label><input id="ap-service" placeholder="e.g. Communion fitting" value="${existing ? esc(existing.service) : esc(prefillService || '')}"></div>
-        <div><label class="f">Appointment date</label><input id="ap-date" type="date" value="${existing ? existing.appointmentAt : (prefillDate || todayStr())}"></div>
-        <div><label class="f">Time coming in</label><input id="ap-time" type="time" value="${existing && existing.time ? existing.time : ''}"></div>
-        <div><label class="f">Staff member</label><select id="ap-staff">
-          <option value="">— Unassigned —</option>
-          ${DB.settings.staff.map(s => `<option ${existing && existing.staffName === s.name ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
-        </select></div>
-      </div>
-      ${isSlot && !existing ? '' : QS.map((qtext, n) => `
-        <label class="f" style="text-transform:none; font-size:.92rem; color:var(--ink)">${n + 1}. ${esc(qtext)}</label>
-        <textarea id="ap-a${n}" rows="2" style="width:100%">${existing ? esc(existing.questions[n].a) : ''}</textarea>`).join('')}
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions.saveAppointment('${customerId}','${apptId || ''}', ${isSlot})">Save</button></div>`);
-  },
-  saveAppointment(customerId, apptId, isSlot) {
-    const date = document.getElementById('ap-date').value || todayStr();
-    const time = document.getElementById('ap-time').value || '';
-    const service = document.getElementById('ap-service').value.trim() || 'Appointment';
-    const staffName = document.getElementById('ap-staff').value || '';
-    const existing = apptId ? DB.appointments.find(a => a.id === apptId) : null;
-    const answers = n => { const el = document.getElementById('ap-a' + n); return el ? el.value.trim() : ''; };
-    if (existing) {
-      existing.service = service; existing.appointmentAt = date; existing.time = time; existing.staffName = staffName;
-      existing.status = date >= todayStr() ? 'upcoming' : 'completed';
-      existing.questions = existing.questions.map((qa, n) => ({ q: qa.q, a: answers(n) }));
-    } else {
-      DB.appointments.push({
-        id: uid(), customerId, source: 'manual', service, time, staffName,
-        appointmentAt: date, status: date >= todayStr() ? 'upcoming' : 'completed',
-        bookedAt: nowIso(), syncedAt: null,
-        questions: isSlot ? [] : DB.settings.appointlyQuestions.map((qtext, n) => ({ q: qtext, a: answers(n) })),
-      });
-    }
-    Store.save(); UI.closeModal(); App.route(); UI.toast('Appointment saved.');
-  },
-  assignStaff(apptId, staffName) {
-    const a = DB.appointments.find(x => x.id === apptId);
-    if (!a) return;
-    a.staffName = staffName;
-    Store.save(); App.route();
-    UI.toast(staffName ? staffName + ' assigned.' : 'Staff unassigned.');
-  },
-  /* Per-customer A4 event sheets: one page per customer, ordered by
-     block, with a big staff-name corner for sorting into piles. Contact
-     info + daughter + booking Q&As + what's already on order, then
-     write-in fields for the dress ordered on the day (style, size,
-     colour, alterations, accessories) and a large notes box. */
-  printCustomerSheets(venueEnc, day) {
-    const venue = decodeURIComponent(venueEnc);
-    const cfg = DB.settings.eventDay;
-    const hh = h => String(h).padStart(2, '0');
-    const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const rows = [];
-    for (const o of DB.orders) {
-      if (!o.eventHotel || o.eventDate !== day) continue;
-      const parts = o.eventHotel.split(/\s+—\s+/);
-      if ((parts[1] || parts[0]).trim() !== venue) continue;
-      const c = Domain.customer(o.customerId);
-      const slot = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
-        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
-      // Booking answers can live on an earlier fitting appointment.
-      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
-        .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
-      rows.push({ c, o, slot, qa, items: Domain.itemsOf(o.id), occasion: (parts[0] || '').trim() });
-    }
-    rows.sort((a, b) => ((a.slot && a.slot.time) || '99') < ((b.slot && b.slot.time) || '99') ? -1 : 1);
-    const blockOf = t => {
-      if (!t) return null;
-      const h = parseInt(t.slice(0, 2), 10);
-      return h >= cfg.startHour && h < cfg.endHour ? h - cfg.startHour + 1 : null;
-    };
+  /* Shared A4 sheet builder — one page per customer. Each row:
+     { c, items, orderRef, qa, headline, slotMain, slotSub, staffName } */
+  _sheetHtml(rows, docTitle) {
     const line = (label, width) => `<div class="fl" style="width:${width || '100%'}"><span>${label}</span><div class="ln"></div></div>`;
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Customer sheets — ${esc(venue)}</title><style>
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(docTitle)}</title><style>
       @page { size: A4; margin: 14mm; }
       body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; font-size: 13px; }
       .sheet { page-break-after: always; padding: 8px 2px; }
@@ -3031,16 +1658,14 @@ Object.assign(Actions, {
       table.itms { border-collapse: collapse; width: 100%; } .itms td { padding: 3px 6px 3px 0; }
       .foot { margin-top: 14px; display: flex; gap: 30px; }
     </style></head><body>
-    ${rows.map(r => {
-      const blk = r.slot ? blockOf(r.slot.time) : null;
-      return `<div class="sheet">
+    ${rows.map(r => `<div class="sheet">
         <div class="top">
-          <div><h1>Darcybow — event appointment sheet</h1>
-            <div class="m">${esc(venue)} · <b>${esc(dayLabel)}</b> · ${esc(r.occasion)}</div></div>
-          <div class="slotbox"><div class="t">${r.slot && r.slot.time ? esc(r.slot.time) : '—'}</div>
-            <div class="m">${blk ? 'Block ' + blk : 'No slot booked'}</div></div>
+          <div><h1>Darcybow — customer sheet</h1>
+            <div class="m">${r.headline}</div></div>
+          <div class="slotbox"><div class="t">${esc(r.slotMain)}</div>
+            <div class="m">${esc(r.slotSub)}</div></div>
           <div class="staffbox"><div class="m">Staff member</div>
-            <div class="s">${r.slot && r.slot.staffName ? esc(r.slot.staffName) : ''}</div></div>
+            <div class="s">${esc(r.staffName || '')}</div></div>
         </div>
         <div class="cust">${esc(r.c.name)}${r.c.daughterName ? ' <span class="m" style="font-weight:400">— for ' + esc(r.c.daughterName) + '</span>' : ''}</div>
         <div class="grid">
@@ -3048,10 +1673,10 @@ Object.assign(Actions, {
           <div><b>Email:</b> ${esc(r.c.email || '—')}</div>
           <div style="grid-column:1/-1"><b>Address:</b> ${esc(r.c.address || '—')}</div>
         </div>
-        <h2>What they told us when booking</h2>
+        <h2>What they told us when booking (Appointly)</h2>
         ${r.qa ? r.qa.questions.map(q => `<div class="qa"><div class="q">${esc(q.q)}</div><div class="a">${esc(q.a || '—')}</div></div>`).join('')
           : '<div class="m">No booking answers on file.</div>'}
-        <h2>Already on order (${esc(r.o.reference)})</h2>
+        <h2>Already on order${r.orderRef ? ' (' + esc(r.orderRef) + ')' : ''}</h2>
         <table class="itms">${r.items.map(i => `<tr><td><b>${esc(i.title)}</b></td><td>${esc(i.colour || '—')}</td><td>${esc(i.size || '—')}</td><td>× ${i.quantity}</td></tr>`).join('') || '<tr><td class="m">Nothing yet.</td></tr>'}</table>
         <h2>Ordered at this appointment — fill in</h2>
         ${line('Dress / style:', '58%')}${line('Size:', '36%')}
@@ -3061,16 +1686,88 @@ Object.assign(Actions, {
         <h2>Staff notes</h2>
         <div class="notes"></div>
         <div class="foot">${line('Taken by:', '40%')}${line('Deposit / payment taken:', '52%')}</div>
-      </div>`;
-    }).join('')}
+      </div>`).join('')}
     </body></html>`;
+  },
+  _sheetModal(heading, blurb, html, count) {
     UI.modal(`
-      <h3>Customer sheets — ${esc(venue)}, ${esc(dayLabel)}</h3>
-      <p class="small muted">One A4 page per customer, in block order, staff name top-right for sorting into piles. Print the lot before the event.</p>
+      <h3>${heading}</h3>
+      <p class="small muted">${blurb}</p>
       <iframe class="invoice-frame" id="csframe"></iframe>
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
-        <button class="primary" onclick="document.getElementById('csframe').contentWindow.print()">🖨 Print all (${rows.length} sheet${rows.length === 1 ? '' : 's'})</button></div>`, true);
+        <button class="primary" onclick="document.getElementById('csframe').contentWindow.print()">🖨 Print / save PDF (${count} sheet${count === 1 ? '' : 's'})</button></div>`, true);
     document.getElementById('csframe').srcdoc = html;
+  },
+  /* One customer → one generic sheet row (used by the all-customers and
+     single-customer prints, where there's no specific event day). */
+  _customerRow(c) {
+    const orders = Domain.ordersOf(c.id).filter(o => o.status !== 'cancelled').sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+    const o = orders[0] || null;
+    const appts = AppointlyService.bookingsFor(c.id);
+    const upcoming = appts.filter(a => a.appointmentAt >= todayStr())
+      .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+    const qa = appts.filter(a => a.questions.length).sort((a, b) => a.appointmentAt < b.appointmentAt ? 1 : -1)[0];
+    return {
+      c, qa,
+      items: o ? Domain.itemsOf(o.id) : [],
+      orderRef: o ? o.reference : '',
+      headline: o && o.eventHotel ? esc(o.eventHotel) + (o.eventDate ? ' · <b>' + esc(fmtDate(o.eventDate)) + '</b>' : '') : 'No event on file',
+      slotMain: upcoming && upcoming.time ? upcoming.time : '—',
+      slotSub: upcoming ? fmtDate(upcoming.appointmentAt) : 'No appointment booked',
+      staffName: (upcoming && upcoming.staffName) || '',
+    };
+  },
+  /* Every customer in the system: details + Appointly answers, one A4 page each. */
+  printAllCustomerSheets() {
+    const rows = DB.customers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(Actions._customerRow);
+    Actions._sheetModal('Customer sheets — all customers',
+      'One A4 page per customer: contact details plus the questions they answered when booking through Appointly. Print the lot or save as one PDF.',
+      Actions._sheetHtml(rows, 'Customer sheets — all customers'), rows.length);
+  },
+  /* Single customer, from their page. */
+  printCustomerSheet(customerId) {
+    const c = Domain.customer(customerId);
+    if (!c) return;
+    const rows = [Actions._customerRow(c)];
+    Actions._sheetModal(`Customer sheet — ${esc(c.name)}`,
+      'Contact details plus the questions they answered when booking through Appointly.',
+      Actions._sheetHtml(rows, `Customer sheet — ${c.name}`), 1);
+  },
+  /* One event day at one venue: a sheet per booked customer, in slot order. */
+  printCustomerSheets(venueEnc, day) {
+    const venue = decodeURIComponent(venueEnc);
+    const cfg = DB.settings.eventDay;
+    const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const blockOf = t => {
+      if (!t) return null;
+      const h = parseInt(t.slice(0, 2), 10);
+      return h >= cfg.startHour && h < cfg.endHour ? h - cfg.startHour + 1 : null;
+    };
+    const rows = [];
+    for (const o of DB.orders) {
+      if (!o.eventHotel || o.eventDate !== day) continue;
+      const parts = o.eventHotel.split(/\s+—\s+/);
+      if ((parts[1] || parts[0]).trim() !== venue) continue;
+      const c = Domain.customer(o.customerId);
+      const slot = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      // Booking answers can live on an earlier fitting appointment.
+      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
+        .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      const blk = slot ? blockOf(slot.time) : null;
+      rows.push({
+        c, qa, items: Domain.itemsOf(o.id), orderRef: o.reference,
+        headline: esc(venue) + ' · <b>' + esc(dayLabel) + '</b> · ' + esc((parts[0] || '').trim()),
+        slotMain: slot && slot.time ? slot.time : '—',
+        slotSub: blk ? 'Block ' + blk : 'No slot booked',
+        staffName: (slot && slot.staffName) || '',
+        _t: (slot && slot.time) || '99',
+      });
+    }
+    rows.sort((a, b) => a._t < b._t ? -1 : 1);
+    Actions._sheetModal(`Customer sheets — ${esc(venue)}, ${esc(dayLabel)}`,
+      'One A4 page per customer, in block order, staff name top-right for sorting into piles. Print the lot before the event.',
+      Actions._sheetHtml(rows, `Customer sheets — ${venue}`), rows.length);
   },
   /* Printable run sheet: hand each staff member the day's schedule —
      time, customer, who it's for, dress, assigned staff. No balances. */
@@ -3132,87 +1829,14 @@ Object.assign(Actions, {
         <button class="primary" onclick="document.getElementById('runframe').contentWindow.print()">🖨 Print / save PDF</button></div>`, true);
     document.getElementById('runframe').srcdoc = html;
   },
-  taskReviewed(taskId) {
-    const t = DB.reminderTasks.find(x => x.id === taskId);
-    t.status = 'reviewed'; t.updatedAt = nowIso();
-    DB.contactLog.push({ id: uid(), orderId: t.orderId, reminderTaskId: t.id, action: 'reviewed',
-      note: 'Reminder marked reviewed (stays visible until the balance is cleared).', staff: App.staff.name, createdAt: nowIso() });
-    Store.save(); App.route();
-  },
-  taskSnooze(taskId) {
-    const t = DB.reminderTasks.find(x => x.id === taskId);
-    const d = prompt('Snooze until (YYYY-MM-DD):', daysFromNow(3));
-    if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return;
-    t.status = 'snoozed'; t.snoozedUntil = d.trim(); t.updatedAt = nowIso();
-    DB.contactLog.push({ id: uid(), orderId: t.orderId, reminderTaskId: t.id, action: 'snoozed',
-      note: 'Snoozed until ' + fmtDate(t.snoozedUntil) + '. Reopens automatically if still unpaid.', staff: App.staff.name, createdAt: nowIso() });
-    Store.save(); App.route();
-  },
-  previewDailySummary() {
-    const s = buildDailySummary();
-    UI.modal(`<h3>${esc(s.subject)}</h3>
-      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:14px; border-radius:8px; font-family:inherit; font-size:.85rem">${esc(s.body)}</pre>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
-        <button class="primary" onclick="Actions.sendDailySummary()">Send now</button></div>`, true);
-  },
-  async sendDailySummary() {
-    try {
-      const s = buildDailySummary();
-      for (const to of DB.settings.dailySummary.recipients) {
-        await GmailService.send({ to: to.trim(), subject: s.subject, body: s.body, kind: 'daily_summary', meta: {} });
-      }
-      DB.lastDailySummaryDate = todayStr(); Store.save(); UI.closeModal(); App.route();
-      UI.toast('Daily summary sent to ' + DB.settings.dailySummary.recipients.length + ' recipient(s) — see outbox (mock mode).');
-    } catch (e) { UI.err(e); }
-  },
-  viewOutbox(id) {
-    const m = DB.outbox.find(x => x.id === id);
-    const isInvoice = m.kind === 'invoice' && m.body.includes('<!DOCTYPE html>');
-    const textPart = isInvoice ? m.body.slice(0, m.body.indexOf('<!DOCTYPE html>')) : m.body;
-    UI.modal(`<h3>${esc(m.subject)}</h3>
-      <p class="small muted">To ${esc(m.recipient)} · ${fmtDateTime(m.sentAt)} · ${UI.badge(m.status)}</p>
-      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:14px; border-radius:8px; font-family:inherit; font-size:.85rem">${esc(textPart)}</pre>
-      ${isInvoice ? '<iframe class="invoice-frame" id="obframe"></iframe>' : ''}
-      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">Close</button></div>`, true);
-    if (isInvoice) document.getElementById('obframe').srcdoc = m.body.slice(m.body.indexOf('<!DOCTYPE html>'));
-  },
-  saveSettings() {
-    try {
-      const st = DB.settings;
-      const up = parseInt(document.getElementById('st-upcoming').value, 10);
-      const ds = parseInt(document.getElementById('st-duesoon').value, 10);
-      if (!(up > 0) || !(ds > 0) || ds > up) throw new Error('Timings must be positive and the due-soon flag must be within the first flag window.');
-      st.reminderOffsets = { upcoming: up, dueSoon: ds };
-      st.duplicateReminderWindowDays = Math.max(0, parseInt(document.getElementById('st-dupwin').value, 10) || 0);
-      st.dailySummary.enabled = document.getElementById('st-ds-enabled').checked;
-      st.dailySummary.recipients = document.getElementById('st-ds-recipients').value.split(',').map(s => s.trim()).filter(Boolean);
-      st.dailySummary.sendHour = Math.min(23, Math.max(0, parseInt(document.getElementById('st-ds-hour').value, 10) || 8));
-      st.reminderTemplate.subject = document.getElementById('st-tpl-subject').value;
-      st.reminderTemplate.body = document.getElementById('st-tpl-body').value;
-      for (const k of ['name', 'addressLine', 'phone', 'email', 'web', 'vat']) st.shop[k] = document.getElementById('st-shop-' + k).value.trim();
-      Store.save(); Domain.refreshAll(); App.route(); UI.toast('Settings saved.');
-    } catch (e) { UI.err(e); }
-  },
-});
+};
 
 /* =============================== BOOT =============================== */
-(async function boot() {
+(function boot() {
   Store.load();
-  const savedStaff = localStorage.getItem('darcybow-staff');
-  App.staff = DB.settings.staff.find(s => s.name === savedStaff) || DB.settings.staff[0];
-  App.catalogue = await ShopifyService.fetchCatalogue(); // mock catalogue until Shopify credentials are supplied
-  App.renderStaff();
   Domain.refreshAll();
   window.addEventListener('hashchange', App.route);
   App.route();
-  // Mock scheduler for the daily summary: fires while the dashboard is open.
-  // In the live build this moves to a server-side cron at dailySummary.sendHour.
-  setInterval(() => {
-    const ds = DB.settings.dailySummary;
-    if (ds.enabled && DB.lastDailySummaryDate !== todayStr() && new Date().getHours() >= ds.sendHour) {
-      Actions.sendDailySummary();
-    }
-  }, 60 * 1000);
 })();
 </script>
 </body>
