@@ -1632,7 +1632,7 @@ Pages.customerDetail = (id) => {
               <b>${esc(o.reference)}</b>
               <span style="margin-left:auto" class="small muted">${fmtDateTime(o.createdAt).split(',')[0]}</span>
             </div>
-            <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + ' (' + esc(i.colour) + ', ' + esc(i.size) + ')').join(' · ')}</div>
+            <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + (i.colour || i.size ? ' (' + [i.colour, i.size].filter(Boolean).map(esc).join(', ') + ')' : '')).join(' · ')}</div>
             <div class="small" style="margin-top:6px">${UI.eventBadge(o.eventHotel).replace('<br>', ' ')}${o.eventDate ? ' <span class="muted">· ' + fmtDate(o.eventDate) + '</span>' : ''}</div>
           </div>`;
         }).join('') || '<div class="card muted">No orders yet.</div>'}
@@ -1881,6 +1881,38 @@ const ImportService = {
     return { customers, orders, orderItems, appointments, warnings };
   },
 
+  // Appointly file added on its own while live/imported data is connected →
+  // merge the bookings in (matched by email/phone) instead of replacing everything.
+  _mergeMode() {
+    const s = ImportService.state;
+    return !!(s.appointly && !s.customers && !s.orders && DB.importInfo);
+  },
+  mergeAppointly() {
+    const b = ImportService.build();
+    const stubById = new Map(b.customers.map(c => [c.id, c]));
+    const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
+    const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
+    let merged = 0, added = 0, skipped = 0;
+    for (const a of b.appointments) {
+      const stub = stubById.get(a.customerId);
+      const real = (stub && ((stub.email && byEmail.get(stub.email.toLowerCase()))
+        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone))))) || null;
+      if (!real) { skipped++; continue; }
+      if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
+      a.customerId = real.id; a.source = 'appointly_csv';
+      const existing = DB.appointments.find(x => x.customerId === real.id && x.appointmentAt === a.appointmentAt);
+      if (existing) {
+        if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
+        if (!existing.time && a.time) existing.time = a.time;
+        if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
+        merged++;
+      } else { DB.appointments.push(a); added++; }
+    }
+    Store.save(); Domain.refreshAll();
+    ImportService.state = { customers: null, orders: null, appointly: null };
+    UI.closeModal(); App.route();
+    UI.toast('Booking answers merged — ' + merged + ' matched to existing bookings, ' + added + ' added' + (skipped ? ', ' + skipped + ' skipped (no matching customer)' : '') + '.');
+  },
   preview() {
     try {
       const b = ImportService.build();
@@ -1888,6 +1920,7 @@ const ImportService = {
       const answers = b.appointments.filter(a => a.questions.some(qa => qa.a)).length;
       UI.modal(`
         <h3>Ready to import</h3>
+        ${ImportService._mergeMode() ? '<div class="note info">These bookings will be <b>merged into your connected data</b> — matched to customers by email/phone. Nothing gets replaced, and the live sync keeps the answers.</div>' : ''}
         <ul style="line-height:1.9">
           <li><b>${b.customers.length}</b> customer${b.customers.length === 1 ? '' : 's'}</li>
           <li><b>${b.orders.length}</b> order${b.orders.length === 1 ? '' : 's'} (${b.orderItems.length} item${b.orderItems.length === 1 ? '' : 's'})</li>
@@ -1900,6 +1933,7 @@ const ImportService = {
     } catch (e) { UI.err(e); }
   },
   apply() {
+    if (ImportService._mergeMode()) { ImportService.mergeAppointly(); return; }
     const b = ImportService.build();
     if (!b.customers.length) return;
     DB.customers = b.customers; DB.orders = b.orders; DB.orderItems = b.orderItems; DB.appointments = b.appointments;
@@ -2008,6 +2042,26 @@ const LiveSync = {
       }
     }
     if (!customers.length) throw new Error('Shopify returned no customers — check the token scopes (read_customers, read_orders).');
+    // Booking answers merged in from an Appointly CSV (and hand-logged
+    // appointments) must survive re-syncs: re-link them to the freshly
+    // built customers by email/phone, folding answers into the synced
+    // booking for the same day where one exists.
+    const oldCustById = new Map((DB.customers || []).map(c => [c.id, c]));
+    const preserved = (DB.appointments || []).filter(a => a.source === 'appointly_csv' || a.source === 'manual');
+    for (const a of preserved) {
+      const oc = oldCustById.get(a.customerId);
+      const nc = (oc && ((oc.email && byEmail.get(String(oc.email).toLowerCase()))
+        || (ImportService._digits(oc.phone) && byPhone.get(ImportService._digits(oc.phone))))) || null;
+      if (!nc) continue;
+      a.customerId = nc.id;
+      if (oc.daughterName && !nc.daughterName) nc.daughterName = oc.daughterName;
+      const existing = appointments.find(x => x.customerId === nc.id && x.appointmentAt === a.appointmentAt);
+      if (existing) {
+        if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
+        if (!existing.time && a.time) existing.time = a.time;
+        if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
+      } else appointments.push(a);
+    }
     // Shopify customer lists collect spam/newsletter signups. Keep only
     // people with an actual order or booking (when there are orders at all).
     let kept = customers;
