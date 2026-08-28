@@ -1822,6 +1822,8 @@ const ImportService = {
             colour, size, quantity: parseInt(lineQty ? r[lineQty] : '1', 10) || 1,
             retailPriceCents: parseEuros(linePrice ? r[linePrice] : '') || 0 });
         }
+        const dq = cls.qas.find(qa => /daughter'?s\s+name/i.test(qa.q));
+        if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
         if (cls.bDate || cls.qas.length) {
           const at = cls.bDate || normDate(createdAt.slice(0, 10)) || todayStr();
           appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || 'Booking',
@@ -1852,12 +1854,15 @@ const ImportService = {
         if (statusCol && /cancel/i.test(r[statusCol])) continue;
         const cust = findOrCreateCustomer(name ? r[name] : '', email ? r[email] : '', phone ? r[phone] : '');
         const d = normDate(date ? r[date] : '');
+        const qas = qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a);
+        const dq = qas.find(qa => /daughter'?s\s+name/i.test(qa.q));
+        if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
         appointments.push({ id: uid(), customerId: cust.id, source: 'appointly',
           service: [service ? r[service] : '', location ? r[location] : ''].filter(Boolean).join(' — ') || 'Appointment',
           appointmentAt: d || todayStr(), time: normTime(time ? r[time] : ''),
           status: (d || todayStr()) >= todayStr() ? 'upcoming' : 'completed',
           bookedAt: nowIso(), syncedAt: nowIso(), staffName: staff ? r[staff] : '',
-          questions: qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a) });
+          questions: qas });
       }
     }
 
@@ -1956,20 +1961,48 @@ const LiveSync = {
         if (cust.email) byEmail.set(cust.email.toLowerCase(), cust);
       }
       const pairs = (so.note_attributes || []).map(a => [String(a.name || '').trim(), String(a.value || '').trim()]).filter(x => x[0] && x[1]);
+      // Apntly stamps bookings onto the LINE ITEM as properties:
+      //   _booking_by: Appointly · Booking: "Date: Sep 27, 2026 Time: 10:00 AM - 11:00 AM"
+      // and the venue lives in the event product's title, e.g.
+      //   "Darcy Day Out at Castlemartyr Resort Event - 26th & 27th September 2026".
+      let bookingTitle = '';
+      for (const li of so.line_items || []) {
+        const props = li.properties || [];
+        if (!bookingTitle && props.some(p => /^_booking/i.test(String(p.name || '')))) bookingTitle = String(li.title || '');
+        for (const p of props) {
+          const n = String(p.name || '').trim(), v = String(p.value || '').trim();
+          if (!n || !v) continue;
+          const dt = v.match(/Date:\s*(.+?)\s*Time:\s*([\d:]+\s*(?:AM|PM)?)/i);
+          if (dt && (/^booking$/i.test(n) || !n.startsWith('_'))) { pairs.push(['Booking Date', dt[1]], ['Booking Time', dt[2]]); continue; }
+          if (n.startsWith('_')) continue; // Apntly internal fields
+          pairs.push([n, v]);
+        }
+      }
       const cls = ImportService._classifyAttrs(pairs);
+      let eventHotel = cls.eventHotel;
+      if (!eventHotel && bookingTitle) {
+        const stripped = bookingTitle.split(/\s+Event\b/i)[0].trim();
+        const atIdx = stripped.toLowerCase().lastIndexOf(' at ');
+        eventHotel = atIdx > 0 ? stripped.slice(0, atIdx).trim() + ' — ' + stripped.slice(atIdx + 4).trim() : stripped;
+      }
+      const eventDate = cls.eventDate || (eventHotel ? cls.bDate : '');
       const order = { id: uid(), customerId: cust.id, reference: so.name || ('SHOP-' + (orders.length + 1)),
         status: so.cancelled_at ? 'cancelled' : 'confirmed', createdAt: so.created_at || nowIso(),
-        eventHotel: cls.eventHotel, eventDate: cls.eventDate, planType: null, staffNotes: so.note || '' };
+        eventHotel, eventDate, planType: null, staffNotes: so.note || '' };
       orders.push(order);
       for (const li of so.line_items || []) {
-        const vp = String(li.variant_title || '').split(' / ').map(s => s.trim());
+        const vt = String(li.variant_title || '');
+        const vp = (/^default title$/i.test(vt) ? '' : vt).split(' / ').map(s => s.trim());
         orderItems.push({ id: uid(), orderId: order.id, productId: null, title: li.title || 'Item',
           styleCode: li.sku || '', category: /dress|gown/i.test(li.title || '') ? 'dress' : 'accessory',
           colour: vp[0] || '', size: vp[1] || '', quantity: li.quantity || 1, retailPriceCents: parseEuros(li.price) || 0 });
       }
+      // Apntly's first custom question asks for the daughter's name — use it.
+      const dq = cls.qas.find(qa => /daughter'?s\s+name/i.test(qa.q));
+      if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
       if (cls.bDate || cls.qas.length) {
         const at = cls.bDate || ImportService._normDate(order.createdAt.slice(0, 10)) || todayStr();
-        appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || 'Booking',
+        appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || eventHotel || 'Booking',
           time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
           bookedAt: order.createdAt, syncedAt: nowIso(), questions: cls.qas });
       }
