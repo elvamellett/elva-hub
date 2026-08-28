@@ -1723,12 +1723,16 @@ const ImportService = {
     const out = { eventHotel: '', eventDate: '', bDate: '', bTime: '', bService: '', bStaff: '', qas: [] };
     for (const [k, val] of pairs) {
       const kl = k.toLowerCase();
+      // Anything phrased like a question stays a question — booking Q&As
+      // often contain words like "occasion" or "date" in the sentence.
+      const isQuestion = k.includes('?') || k.length > 40;
+      if (isQuestion) { out.qas.push({ q: k, a: val }); continue; }
       if (/booking date|appointment date/.test(kl) || kl === 'date') out.bDate = normDate(val);
       else if (/booking time|appointment time|start time/.test(kl) || kl === 'time') out.bTime = normTime(val);
-      else if (/^(service|appointment type)$/.test(kl)) out.bService = val;
-      else if (/^(staff|employee)$/.test(kl)) out.bStaff = val;
+      else if (/^(service|appointment type|appointment)$/.test(kl)) out.bService = val;
+      else if (/^(staff|employee|team member)$/.test(kl)) out.bStaff = val;
       else if (/event date|ceremony date/.test(kl)) out.eventDate = normDate(val);
-      else if (/^(event|occasion|venue|hotel|location)$/.test(kl)) out.eventHotel = out.eventHotel || val;
+      else if (/venue|hotel|location|event|occasion/.test(kl)) out.eventHotel = out.eventHotel || val;
       else out.qas.push({ q: k, a: val });
     }
     return out;
@@ -1857,6 +1861,18 @@ const ImportService = {
       }
     }
 
+    // Same spam guard as the live sync: when orders are present, keep only
+    // customers with an order or booking.
+    if (orders.length) {
+      const used = new Set(orders.map(o => o.customerId));
+      for (const a of appointments) used.add(a.customerId);
+      const kept = customers.filter(c => used.has(c.id));
+      if (kept.length && kept.length < customers.length) {
+        warnings.push((customers.length - kept.length) + ' contact' + (customers.length - kept.length === 1 ? '' : 's') +
+          ' with no orders or bookings left out (newsletter/spam signups).');
+        return { customers: kept, orders, orderItems, appointments, warnings };
+      }
+    }
     return { customers, orders, orderItems, appointments, warnings };
   },
 
@@ -1959,12 +1975,23 @@ const LiveSync = {
       }
     }
     if (!customers.length) throw new Error('Shopify returned no customers — check the token scopes (read_customers, read_orders).');
-    DB.customers = customers; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    // Shopify customer lists collect spam/newsletter signups. Keep only
+    // people with an actual order or booking (when there are orders at all).
+    let kept = customers;
+    if (orders.length) {
+      const used = new Set(orders.map(o => o.customerId));
+      for (const a of appointments) used.add(a.customerId);
+      kept = customers.filter(c => used.has(c.id));
+      if (!kept.length) kept = customers;
+    }
+    const skipped = customers.length - kept.length;
+    DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
     for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
       if (Array.isArray(DB[k])) DB[k] = [];
-    DB.importInfo = { at: nowIso(), live: true, counts: { customers: customers.length, orders: orders.length, bookings: appointments.length } };
+    DB.importInfo = { at: nowIso(), live: true, counts: { customers: kept.length, orders: orders.length, bookings: appointments.length } };
     Store.save(); Domain.refreshAll(); App.route();
-    UI.toast('Live sync complete — ' + customers.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings.');
+    UI.toast('Live sync complete — ' + kept.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings' +
+      (skipped > 0 ? ' (' + skipped + ' contacts with no orders — newsletter/spam signups — left out).' : '.'));
   },
 };
 
