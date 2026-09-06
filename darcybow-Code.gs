@@ -33,7 +33,10 @@ function doGet() {
 
 /**
  * Called from the page via google.script.run. Returns a JSON string:
- * { customers: [...], orders: [...], syncedAt } or { error: "..." }.
+ * { customers: [...], orders: [...], bookingsCsv, syncedAt } or { error }.
+ * bookingsCsv is the shared Appointly export (see saveBookingsCsv), so every
+ * browser that opens the dashboard gets the imported bookings — not just the
+ * browser that did the import.
  */
 function syncShopify() {
   try {
@@ -44,11 +47,35 @@ function syncShopify() {
     }
     var token = getAccessToken_(store);
     var base = 'https://' + store + '/admin/api/2024-10/';
+    var bookingsCsv = '';
+    try {
+      var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
+      if (files.hasNext()) bookingsCsv = files.next().getBlob().getDataAsString();
+    } catch (eDrive) { /* Drive not authorised yet — sync still works without it */ }
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
+      bookingsCsv: bookingsCsv,
       syncedAt: new Date().toISOString(),
     });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+var BOOKINGS_FILE_ = 'darcybow-bookings.csv';
+
+/**
+ * Stores the Appointly bookings export centrally (a small file in the
+ * owner's Google Drive), so syncShopify can hand it to every browser that
+ * opens the dashboard. Called automatically when an export is imported.
+ */
+function saveBookingsCsv(text) {
+  try {
+    var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
+    if (files.hasNext()) files.next().setContent(text);
+    else DriveApp.createFile(BOOKINGS_FILE_, text, 'text/csv');
+    return JSON.stringify({ ok: true });
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });
   }

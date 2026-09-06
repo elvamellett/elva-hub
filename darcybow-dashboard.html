@@ -1709,7 +1709,7 @@ const ImportService = {
       const text = await file.text();
       const parsed = parseCsv(text);
       if (!parsed.records.length) throw new Error('No data rows found in ' + file.name + ' — is it a CSV export?');
-      ImportService.state[kind] = { name: file.name, headers: parsed.headers, records: parsed.records };
+      ImportService.state[kind] = { name: file.name, raw: text, headers: parsed.headers, records: parsed.records };
       App.route();
     } catch (e) { input.value = ''; UI.err(e); }
   },
@@ -1972,7 +1972,8 @@ const ImportService = {
     const s = ImportService.state;
     return !!(s.appointly && !s.customers && !s.orders && DB.importInfo);
   },
-  mergeAppointly() {
+  mergeAppointly(fromServer) {
+    const rawCsv = ImportService.state.appointly && ImportService.state.appointly.raw;
     const b = ImportService.build();
     const stubById = new Map(b.customers.map(c => [c.id, c]));
     const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
@@ -2025,6 +2026,11 @@ const ImportService = {
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
     UI.toast('Booking answers merged — ' + merged + ' matched to existing bookings, ' + added + ' added' + (created ? ', ' + created + ' new customers created (booked without an order)' : '') + '.');
+    // Manually imported here → store the export centrally so every other
+    // browser opening the dashboard link receives it on its next sync.
+    if (!fromServer && rawCsv && LiveSync.available()) {
+      try { google.script.run.saveBookingsCsv(rawCsv); } catch (e) { /* non-fatal */ }
+    }
   },
   preview() {
     try {
@@ -2243,6 +2249,17 @@ const LiveSync = {
     Store.save(); Domain.refreshAll(); App.route();
     UI.toast('Live sync complete — ' + kept.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings' +
       (skipped > 0 ? ' (' + skipped + ' contacts with no orders — newsletter/spam signups — left out).' : '.'));
+    // Replay the centrally stored Appointly export (put there by whoever
+    // imported it last) so this browser has the bookings and answers too.
+    if (p.bookingsCsv) {
+      try {
+        const parsed = parseCsv(p.bookingsCsv);
+        if (parsed.records.length) {
+          ImportService.state.appointly = { name: 'shared bookings', raw: '', headers: parsed.headers, records: parsed.records };
+          ImportService.mergeAppointly(true);
+        }
+      } catch (e) { /* non-fatal — manual import still available */ }
+    }
   },
 };
 
