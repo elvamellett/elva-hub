@@ -1,0 +1,2570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darcybow — Customers & Events</title>
+<style>
+  :root {
+    --brand: #9b2c4d;
+    --brand-dark: #7c1f3c;
+    --brand-soft: #fdf0f4;
+    --ink: #23262e;
+    --muted: #6b7280;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --line: #e5e7eb;
+    --green: #157347; --green-bg: #e6f4ec;
+    --amber: #b45309; --amber-bg: #fef3c7;
+    --red: #b91c1c;   --red-bg: #fde8e8;
+    --blue: #1d4ed8;  --blue-bg: #e7edfd;
+    --grey-bg: #eef0f3;
+    --sidebar: #221722;
+    --radius: 10px;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    display: flex; min-height: 100vh;
+  }
+  /* ---------- Sidebar ---------- */
+  #sidebar {
+    width: 218px; background: var(--sidebar); color: #e8dfe4; flex-shrink: 0;
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+  }
+  #sidebar .logo { padding: 22px 20px 14px; }
+  #sidebar .logo b { font-size: 1.35rem; letter-spacing: .04em; color: #fff; font-weight: 600; }
+  #sidebar .logo span { display:block; font-size: .72rem; color: #b99aa8; letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
+  #sidebar nav { flex: 1; padding: 8px 10px; }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 2px 0;
+    color: #cdbcc5; text-decoration: none; border-radius: 8px; font-size: .95rem;
+  }
+  #sidebar nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
+  #sidebar nav a.active { background: var(--brand); color: #fff; }
+  #sidebar nav a .cnt {
+    margin-left: auto; background: rgba(255,255,255,.15); border-radius: 99px;
+    font-size: .72rem; padding: 1px 8px; min-width: 22px; text-align: center;
+  }
+  #sidebar nav a.active .cnt { background: rgba(255,255,255,.25); }
+  #sidebar .staffbox { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.1); font-size: .8rem; }
+  #sidebar .staffbox label { color: #b99aa8; display: block; margin-bottom: 5px; }
+  #sidebar .staffbox select {
+    width: 100%; background: #3a2733; border: 1px solid #55404c; color: #fff;
+    border-radius: 6px; padding: 6px 8px; font-size: .85rem;
+  }
+  #sidebar .demo { padding: 10px 16px 16px; }
+  #sidebar .demo button {
+    width: 100%; background: none; border: 1px solid #55404c; color: #b99aa8;
+    border-radius: 6px; padding: 6px; font-size: .75rem; cursor: pointer;
+  }
+  #sidebar .demo button:hover { color: #fff; border-color: #7a5f6f; }
+
+  /* ---------- Main ---------- */
+  #main { flex: 1; min-width: 0; padding: 22px 28px 60px; }
+  h1 { font-size: 1.45rem; margin: 6px 0 4px; font-weight: 650; }
+  h2 { font-size: 1.05rem; margin: 22px 0 10px; font-weight: 650; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 18px; }
+
+  /* ---------- Notification banner ---------- */
+  #banner {
+    background: linear-gradient(90deg, var(--brand), var(--brand-dark)); color: #fff;
+    border-radius: var(--radius); padding: 13px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(155,44,77,.25); cursor: pointer;
+  }
+  #banner.quiet { background: #fff; color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+  #banner .bell { font-size: 1.3rem; }
+  #banner b { font-weight: 650; }
+  #banner .pill { background: rgba(255,255,255,.18); border-radius: 99px; padding: 2px 11px; font-size: .82rem; }
+  #banner.quiet .pill { background: var(--grey-bg); }
+
+  /* ---------- Cards, stats ---------- */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .stat .v { font-size: 1.35rem; font-weight: 700; margin-top: 2px; }
+  .stat .l { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+  .stat.warn .v { color: var(--amber); }
+  .stat.bad .v { color: var(--red); }
+  .stat.good .v { color: var(--green); }
+
+  /* ---------- Tables ---------- */
+  .tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #fafafb; color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; position: sticky; top: 0; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr.click:hover { background: var(--brand-soft); cursor: pointer; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .grouphead td {
+    background: var(--grey-bg); font-weight: 650; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .04em; color: #444; padding: 7px 12px;
+  }
+
+  /* ---------- Badges ---------- */
+  .badge { display: inline-block; border-radius: 99px; padding: 2px 10px; font-size: .74rem; font-weight: 600; white-space: nowrap; }
+  .b-green { background: var(--green-bg); color: var(--green); }
+  .b-amber { background: var(--amber-bg); color: var(--amber); }
+  .b-red { background: var(--red-bg); color: var(--red); }
+  .b-blue { background: var(--blue-bg); color: var(--blue); }
+  .b-grey { background: var(--grey-bg); color: #4b5563; }
+  .b-brand { background: var(--brand-soft); color: var(--brand); }
+  .b-purple { background: #f0e7fd; color: #6d28d9; }
+  .b-teal { background: #d8f1ee; color: #0f766e; }
+  .b-gold { background: #fdf0d5; color: #92600a; }
+
+  /* ---------- Buttons, inputs ---------- */
+  button, .btn {
+    font: inherit; border-radius: 8px; border: 1px solid var(--line); background: #fff;
+    padding: 7px 14px; cursor: pointer; font-size: .88rem; color: var(--ink);
+  }
+  button:hover, .btn:hover { border-color: #c9ccd2; background: #fafafa; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+  button.primary:hover { background: var(--brand-dark); }
+  button.danger { color: var(--red); border-color: #f3c2c2; }
+  button.danger:hover { background: var(--red-bg); }
+  button.small, .btn.small { padding: 3px 10px; font-size: .78rem; border-radius: 6px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  input, select, textarea {
+    font: inherit; border: 1px solid #cfd3da; border-radius: 8px; padding: 7px 10px;
+    background: #fff; color: var(--ink); font-size: .9rem;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+  label.f { display: block; font-size: .78rem; font-weight: 600; color: var(--muted); margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 18px; }
+  .formgrid input, .formgrid select, .formgrid textarea { width: 100%; }
+  .searchbar {
+    width: 100%; max-width: 620px; font-size: 1.05rem; padding: 12px 16px;
+    border-radius: 12px; border: 1.5px solid #cfd3da; margin-bottom: 16px;
+  }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .toolbar .spacer { flex: 1; }
+  .chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 5px 13px;
+    font-size: .8rem; cursor: pointer; color: #444;
+  }
+  .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+
+  /* ---------- Modal ---------- */
+  #modalroot { position: fixed; inset: 0; display: none; z-index: 50; }
+  #modalroot.open { display: block; }
+  #modalroot .scrim { position: absolute; inset: 0; background: rgba(20,15,20,.55); }
+  #modalroot .box {
+    position: relative; background: #fff; border-radius: 14px; max-width: 860px; width: calc(100% - 40px);
+    margin: 4vh auto; max-height: 92vh; overflow-y: auto; padding: 24px 26px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.3);
+  }
+  #modalroot .box.wide { max-width: 1040px; }
+  #modalroot h3 { margin: 0 0 4px; font-size: 1.15rem; }
+  .modalfoot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .x { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 1.25rem; color: var(--muted); cursor: pointer; }
+
+  .note { background: var(--amber-bg); border: 1px solid #f4d488; color: #7c5205; border-radius: 8px; padding: 9px 13px; font-size: .85rem; margin: 10px 0; }
+  .note.info { background: var(--blue-bg); border-color: #c3d0f5; color: #1e3a8a; }
+  .note.ok { background: var(--green-bg); border-color: #bfe3cf; color: var(--green); }
+  .note.err { background: var(--red-bg); border-color: #f3c2c2; color: var(--red); }
+  .muted { color: var(--muted); }
+  .small { font-size: .8rem; }
+  .mono { font-family: ui-monospace, Consolas, monospace; font-size: .84em; }
+  .right { text-align: right; }
+  .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } body { flex-direction: column; } #sidebar { width: 100%; height: auto; position: static; } }
+  a.plain { color: var(--brand); text-decoration: none; font-weight: 600; }
+  a.plain:hover { text-decoration: underline; }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { border-left: 2px solid var(--line); padding: 4px 0 10px 14px; margin-left: 6px; position: relative; font-size: .86rem; }
+  .timeline li::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: var(--brand); position: absolute; left: -5px; top: 9px; }
+  .invoice-frame { width: 100%; height: 66vh; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  .seam {
+    border: 1.5px dashed var(--brand); background: var(--brand-soft); border-radius: 8px;
+    padding: 10px 14px; font-size: .82rem; color: var(--brand-dark); margin: 10px 0;
+  }
+  .cname { font-weight: 700; font-size: 1.02rem; }
+  .bigselect { padding: 11px 12px; border-radius: 12px; border: 1.5px solid #cfd3da; font-size: .95rem; max-width: 300px; }
+  table.roomy td { padding: 13px 12px; }
+  .qa { margin: 0 0 14px; }
+  .qa .q { font-size: .95rem; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .qa ul { margin: 2px 0 0; padding-left: 20px; }
+  .qa li { font-size: .95rem; margin-bottom: 3px; }
+  .dl-row { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .dl-row:last-child { border-bottom: none; }
+  .dl-label { width: 92px; flex-shrink: 0; font-size: .74rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .dl-value { font-size: 1rem; font-weight: 700; color: var(--ink); flex: 1; }
+  .dl-value .muted { font-weight: 400; }
+  .dl-row.editable { cursor: pointer; border-radius: 8px; }
+  .dl-row.editable:hover { background: var(--brand-soft); }
+  .editpen { color: var(--brand); opacity: 0; font-size: .9rem; padding-left: 8px; }
+  .dl-row.editable:hover .editpen { opacity: 1; }
+  .venuegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  @media (max-width: 560px) { .venuegrid { grid-template-columns: 1fr; } }
+  .vtile {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 24px; cursor: pointer; transition: box-shadow .12s, transform .12s;
+  }
+  .vtile:hover { box-shadow: 0 6px 18px rgba(155,44,77,.14); transform: translateY(-1px); border-color: #e3c3ce; }
+  .vtile-date { font-size: .8rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+  .vtile-name { font-size: 1.3rem; font-weight: 750; line-height: 1.25; margin-bottom: 8px; }
+  .vtile-sub { font-size: .82rem; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .vrow { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .vrow:first-child { border-top: none; }
+  .vrow:hover { background: var(--brand-soft); margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+  .vtime { width: 86px; flex-shrink: 0; text-align: center; line-height: 1.3; }
+  .vclock { font-size: 1.15rem; font-weight: 750; color: var(--brand); font-variant-numeric: tabular-nums; }
+  .blockhead { margin: 14px 0 8px; }
+  .blockhead b { font-size: 1.02rem; }
+  select.mini { padding: 4px 8px; font-size: .82rem; border-radius: 6px; }
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: var(--ink); color: #fff;
+    border-radius: 10px; padding: 12px 18px; font-size: .9rem; z-index: 99;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35); max-width: 380px;
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
+    <nav id="nav"></nav>
+    <div class="demo"><button onclick="App.resetDemo()">↺ Reset demo data</button></div>
+  </aside>
+  <main id="main"></main>
+  <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   Darcybow Customers & Events — single-file VIEWING platform.
+
+   Phase 1 is deliberately read-only: Shopify (customers, orders,
+   products) and Appointly (bookings + the questions each customer
+   answered) are pulled together into one place for staff to browse.
+   The ONLY actions are printing — A4 customer sheets (details + the
+   Appointly booking answers) and the staff run sheet for an event day.
+
+   Runs fully offline on seeded mock data (persisted in localStorage).
+   External integrations are isolated in ShopifyService /
+   AppointlyService below, each with a clearly marked LIVE CREDENTIAL
+   SEAM where the real API credentials plug in — once filled, the same
+   screens fill with real data and nothing else changes.
+   ===================================================================== */
+
+/* ---------------------- small utilities ---------------------- */
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2) + Date.now());
+const nowIso = () => new Date().toISOString();
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
+function isoDaysAgo(n, h) { const d = new Date(); d.setDate(d.getDate() - n); if (h != null) d.setHours(h, 15, 0, 0); return d.toISOString(); }
+function daysUntil(dateStr) {
+  const a = new Date(todayStr() + 'T00:00:00'); const b = new Date(dateStr + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+// Calendar-month addition clamped to shorter months (31 Jan + 1m = 28/29 Feb).
+function addCalendarMonths(dateStr, months) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const t = new Date(y, m - 1 + months, 1);
+  const dim = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+  t.setDate(Math.min(d, dim));
+  return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+}
+function fmtDate(ds) {
+  if (!ds) return '—';
+  return new Date(ds + 'T00:00:00').toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-IE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* ------- money: integer euro cents everywhere ------- */
+const eur = c => (c / 100).toLocaleString('en-IE', { style: 'currency', currency: 'EUR' });
+function parseEuros(str) {
+  const clean = String(str ?? '').replace(/[€,\s]/g, '');
+  if (clean === '' || !/^-?\d+(\.\d{1,2})?$/.test(clean)) return null;
+  return Math.round(parseFloat(clean) * 100);
+}
+// Split a total into n instalments; rounding difference goes to the FINAL one.
+function splitCents(total, n) {
+  const base = Math.floor(total / n);
+  const out = Array(n).fill(base);
+  out[n - 1] = total - base * (n - 1);
+  return out;
+}
+
+/* ---------------------- data store ---------------------- */
+const STORE_KEY = 'darcybow-db-v5';
+let DB = null;
+
+const Store = {
+  load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) { DB = JSON.parse(raw); return; }
+    } catch (e) { /* corrupt store: fall through to reseed */ }
+    DB = Seed.build();
+    Store.save();
+  },
+  save() { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); },
+  reset() { localStorage.removeItem(STORE_KEY); DB = Seed.build(); Store.save(); },
+};
+
+const DEFAULT_SETTINGS = {
+  // Internal reminder stages, in days before the due date (editable in Settings).
+  reminderOffsets: { upcoming: 14, dueSoon: 7 },
+  duplicateReminderWindowDays: 3,
+  dailySummary: { enabled: false, recipients: ['owner@darcybow.ie'], sendHour: 8 },
+  reminderTemplate: {
+    subject: 'Darcybow — payment reminder ({{orderReference}})',
+    body: 'Hi {{customerName}},\n\nA friendly reminder about the remaining balance on your Darcybow order {{orderReference}} (invoice {{invoiceNumber}}).\n\nOrder total: {{orderTotal}}\nPayments received: {{totalPaid}}\nRemaining balance: {{remainingBalance}}\nDue date: {{dueDate}}\n\n{{paymentLink}}\n\nIf you have any questions, or have already made this payment, just reply to this email or give us a ring.\n\nWarm regards,\nDarcybow\nhello@darcybow.ie · +353 21 123 4567 · darcybow.ie',
+  },
+  // The three booking questions Appointly asks when a customer books an
+  // appointment through Shopify. Shown with the customer's answers on the
+  // customer page; also used to prefill manual logging.
+  appointlyQuestions: [
+    'What is the occasion, and when is it?',
+    'Who is the appointment for, and what age/size do they usually wear?',
+    'Are there any styles, colours or budget you have in mind?',
+  ],
+  shop: {
+    name: 'Darcybow', addressLine: 'Unit 4, The Courtyard, Douglas, Cork, Ireland',
+    email: 'hello@darcybow.ie', phone: '+353 21 123 4567', web: 'darcybow.ie', vat: 'IE 1234567X',
+  },
+  // Six staff run private appointments with customers at event days.
+  staff: [
+    { name: 'Elva', role: 'admin' },
+    { name: 'Aoife', role: 'staff' },
+    { name: 'Niamh', role: 'staff' },
+    { name: 'Sinéad', role: 'staff' },
+    { name: 'Ciara', role: 'staff' },
+    { name: 'Emma', role: 'staff' },
+  ],
+  // Event-day schedule: hourly blocks from 9am to 6pm, up to 6 customers
+  // per slot (private appointments, one staff member per customer).
+  eventDay: { startHour: 9, endHour: 18, slotCapacity: 6 },
+};
+
+/* ---------------------- seed data ---------------------- */
+const Seed = {
+  build() {
+    const db = {
+      seededAt: nowIso(),
+      settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+      customers: [], products: [], orders: [], orderItems: [], instalments: [],
+      payments: [], allocations: [], adjustments: [], reminderTasks: [],
+      contactLog: [], customerReminders: [], outbox: [], appointments: [],
+      counters: { order: 1040, invoice: 2100 },
+    };
+
+    // Product catalogue — in live mode this is refreshed from Shopify
+    // via ShopifyService.fetchCatalogue(); these mirror that shape.
+    const P = (title, styleCode, category, price, colours, sizes) =>
+      ({ id: uid(), shopifySourceId: 'gid://shopify/Product/' + Math.floor(1e12 + Math.random() * 9e12),
+         title, styleCode, category, retailPriceCents: price, colours, sizes, active: true });
+    const products = [
+      P('Isabella Communion Gown', 'DB-IS01', 'dress', 38500, ['Ivory','White'], ['Age 7','Age 8','Age 9','Age 10']),
+      P('Grace Communion Dress', 'DB-GR02', 'dress', 32000, ['White','Ivory'], ['Age 7','Age 8','Age 9','Age 10']),
+      P('Aoibhinn Flower Girl Dress', 'DB-AO03', 'dress', 18500, ['Ivory','Blush','Champagne'], ['Age 3','Age 4','Age 5','Age 6','Age 7']),
+      P('Sofia Debs Gown', 'DB-SF04', 'dress', 42500, ['Emerald','Navy','Ruby','Black'], ['6','8','10','12','14','16']),
+      P('Valentina Debs Gown', 'DB-VL05', 'dress', 48000, ['Champagne','Dusty Rose','Sage'], ['6','8','10','12','14','16']),
+      P('Clara Confirmation Dress', 'DB-CL06', 'dress', 24500, ['White','Powder Blue','Lilac'], ['Age 11','Age 12','Age 13']),
+      P('Mother-of-the-Bride Two Piece', 'DB-MB07', 'dress', 39500, ['Teal','Silver','Plum'], ['10','12','14','16','18','20']),
+      P('Willow Christening Gown', 'DB-CH08', 'dress', 14500, ['Ivory','White'], ['0-3 months','3-6 months','6-12 months','12-18 months']),
+      P('Satin Ballet Pumps', 'DB-SH10', 'shoes', 5500, ['White','Ivory'], ['28','29','30','31','32','33','34','35']),
+      P('Pearl Heeled Sandals', 'DB-SH11', 'shoes', 7500, ['Ivory','Silver','Nude'], ['36','37','38','39','40','41']),
+      P('Crystal Tiara', 'DB-AC20', 'accessory', 4500, ['Silver','Gold'], ['One size']),
+      P('Pearl Bolero Jacket', 'DB-AC21', 'accessory', 6500, ['White','Ivory'], ['Age 7-8','Age 9-10','S','M','L']),
+      P('Communion Veil with Comb', 'DB-AC22', 'accessory', 3500, ['White','Ivory'], ['One size']),
+      P('Satin Gloves', 'DB-AC23', 'accessory', 1800, ['White','Ivory'], ['Child','Adult']),
+      P('Beaded Clutch Bag', 'DB-AC24', 'accessory', 4200, ['Silver','Champagne','Navy'], ['One size']),
+    ];
+    db.products = products;
+    const prod = code => products.find(p => p.styleCode === code);
+
+    const C = (name, daughterName, email, phone, address, notes) =>
+      ({ id: uid(), name, daughterName, email, phone, address, notes, createdAt: isoDaysAgo(90), updatedAt: isoDaysAgo(10) });
+
+    // Venues usually host a whole weekend of events (Saturday + Sunday):
+    // find the Saturday ~5 weeks out so the seed demos the day filters.
+    let satN = 35; while (new Date(Date.now() + satN * 86400000).getDay() !== 6) satN++;
+    const SAT = daysFromNow(satN), SUN = daysFromNow(satN + 1);
+
+    // Helper: create a full order with items, deposit, plan and payments.
+    // spec: { customer, items:[{code,colour,size,qty?}], eventHotel, eventDate, staffNotes,
+    //         confirmedDaysAgo, plan: 'paid_in_full'|'fifty_fifty'|'custom'|null,
+    //         custom:[{amount,dueInDays,notes}], finalDueInDays, payments:[{amount|'rest1'|'all', daysAgo, method}],
+    //         status?, flags?, writeOff?, reminderSentDaysAgo?, contact?[], promisedInDays? }
+    let refN = db.counters.order;
+    const mkOrder = (spec) => {
+      const cust = spec.customer; db.customers.push(cust);
+      const oid = uid();
+      const created = isoDaysAgo(spec.confirmedDaysAgo, 11);
+      const order = {
+        id: oid, reference: 'DB-' + (refN++), customerId: cust.id,
+        status: spec.status || 'confirmed', planType: spec.plan || null,
+        eventHotel: spec.eventHotel || '', eventDate: spec.eventDate || null,
+        staffNotes: spec.staffNotes || '',
+        remindersPaused: !!(spec.flags && spec.flags.remindersPaused),
+        needsReview: !!(spec.flags && spec.flags.needsReview),
+        refundProcessing: false, promisedPaymentDate: spec.promisedInDays != null ? daysFromNow(spec.promisedInDays) : null,
+        createdAt: created, updatedAt: created,
+      };
+      db.orders.push(order);
+      let total = 0;
+      for (const it of spec.items) {
+        const p = prod(it.code); const qty = it.qty || 1;
+        total += p.retailPriceCents * qty;
+        db.orderItems.push({ id: uid(), orderId: oid, productId: p.id, title: p.title, styleCode: p.styleCode,
+          category: p.category, colour: it.colour, size: it.size, quantity: qty, retailPriceCents: p.retailPriceCents });
+      }
+      // Every order starts with the €25 Shopify deposit (the only thing sold through checkout).
+      const payments = [{ amount: 2500, daysAgo: spec.confirmedDaysAgo, method: 'shopify_deposit',
+        notes: 'Shopify deposit product — order #' + order.reference }];
+      for (const pay of (spec.payments || [])) payments.push(pay);
+
+      // Build instalments.
+      const insts = [];
+      const mkInst = (n, due, dueDate, notes) => {
+        const inst = { id: uid(), dressOrderId: oid, instalmentNumber: n, amountDueCents: due, amountPaidCents: 0,
+          dueDate, status: 'scheduled', paidAt: null, reminderStatus: 'not_due', lastReminderSentAt: null,
+          nextReminderAt: null, notes: notes || '', createdAt: created, updatedAt: created };
+        insts.push(inst); db.instalments.push(inst); return inst;
+      };
+      if (spec.plan === 'paid_in_full') {
+        mkInst(1, total, daysFromNow(-(spec.confirmedDaysAgo)), 'Paid in full at confirmation');
+      } else if (spec.plan === 'fifty_fifty') {
+        const [h1] = splitCents(total, 2);
+        mkInst(1, h1, daysFromNow(-(spec.confirmedDaysAgo)), 'First 50% at confirmation');
+        mkInst(2, total - h1, spec.finalDueInDays != null ? daysFromNow(spec.finalDueInDays)
+          : addCalendarMonths(daysFromNow(-(spec.confirmedDaysAgo)), 1), 'Final balance');
+      } else if (spec.plan === 'custom') {
+        let n = 1;
+        for (const ci of spec.custom) mkInst(n++, ci.amount, daysFromNow(ci.dueInDays), ci.notes || '');
+      }
+      // Record payments and allocate oldest-instalment-first.
+      for (const pay of payments) {
+        let amt = pay.amount;
+        if (amt === 'rest1') amt = insts[0].amountDueCents - insts[0].amountPaidCents;
+        if (amt === 'all') amt = total - payments.filter(p2 => typeof p2.amount === 'number').reduce((s, p2) => s + p2.amount, 0);
+        const pm = { id: uid(), orderId: oid, amountCents: amt, method: pay.method || 'card', reference: '',
+          receivedAt: isoDaysAgo(pay.daysAgo, 14), recordedBy: pay.by || 'Elva', notes: pay.notes || '',
+          voided: false, voidReason: '', createdAt: isoDaysAgo(pay.daysAgo, 14) };
+        db.payments.push(pm);
+        let left = amt;
+        for (const inst of insts) {
+          if (left <= 0) break;
+          const need = inst.amountDueCents - inst.amountPaidCents;
+          if (need <= 0) continue;
+          const take = Math.min(left, need);
+          db.allocations.push({ id: uid(), paymentId: pm.id, instalmentId: inst.id, amountCents: take, createdAt: pm.createdAt });
+          inst.amountPaidCents += take; left -= take;
+          if (inst.amountPaidCents >= inst.amountDueCents) { inst.paidAt = pm.receivedAt; }
+        }
+      }
+      if (spec.writeOff) {
+        db.adjustments.push({ id: uid(), orderId: oid, type: 'write_off', amountCents: spec.writeOff.amount,
+          reason: spec.writeOff.reason, staff: 'Elva', previousValue: 'balance ' + eur(spec.writeOff.amount),
+          newValue: 'balance €0.00 (written off)', createdAt: isoDaysAgo(spec.writeOff.daysAgo, 16) });
+        order.status = 'written_off';
+      }
+      if (spec.reminderSentDaysAgo != null) {
+        const inst = insts[insts.length - 1];
+        inst.reminderStatus = 'sent'; inst.lastReminderSentAt = isoDaysAgo(spec.reminderSentDaysAgo, 10);
+        db.customerReminders.push({ id: uid(), orderId: oid, instalmentId: inst.id, method: 'email',
+          recipient: cust.email, subject: 'Darcybow — payment reminder (' + order.reference + ')',
+          body: 'Hi ' + cust.name + ',\n\nA friendly reminder about the remaining balance on your Darcybow order ' + order.reference + '. (seeded sample reminder)',
+          sentBy: 'Aoife', sentAt: isoDaysAgo(spec.reminderSentDaysAgo, 10), deliveryStatus: 'delivered', customerResponse: spec.reminderResponse || '' });
+      }
+      for (const cl of (spec.contact || [])) {
+        db.contactLog.push({ id: uid(), orderId: oid, reminderTaskId: null, action: cl.action, note: cl.note || '',
+          staff: cl.by || 'Aoife', createdAt: isoDaysAgo(cl.daysAgo, 15) });
+      }
+      return order;
+    };
+
+    /* ---- Scenario 1: paid in full (recently paid) ---- */
+    mkOrder({
+      customer: C('Mary O’Sullivan', 'Saoirse', 'mary.osullivan@gmail.com', '087 234 5678',
+        '14 Elm Grove, Douglas, Cork', 'Lovely family, returning customer — sister’s communion 2024.'),
+      items: [{ code: 'DB-IS01', colour: 'Ivory', size: 'Age 8' }, { code: 'DB-AC22', colour: 'Ivory', size: 'One size' }],
+      eventHotel: 'Communion — Rochestown Park Hotel', eventDate: SAT,
+      staffNotes: 'Hem take-up booked for fitting on the 22nd.',
+      confirmedDaysAgo: 21, plan: 'paid_in_full',
+      payments: [{ amount: 'all', daysAgo: 5, method: 'card' }],
+      status: 'fully_paid',
+    });
+
+    /* ---- Scenario 2: 50/50, final due later (~25 days) ---- */
+    mkOrder({
+      customer: C('Claire Murphy', 'Aoife', 'claire.murphy82@gmail.com', '086 112 3344',
+        '3 The Willows, Carrigaline, Co. Cork', ''),
+      items: [{ code: 'DB-GR02', colour: 'White', size: 'Age 9' }, { code: 'DB-SH10', colour: 'White', size: '31' }],
+      eventHotel: 'Communion — Oriel House Hotel, Ballincollig', eventDate: daysFromNow(38),
+      staffNotes: 'Wants matching bolero if it comes back in stock — call when the AC21 delivery lands.',
+      confirmedDaysAgo: 6, plan: 'fifty_fifty', finalDueInDays: 25,
+      payments: [{ amount: 'rest1', daysAgo: 6, method: 'card' }],
+    });
+
+    /* ---- Scenario 3: 50/50, final due in 10 days ---- */
+    mkOrder({
+      customer: C('Sinéad Kelleher', 'Róisín', 'sinead.kelleher@hotmail.com', '085 667 8899',
+        'Glenview House, Bandon, Co. Cork', 'Prefers WhatsApp over calls.'),
+      items: [{ code: 'DB-SF04', colour: 'Emerald', size: '10' }, { code: 'DB-SH11', colour: 'Silver', size: '38' }, { code: 'DB-AC24', colour: 'Silver', size: 'One size' }],
+      eventHotel: 'Debs — Clayton Hotel Silver Springs', eventDate: daysFromNow(24),
+      staffNotes: 'Dress needs strap adjustment — pinned at fitting 2 weeks ago.',
+      confirmedDaysAgo: 20, plan: 'fifty_fifty', finalDueInDays: 10,
+      payments: [{ amount: 'rest1', daysAgo: 20, method: 'bank_transfer' }],
+    });
+
+    /* ---- Scenario 4: 50/50, final due in 5 days ---- */
+    mkOrder({
+      customer: C('Emma Walsh', 'Lucy', 'emmawalsh.cork@gmail.com', '083 445 6677',
+        '27 Maple Court, Midleton, Co. Cork', ''),
+      items: [{ code: 'DB-AO03', colour: 'Blush', size: 'Age 5' }],
+      eventHotel: 'Wedding — Castlemartyr Resort', eventDate: daysFromNow(12),
+      staffNotes: 'Flower girl for aunt’s wedding. Mum asked for the dress steamed before collection.',
+      confirmedDaysAgo: 26, plan: 'fifty_fifty', finalDueInDays: 5,
+      payments: [{ amount: 'rest1', daysAgo: 26, method: 'cash' }],
+    });
+
+    /* ---- Scenario 5: 50/50, final due today ---- */
+    mkOrder({
+      customer: C('Fiona Byrne', 'Ella', 'fiona.byrne@yahoo.ie', '089 990 1122',
+        '8 Harbour View, Cobh, Co. Cork', 'Asked us to hold collection until final payment clears.'),
+      items: [{ code: 'DB-CL06', colour: 'Powder Blue', size: 'Age 12' }, { code: 'DB-AC23', colour: 'White', size: 'Child' }],
+      eventHotel: 'Confirmation — Fota Island Resort', eventDate: daysFromNow(9),
+      staffNotes: '', confirmedDaysAgo: 31, plan: 'fifty_fifty', finalDueInDays: 0,
+      payments: [{ amount: 'rest1', daysAgo: 31, method: 'card' }],
+      contact: [{ action: 'texted', note: 'Text sent Monday confirming balance due date.', daysAgo: 3, by: 'Niamh' }],
+    });
+
+    /* ---- Scenario 6: 50/50, overdue 12 days, reminder sent, no response ---- */
+    mkOrder({
+      customer: C('Deirdre Nolan', 'Kate', 'deirdre.nolan@gmail.com', '087 776 5544',
+        '41 Riverside Drive, Mallow, Co. Cork', ''),
+      items: [{ code: 'DB-VL05', colour: 'Dusty Rose', size: '12' }],
+      eventHotel: 'Debs — Vienna Woods Hotel', eventDate: daysFromNow(15),
+      staffNotes: 'Two missed fitting appointments. Handle gently — bereavement in the family recently.',
+      confirmedDaysAgo: 45, plan: 'fifty_fifty', finalDueInDays: -12,
+      payments: [{ amount: 'rest1', daysAgo: 45, method: 'card' }],
+      reminderSentDaysAgo: 8,
+      contact: [{ action: 'called', note: 'No answer, left voicemail.', daysAgo: 5, by: 'Aoife' }],
+    });
+
+    /* ---- Scenario 7: custom plan, partially paid instalment now overdue ---- */
+    mkOrder({
+      customer: C('Orla McCarthy', 'Niamh', 'orla.mccarthy@outlook.com', '086 334 2211',
+        '5 Beechwood Park, Fermoy, Co. Cork', 'Paying in small amounts — agreed flexible plan.'),
+      items: [{ code: 'DB-MB07', colour: 'Teal', size: '14' }, { code: 'DB-SH11', colour: 'Nude', size: '39' }],
+      eventHotel: 'Wedding — Springfort Hall, Mallow', eventDate: daysFromNow(30),
+      staffNotes: 'Mother of the bride. Second instalment part-paid — said she’d clear it after payday.',
+      confirmedDaysAgo: 50, plan: 'custom',
+      custom: [
+        { amount: 15000, dueInDays: -40, notes: 'Agreed opening instalment' },
+        { amount: 15000, dueInDays: -6, notes: 'Mid plan' },
+        { amount: 14500, dueInDays: 20, notes: 'Final — before collection' },
+      ],
+      payments: [
+        { amount: 12500, daysAgo: 40, method: 'cash', notes: 'Topped deposit up to first instalment' },
+        { amount: 8000, daysAgo: 4, method: 'revolut', notes: 'Part payment toward instalment 2' },
+      ],
+      promisedInDays: 3,
+      contact: [{ action: 'promised_date', note: 'Promised remaining €70 of instalment 2 by ' + fmtDate(daysFromNow(3)) + '.', daysAgo: 4, by: 'Elva' }],
+    });
+
+    /* ---- Scenario 8: custom plan on track, next due in 6 days ---- */
+    mkOrder({
+      customer: C('Grace Hennessy', 'Sophie', 'grace.hennessy@gmail.com', '085 221 9988',
+        '12 The Paddocks, Kinsale, Co. Cork', ''),
+      items: [{ code: 'DB-SF04', colour: 'Navy', size: '8' }, { code: 'DB-AC20', colour: 'Silver', size: 'One size' }],
+      eventHotel: 'Debs — Actons Hotel, Kinsale', eventDate: daysFromNow(55),
+      staffNotes: 'Tiara to be gift-wrapped separately (birthday surprise).',
+      confirmedDaysAgo: 30, plan: 'custom',
+      custom: [
+        { amount: 20000, dueInDays: -25 },
+        { amount: 15000, dueInDays: 6 },
+        { amount: 9500, dueInDays: 36, notes: 'Final before collection' },
+      ],
+      payments: [{ amount: 17500, daysAgo: 25, method: 'card', notes: 'Cleared instalment 1' }],
+    });
+
+    /* ---- Scenario 9: overdue, NO reminder ever sent (reminder required) ---- */
+    mkOrder({
+      customer: C('Laura Dempsey', 'Holly', 'laura.dempsey@gmail.com', '083 887 7665',
+        '22 Sycamore Close, Ballinlough, Cork', ''),
+      items: [{ code: 'DB-GR02', colour: 'Ivory', size: 'Age 10' }, { code: 'DB-AC21', colour: 'Ivory', size: 'Age 9-10' }, { code: 'DB-SH10', colour: 'Ivory', size: '33' }],
+      eventHotel: 'Communion — Radisson Blu Little Island', eventDate: daysFromNow(18),
+      staffNotes: 'Collection arranged for the week before the communion.',
+      confirmedDaysAgo: 35, plan: 'fifty_fifty', finalDueInDays: -4,
+      payments: [{ amount: 'rest1', daysAgo: 35, method: 'card' }],
+    });
+
+    /* ---- Scenario 10: small balance written off (stays in reporting) ---- */
+    mkOrder({
+      customer: C('Patricia Lynch', 'Amy', 'patricia.lynch@eircom.net', '087 123 9876',
+        '9 Church Road, Blackrock, Cork', 'Long-standing customer.'),
+      items: [{ code: 'DB-AO03', colour: 'Champagne', size: 'Age 6' }],
+      eventHotel: 'Wedding — Maryborough Hotel', eventDate: daysFromNow(-10),
+      staffNotes: 'Goodwill write-off of the last €10 — dress had a small bead flaw we repaired.',
+      confirmedDaysAgo: 60, plan: 'fifty_fifty', finalDueInDays: -20,
+      payments: [
+        { amount: 'rest1', daysAgo: 60, method: 'card' },
+        { amount: 9250, daysAgo: 22, method: 'cash', notes: 'Final payment less €10 goodwill' },
+      ],
+      writeOff: { amount: 1000, reason: 'Goodwill gesture — repaired bead-work flaw on the bodice.', daysAgo: 22 },
+    });
+
+    /* ---- Scenario 11: cancelled order ---- */
+    (() => {
+      const o = mkOrder({
+        customer: C('Rachel Cronin', 'Mia', 'rachel.cronin@gmail.com', '089 456 7123',
+          '30 Lakeside Avenue, Wilton, Cork', ''),
+        items: [{ code: 'DB-CL06', colour: 'Lilac', size: 'Age 11' }],
+        eventHotel: 'Confirmation — The Kingsley', eventDate: daysFromNow(50),
+        staffNotes: 'Family moved to Dublin — order cancelled, deposit retained per policy.',
+        confirmedDaysAgo: 15, plan: 'fifty_fifty', finalDueInDays: 14,
+        status: 'cancelled',
+      });
+      // Cancel the schedule to match the order status.
+      for (const inst of db.instalments.filter(i => i.dressOrderId === o.id)) inst.status = 'cancelled';
+    })();
+
+    /* ---- Scenario 12: deposit only, no plan yet (needs review / follow-up) ---- */
+    mkOrder({
+      customer: C('Jennifer Barrett', 'Chloe', 'jen.barrett@gmail.com', '086 909 8071',
+        '17 Meadow Springs, Glanmire, Co. Cork', 'New customer — came from Instagram.'),
+      items: [{ code: 'DB-VL05', colour: 'Sage', size: '10' }, { code: 'DB-SH11', colour: 'Ivory', size: '37' }],
+      eventHotel: 'Debs — Rochestown Park Hotel', eventDate: SUN,
+      staffNotes: 'Deposit paid online. Ring to agree the payment plan and book first fitting.',
+      confirmedDaysAgo: 2, plan: null, flags: { needsReview: true },
+    });
+
+    /* ---- Scenario 13: christening, 50/50 on track ---- */
+    mkOrder({
+      customer: C('Niamh Twomey', 'Éabha', 'niamh.twomey@gmail.com', '085 443 2211',
+        '6 Orchard Rise, Ballincollig, Co. Cork', 'Wants the gown kept boxed until the week of the christening.'),
+      items: [{ code: 'DB-CH08', colour: 'Ivory', size: '6-12 months' }, { code: 'DB-AC22', colour: 'Ivory', size: 'One size' }],
+      eventHotel: 'Christening — The Angler’s Rest, Innishannon', eventDate: daysFromNow(21),
+      staffNotes: 'Embroidered name on the hem — confirm spelling: Éabha.',
+      confirmedDaysAgo: 10, plan: 'fifty_fifty', finalDueInDays: 12,
+      payments: [{ amount: 'rest1', daysAgo: 10, method: 'card' }],
+    });
+
+    /* ---- Scenario 14: same weekend, Saturday at Rochestown Park ---- */
+    mkOrder({
+      customer: C('Aisling Buckley', 'Emily', 'aisling.buckley@gmail.com', '087 665 4321',
+        '44 Castle Heights, Carrigtwohill, Co. Cork', ''),
+      items: [{ code: 'DB-IS01', colour: 'White', size: 'Age 9' }, { code: 'DB-SH10', colour: 'White', size: '32' }],
+      eventHotel: 'Communion — Rochestown Park Hotel', eventDate: SAT,
+      staffNotes: 'Same communion weekend as the O’Sullivans — friends, would like fittings together if possible.',
+      confirmedDaysAgo: 8, plan: 'fifty_fifty', finalDueInDays: 18,
+      payments: [{ amount: 'rest1', daysAgo: 8, method: 'card' }],
+    });
+
+    /* ---- Appointly booking Q&As ----
+       In live mode these are pulled from Appointly (via the Shopify link —
+       see AppointlyService); seeded here in exactly the shape the sync
+       produces so the customer page is testable offline. */
+    const QS = db.settings.appointlyQuestions;
+    const SLOT_TIMES = ['10:00', '11:30', '13:00', '14:30', '16:00', '17:30'];
+    const appt = (custName, daysAgoBooked, apptInDays, service, a1, a2, a3) => {
+      const cust = db.customers.find(c => c.name === custName);
+      if (!cust) return;
+      db.appointments.push({
+        id: uid(), customerId: cust.id, source: 'appointly',
+        service, appointmentAt: daysFromNow(apptInDays),
+        time: SLOT_TIMES[db.appointments.length % SLOT_TIMES.length],
+        status: apptInDays >= 0 ? 'upcoming' : 'completed',
+        bookedAt: isoDaysAgo(daysAgoBooked, 12), syncedAt: isoDaysAgo(0, 9),
+        questions: [{ q: QS[0], a: a1 }, { q: QS[1], a: a2 }, { q: QS[2], a: a3 }],
+        staffName: '',
+      });
+    };
+    // Event-day slot at a venue: the private appointment where a staff
+    // member helps the customer pick their dress on the day itself.
+    const apptVenue = (custName, dateStr, time, venue, staffName) => {
+      const cust = db.customers.find(c => c.name === custName);
+      if (!cust) return;
+      db.appointments.push({
+        id: uid(), customerId: cust.id, source: 'appointly',
+        service: 'Private appointment — ' + venue,
+        appointmentAt: dateStr, time,
+        status: dateStr >= daysFromNow(0) ? 'upcoming' : 'completed',
+        bookedAt: isoDaysAgo(4, 12), syncedAt: isoDaysAgo(0, 9),
+        questions: [], staffName: staffName || '',
+      });
+    };
+    appt('Mary O’Sullivan', 24, -22, 'Communion fitting',
+      'First Holy Communion on ' + fmtDate(daysFromNow(40)) + ' — Rochestown Park afterwards.',
+      'My daughter Saoirse, she’s 8 and usually wears age 8.',
+      'She loved the Isabella gown on your Instagram — ivory if possible.');
+    appt('Claire Murphy', 8, -6, 'Communion fitting',
+      'Communion in May, party at Oriel House in Ballincollig.',
+      'Aoife, age 9 — tall for her age so maybe age 10 in some styles.',
+      'Something classic in plain satin, budget around €350 with shoes.');
+    appt('Sinéad Kelleher', 22, -20, 'Debs consultation',
+      'Debs at the Clayton Silver Springs, ' + fmtDate(daysFromNow(24)) + '.',
+      'For Róisín, she’s a size 10, 5ft 7.',
+      'Emerald green — she has the Sofia gown saved from your website.');
+    appt('Emma Walsh', 28, -26, 'Flower girl fitting',
+      'My sister’s wedding at Castlemartyr Resort, ' + fmtDate(daysFromNow(12)) + '.',
+      'Lucy, age 5 — she’s the flower girl.',
+      'Blush tones to match the bridesmaids, nothing too fussy.');
+    appt('Fiona Byrne', 33, -31, 'Confirmation fitting',
+      'Ella’s confirmation, then lunch at Fota Island Resort.',
+      'Ella, she’s 12, usually age 12 fits her.',
+      'Powder blue if you have it, with a modest neckline for the church.');
+    appt('Deirdre Nolan', 47, -44, 'Debs consultation',
+      'Debs at the Vienna Woods, mid next month.',
+      'Kate, size 12.',
+      'Dusty rose, strapless if possible — open on budget for the right dress.');
+    appt('Orla McCarthy', 52, -49, 'Occasionwear consultation',
+      'My daughter’s wedding at Springfort Hall — I’m mother of the bride!',
+      'It’s for myself, size 14, and I’ll need comfortable shoes too.',
+      'A teal two-piece caught my eye in the window. Would like to pay in bits if that’s ok.');
+    appt('Grace Hennessy', 32, -29, 'Debs consultation',
+      'Debs at Actons in Kinsale, ' + fmtDate(daysFromNow(55)) + '.',
+      'Sophie, size 8.',
+      'Navy — and she has her heart set on a tiara to go with it.');
+    appt('Laura Dempsey', 37, -34, 'Communion fitting',
+      'First Communion, celebration at the Radisson Little Island after.',
+      'Holly, age 10.',
+      'A full skirt like her cousin had, plus a bolero for the church.');
+    appt('Patricia Lynch', 62, -59, 'Flower girl fitting',
+      'A family wedding at the Maryborough in the spring.',
+      'Amy, my granddaughter, age 6.',
+      'Champagne to match the theme — you dressed her sister in 2024!');
+    appt('Rachel Cronin', 17, -14, 'Confirmation fitting',
+      'Mia’s confirmation, reception at The Kingsley.',
+      'Mia, age 11.',
+      'Lilac was her first choice.');
+    appt('Niamh Twomey', 12, -9, 'Christening fitting',
+      'Éabha’s christening at the end of the month — lunch at the Angler’s Rest in Innishannon after.',
+      'Baby Éabha — she’ll be 8 months by then.',
+      'The Willow gown, ivory, with her name embroidered on the hem.');
+    appt('Aisling Buckley', 6, 5, 'Communion fitting',
+      'First Communion — same weekend as the O’Sullivans at the Rochestown Park.',
+      'Emily, age 9.',
+      'White, and she’d love the same ballet pumps her friend Saoirse got.');
+    appt('Jennifer Barrett', 2, 3, 'Debs consultation',
+      'Debs at the Rochestown Park in about ten weeks.',
+      'Chloe, size 10.',
+      'The sage Valentina from your Instagram — budget up to €500.');
+
+    // Rochestown Park weekend: booked slots + assigned staff for the demo.
+    apptVenue('Mary O’Sullivan', SAT, '10:15', 'Rochestown Park Hotel', 'Aoife');
+    apptVenue('Aisling Buckley', SAT, '10:40', 'Rochestown Park Hotel', 'Niamh');
+    apptVenue('Jennifer Barrett', SUN, '13:00', 'Rochestown Park Hotel', '');
+
+    return db;
+  },
+};
+</script>
+<script>
+/* =====================================================================
+   Domain — every euro figure is computed here from the ledger, never
+   taken from UI state. In the live build this module moves server-side.
+   ===================================================================== */
+const Domain = {
+
+  customer: id => DB.customers.find(c => c.id === id),
+  order: id => DB.orders.find(o => o.id === id),
+  itemsOf: orderId => DB.orderItems.filter(i => i.orderId === orderId),
+  instalmentsOf: orderId => DB.instalments.filter(i => i.dressOrderId === orderId).sort((a, b) => a.instalmentNumber - b.instalmentNumber),
+  paymentsOf: orderId => DB.payments.filter(p => p.orderId === orderId).sort((a, b) => a.receivedAt < b.receivedAt ? -1 : 1),
+  ordersOf: customerId => DB.orders.filter(o => o.customerId === customerId),
+
+  orderTotalCents(orderId) {
+    return Domain.itemsOf(orderId).reduce((s, i) => s + i.retailPriceCents * i.quantity, 0);
+  },
+  paidCents(orderId) {
+    return Domain.paymentsOf(orderId).filter(p => !p.voided).reduce((s, p) => s + p.amountCents, 0);
+  },
+  creditCents(orderId) { // discounts + write-offs: reduce the balance, are NOT payments
+    return DB.adjustments.filter(a => a.orderId === orderId && (a.type === 'discount' || a.type === 'write_off'))
+      .reduce((s, a) => s + (a.amountCents || 0), 0);
+  },
+  balanceCents(orderId) {
+    return Domain.orderTotalCents(orderId) - Domain.paidCents(orderId) - Domain.creditCents(orderId);
+  },
+
+  /* -------- instalment status (recomputed, never trusted from UI) -------- */
+  refreshInstalment(inst) {
+    if (inst.status === 'cancelled') return;
+    const order = Domain.order(inst.dressOrderId);
+    if (order.status === 'cancelled') { inst.status = 'cancelled'; return; }
+    const offs = DB.settings.reminderOffsets;
+    const du = daysUntil(inst.dueDate);
+    let status;
+    if (inst.amountPaidCents >= inst.amountDueCents) status = 'paid';
+    else if (du < 0) status = 'overdue';
+    else if (inst.amountPaidCents > 0) status = 'partially_paid';
+    else if (du <= offs.dueSoon) status = 'due_soon';
+    else status = 'scheduled';
+    if (status !== inst.status) { inst.status = status; inst.updatedAt = nowIso(); }
+    // reminderStatus: pending once inside the reminder window, unless already sent
+    if (status === 'paid') inst.reminderStatus = inst.reminderStatus === 'sent' ? 'sent' : 'not_due';
+    else if (inst.reminderStatus !== 'sent' && inst.reminderStatus !== 'failed') {
+      inst.reminderStatus = du <= offs.upcoming ? 'pending' : 'not_due';
+    }
+    inst.nextReminderAt = status === 'paid' ? null
+      : du > offs.upcoming ? daysFromNow(du - offs.upcoming)
+      : du > offs.dueSoon ? daysFromNow(du - offs.dueSoon)
+      : du > 0 ? inst.dueDate : todayStr();
+  },
+
+  nextUnpaidInstalment(orderId) {
+    return Domain.instalmentsOf(orderId).find(i => i.status !== 'cancelled' && i.amountPaidCents < i.amountDueCents) || null;
+  },
+
+  reminderStage(inst) {
+    const du = daysUntil(inst.dueDate);
+    const offs = DB.settings.reminderOffsets;
+    if (du < 0) return 'overdue';
+    if (du === 0) return 'due_today';
+    if (du <= offs.dueSoon) return 'upcoming_7';
+    if (du <= offs.upcoming) return 'upcoming_14';
+    return null;
+  },
+
+  /* -------- reminder engine: internal follow-up tasks --------
+     Tasks are created per (instalment, stage) and are never cleared just
+     because they were reviewed — they close only when the balance hits
+     zero, the order is cancelled, or the balance is written off. */
+  refreshAll() {
+    for (const inst of DB.instalments) Domain.refreshInstalment(inst);
+    for (const order of DB.orders) {
+      const balance = Domain.balanceCents(order.id);
+      const active = order.status !== 'cancelled' && order.status !== 'written_off';
+      if (active && balance <= 0 && order.status !== 'fully_paid' && order.planType) {
+        order.status = 'fully_paid'; order.updatedAt = nowIso();
+      }
+      const done = !active || balance <= 0;
+      if (done) { // stop reminders, keep history
+        for (const t of DB.reminderTasks.filter(t => t.orderId === order.id && t.status !== 'closed')) {
+          t.status = 'closed'; t.updatedAt = nowIso();
+        }
+        continue;
+      }
+      if (order.remindersPaused) continue;
+      const inst = Domain.nextUnpaidInstalment(order.id);
+      if (!inst) continue;
+      const stage = Domain.reminderStage(inst);
+      if (!stage) continue;
+      let task = DB.reminderTasks.find(t => t.instalmentId === inst.id && t.stage === stage);
+      if (!task) {
+        task = { id: uid(), orderId: order.id, instalmentId: inst.id, stage, status: 'open',
+          snoozedUntil: null, promisedPaymentDate: null, createdAt: nowIso(), updatedAt: nowIso() };
+        DB.reminderTasks.push(task);
+      }
+      // Reopen when a snooze or promised payment date has passed unpaid.
+      if (task.status === 'snoozed' && task.snoozedUntil && task.snoozedUntil <= todayStr()) {
+        task.status = 'open'; task.updatedAt = nowIso();
+        DB.contactLog.push({ id: uid(), orderId: order.id, reminderTaskId: task.id, action: 'reopened',
+          note: 'Snooze until ' + fmtDate(task.snoozedUntil) + ' elapsed with balance still outstanding.', staff: 'System', createdAt: nowIso() });
+        task.snoozedUntil = null;
+      }
+      if (order.promisedPaymentDate && order.promisedPaymentDate < todayStr()) {
+        if (task.status === 'reviewed') {
+          task.status = 'open'; task.updatedAt = nowIso();
+          DB.contactLog.push({ id: uid(), orderId: order.id, reminderTaskId: task.id, action: 'reopened',
+            note: 'Promised payment date ' + fmtDate(order.promisedPaymentDate) + ' passed unpaid.', staff: 'System', createdAt: nowIso() });
+        }
+        order.promisedPaymentDate = null;
+      }
+    }
+    Store.save();
+  },
+
+  openTasks() {
+    return DB.reminderTasks.filter(t => {
+      if (t.status === 'closed') return false;
+      if (t.status === 'snoozed' && t.snoozedUntil && t.snoozedUntil > todayStr()) return false;
+      return true;
+    });
+  },
+
+  /* -------- payment plans -------- */
+  createPlan(orderId, planType, opts, staff) {
+    const order = Domain.order(orderId);
+    if (!order) throw new Error('Order not found');
+    if (Domain.instalmentsOf(orderId).some(i => i.status !== 'cancelled'))
+      throw new Error('This order already has an active plan. Cancel it first (with a reason) to re-plan.');
+    const total = Domain.orderTotalCents(orderId);
+    const outstanding = Domain.balanceCents(orderId);
+    const now = nowIso();
+    const mk = (n, amountDueCents, dueDate, notes) => DB.instalments.push({
+      id: uid(), dressOrderId: orderId, instalmentNumber: n, amountDueCents, amountPaidCents: 0,
+      dueDate, status: 'scheduled', paidAt: null, reminderStatus: 'not_due', lastReminderSentAt: null,
+      nextReminderAt: null, notes: notes || '', createdAt: now, updatedAt: now,
+    });
+
+    if (planType === 'paid_in_full') {
+      mk(1, total, todayStr(), 'Paid in full');
+    } else if (planType === 'fifty_fifty') {
+      // First payment is 50% of the ORDER TOTAL; rounding cent goes to the final instalment.
+      const [first] = splitCents(total, 2);
+      const finalDue = opts.finalDueDate || addCalendarMonths(todayStr(), 1); // default: one calendar month after first payment; editable
+      if (finalDue < todayStr()) throw new Error('Final instalment due date cannot be in the past.');
+      mk(1, first, todayStr(), 'First 50% of order total');
+      mk(2, total - first, finalDue, 'Final balance');
+    } else if (planType === 'custom') {
+      const rows = opts.instalments || [];
+      if (!rows.length) throw new Error('Add at least one instalment.');
+      let sum = 0, n = 1;
+      for (const r of rows) {
+        if (!Number.isInteger(r.amountCents) || r.amountCents <= 0) throw new Error('Instalment ' + n + ': enter a valid amount.');
+        if (!r.dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(r.dueDate)) throw new Error('Instalment ' + n + ': enter a due date.');
+        sum += r.amountCents; n++;
+      }
+      // Scheduled instalments must sum to the outstanding balance (server-side rule).
+      if (sum !== outstanding) {
+        throw new Error('Instalments sum to ' + eur(sum) + ' but the outstanding balance is ' + eur(outstanding) +
+          '. Difference: ' + eur(sum - outstanding) + '.');
+      }
+      n = 1;
+      for (const r of rows.slice().sort((a, b) => a.dueDate < b.dueDate ? -1 : 1)) mk(n++, r.amountCents, r.dueDate, r.notes || '');
+    } else {
+      throw new Error('Unknown plan type');
+    }
+    order.planType = planType; order.needsReview = false; order.updatedAt = now;
+    // Existing payments (e.g. the Shopify deposit) allocate onto the new schedule.
+    Domain.reallocateAll(orderId);
+    Domain.refreshAll();
+  },
+
+  cancelPlan(orderId, reason, staff) {
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled');
+    for (const i of insts) { i.status = 'cancelled'; i.updatedAt = nowIso(); }
+    for (const al of DB.allocations.filter(a => insts.some(i => i.id === a.instalmentId))) {
+      // keep allocation history; amounts re-allocate when a new plan is made
+    }
+    const order = Domain.order(orderId);
+    DB.adjustments.push({ id: uid(), orderId, type: 'plan_cancelled', amountCents: 0, reason, staff,
+      previousValue: 'plan: ' + (order.planType || 'none'), newValue: 'plan cancelled', createdAt: nowIso() });
+    order.planType = null; order.updatedAt = nowIso();
+    Domain.refreshAll();
+  },
+
+  // Rebuild allocations for an order from its non-voided payments, oldest
+  // payment → lowest-numbered unpaid instalment. Keeps the audit trail:
+  // old allocation rows for voided payments are removed with the void entry logged.
+  reallocateAll(orderId) {
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled');
+    const orderInstIds = new Set(Domain.instalmentsOf(orderId).map(i => i.id));
+    DB.allocations = DB.allocations.filter(a => !orderInstIds.has(a.instalmentId));
+    for (const i of insts) { i.amountPaidCents = 0; i.paidAt = null; }
+    for (const p of Domain.paymentsOf(orderId).filter(p => !p.voided)) {
+      let left = p.amountCents;
+      for (const inst of insts) {
+        if (left <= 0) break;
+        const need = inst.amountDueCents - inst.amountPaidCents;
+        if (need <= 0) continue;
+        const take = Math.min(left, need);
+        DB.allocations.push({ id: uid(), paymentId: p.id, instalmentId: inst.id, amountCents: take, createdAt: nowIso() });
+        inst.amountPaidCents += take; left -= take;
+        if (inst.amountPaidCents >= inst.amountDueCents) inst.paidAt = p.receivedAt;
+      }
+    }
+  },
+
+  /* -------- payments -------- */
+  recordPayment(orderId, { amountCents, method, receivedAt, notes, recordedBy, allocations }) {
+    if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('Enter a valid payment amount.');
+    const order = Domain.order(orderId);
+    if (!order) throw new Error('Order not found');
+    if (order.status === 'cancelled') throw new Error('This order is cancelled — record an adjustment instead.');
+    const balance = Domain.balanceCents(orderId);
+    if (amountCents > balance) throw new Error('Payment (' + eur(amountCents) + ') exceeds the outstanding balance (' + eur(balance) + '). Record the correct amount, or apply an adjustment for overpayments.');
+    const pm = { id: uid(), orderId, amountCents, method: method || 'card', reference: '',
+      receivedAt: receivedAt || nowIso(), recordedBy, notes: notes || '', voided: false, voidReason: '', createdAt: nowIso() };
+    DB.payments.push(pm);
+    const insts = Domain.instalmentsOf(orderId).filter(i => i.status !== 'cancelled');
+    let left = amountCents;
+    if (allocations && allocations.length) {
+      // Manual split: must match the payment amount exactly.
+      const sum = allocations.reduce((s, a) => s + a.amountCents, 0);
+      if (sum !== amountCents) throw new Error('Allocations (' + eur(sum) + ') must equal the payment amount (' + eur(amountCents) + ').');
+      for (const a of allocations) {
+        const inst = insts.find(i => i.id === a.instalmentId);
+        if (!inst) throw new Error('Unknown instalment in allocation.');
+        const need = inst.amountDueCents - inst.amountPaidCents;
+        if (a.amountCents > need) throw new Error('Allocation to instalment ' + inst.instalmentNumber + ' exceeds what is owed on it (' + eur(need) + ').');
+        DB.allocations.push({ id: uid(), paymentId: pm.id, instalmentId: inst.id, amountCents: a.amountCents, createdAt: nowIso() });
+        inst.amountPaidCents += a.amountCents;
+        if (inst.amountPaidCents >= inst.amountDueCents) inst.paidAt = pm.receivedAt;
+        inst.updatedAt = nowIso();
+      }
+    } else {
+      // Auto: oldest unpaid instalment first.
+      for (const inst of insts) {
+        if (left <= 0) break;
+        const need = inst.amountDueCents - inst.amountPaidCents;
+        if (need <= 0) continue;
+        const take = Math.min(left, need);
+        DB.allocations.push({ id: uid(), paymentId: pm.id, instalmentId: inst.id, amountCents: take, createdAt: nowIso() });
+        inst.amountPaidCents += take; left -= take;
+        if (inst.amountPaidCents >= inst.amountDueCents) inst.paidAt = pm.receivedAt;
+        inst.updatedAt = nowIso();
+      }
+    }
+    order.updatedAt = nowIso();
+    Domain.refreshAll(); // marks order fully_paid at zero balance and closes reminder tasks
+    return pm;
+  },
+
+  voidPayment(paymentId, reason, staff) {
+    const pm = DB.payments.find(p => p.id === paymentId);
+    if (!pm) throw new Error('Payment not found');
+    if (pm.voided) throw new Error('Payment already corrected.');
+    pm.voided = true; pm.voidReason = reason;
+    DB.adjustments.push({ id: uid(), orderId: pm.orderId, type: 'payment_correction', amountCents: 0,
+      reason, staff, previousValue: eur(pm.amountCents) + ' ' + pm.method + ' on ' + fmtDateTime(pm.receivedAt),
+      newValue: 'payment voided', createdAt: nowIso() });
+    const order = Domain.order(pm.orderId);
+    if (order.status === 'fully_paid' && Domain.balanceCents(order.id) + pm.amountCents > 0) order.status = 'confirmed';
+    Domain.reallocateAll(pm.orderId);
+    Domain.refreshAll();
+  },
+
+  /* -------- adjustments (admin only, always audited) -------- */
+  applyAdjustment(orderId, { type, amountCents, reason, staff, previousValue, newValue }) {
+    if (!reason || !reason.trim()) throw new Error('A reason is required for every adjustment.');
+    DB.adjustments.push({ id: uid(), orderId, type, amountCents: amountCents || 0, reason: reason.trim(),
+      staff, previousValue: previousValue || '', newValue: newValue || '', createdAt: nowIso() });
+    if (type === 'write_off') {
+      const order = Domain.order(orderId);
+      if (Domain.balanceCents(orderId) <= 0) { order.status = 'written_off'; order.updatedAt = nowIso(); }
+    }
+    Domain.refreshAll();
+  },
+
+  changeDueDate(instalmentId, newDate, reason, staff) {
+    const inst = DB.instalments.find(i => i.id === instalmentId);
+    if (!inst) throw new Error('Instalment not found');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) throw new Error('Enter a valid date.');
+    Domain.applyAdjustment(inst.dressOrderId, {
+      type: 'due_date_change', reason, staff,
+      previousValue: 'instalment ' + inst.instalmentNumber + ' due ' + fmtDate(inst.dueDate),
+      newValue: 'due ' + fmtDate(newDate),
+    });
+    inst.dueDate = newDate; inst.updatedAt = nowIso();
+    Domain.refreshAll();
+  },
+
+  /* -------- outstanding balances view -------- */
+  balanceRows() {
+    const rows = [];
+    for (const order of DB.orders) {
+      if (order.status === 'cancelled') continue;
+      const balance = Domain.balanceCents(order.id);
+      const writtenOff = order.status === 'written_off';
+      if (balance <= 0 && !writtenOff) continue;
+      if (writtenOff) continue; // written-off balances appear in reporting, not as owing customers
+      const cust = Domain.customer(order.customerId);
+      const next = Domain.nextUnpaidInstalment(order.id);
+      const du = next ? daysUntil(next.dueDate) : null;
+      const lastRem = DB.customerReminders.filter(r => r.orderId === order.id).sort((a, b) => a.sentAt < b.sentAt ? 1 : -1)[0];
+      const dress = Domain.itemsOf(order.id).filter(i => i.category === 'dress').map(i => i.title).join(', ')
+        || Domain.itemsOf(order.id).map(i => i.title).join(', ');
+      let group;
+      if (!next) group = 'no_plan';
+      else if (du < 0) group = next.amountPaidCents > 0 ? 'partially_paid_overdue' : 'overdue';
+      else if (du === 0) group = 'due_today';
+      else if (du <= DB.settings.reminderOffsets.dueSoon) group = 'due_7';
+      else if (du <= DB.settings.reminderOffsets.upcoming) group = 'due_14';
+      else group = 'due_later';
+      const reminderRequired = next && du <= DB.settings.reminderOffsets.dueSoon && (!lastRem || (du < 0 && lastRem.sentAt < new Date(Date.now() - DB.settings.duplicateReminderWindowDays * 86400000).toISOString()));
+      rows.push({
+        order, customer: cust, dress,
+        totalCents: Domain.orderTotalCents(order.id), paidCents: Domain.paidCents(order.id),
+        creditCents: Domain.creditCents(order.id), balanceCents: balance,
+        next, daysUntilDue: du, group, lastReminder: lastRem || null,
+        reminderRequired: !!reminderRequired,
+        planStatus: order.planType ? (next ? next.status : 'paid') : 'no_plan',
+      });
+    }
+    return rows;
+  },
+
+  balanceSummary(rows) {
+    const withinSoon = rows.filter(r => r.daysUntilDue != null && r.daysUntilDue >= 0 && r.daysUntilDue <= DB.settings.reminderOffsets.dueSoon);
+    const overdue = rows.filter(r => r.daysUntilDue != null && r.daysUntilDue < 0);
+    return {
+      totalOutstanding: rows.reduce((s, r) => s + r.balanceCents, 0),
+      dueSoonAmount: withinSoon.reduce((s, r) => s + (r.next ? r.next.amountDueCents - r.next.amountPaidCents : 0), 0),
+      dueSoonCount: withinSoon.length,
+      overdueAmount: overdue.reduce((s, r) => s + r.balanceCents, 0),
+      overdueCount: overdue.length,
+      customersOwing: new Set(rows.map(r => r.customer.id)).size,
+      remindersNeeded: rows.filter(r => r.reminderRequired).length,
+      writtenOffCents: DB.adjustments.filter(a => a.type === 'write_off').reduce((s, a) => s + a.amountCents, 0),
+    };
+  },
+
+  /* -------- customer reminder guard-rails --------
+     These are the conditions under which a reminder must never be sent
+     automatically; for manual sends they surface as blocks/warnings. */
+  reminderBlocks(orderId) {
+    const order = Domain.order(orderId);
+    const blocks = [];
+    if (Domain.balanceCents(orderId) <= 0) blocks.push('The balance is already paid.');
+    if (order.status === 'cancelled') blocks.push('The order is cancelled.');
+    if (order.refundProcessing) blocks.push('A refund is being processed.');
+    if (order.remindersPaused) blocks.push('Reminders are paused for this order.');
+    if (order.needsReview) blocks.push('The record is flagged as needing review.');
+    if (order.promisedPaymentDate && order.promisedPaymentDate >= todayStr())
+      blocks.push('An agreed payment date is in the future (' + fmtDate(order.promisedPaymentDate) + ').');
+    return blocks;
+  },
+  duplicateReminderWarning(orderId) {
+    const win = DB.settings.duplicateReminderWindowDays;
+    const cutoff = new Date(Date.now() - win * 86400000).toISOString();
+    const recent = DB.customerReminders.filter(r => r.orderId === orderId && r.sentAt >= cutoff)
+      .sort((a, b) => a.sentAt < b.sentAt ? 1 : -1)[0];
+    return recent ? 'A reminder was already sent ' + fmtDateTime(recent.sentAt) + ' by ' + recent.sentBy +
+      ' (' + recent.method + '). Sending again within ' + win + ' days needs an authorised override.' : null;
+  },
+
+  invoiceNumber(order, variant) {
+    return 'INV-' + order.reference.replace('DB-', '') + (variant === 'accountant' ? '-A' : '-C');
+  },
+
+  /* -------- stock export -------- */
+  stockRows() {
+    const map = new Map();
+    for (const order of DB.orders) {
+      if (order.status === 'cancelled') continue;
+      for (const it of Domain.itemsOf(order.id)) {
+        const key = it.styleCode + '|' + it.title;
+        if (!map.has(key)) map.set(key, { styleCode: it.styleCode, title: it.title, category: it.category, total: 0, variants: new Map() });
+        const row = map.get(key);
+        row.total += it.quantity;
+        const vk = (it.colour || '—') + ' / ' + (it.size || '—');
+        row.variants.set(vk, (row.variants.get(vk) || 0) + it.quantity);
+      }
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  },
+};
+</script>
+<script>
+/* =====================================================================
+   Integration services. The app runs fully on mock data with NO keys
+   present; supplying credentials at the marked seams switches to live.
+   ===================================================================== */
+
+const Credentials = {
+  // ------------------------------------------------------------------
+  // LIVE CREDENTIAL SEAM — Shopify Admin API
+  // To go live, fill these in (store domain + Admin API access token
+  // with read_products scope) and ShopifyService switches from the
+  // seeded mock catalogue to the real one. Nothing else changes.
+  // ------------------------------------------------------------------
+  shopify: {
+    storeDomain: '',        // e.g. 'darcybow.myshopify.com'
+    adminApiAccessToken: '', // shpat_...  (read_products)
+  },
+  // ------------------------------------------------------------------
+  // LIVE CREDENTIAL SEAM — Appointly (appointment booking on Shopify)
+  // Appointly asks three questions when a customer books an appointment
+  // through the Shopify storefront and stores the answers with the
+  // booking. Fill in the Appointly API key (Appointly app → Settings →
+  // API) — plus the same Shopify credentials above — and
+  // AppointlyService pulls each booking's Q&As and matches them to
+  // customers by email/phone. Until then, seeded sample bookings are
+  // shown and staff can log answers manually.
+  // ------------------------------------------------------------------
+  appointly: {
+    apiKey: '',
+  },
+};
+
+const ShopifyService = {
+  isLive: () => !!(Credentials.shopify.storeDomain && Credentials.shopify.adminApiAccessToken),
+  // Returns the full product catalogue for staff selection. The dresses,
+  // shoes and accessories exist in Shopify as product records only —
+  // checkout is used solely for the €25 deposit product, so no order or
+  // payment data ever comes from Shopify; just the catalogue.
+  async fetchCatalogue() {
+    if (ShopifyService.isLive()) {
+      // LIVE CREDENTIAL SEAM — real call goes here, e.g.:
+      //   GET https://{storeDomain}/admin/api/2024-10/products.json
+      //   Header: X-Shopify-Access-Token: {adminApiAccessToken}
+      // Map each product/variant to { id, shopifySourceId, title, styleCode,
+      // category, retailPriceCents, colours[], sizes[], active } and merge
+      // into DB.products keyed on shopifySourceId.
+      throw new Error('Live Shopify fetch not wired in this offline slice.');
+    }
+    return DB.products.filter(p => p.active); // mock catalogue seeded from Seed.build()
+  },
+};
+
+const AppointlyService = {
+  isLive: () => !!(Credentials.appointly.apiKey && ShopifyService.isLive()),
+  // Returns appointment bookings with the three question/answer pairs.
+  async fetchBookings() {
+    if (AppointlyService.isLive()) {
+      // LIVE CREDENTIAL SEAM — real sync goes here, e.g.:
+      //   GET https://api.appointly.io/v1/bookings  (X-Api-Key: {apiKey})
+      //   or read the booking's question answers from the Shopify order's
+      //   note_attributes on the Appointly booking order.
+      // Map each booking to { id, customerId (matched on email/phone),
+      // source:'appointly', service, appointmentAt, status, bookedAt,
+      // questions:[{q,a}×3], syncedAt } and merge into DB.appointments.
+      throw new Error('Live Appointly sync not wired in this offline slice.');
+    }
+    return DB.appointments; // seeded sample bookings (same shape as the live sync)
+  },
+  bookingsFor(customerId) {
+    return DB.appointments.filter(a => a.customerId === customerId)
+      .sort((a, b) => a.appointmentAt < b.appointmentAt ? 1 : -1);
+  },
+};
+
+</script>
+<script>
+/* =====================================================================
+   UI — hash-routed single page app.
+   ===================================================================== */
+const UI = {
+  modal(html, wide) {
+    const root = document.getElementById('modalroot');
+    const box = document.getElementById('modalbox');
+    box.className = 'box' + (wide ? ' wide' : '');
+    box.innerHTML = '<button class="x" onclick="UI.closeModal()">✕</button>' + html;
+    root.classList.add('open');
+    box.scrollTop = 0;
+  },
+  closeModal() { document.getElementById('modalroot').classList.remove('open'); },
+  toast(msg, ms = 3200) {
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), ms);
+  },
+  err(e) { UI.toast('⚠ ' + (e.message || e), 5000); },
+
+  badge(status) {
+    const map = {
+      paid: ['b-green', 'Paid'], fully_paid: ['b-green', 'Fully paid'], scheduled: ['b-grey', 'Scheduled'],
+      due_soon: ['b-amber', 'Due soon'], partially_paid: ['b-blue', 'Partially paid'], overdue: ['b-red', 'Overdue'],
+      cancelled: ['b-grey', 'Cancelled'], confirmed: ['b-blue', 'Active'], written_off: ['b-grey', 'Written off'],
+      draft: ['b-grey', 'Draft'], no_plan: ['b-amber', 'No plan yet'],
+      not_due: ['b-grey', 'Not due'], pending: ['b-amber', 'Reminder pending'], sent: ['b-blue', 'Reminder sent'], failed: ['b-red', 'Send failed'],
+      open: ['b-amber', 'Open'], reviewed: ['b-blue', 'Reviewed'], snoozed: ['b-grey', 'Snoozed'], closed: ['b-green', 'Closed'],
+      mock_sent: ['b-blue', 'Mock sent'],
+    };
+    const [cls, label] = map[status] || ['b-grey', status];
+    return `<span class="badge ${cls}">${esc(label)}</span>`;
+  },
+  // Occasion badge, colour-coded by type so Communion / Confirmation /
+  // Christening / Debs / Wedding are distinguishable at a glance.
+  eventBadge(eventHotel) {
+    if (!eventHotel) return '<span class="muted">—</span>';
+    const [type, venue] = eventHotel.split(/\s+—\s+/);
+    const cls = /communion/i.test(type) ? 'b-blue'
+      : /confirmation/i.test(type) ? 'b-purple'
+      : /christening|baptism/i.test(type) ? 'b-teal'
+      : /debs|prom|grad/i.test(type) ? 'b-brand'
+      : /wedding|flower/i.test(type) ? 'b-gold' : 'b-grey';
+    return `<span class="badge ${cls}">${esc(type)}</span>${venue ? `<br><span class="muted">${esc(venue)}</span>` : ''}`;
+  },
+  dueBadge(du) {
+    if (du == null) return '';
+    if (du < 0) return `<span class="badge b-red">${Math.abs(du)}d overdue</span>`;
+    if (du === 0) return `<span class="badge b-red">Due today</span>`;
+    if (du <= DB.settings.reminderOffsets.dueSoon) return `<span class="badge b-amber">${du}d</span>`;
+    return `<span class="badge b-grey">${du}d</span>`;
+  },
+};
+
+const App = {
+  resetDemo() {
+    if (!confirm('Reset all demo data back to the seeded sample set?')) return;
+    Store.reset(); Domain.refreshAll(); App.route();
+    UI.toast('Demo data reset.');
+  },
+
+  /* ---------- router ---------- */
+  route() {
+    Domain.refreshAll();
+    const hash = location.hash || '#/dashboard';
+    const [_, pageRaw, argRaw] = hash.split('/');
+    const page = (pageRaw || '').split('?')[0];
+    const arg = (argRaw || '').split('?')[0];
+    const nav = [
+      ['dashboard', '⌂', 'Dashboard'],
+      ['customers', '👥', 'Customers', () => DB.customers.length],
+      ['venues', '📍', 'Venues'],
+      ['import', '⇪', 'Connect data'],
+    ];
+    document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
+      `<a href="#/${key}" class="${page === key ? 'active' : ''}"><span>${icon}</span> ${label}${cnt ? `<span class="cnt">${cnt()}</span>` : ''}</a>`).join('');
+    const main = document.getElementById('main');
+    const pages = {
+      dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
+      venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
+      import: Pages.importPage,
+    };
+    main.innerHTML = (pages[page] || Pages.dashboard)();
+    main.scrollTop = 0;
+
+    const s = document.getElementById('pagesearch');
+    if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+  },
+  go(hash) { if (location.hash === hash) App.route(); else location.hash = hash; },
+};
+
+const Pages = {};
+
+/* =============================== DASHBOARD =============================== */
+Pages.dashboard = () => {
+  const upcomingAppts = DB.appointments.filter(a => a.appointmentAt >= todayStr())
+    .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1);
+  const withAnswers = new Set(DB.appointments.filter(a => a.questions.some(qa => qa.a)).map(a => a.customerId));
+  const nextVenues = venueGroups().filter(v => v.nextDate).slice(0, 6);
+  return `
+    <h1>Dashboard</h1>
+    <p class="sub">Everything Shopify + Appointly know, side by side: customers, what they ordered, when they're booked in and the answers they gave. Viewing only — printing is the one action.</p>
+    <div class="statrow">
+      <div class="stat"><div class="l">Customers</div><div class="v">${DB.customers.length}</div></div>
+      <div class="stat"><div class="l">Orders</div><div class="v">${DB.orders.length}</div></div>
+      <div class="stat good"><div class="l">Upcoming appointments</div><div class="v">${upcomingAppts.length}</div></div>
+      <div class="stat"><div class="l">Customers with booking answers</div><div class="v">${withAnswers.size}</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="primary" onclick="Actions.printAllCustomerSheets()">🖨 Print all customer sheets (details + booking answers)</button>
+      ${typeof LiveSync !== 'undefined' && LiveSync.available() ? '<button onclick="LiveSync.sync()">⟳ Sync from Shopify</button>' : ''}
+      <button onclick="App.go('#/customers')">Customer directory</button>
+      <button onclick="App.go('#/venues')">Venues</button>
+    </div>
+    ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">✅ Showing your ${DB.importInfo.live ? 'live Shopify + Appointly data — last sync' : 'imported Shopify + Appointly data — last import'} ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Connect data →</a></div>`
+      : `<div class="seam">🔌 Sample data — nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly →</b></a> Sync live via the free Google web app, or drop in CSV exports — either fills these screens with the real customers and booking answers.</div>`}
+    <div class="cols2">
+      <div>
+        <h2>Next appointments</h2>
+        ${upcomingAppts.length ? `<div class="tablewrap"><table>
+          <thead><tr><th>When</th><th>Customer</th><th>Type</th><th>Staff</th></tr></thead>
+          <tbody>${upcomingAppts.slice(0, 8).map(a => {
+            const c = Domain.customer(a.customerId);
+            return `<tr class="click" onclick="App.go('#/customer/${a.customerId}')">
+              <td><b>${fmtDate(a.appointmentAt)}</b>${a.time ? ' · <span class="vclock" style="font-size:.95rem">' + esc(a.time) + '</span>' : ''}</td>
+              <td><b>${esc(c ? c.name : '—')}</b>${c && c.daughterName ? `<br><span class="muted small">for ${esc(c.daughterName)}</span>` : ''}</td>
+              <td class="small">${esc(a.service)}</td>
+              <td class="small">${esc(a.staffName || '—')}</td></tr>`;
+          }).join('')}</tbody></table></div>`
+        : '<div class="card muted">No upcoming appointments.</div>'}
+      </div>
+      <div>
+        <h2>Next event days</h2>
+        ${nextVenues.length ? `<div class="tablewrap"><table>
+          <thead><tr><th>Venue</th><th>Next date</th><th class="num">Customers</th></tr></thead>
+          <tbody>${nextVenues.map(v => `<tr class="click" onclick="App.go('#/venue/${encodeURIComponent(v.venue).replace(/'/g, '%27')}')">
+            <td><b>${esc(v.venue)}</b></td><td>${fmtWd(v.nextDate)}</td><td class="num">${v.orders.length}</td></tr>`).join('')}</tbody></table></div>`
+        : '<div class="card muted">No upcoming event days.</div>'}
+      </div>
+    </div>`;
+};
+
+/* =============================== CUSTOMERS =============================== */
+let customerQuery = '';
+let customerEventFilter = '';
+let customerDressFilter = '';
+Pages.customers = () => {
+  const q = customerQuery.trim().toLowerCase();
+  const events = [...new Set(DB.orders.map(o => o.eventHotel).filter(Boolean))].sort();
+  const dresses = [...new Set(DB.orderItems.filter(i => i.category === 'dress').map(i => i.title))].sort();
+  const matches = DB.customers.filter(c => {
+    const orders = Domain.ordersOf(c.id);
+    if (customerEventFilter && !orders.some(o => o.eventHotel === customerEventFilter)) return false;
+    if (customerDressFilter && !orders.some(o => Domain.itemsOf(o.id).some(i => i.title === customerDressFilter))) return false;
+    if (!q) return true;
+    const hay = [c.name, c.daughterName, c.email, c.phone,
+      ...orders.map(o => o.eventHotel),
+      ...orders.flatMap(o => Domain.itemsOf(o.id).map(i => i.title + ' ' + i.styleCode)),
+    ].join(' ').toLowerCase();
+    return q.split(/\s+/).every(w => hay.includes(w));
+  }).map(c => {
+    // Most recent activity first: latest order, or latest booking for
+    // customers who only booked (no Shopify order).
+    let k = '';
+    for (const o of Domain.ordersOf(c.id)) if (o.createdAt > k) k = o.createdAt;
+    for (const a of AppointlyService.bookingsFor(c.id)) if ((a.bookedAt || '') > k) k = a.bookedAt;
+    return { c, k: k || c.createdAt || '' };
+  }).sort((a, b) => a.k < b.k ? 1 : a.k > b.k ? -1 : a.c.name.localeCompare(b.c.name)).map(x => x.c);
+  return `
+    <div class="flex" style="justify-content:space-between; margin-bottom:14px">
+      <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
+      <div class="flex">
+        <button class="primary" onclick="Actions.printAllCustomerSheets()">🖨 Print all customer sheets</button>
+      </div>
+    </div>
+    <div class="flex" style="margin-bottom:16px">
+      <input id="pagesearch" class="searchbar" style="margin:0; flex:1; max-width:460px" placeholder="Search name, daughter, phone, email…"
+        value="${esc(customerQuery)}" oninput="customerQuery = this.value; App.route()">
+      <select id="ev-filter" class="bigselect" onchange="customerEventFilter = this.value; App.route()">
+        <option value="">All events</option>
+        ${events.map(ev => `<option value="${esc(ev)}" ${customerEventFilter === ev ? 'selected' : ''}>${esc(ev)}</option>`).join('')}
+      </select>
+      <select id="dress-filter" class="bigselect" onchange="customerDressFilter = this.value; App.route()">
+        <option value="">All dresses</option>
+        ${dresses.map(d => `<option value="${esc(d)}" ${customerDressFilter === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+      </select>
+      ${customerEventFilter || customerDressFilter || customerQuery ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; App.route()">✕ Clear</button>` : ''}
+    </div>
+    <div class="tablewrap"><table class="roomy">
+      <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th>Next appointment</th><th>Booking answers</th></tr></thead>
+      <tbody>
+        ${matches.map(c => {
+          const orders = Domain.ordersOf(c.id);
+          const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+          const items = orders.flatMap(o => Domain.itemsOf(o.id));
+          const firstItem = items[0];
+          const appts = AppointlyService.bookingsFor(c.id);
+          const upcoming = appts.filter(a => a.appointmentAt >= todayStr())
+            .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+          const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
+          return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
+            <td><span class="cname">${esc(c.name)}</span>${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
+            <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
+            <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
+            <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
+            <td class="small">${upcoming ? `<b>${fmtDate(upcoming.appointmentAt)}</b>${upcoming.time ? ' · <span class="vclock" style="font-size:.9rem">' + esc(upcoming.time) + '</span>' : ''}` : '<span class="muted">—</span>'}</td>
+            <td>${answered ? `<span class="badge b-brand">${answered} booking${answered === 1 ? '' : 's'}</span>` : '<span class="muted small">none yet</span>'}</td></tr>`;
+        }).join('') || '<tr><td colspan="6" class="muted">No customers match.</td></tr>'}
+      </tbody></table></div>`;
+};
+
+/* =============================== VENUES =============================== */
+const fmtWd = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
+
+// Everyone attending each venue, from BOTH sources: orders with event info,
+// plus bookings (e.g. from the Appointly export) whose service names the
+// venue — so customers without a Shopify order still appear. Where a booking
+// exists for a customer at a venue, its date wins over the order's copy.
+function venueGroups() {
+  const venOf = eh => { const p = String(eh).split(/\s+—\s+/); return (p[1] || p[0]).trim(); };
+  const apptBy = new Map(); // customerId|venue → best appointment (export wins)
+  for (const a of DB.appointments) {
+    if (!a.eventHotel) continue;
+    const k = a.customerId + '|' + venOf(a.eventHotel);
+    const cur = apptBy.get(k);
+    if (!cur || (a.source === 'appointly_csv' && cur.source !== 'appointly_csv')) apptBy.set(k, a);
+  }
+  const groups = new Map();
+  const seen = new Set();
+  const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
+  for (const o of DB.orders) {
+    if (!o.eventHotel) continue;
+    const venue = venOf(o.eventHotel);
+    const a = apptBy.get(o.customerId + '|' + venue);
+    push(venue, a && a.appointmentAt !== o.eventDate ? Object.assign({}, o, { eventDate: a.appointmentAt }) : o);
+    seen.add(o.customerId + '|' + venue);
+  }
+  for (const [k, a] of apptBy) {
+    if (seen.has(k)) continue;
+    push(venOf(a.eventHotel), { id: 'appt-' + a.id, customerId: a.customerId, reference: '', status: 'confirmed',
+      createdAt: a.bookedAt || nowIso(), eventHotel: a.eventHotel, eventDate: a.appointmentAt, planType: null, staffNotes: '' });
+  }
+  return [...groups.entries()].map(([venue, orders]) => {
+    const dates = [...new Set(orders.map(o => o.eventDate).filter(Boolean))].sort();
+    const nextDate = dates.find(d => d >= todayStr()) || null;
+    const occasions = [...new Set(orders.map(o => (String(o.eventHotel).split(/\s+—\s+/)[0] || '').trim()).filter(Boolean))];
+    return { venue, orders, dates, nextDate, occasions };
+  }).sort((a, b) => (a.nextDate || '9999-' + (a.dates.slice(-1)[0] || '')) < (b.nextDate || '9999-' + (b.dates.slice(-1)[0] || '')) ? -1 : 1);
+}
+
+/* ---- Venues board: big clean bubbles, no customers, chronological ---- */
+Pages.venues = () => {
+  const cards = venueGroups();
+  return `
+    <h1 style="margin-bottom:2px">Venues <span class="muted" style="font-size:1rem; font-weight:400">${cards.length}</span></h1>
+    <p class="sub">In date order — tap a venue to see everyone booked for it and when they're coming in.</p>
+    <div class="venuegrid">
+      ${cards.map(v => `
+        <div class="vtile" onclick="App.go('#/venue/${encodeURIComponent(v.venue).replace(/'/g, '%27')}')">
+          <div class="vtile-date">${v.nextDate ? fmtWd(v.nextDate) + (v.dates.filter(d => d >= todayStr()).length > 1 ? ' · +' + (v.dates.filter(d => d >= todayStr()).length - 1) + ' more date' + (v.dates.filter(d => d >= todayStr()).length > 2 ? 's' : '') : '') : 'No upcoming date'}</div>
+          <div class="vtile-name">${esc(v.venue)}</div>
+          <div class="vtile-sub">${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · ${v.occasions.map(oc => UI.eventBadge(oc + ' — ').split('<br>')[0]).join(' ')}</div>
+        </div>`).join('')}
+    </div>`;
+};
+
+/* ---- Single venue: every customer + coming-in times, chronological.
+       Venues often host a whole weekend (Sat + Sun), so each event day
+       gets its own filter chip alongside "All customers". ---- */
+let venueDayFilter = '';
+let venueDayFilterVenue = '';
+Pages.venueDetail = (venueName) => {
+  const v = venueGroups().find(x => x.venue === venueName);
+  if (!v) return `<p><a class="plain" href="#/venues">← Venues</a></p><h1>Venue not found</h1>`;
+  if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueDayFilterVenue = venueName; }
+  const allRows = v.orders.map(o => {
+    const c = Domain.customer(o.customerId);
+    const appts = AppointlyService.bookingsFor(c.id);
+    const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+    const last = appts[0];
+    const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
+    return { o, c, upcoming, last, dress };
+  });
+  const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
+  const dayChips = v.dates.map(d => ({
+    date: d,
+    label: dayName(d) + ' · ' + new Date(d + 'T00:00').toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
+    count: allRows.filter(r => r.o.eventDate === d).length,
+  }));
+  const key = r => r.upcoming ? r.upcoming.appointmentAt + 'T' + (r.upcoming.time || '00:00') : (r.last ? r.last.appointmentAt + 'T' + (r.last.time || '00:00') : '');
+  const row = (r, timeHtml, appt) => `
+    <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
+      <div class="vtime">${timeHtml}</div>
+      <div style="flex:1; min-width:0">
+        <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
+        <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
+      </div>
+      ${appt && appt.staffName ? `<div><span class="badge b-grey">${esc(appt.staffName)}</span></div>` : ''}
+      <div style="text-align:right">
+        ${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}
+      </div>
+    </div>`;
+
+  let body;
+  if (venueDayFilter) {
+    /* ---- Day planner: hourly blocks 9am–6pm, 6-per-slot capacity,
+           staff assigned per customer, printable run sheet ---- */
+    const day = venueDayFilter;
+    const cfg = DB.settings.eventDay;
+    const dayRows = allRows.filter(r => r.o.eventDate === day);
+    const slotted = [], notBooked = [];
+    for (const r of dayRows) {
+      const a = DB.appointments.filter(x => x.customerId === r.c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      if (a) slotted.push({ ...r, a }); else notBooked.push(r);
+    }
+    const hh = h => String(h).padStart(2, '0');
+    const blocks = [];
+    for (let h = cfg.startHour; h < cfg.endHour; h++) {
+      const inBlock = slotted.filter(s => s.a.time && s.a.time >= hh(h) + ':00' && s.a.time < hh(h + 1) + ':00')
+        .sort((p, q) => p.a.time < q.a.time ? -1 : 1);
+      blocks.push({ n: blocks.length + 1, from: hh(h) + ':00', to: hh(h + 1) + ':00', rows: inBlock });
+    }
+    const unscheduled = slotted.filter(s => !s.a.time || s.a.time < hh(cfg.startHour) + ':00' || s.a.time >= hh(cfg.endHour) + ':00');
+    body = `
+      <div class="toolbar">
+        <button class="primary" onclick="Actions.printRunSheet('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">🖨 Staff run sheet</button>
+        <button class="primary" onclick="Actions.printCustomerSheets('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">🖨 Customer sheets (A4, one per customer)</button>
+        <span class="small muted">Up to ${cfg.slotCapacity} customers per slot · one staff member per customer (private appointments).</span>
+      </div>
+      ${blocks.map(b => `
+        <div class="flex blockhead">
+          <b>Block ${b.n}</b><span class="muted">${b.from} – ${b.to}</span>
+          <span class="badge ${b.rows.length > cfg.slotCapacity ? 'b-red' : b.rows.length ? 'b-blue' : 'b-grey'}">${b.rows.length ? b.rows.length + ' booked' : 'free'}${b.rows.length > cfg.slotCapacity ? ' — over capacity!' : ''}</span>
+        </div>
+        ${b.rows.length ? `<div class="card" style="padding-top:2px; padding-bottom:2px; margin-bottom:10px">
+          ${b.rows.map(s => row(s, `<span class="vclock">${esc(s.a.time)}</span>`, s.a)).join('')}</div>` : ''}`).join('')}
+      ${unscheduled.length ? `<h2>Booked, no time set (${unscheduled.length})</h2><div class="card" style="padding-top:2px; padding-bottom:2px">
+        ${unscheduled.map(s => row(s, `<span class="badge b-amber">No time</span>`, s.a)).join('')}</div>` : ''}
+      ${notBooked.length ? `<h2>Not booked in yet (${notBooked.length})</h2><div class="card" style="padding-top:2px; padding-bottom:2px">
+        ${notBooked.map(r => `
+          <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
+            <div class="vtime"><span class="badge b-amber">No slot</span></div>
+            <div style="flex:1"><span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
+              <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}</span></div>
+            <div>${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}</div>
+          </div>`).join('')}</div>` : ''}`;
+  } else {
+    const booked = allRows.filter(r => r.upcoming).sort((a, b) => key(a) < key(b) ? -1 : 1);
+    const noAppt = allRows.filter(r => !r.upcoming && !r.last).sort((a, b) => (a.o.eventDate || '9999') < (b.o.eventDate || '9999') ? -1 : 1);
+    const visited = allRows.filter(r => !r.upcoming && r.last).sort((a, b) => key(a) < key(b) ? -1 : 1);
+    const venueArg = encodeURIComponent(v.venue).replace(/'/g, '%27');
+    body = `
+      ${dayChips.length ? `<div class="card" style="margin-bottom:16px; padding-top:12px; padding-bottom:8px">
+        <h2 style="margin-top:0; margin-bottom:4px">🖨 Print event sheets</h2>
+        <p class="small muted" style="margin:0 0 4px">Everything for the day in one go — an A4 customer sheet for every customer booked at this venue on that date, plus the staff run sheet.</p>
+        ${dayChips.map(dc => `
+          <div class="flex" style="padding:9px 0; border-top:1px solid var(--line); flex-wrap:wrap; align-items:center">
+            <b>${esc(dc.label)}</b>
+            <span class="small muted">${dc.count} customer${dc.count === 1 ? '' : 's'}</span>
+            <span style="flex:1"></span>
+            <button class="small primary" onclick="Actions.printCustomerSheets('${venueArg}','${dc.date}')">🖨 Customer sheets (${dc.count})</button>
+            <button class="small" onclick="Actions.printRunSheet('${venueArg}','${dc.date}')">🖨 Staff run sheet</button>
+          </div>`).join('')}
+      </div>` : ''}
+      ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+        ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '—')}</span>`, r.upcoming)).join('')}</div>` : ''}
+      ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+        ${noAppt.map(r => row(r, `<span class="badge b-amber">Not booked</span>`)).join('')}</div>` : ''}
+      ${visited.length ? `<h2>Already visited (${visited.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
+        ${visited.map(r => row(r, `<span class="muted small">${fmtWd(r.last.appointmentAt)}</span><br><span class="vclock" style="color:var(--muted)">${esc(r.last.time || '—')}</span>`)).join('')}</div>` : ''}`;
+  }
+  return `
+    <p><a class="plain" href="#/venues">← Venues</a></p>
+    <h1 style="margin-bottom:2px">📍 ${esc(v.venue)}</h1>
+    <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> · ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} · slot times from Appointly, in time order.</p>
+    <div class="chips">
+      <button class="chip ${!venueDayFilter ? 'on' : ''}" onclick="venueDayFilter=''; App.route()">All customers (${allRows.length})</button>
+      ${dayChips.map(dc => `<button class="chip ${venueDayFilter === dc.date ? 'on' : ''}" onclick="venueDayFilter='${dc.date}'; App.route()">${esc(dc.label)} (${dc.count})</button>`).join('')}
+    </div>
+    ${body}`;
+};
+
+Pages.customerDetail = (id) => {
+  const c = Domain.customer(id);
+  if (!c) return '<h1>Customer not found</h1>';
+  const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  return `
+    <p><a class="plain" href="#/customers">← Customers</a></p>
+    <h1>${esc(c.name)}</h1>
+    <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> · ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
+    <div class="toolbar">
+      <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">🖨 Print this customer's sheet (details + booking answers)</button>
+    </div>
+    <div class="cols2">
+      <div class="card">
+        <h2 style="margin-top:0">Details</h2>
+        <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
+        ${c.notes ? `<div class="dl-row"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes)} <span class="small muted">(internal)</span></span></div>` : ''}
+      </div>
+      <div class="card" style="grid-row: span 2">
+        <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
+        ${AppointlyService.bookingsFor(c.id).map(a => `
+          <div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
+            <div class="flex" style="margin-bottom:10px">
+              <b>${esc(a.service)}</b>
+              <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
+              <span class="small muted">${fmtDate(a.appointmentAt)}${a.time ? ' · <b>' + esc(a.time) + '</b>' : ''}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
+            </div>
+            ${a.staffName ? `<div class="small" style="margin-bottom:8px">Looked after by <b>${esc(a.staffName)}</b></div>` : ''}
+            ${a.questions.length ? a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
+              <ul>${(qa.a || '—').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')
+              : '<div class="small muted">Event-day slot — no booking questions.</div>'}
+          </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet — they appear here once the customer books through the site.</p>'}
+        ${AppointlyService.isLive() || DB.importInfo ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — sample data. Bring in the real booking answers on the <a class="plain" href="#/import">Connect data</a> page.</div>'}
+      </div>
+      <div>
+        <h2 style="margin-top:0">Orders (${orders.length})</h2>
+        ${orders.map(o => {
+          const items = Domain.itemsOf(o.id);
+          return `<div class="card" style="margin-bottom:12px">
+            <div class="flex" style="justify-content:space-between">
+              <b>${esc(o.reference)}</b>
+              <span style="margin-left:auto" class="small muted">${fmtDateTime(o.createdAt).split(',')[0]}</span>
+            </div>
+            <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + (i.colour || i.size ? ' (' + [i.colour, i.size].filter(Boolean).map(esc).join(', ') + ')' : '')).join(' · ')}</div>
+            <div class="small" style="margin-top:6px">${UI.eventBadge(o.eventHotel).replace('<br>', ' ')}${o.eventDate ? ' <span class="muted">· ' + fmtDate(o.eventDate) + '</span>' : ''}</div>
+          </div>`;
+        }).join('') || '<div class="card muted">No orders yet.</div>'}
+      </div>
+    </div>`;
+};
+</script>
+<script>
+/* =============================== CONNECT DATA (CSV import) =============================== */
+/* "Connecting" Shopify + Appointly without a server: both apps have
+   Export buttons, and this page turns those CSV files into the same
+   shape as the seeded sample data. Browsers can't call the Shopify
+   Admin API directly (blocked for security, and the token would be
+   exposed), so a fully automatic sync needs this dashboard hosted with
+   a small backend — the LIVE CREDENTIAL SEAMs above mark where that
+   plugs in when the time comes. */
+
+function parseCsv(text) {
+  text = String(text || '').replace(/^\uFEFF/, '');
+  const rows = []; let row = [], cell = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+      else cell += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); cell = '';
+      if (row.length > 1 || row[0].trim() !== '') rows.push(row);
+      row = [];
+    } else cell += ch;
+  }
+  row.push(cell);
+  if (row.length > 1 || row[0].trim() !== '') rows.push(row);
+  if (!rows.length) return { headers: [], records: [] };
+  const headers = rows[0].map(h => h.trim());
+  const records = rows.slice(1).map(r => { const o = {}; headers.forEach((h, i) => o[h] = (r[i] || '').trim()); return o; });
+  return { headers, records };
+}
+
+const ImportService = {
+  state: { customers: null, orders: null, appointly: null },
+
+  async fileChosen(kind, input) {
+    try {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const parsed = parseCsv(text);
+      if (!parsed.records.length) throw new Error('No data rows found in ' + file.name + ' — is it a CSV export?');
+      ImportService.state[kind] = { name: file.name, raw: text, headers: parsed.headers, records: parsed.records };
+      App.route();
+    } catch (e) { input.value = ''; UI.err(e); }
+  },
+  clear(kind) { ImportService.state[kind] = null; App.route(); },
+
+  // First header equal to a candidate wins; then first header containing one.
+  _col(headers, ...cands) {
+    for (const cand of cands) { const h = headers.find(x => x.toLowerCase() === cand); if (h) return h; }
+    for (const cand of cands) { const h = headers.find(x => x.toLowerCase().includes(cand)); if (h) return h; }
+    return null;
+  },
+  _digits: s => String(s || '').replace(/\D/g, ''),
+  _normDate(str) {
+    const s = String(str || '').trim();
+    if (!s) return '';
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[0];
+    m = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/); // Irish exports: day first
+    if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+    const d = new Date(s);
+    return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  },
+  _normTime(str) {
+    const m = String(str || '').match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+    if (!m) return '';
+    let h = parseInt(m[1], 10);
+    if (m[3]) { const pm = m[3].toLowerCase() === 'pm'; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+    return String(h).padStart(2, '0') + ':' + m[2];
+  },
+  // Appointly's export can pack all responses into one cell:
+  //   "Ques: What is your Daughter's Name? Ans: Emilia ... Ques: ... Ans: ..."
+  // Split those into proper question/answer pairs and drop export junk
+  // (Variant / Default Title / empty Custom Questions labels).
+  _expandQas(qas) {
+    const out = [];
+    for (const qa of qas || []) {
+      const q = String(qa.q || '').trim(), a = String(qa.a || '').trim();
+      if (!a) continue;
+      if (/^variant$/i.test(q) || /^default title$/i.test(a)) continue;
+      if (/Ques\s*:/i.test(a)) {
+        const re = /Ques\s*:\s*([\s\S]*?)\s*Ans\s*:\s*([\s\S]*?)(?=Ques\s*:|$)/gi;
+        let m;
+        while ((m = re.exec(a))) { if (m[2].trim()) out.push({ q: m[1].trim(), a: m[2].trim() }); }
+        continue;
+      }
+      if (/^custom questions?$/i.test(q)) continue;
+      out.push({ q, a });
+    }
+    return out;
+  },
+  // "Darcy Day Out at The Cashel Palace, Tipperary - 19th & 20th September
+  // 2026 (Deleted)" → "Darcy Day Out — The Cashel Palace, Tipperary".
+  _eventFromTitle(t) {
+    const stripped = String(t || '').split(/\s+Event\b/i)[0].replace(/\s*\(deleted\)\s*/ig, ' ').trim();
+    const atIdx = stripped.toLowerCase().lastIndexOf(' at ');
+    const occ = atIdx > 0 ? stripped.slice(0, atIdx).trim() : '';
+    let ven = atIdx > 0 ? stripped.slice(atIdx + 4).trim() : stripped;
+    ven = ven.replace(/\s*[-–]\s*(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day\b|\d{1,2}(?:st|nd|rd|th)\b)[\s\S]*$/i, '').trim() || ven;
+    return occ ? occ + ' — ' + ven : ven;
+  },
+  // The booking questions include contact fields (Address 1/2/3, Postcode,
+  // Mobile, Email) — fold those into the customer record and keep only the
+  // real questions.
+  _absorbContactQas(cust, qas) {
+    const rest = [];
+    const addr = { a1: '', a2: '', a3: '', post: '' };
+    for (const qa of qas) {
+      const q = String(qa.q || '').toLowerCase();
+      if (/^address\s*1/.test(q)) addr.a1 = qa.a;
+      else if (/^address\s*2/.test(q)) addr.a2 = qa.a;
+      else if (/^address\s*3/.test(q)) addr.a3 = qa.a;
+      else if (/^(post\s*code|postcode|eircode)/.test(q)) addr.post = qa.a;
+      else if (/^(mobile|phone|contact)\b/.test(q)) { if (cust && !cust.phone) cust.phone = qa.a; }
+      else if (/^e-?mail/.test(q)) { /* already keyed on email */ }
+      else rest.push(qa);
+    }
+    const full = [addr.a1, addr.a2, addr.a3, addr.post].filter(Boolean).join(', ');
+    if (full && cust && !cust.address) cust.address = full;
+    return rest;
+  },
+  // Sort an order's attribute [key, value] pairs into booking details,
+  // event info and question answers. Shared by the CSV importer and the
+  // live Shopify sync (Appointly writes bookings onto orders this way).
+  _classifyAttrs(pairs) {
+    const normDate = ImportService._normDate, normTime = ImportService._normTime;
+    const out = { eventHotel: '', eventDate: '', bDate: '', bTime: '', bService: '', bStaff: '', qas: [] };
+    for (const [k, val] of pairs) {
+      const kl = k.toLowerCase();
+      // Anything phrased like a question stays a question — booking Q&As
+      // often contain words like "occasion" or "date" in the sentence.
+      const isQuestion = k.includes('?') || k.length > 40;
+      if (isQuestion) { out.qas.push({ q: k, a: val }); continue; }
+      if (/booking date|appointment date/.test(kl) || kl === 'date') out.bDate = normDate(val);
+      else if (/booking time|appointment time|start time/.test(kl) || kl === 'time') out.bTime = normTime(val);
+      else if (/^(service|appointment type|appointment)$/.test(kl)) out.bService = val;
+      else if (/^(staff|employee|team member)$/.test(kl)) out.bStaff = val;
+      else if (/event date|ceremony date/.test(kl)) out.eventDate = normDate(val);
+      else if (/venue|hotel|location|event|occasion/.test(kl)) out.eventHotel = out.eventHotel || val;
+      else out.qas.push({ q: k, a: val });
+    }
+    return out;
+  },
+
+  // Turn whatever files are loaded into { customers, orders, orderItems, appointments }.
+  build() {
+    const s = ImportService.state;
+    const col = ImportService._col, normDate = ImportService._normDate, normTime = ImportService._normTime;
+    const customers = [], orders = [], orderItems = [], appointments = [], warnings = [];
+    const byEmail = new Map(), byPhone = new Map();
+    const findOrCreateCustomer = (name, email, phone, extra) => {
+      const e = String(email || '').toLowerCase();
+      const p = ImportService._digits(phone);
+      let c = (e && byEmail.get(e)) || (p && byPhone.get(p)) || null;
+      if (!c) {
+        c = { id: uid(), name: (name || email || 'Unknown customer').trim(), daughterName: '', email: email || '',
+          phone: phone || '', address: '', notes: '', createdAt: nowIso() };
+        customers.push(c);
+      }
+      if (e) byEmail.set(e, c);
+      if (p) byPhone.set(p, c);
+      if (extra) for (const k of Object.keys(extra)) if (extra[k] && !c[k]) c[k] = extra[k];
+      return c;
+    };
+
+    /* ---- Shopify customers export ---- */
+    if (s.customers) {
+      const H = s.customers.headers;
+      const first = col(H, 'first name'), last = col(H, 'last name');
+      const email = col(H, 'email'), phone = col(H, 'phone');
+      const addr1 = col(H, 'address1'), city = col(H, 'city'), prov = col(H, 'province name', 'province'), zip = col(H, 'zip');
+      const note = col(H, 'note');
+      if (!email && !first) warnings.push('Customers file: the usual Shopify columns (First Name, Email…) weren\'t found — imported what was possible.');
+      for (const r of s.customers.records) {
+        const name = [first ? r[first] : '', last ? r[last] : ''].filter(Boolean).join(' ').trim();
+        if (!name && !(email && r[email])) continue;
+        findOrCreateCustomer(name, email ? r[email] : '', phone ? r[phone] : '', {
+          address: [addr1, city, prov, zip].map(h => h ? r[h] : '').filter(Boolean).join(', '),
+          notes: note ? r[note] : '',
+        });
+      }
+    }
+
+    /* ---- Shopify orders export (one row per line item) ---- */
+    if (s.orders) {
+      const H = s.orders.headers;
+      const ref = col(H, 'name'), email = col(H, 'email'), created = col(H, 'created at');
+      const lineName = col(H, 'lineitem name'), lineQty = col(H, 'lineitem quantity'), linePrice = col(H, 'lineitem price'), lineSku = col(H, 'lineitem sku');
+      const bName = col(H, 'billing name'), phone = col(H, 'phone', 'billing phone');
+      const notes = col(H, 'notes'), noteAttr = col(H, 'note attributes'), cancelled = col(H, 'cancelled at');
+      if (!ref || !lineName) warnings.push('Orders file: expected Shopify columns (Name, Lineitem name…) weren\'t all found — imported what was possible.');
+      const groups = new Map();
+      for (const r of s.orders.records) {
+        const key = ref ? r[ref] : String(groups.size);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+      }
+      for (const [reference, rows] of groups) {
+        const head = rows.find(r => (email && r[email]) || (bName && r[bName])) || rows[0];
+        const cust = findOrCreateCustomer(bName ? head[bName] : '', email ? head[email] : '', phone ? head[phone] : '');
+        // Appointly writes booking details onto the order as note attributes
+        // ("Key: value" lines) — pull out the booking + questions.
+        const attrs = [];
+        String(noteAttr ? head[noteAttr] : '').split(/\n+/).forEach(line => {
+          const m = line.match(/^([^:]{1,120}):\s*(.*)$/);
+          if (m && m[2].trim()) attrs.push([m[1].trim(), m[2].trim()]);
+        });
+        const cls = ImportService._classifyAttrs(attrs);
+        const createdAt = (() => { const d = new Date(created ? head[created] : ''); return isNaN(d) ? nowIso() : d.toISOString(); })();
+        const order = { id: uid(), customerId: cust.id, reference: reference || ('IMP-' + (orders.length + 1)),
+          status: cancelled && head[cancelled] ? 'cancelled' : 'confirmed', createdAt,
+          eventHotel: cls.eventHotel, eventDate: cls.eventDate, planType: null, staffNotes: notes ? head[notes] : '' };
+        orders.push(order);
+        for (const r of rows) {
+          const t0 = lineName ? r[lineName] : '';
+          if (!t0) continue;
+          let title = t0, colour = '', size = '';
+          const dash = t0.split(' - ');
+          if (dash.length > 1) {
+            title = dash[0].trim();
+            const vp = dash.slice(1).join(' - ').split(' / ').map(x => x.trim());
+            colour = vp[0] || ''; size = vp[1] || '';
+          }
+          orderItems.push({ id: uid(), orderId: order.id, productId: null, title,
+            styleCode: lineSku ? r[lineSku] : '', category: /dress|gown/i.test(title) ? 'dress' : 'accessory',
+            colour, size, quantity: parseInt(lineQty ? r[lineQty] : '1', 10) || 1,
+            retailPriceCents: parseEuros(linePrice ? r[linePrice] : '') || 0 });
+        }
+        const qas2 = ImportService._expandQas(cls.qas);
+        const dq = qas2.find(qa => /daughter'?s\s+name/i.test(qa.q));
+        if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
+        if (cls.bDate || qas2.length) {
+          const at = cls.bDate || normDate(createdAt.slice(0, 10)) || todayStr();
+          appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || 'Booking',
+            time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
+            bookedAt: createdAt, syncedAt: nowIso(), questions: qas2 });
+        }
+      }
+    }
+
+    /* ---- Appointly bookings export ---- */
+    if (s.appointly) {
+      const H = s.appointly.headers;
+      const email = col(H, 'email'), name = col(H, 'customer name', 'client name', 'name'), phone = col(H, 'phone');
+      const date = col(H, 'appointment date', 'booking date', 'start date', 'date');
+      const time = col(H, 'start time', 'appointment time', 'booking time', 'time');
+      const service = col(H, 'service', 'appointment type', 'type');
+      const staff = col(H, 'staff', 'employee', 'team member', 'assigned');
+      const statusCol = col(H, 'status'), location = col(H, 'location', 'venue');
+      const known = new Set([email, name, phone, date, time, service, staff, statusCol, location].filter(Boolean));
+      // Question columns: headers with a "?" if any exist, otherwise every
+      // leftover column that isn't an obvious id/timestamp/money field.
+      const withQ = H.filter(h => h.includes('?'));
+      const qCols = withQ.length ? withQ
+        : H.filter(h => h && !known.has(h) && !/\bid\b|created|updated|duration|price|amount|currency|order|payment|end time|timezone/i.test(h));
+      if (!qCols.length) warnings.push('Appointly file: no question columns found — booking answers may be missing.');
+      const orderCol = col(H, 'order');
+      const createdCol = col(H, 'createdat', 'created at', 'booked at', 'created');
+      for (const r of s.appointly.records) {
+        if (!((email && r[email]) || (name && r[name]))) continue;
+        if (statusCol && /cancel/i.test(r[statusCol])) continue;
+        const cust = findOrCreateCustomer(name ? r[name] : '', email ? r[email] : '', phone ? r[phone] : '');
+        // "Appointment Time" often carries date AND time in one cell.
+        const rawWhen = (date ? r[date] : '') || (time ? r[time] : '');
+        const d = normDate(rawWhen);
+        const qas = ImportService._absorbContactQas(cust,
+          ImportService._expandQas(qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a)));
+        const dq = qas.find(qa => /daughter'?s\s+name/i.test(qa.q));
+        if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
+        const svcRaw = (service ? r[service] : '').replace(/\s*\(deleted\)\s*/ig, ' ').trim();
+        const eventHotel = /\sat\s/i.test(svcRaw) ? ImportService._eventFromTitle(svcRaw) : '';
+        appointments.push({ id: uid(), customerId: cust.id, source: 'appointly',
+          service: [eventHotel || svcRaw, location ? r[location] : ''].filter(Boolean).join(' — ') || 'Appointment',
+          eventHotel, _orderRef: orderCol ? (r[orderCol] || '').trim() : '',
+          appointmentAt: d || todayStr(), time: normTime((time ? r[time] : '') || rawWhen),
+          status: (d || todayStr()) >= todayStr() ? 'upcoming' : 'completed',
+          bookedAt: (() => { const bd = new Date(createdCol ? r[createdCol] : ''); return isNaN(bd) ? nowIso() : bd.toISOString(); })(),
+          syncedAt: nowIso(), staffName: staff ? r[staff] : '',
+          questions: qas });
+      }
+    }
+
+    // Same spam guard as the live sync: when orders are present, keep only
+    // customers with an order or booking.
+    if (orders.length) {
+      const used = new Set(orders.map(o => o.customerId));
+      for (const a of appointments) used.add(a.customerId);
+      const kept = customers.filter(c => used.has(c.id));
+      if (kept.length && kept.length < customers.length) {
+        warnings.push((customers.length - kept.length) + ' contact' + (customers.length - kept.length === 1 ? '' : 's') +
+          ' with no orders or bookings left out (newsletter/spam signups).');
+        return { customers: kept, orders, orderItems, appointments, warnings };
+      }
+    }
+    return { customers, orders, orderItems, appointments, warnings };
+  },
+
+  // Appointly file added on its own while live/imported data is connected →
+  // merge the bookings in (matched by email/phone) instead of replacing everything.
+  _mergeMode() {
+    const s = ImportService.state;
+    return !!(s.appointly && !s.customers && !s.orders && DB.importInfo);
+  },
+  mergeAppointly(fromServer) {
+    const rawCsv = ImportService.state.appointly && ImportService.state.appointly.raw;
+    const b = ImportService.build();
+    const stubById = new Map(b.customers.map(c => [c.id, c]));
+    const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
+    const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
+    let merged = 0, added = 0, created = 0;
+    const resolved = [];
+    const custById = new Map(DB.customers.map(c => [c.id, c]));
+    const byOrderRef = new Map(DB.orders.map(o => [String(o.reference || '').trim(), o.customerId]));
+    for (const a of b.appointments) {
+      const stub = stubById.get(a.customerId);
+      if (!stub) continue;
+      let real = (stub.email && byEmail.get(stub.email.toLowerCase()))
+        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone)))
+        || (a._orderRef && custById.get(byOrderRef.get(a._orderRef))) || null;
+      // Bookings made without a Shopify order (added by staff, or no deposit
+      // paid online) belong to customers Shopify has never seen — create them.
+      if (!real) {
+        real = { id: uid(), name: stub.name, daughterName: stub.daughterName || '', email: stub.email || '',
+          phone: stub.phone || '', address: stub.address || '', notes: '', createdAt: nowIso() };
+        DB.customers.push(real);
+        if (real.email) byEmail.set(real.email.toLowerCase(), real);
+        if (ImportService._digits(real.phone)) byPhone.set(ImportService._digits(real.phone), real);
+        created++;
+      }
+      if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
+      if (stub.phone && !real.phone) real.phone = stub.phone;
+      if (stub.address && !real.address) real.address = stub.address;
+      a.customerId = real.id; a.source = 'appointly_csv';
+      resolved.push(a);
+    }
+    // The Appointly export is the truth for bookings: for customers in it,
+    // drop bookings (order-derived or from an older export) whose dates
+    // this export doesn't confirm.
+    const csvCusts = new Set(resolved.map(a => a.customerId));
+    const csvDates = new Set(resolved.map(a => a.customerId + '|' + a.appointmentAt));
+    DB.appointments = DB.appointments.filter(x =>
+      !((x.source === 'appointly' || x.source === 'appointly_csv') && csvCusts.has(x.customerId) && !csvDates.has(x.customerId + '|' + x.appointmentAt)));
+    for (const a of resolved) {
+      const existing = DB.appointments.find(x => x.customerId === a.customerId && x.appointmentAt === a.appointmentAt);
+      if (existing) {
+        if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
+        if (!existing.time && a.time) existing.time = a.time;
+        if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
+        if (!existing.eventHotel && a.eventHotel) existing.eventHotel = a.eventHotel;
+        existing.source = 'appointly_csv'; // export-backed: survives every re-sync
+        merged++;
+      } else { DB.appointments.push(a); added++; }
+    }
+    Store.save(); Domain.refreshAll();
+    ImportService.state = { customers: null, orders: null, appointly: null };
+    UI.closeModal(); App.route();
+    UI.toast('Booking answers merged — ' + merged + ' matched to existing bookings, ' + added + ' added' + (created ? ', ' + created + ' new customers created (booked without an order)' : '') + '.');
+    // Manually imported here → store the export centrally so every other
+    // browser opening the dashboard link receives it on its next sync.
+    if (!fromServer && rawCsv && LiveSync.available()) {
+      try { google.script.run.saveBookingsCsv(rawCsv); } catch (e) { /* non-fatal */ }
+    }
+  },
+  preview() {
+    try {
+      const b = ImportService.build();
+      if (!b.customers.length) throw new Error('Nothing to import yet — add at least one CSV file first.');
+      const answers = b.appointments.filter(a => a.questions.some(qa => qa.a)).length;
+      UI.modal(`
+        <h3>Ready to import</h3>
+        ${ImportService._mergeMode() ? '<div class="note info">These bookings will be <b>merged into your connected data</b> — matched to customers by email/phone. Nothing gets replaced, and the live sync keeps the answers.</div>' : ''}
+        <ul style="line-height:1.9">
+          <li><b>${b.customers.length}</b> customer${b.customers.length === 1 ? '' : 's'}</li>
+          <li><b>${b.orders.length}</b> order${b.orders.length === 1 ? '' : 's'} (${b.orderItems.length} item${b.orderItems.length === 1 ? '' : 's'})</li>
+          <li><b>${b.appointments.length}</b> booking${b.appointments.length === 1 ? '' : 's'} — <b>${answers}</b> with question answers</li>
+        </ul>
+        ${b.warnings.map(w => `<div class="note">${esc(w)}</div>`).join('')}
+        <p class="small muted">Importing replaces the sample data with your real data. It's stored only in this browser — nothing is uploaded anywhere. “Reset demo data” (bottom left) brings the samples back.</p>
+        <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+          <button class="primary" onclick="ImportService.apply()">Import now</button></div>`);
+    } catch (e) { UI.err(e); }
+  },
+  apply() {
+    if (ImportService._mergeMode()) { ImportService.mergeAppointly(); return; }
+    const b = ImportService.build();
+    if (!b.customers.length) return;
+    DB.customers = b.customers; DB.orders = b.orders; DB.orderItems = b.orderItems; DB.appointments = b.appointments;
+    for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
+      if (Array.isArray(DB[k])) DB[k] = [];
+    DB.importInfo = { at: nowIso(), counts: { customers: b.customers.length, orders: b.orders.length, bookings: b.appointments.length } };
+    Store.save(); Domain.refreshAll();
+    ImportService.state = { customers: null, orders: null, appointly: null };
+    UI.closeModal();
+    App.go('#/dashboard'); App.route();
+    UI.toast('Imported ' + DB.importInfo.counts.customers + ' customers, ' + DB.importInfo.counts.orders + ' orders and ' + DB.importInfo.counts.bookings + ' bookings.');
+  },
+};
+
+/* ---- Live sync: this same file, served as a Google Apps Script web
+   app (see Code.gs), gains a server that calls the Shopify Admin API
+   with the token kept in Script properties. The page detects that
+   environment and pulls live data through google.script.run. ---- */
+const LiveSync = {
+  syncing: false,
+  _diag: null,
+  available: () => typeof google !== 'undefined' && google.script && google.script.run,
+  // One-screen debugging aid: what Shopify sent per order and how it was read.
+  report() {
+    const rows = LiveSync._diag;
+    if (!rows || !rows.length) { UI.err(new Error('Run “Sync from Shopify now” first, then open the report.')); return; }
+    const withProps = rows.filter(r => r.raw.length);
+    const withDate = withProps.filter(r => r.bDate);
+    const tally = new Map();
+    for (const r of rows) { const k = r.venue || '(no venue found)'; tally.set(k, (tally.get(k) || 0) + 1); }
+    const fmt = r => r.ref + ' · created ' + r.created + ' · read: date=' + (r.bDate || '✗') + ' time=' + (r.bTime || '✗') + ' venue=' + (r.venue || '✗') + '\n  ' + r.raw.join('\n  ');
+    const problems = withProps.filter(r => !r.bDate || !r.venue).slice(0, 6);
+    const good = withProps.filter(r => r.bDate && r.venue).slice(0, 2);
+    UI.modal(`
+      <h3>Booking data report</h3>
+      <p class="small muted">Screenshot this box top to bottom — it shows exactly what Shopify sent and how each order was read.</p>
+      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:12px; border-radius:8px; font-size:.72rem; max-height:55vh; overflow:auto">${esc(
+        'Orders from Shopify: ' + rows.length +
+        '\nWith Apntly booking info on them: ' + withProps.length +
+        '\n  … where the booking date could be read: ' + withDate.length +
+        '\n\nOrders per venue:\n' + [...tally.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => '  ' + v + ' × ' + k).join('\n') +
+        (problems.length ? '\n\n—— Booking info that could NOT be fully read ——\n' + problems.map(fmt).join('\n\n') : '\n\nEvery order with booking info was read successfully.') +
+        (good.length ? '\n\n—— Examples that read fine ——\n' + good.map(fmt).join('\n\n') : ''))}</pre>
+      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">Close</button></div>`, true);
+  },
+  sync() {
+    if (!LiveSync.available()) { UI.err(new Error('Live sync only works when the dashboard is opened from its Google Apps Script web-app link — see Connect data.')); return; }
+    if (LiveSync.syncing) return;
+    LiveSync.syncing = true;
+    UI.toast('Syncing from Shopify…');
+    google.script.run
+      .withSuccessHandler(payload => {
+        LiveSync.syncing = false;
+        try { LiveSync.applyPayload(JSON.parse(payload)); } catch (e) { UI.err(e); }
+      })
+      .withFailureHandler(e => { LiveSync.syncing = false; UI.err(e); })
+      .syncShopify();
+  },
+  // Shopify Admin API JSON → the dashboard's own shape.
+  applyPayload(p) {
+    if (p.error) throw new Error(p.error);
+    const customers = [], orders = [], orderItems = [], appointments = [];
+    const byEmail = new Map(), byPhone = new Map(), bySrcId = new Map();
+    for (const sc of p.customers || []) {
+      const name = [sc.first_name, sc.last_name].filter(Boolean).join(' ').trim() || sc.email || 'Unknown customer';
+      const da = sc.default_address || {};
+      const c = { id: uid(), name, daughterName: '', email: sc.email || '',
+        phone: sc.phone || da.phone || '', address: [da.address1, da.city, da.province, da.zip].filter(Boolean).join(', '),
+        notes: sc.note || '', createdAt: sc.created_at || nowIso() };
+      customers.push(c);
+      if (sc.id != null) bySrcId.set(String(sc.id), c);
+      if (c.email) byEmail.set(c.email.toLowerCase(), c);
+      const digits = ImportService._digits(c.phone);
+      if (digits) byPhone.set(digits, c);
+    }
+    const diagRows = [];
+    for (const so of p.orders || []) {
+      let cust = (so.customer && so.customer.id != null && bySrcId.get(String(so.customer.id)))
+        || (so.email && byEmail.get(String(so.email).toLowerCase())) || null;
+      if (!cust) {
+        cust = { id: uid(), name: (so.customer && [so.customer.first_name, so.customer.last_name].filter(Boolean).join(' ').trim()) || so.email || 'Unknown customer',
+          daughterName: '', email: so.email || '', phone: '', address: '', notes: '', createdAt: so.created_at || nowIso() };
+        customers.push(cust);
+        if (cust.email) byEmail.set(cust.email.toLowerCase(), cust);
+      }
+      const pairs = (so.note_attributes || []).map(a => [String(a.name || '').trim(), String(a.value || '').trim()]).filter(x => x[0] && x[1]);
+      // Apntly stamps bookings onto the LINE ITEM as properties:
+      //   _booking_by: Appointly · Booking: "Date: Sep 27, 2026 Time: 10:00 AM - 11:00 AM"
+      // and the venue lives in the event product's title, e.g.
+      //   "Darcy Day Out at Castlemartyr Resort Event - 26th & 27th September 2026".
+      let bookingTitle = '';
+      const rawProps = [];
+      for (const li of so.line_items || []) {
+        const props = li.properties || [];
+        if (props.length) rawProps.push('[item] ' + String(li.title || '').slice(0, 90));
+        if (!bookingTitle && props.some(p => /^_booking/i.test(String(p.name || '')))) bookingTitle = String(li.title || '');
+        for (const p of props) {
+          const n = String(p.name || '').trim(), v = String(p.value || '').trim();
+          rawProps.push(n + ' = ' + v.slice(0, 90));
+          if (!n || !v) continue;
+          const dt = v.match(/Date:\s*(.+?)\s*Time:\s*([\d:]+\s*(?:AM|PM)?)/i);
+          if (dt && (/^booking$/i.test(n) || !n.startsWith('_'))) { pairs.push(['Booking Date', dt[1]], ['Booking Time', dt[2]]); continue; }
+          if (n.startsWith('_')) continue; // Apntly internal fields
+          pairs.push([n, v]);
+        }
+      }
+      const cls = ImportService._classifyAttrs(pairs);
+      let eventHotel = cls.eventHotel;
+      if (!eventHotel && bookingTitle) eventHotel = ImportService._eventFromTitle(bookingTitle);
+      const eventDate = cls.eventDate || (eventHotel ? cls.bDate : '');
+      const order = { id: uid(), customerId: cust.id, reference: so.name || ('SHOP-' + (orders.length + 1)),
+        status: so.cancelled_at ? 'cancelled' : 'confirmed', createdAt: so.created_at || nowIso(),
+        eventHotel, eventDate, planType: null, staffNotes: so.note || '' };
+      orders.push(order);
+      for (const li of so.line_items || []) {
+        const vt = String(li.variant_title || '');
+        const vp = (/^default title$/i.test(vt) ? '' : vt).split(' / ').map(s => s.trim());
+        orderItems.push({ id: uid(), orderId: order.id, productId: null, title: li.title || 'Item',
+          styleCode: li.sku || '', category: /dress|gown/i.test(li.title || '') ? 'dress' : 'accessory',
+          colour: vp[0] || '', size: vp[1] || '', quantity: li.quantity || 1, retailPriceCents: parseEuros(li.price) || 0 });
+      }
+      // Apntly's first custom question asks for the daughter's name — use it.
+      const qas2 = ImportService._absorbContactQas(cust, ImportService._expandQas(cls.qas));
+      const dq = qas2.find(qa => /daughter'?s\s+name/i.test(qa.q));
+      if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
+      if (cls.bDate || qas2.length) {
+        const at = cls.bDate || ImportService._normDate(order.createdAt.slice(0, 10)) || todayStr();
+        appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || eventHotel || 'Booking',
+          eventHotel, time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
+          bookedAt: order.createdAt, syncedAt: nowIso(), questions: qas2 });
+      }
+      diagRows.push({ ref: order.reference, created: String(so.created_at || '').slice(0, 10),
+        raw: rawProps, bDate: cls.bDate, bTime: cls.bTime, venue: eventHotel });
+    }
+    LiveSync._diag = diagRows;
+    if (!customers.length) throw new Error('Shopify returned no customers — check the token scopes (read_customers, read_orders).');
+    // Booking answers merged in from an Appointly CSV (and hand-logged
+    // appointments) must survive re-syncs: re-link them to the freshly
+    // built customers by email/phone, folding answers into the synced
+    // booking for the same day where one exists.
+    const oldCustById = new Map((DB.customers || []).map(c => [c.id, c]));
+    const preserved = (DB.appointments || []).filter(a => a.source === 'appointly_csv' || a.source === 'manual');
+    for (const a of preserved) {
+      const oc = oldCustById.get(a.customerId);
+      const nc = (oc && ((oc.email && byEmail.get(String(oc.email).toLowerCase()))
+        || (ImportService._digits(oc.phone) && byPhone.get(ImportService._digits(oc.phone))))) || null;
+      if (!nc) {
+        // Customer exists only in Appointly (booked without an order) —
+        // carry them and their booking through the sync untouched.
+        if (oc) {
+          customers.push(oc);
+          if (oc.email) byEmail.set(String(oc.email).toLowerCase(), oc);
+          if (ImportService._digits(oc.phone)) byPhone.set(ImportService._digits(oc.phone), oc);
+          appointments.push(a);
+        }
+        continue;
+      }
+      a.customerId = nc.id;
+      if (oc.daughterName && !nc.daughterName) nc.daughterName = oc.daughterName;
+      const existing = appointments.find(x => x.customerId === nc.id && x.appointmentAt === a.appointmentAt);
+      if (existing) {
+        if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
+        if (!existing.time && a.time) existing.time = a.time;
+        if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
+        if (!existing.eventHotel && a.eventHotel) existing.eventHotel = a.eventHotel;
+        existing.source = 'appointly_csv'; // keep the export-backed marker alive
+      } else appointments.push(a);
+    }
+    // Where the Appointly export has spoken for a customer, its dates win
+    // over the copy on the Shopify order — every sync, not just at import.
+    const csvCust2 = new Set(), csvKeep2 = new Set();
+    for (const a of appointments) if (a.source === 'appointly_csv' || a.source === 'manual') {
+      csvCust2.add(a.customerId);
+      csvKeep2.add(a.customerId + '|' + a.appointmentAt);
+    }
+    for (let i = appointments.length - 1; i >= 0; i--) {
+      const a = appointments[i];
+      if (a.source === 'appointly' && csvCust2.has(a.customerId) && !csvKeep2.has(a.customerId + '|' + a.appointmentAt)) appointments.splice(i, 1);
+    }
+    // Shopify customer lists collect spam/newsletter signups. Keep only
+    // people with an actual order or booking (when there are orders at all).
+    let kept = customers;
+    if (orders.length) {
+      const used = new Set(orders.map(o => o.customerId));
+      for (const a of appointments) used.add(a.customerId);
+      kept = customers.filter(c => used.has(c.id));
+      if (!kept.length) kept = customers;
+    }
+    const skipped = customers.length - kept.length;
+    DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
+      if (Array.isArray(DB[k])) DB[k] = [];
+    DB.importInfo = { at: nowIso(), live: true, counts: { customers: kept.length, orders: orders.length, bookings: appointments.length } };
+    Store.save(); Domain.refreshAll(); App.route();
+    UI.toast('Live sync complete — ' + kept.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings' +
+      (skipped > 0 ? ' (' + skipped + ' contacts with no orders — newsletter/spam signups — left out).' : '.'));
+    // Replay the centrally stored Appointly export (put there by whoever
+    // imported it last) so this browser has the bookings and answers too.
+    if (p.bookingsCsv) {
+      try {
+        const parsed = parseCsv(p.bookingsCsv);
+        if (parsed.records.length) {
+          ImportService.state.appointly = { name: 'shared bookings', raw: '', headers: parsed.headers, records: parsed.records };
+          ImportService.mergeAppointly(true);
+        }
+      } catch (e) { /* non-fatal — manual import still available */ }
+    }
+  },
+};
+
+Pages.importPage = () => {
+  const st = ImportService.state;
+  const slot = (kind, title, help) => `
+    <div class="card" style="margin-bottom:12px">
+      <div class="flex" style="justify-content:space-between; flex-wrap:wrap; align-items:center">
+        <div style="flex:1; min-width:240px"><b>${title}</b><br><span class="small muted">${help}</span></div>
+        <div style="text-align:right">
+          ${st[kind] ? `<span class="badge b-green">✓ ${esc(st[kind].name)} — ${st[kind].records.length} rows</span>
+            <button class="small" onclick="ImportService.clear('${kind}')">✕ Remove</button>`
+          : `<label class="btn small primary" style="cursor:pointer; display:inline-block">Choose CSV<input type="file" accept=".csv,text/csv" style="display:none" onchange="ImportService.fileChosen('${kind}', this)"></label>`}
+        </div>
+      </div>
+    </div>`;
+  const any = st.customers || st.orders || st.appointly;
+  return `
+    <h1>Connect Shopify &amp; Appointly</h1>
+    <p class="sub">Two ways to get the real data in — CSV import works today, with no technical setup.</p>
+    ${DB.importInfo ? `<div class="note ok" style="margin-bottom:16px">✅ Connected via CSV import — last import ${fmtDateTime(DB.importInfo.at)}: ${DB.importInfo.counts.customers} customers, ${DB.importInfo.counts.orders} orders, ${DB.importInfo.counts.bookings} bookings. Import again any time to refresh.</div>` : ''}
+    <h2>Route 1 — CSV import (works now)</h2>
+    <p class="small muted" style="max-width:780px">Export from each app, then add the files below. Any one file works on its own; together they build the full picture. Everything stays in this browser — nothing is uploaded anywhere.</p>
+    ${slot('customers', '1 · Shopify customers', 'Shopify admin → Customers → Export → “Plain CSV file”. Names, emails, phones and addresses.')}
+    ${slot('orders', '2 · Shopify orders', 'Shopify admin → Orders → Export → “Plain CSV file”. What each customer ordered — and if Appointly saved the booking onto the order, the booking questions come in too.')}
+    ${slot('appointly', '3 · Appointly bookings', 'Appointly app → Appointments → Export. Any CSV with a customer email and date works; question columns become the booking answers.')}
+    <div class="toolbar">
+      <button class="primary" ${any ? '' : 'disabled'} onclick="ImportService.preview()">Preview import…</button>
+      <button onclick="App.resetDemo()">↺ Back to sample data</button>
+    </div>
+    <h2 style="margin-top:28px">Route 2 — live dashboard (free, via Google Apps Script)</h2>
+    ${LiveSync.available() ? `
+    <div class="card" style="max-width:780px">
+      <p class="small" style="margin-top:0">✅ This copy is running as your Google Apps Script web app — it can pull straight from Shopify, and the booking answers come with the orders.</p>
+      <button class="primary" onclick="LiveSync.sync()">⟳ Sync from Shopify now</button>
+      <button onclick="LiveSync.report()" style="margin-left:8px">🔍 Booking data report</button>
+      ${DB.importInfo && DB.importInfo.live ? `<span class="small muted" style="margin-left:10px">Last sync ${fmtDateTime(DB.importInfo.at)}</span>` : ''}
+      <p class="small muted" style="margin-bottom:0; margin-top:10px">It also syncs by itself every time the page opens. If a sync fails, check the Script properties in the Apps Script project settings: SHOPIFY_STORE plus either SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET or SHOPIFY_TOKEN.</p>
+    </div>`
+    : `
+    <div class="card" style="max-width:780px">
+      <p class="small" style="margin-top:0">A file opened straight from the computer can't call Shopify — browsers block it, and the API key would be visible to anyone with the file. The free fix: run this same file as a <b>Google Apps Script web app</b>. Google's servers make the Shopify calls, the token stays private, and only your Google account can open the page. The dashboard then syncs itself every time you open it. One-time setup, about 10 minutes:</p>
+      <ol class="small" style="line-height:1.8; padding-left:20px; margin:10px 0">
+        <li><b>Get a Shopify token:</b> Shopify admin → Settings → Apps and sales channels → Develop apps → Create app (call it “Darcybow dashboard”) → Configure Admin API scopes → tick <b>read_customers</b> and <b>read_orders</b> → Install app → reveal and copy the Admin API access token (starts <b>shpat_</b>).</li>
+        <li>Go to <b>script.new</b> in the browser (signed in to your Google account).</li>
+        <li>Replace the contents of <b>Code.gs</b> with the <b>darcybow-Code.gs</b> file that comes with this dashboard.</li>
+        <li>Click <b>+</b> next to Files → HTML → name it <b>index</b> → paste this entire dashboard file into it (replacing what's there).</li>
+        <li>⚙ Project Settings → Script properties → add <b>SHOPIFY_STORE</b> (e.g. darcybow.myshopify.com) plus the app's credentials: <b>SHOPIFY_CLIENT_ID</b> and <b>SHOPIFY_CLIENT_SECRET</b> (Dev Dashboard → your app → Settings → Credentials), or <b>SHOPIFY_TOKEN</b> if you have a legacy shpat_… token.</li>
+        <li><b>Deploy → New deployment → Web app</b> → Execute as <b>Me</b> · Who has access <b>Only myself</b> → Deploy. Open the web-app link and bookmark it — that link IS the live dashboard.</li>
+      </ol>
+      <p class="small muted" style="margin-bottom:0">Appointly's booking answers ride along on the Shopify orders, so the one connection covers both apps. Until it's set up, CSV import above does the same job manually.</p>
+    </div>`}`;
+};
+
+/* =============================== PRINTING (the only actions) =============================== */
+/* This build is a viewing platform: staff browse what Shopify + Appointly
+   feed in, and the only thing it DOES is print — A4 customer sheets
+   (contact details + the Appointly booking answers) and the staff run
+   sheet for an event day. Editing, payments, invoicing and reminders
+   come back in a later phase. */
+const Actions = {
+  /* Shared A4 sheet builder — one page per customer. Each row:
+     { c, items, orderRef, qa, headline, slotMain, slotSub, staffName } */
+  _sheetHtml(rows, docTitle) {
+    const line = (label, width) => `<div class="fl" style="width:${width || '100%'}"><span>${label}</span><div class="ln"></div></div>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(docTitle)}</title><style>
+      @page { size: A4; margin: 14mm; }
+      body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; font-size: 13px; }
+      .sheet { page-break-after: always; padding: 8px 2px; }
+      .top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #9b2c4d; padding-bottom: 10px; }
+      .top h1 { font-size: 17px; margin: 0; color: #9b2c4d; }
+      .m { color: #666; }
+      .slotbox { text-align: center; border: 2px solid #9b2c4d; border-radius: 10px; padding: 6px 16px; }
+      .slotbox .t { font-size: 22px; font-weight: 800; }
+      .staffbox { text-align: center; border: 2px dashed #999; border-radius: 10px; padding: 6px 16px; min-width: 130px; }
+      .staffbox .s { font-size: 18px; font-weight: 800; min-height: 24px; }
+      h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: #9b2c4d; margin: 16px 0 6px; border-bottom: 1px solid #e5c9d3; padding-bottom: 3px; }
+      .cust { font-size: 19px; font-weight: 800; margin: 12px 0 2px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 24px; }
+      .grid div b { font-weight: 700; }
+      .qa { margin: 6px 0; } .qa .q { font-weight: 700; } .qa .a { margin: 2px 0 0 14px; }
+      .fl { display: inline-flex; align-items: flex-end; gap: 6px; margin: 7px 12px 0 0; vertical-align: bottom; }
+      .fl span { white-space: nowrap; font-weight: 600; }
+      .fl .ln { flex: 1; border-bottom: 1.5px solid #888; min-width: 60px; height: 18px; }
+      .notes { border: 1.5px solid #888; border-radius: 8px; height: 150px; margin-top: 6px; }
+      table.itms { border-collapse: collapse; width: 100%; } .itms td { padding: 3px 6px 3px 0; }
+      .foot { margin-top: 14px; display: flex; gap: 30px; }
+    </style></head><body>
+    ${rows.map(r => `<div class="sheet">
+        <div class="top">
+          <div><h1>Darcybow — customer sheet</h1>
+            <div class="m">${r.headline}</div></div>
+          <div class="slotbox"><div class="t">${esc(r.slotMain)}</div>
+            <div class="m">${esc(r.slotSub)}</div></div>
+          <div class="staffbox"><div class="m">Staff member</div>
+            <div class="s">${esc(r.staffName || '')}</div></div>
+        </div>
+        <div class="cust">${esc(r.c.name)}${r.c.daughterName ? ' <span class="m" style="font-weight:400">— for ' + esc(r.c.daughterName) + '</span>' : ''}</div>
+        <div class="grid">
+          <div><b>Phone:</b> ${esc(r.c.phone || '—')}</div>
+          <div><b>Email:</b> ${esc(r.c.email || '—')}</div>
+          <div style="grid-column:1/-1"><b>Address:</b> ${esc(r.c.address || '—')}</div>
+        </div>
+        <h2>What they told us when booking (Appointly)</h2>
+        ${r.qa ? r.qa.questions.map(q => `<div class="qa"><div class="q">${esc(q.q)}</div><div class="a">${esc(q.a || '—')}</div></div>`).join('')
+          : '<div class="m">No booking answers on file.</div>'}
+        <h2>Already on order${r.orderRef ? ' (' + esc(r.orderRef) + ')' : ''}</h2>
+        <table class="itms">${r.items.map(i => `<tr><td><b>${esc(i.title)}</b></td><td>${esc(i.colour || '—')}</td><td>${esc(i.size || '—')}</td><td>× ${i.quantity}</td></tr>`).join('') || '<tr><td class="m">Nothing yet.</td></tr>'}</table>
+        <h2>Ordered at this appointment — fill in</h2>
+        ${line('Dress / style:', '58%')}${line('Size:', '36%')}
+        ${line('Colour:', '46%')}${line('Alterations:', '48%')}
+        <div style="margin-top:4px">${line('Bow:', '30%')}${line('Veil:', '30%')}${line('Shoes:', '31%')}
+        ${line('Bag:', '30%')}${line('Tiara:', '30%')}${line('Other:', '31%')}</div>
+        <h2>Staff notes</h2>
+        <div class="notes"></div>
+        <div class="foot">${line('Taken by:', '40%')}${line('Deposit / payment taken:', '52%')}</div>
+      </div>`).join('')}
+    </body></html>`;
+  },
+  _sheetModal(heading, blurb, html, count) {
+    UI.modal(`
+      <h3>${heading}</h3>
+      <p class="small muted">${blurb}</p>
+      <iframe class="invoice-frame" id="csframe"></iframe>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
+        <button class="primary" onclick="document.getElementById('csframe').contentWindow.print()">🖨 Print / save PDF (${count} sheet${count === 1 ? '' : 's'})</button></div>`, true);
+    document.getElementById('csframe').srcdoc = html;
+  },
+  /* One customer → one generic sheet row (used by the all-customers and
+     single-customer prints, where there's no specific event day). */
+  _customerRow(c) {
+    const orders = Domain.ordersOf(c.id).filter(o => o.status !== 'cancelled').sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+    const o = orders[0] || null;
+    const appts = AppointlyService.bookingsFor(c.id);
+    const upcoming = appts.filter(a => a.appointmentAt >= todayStr())
+      .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+    const qa = appts.filter(a => a.questions.length).sort((a, b) => a.appointmentAt < b.appointmentAt ? 1 : -1)[0];
+    return {
+      c, qa,
+      items: o ? Domain.itemsOf(o.id) : [],
+      orderRef: o ? o.reference : '',
+      headline: o && o.eventHotel ? esc(o.eventHotel) + (o.eventDate ? ' · <b>' + esc(fmtDate(o.eventDate)) + '</b>' : '') : 'No event on file',
+      slotMain: upcoming && upcoming.time ? upcoming.time : '—',
+      slotSub: upcoming ? fmtDate(upcoming.appointmentAt) : 'No appointment booked',
+      staffName: (upcoming && upcoming.staffName) || '',
+    };
+  },
+  /* Every customer in the system: details + Appointly answers, one A4 page each. */
+  printAllCustomerSheets() {
+    const rows = DB.customers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(Actions._customerRow);
+    Actions._sheetModal('Customer sheets — all customers',
+      'One A4 page per customer: contact details plus the questions they answered when booking through Appointly. Print the lot or save as one PDF.',
+      Actions._sheetHtml(rows, 'Customer sheets — all customers'), rows.length);
+  },
+  /* Single customer, from their page. */
+  printCustomerSheet(customerId) {
+    const c = Domain.customer(customerId);
+    if (!c) return;
+    const rows = [Actions._customerRow(c)];
+    Actions._sheetModal(`Customer sheet — ${esc(c.name)}`,
+      'Contact details plus the questions they answered when booking through Appointly.',
+      Actions._sheetHtml(rows, `Customer sheet — ${c.name}`), 1);
+  },
+  /* One event day at one venue: a sheet per booked customer, in slot order. */
+  printCustomerSheets(venueEnc, day) {
+    const venue = decodeURIComponent(venueEnc);
+    const cfg = DB.settings.eventDay;
+    const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const blockOf = t => {
+      if (!t) return null;
+      const h = parseInt(t.slice(0, 2), 10);
+      return h >= cfg.startHour && h < cfg.endHour ? h - cfg.startHour + 1 : null;
+    };
+    const rows = [];
+    const group = venueGroups().find(x => x.venue === venue);
+    for (const o of (group ? group.orders : [])) {
+      if (o.eventDate !== day) continue;
+      const parts = String(o.eventHotel).split(/\s+—\s+/);
+      const c = Domain.customer(o.customerId);
+      if (!c) continue;
+      const slot = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      // Booking answers can live on an earlier fitting appointment.
+      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
+        .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      const blk = slot ? blockOf(slot.time) : null;
+      rows.push({
+        c, qa, items: Domain.itemsOf(o.id), orderRef: o.reference,
+        headline: esc(venue) + ' · <b>' + esc(dayLabel) + '</b> · ' + esc((parts[0] || '').trim()),
+        slotMain: slot && slot.time ? slot.time : '—',
+        slotSub: blk ? 'Block ' + blk : 'No slot booked',
+        staffName: (slot && slot.staffName) || '',
+        _t: (slot && slot.time) || '99',
+      });
+    }
+    rows.sort((a, b) => a._t < b._t ? -1 : 1);
+    Actions._sheetModal(`Customer sheets — ${esc(venue)}, ${esc(dayLabel)}`,
+      'One A4 page per customer, in block order, staff name top-right for sorting into piles. Print the lot before the event.',
+      Actions._sheetHtml(rows, `Customer sheets — ${venue}`), rows.length);
+  },
+  /* Printable run sheet: hand each staff member the day's schedule —
+     time, customer, who it's for, dress, assigned staff. No balances. */
+  printRunSheet(venueEnc, day) {
+    const venue = decodeURIComponent(venueEnc);
+    const cfg = DB.settings.eventDay;
+    const hh = h => String(h).padStart(2, '0');
+    const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const rows = [];
+    const group = venueGroups().find(x => x.venue === venue);
+    for (const o of (group ? group.orders : [])) {
+      if (o.eventDate !== day) continue;
+      const parts = String(o.eventHotel).split(/\s+—\s+/);
+      const c = Domain.customer(o.customerId);
+      if (!c) continue;
+      const a = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
+      // Booking answers can live on an earlier appointment than the event slot.
+      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
+        .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim() });
+    }
+    const blockRows = [];
+    for (let h = cfg.startHour; h < cfg.endHour; h++) {
+      const inBlock = rows.filter(r => r.a && r.a.time && r.a.time >= hh(h) + ':00' && r.a.time < hh(h + 1) + ':00')
+        .sort((p, q) => p.a.time < q.a.time ? -1 : 1);
+      if (inBlock.length) blockRows.push({ label: hh(h) + ':00 – ' + hh(h + 1) + ':00', rows: inBlock });
+    }
+    const unslotted = rows.filter(r => !r.a || !r.a.time);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Run sheet — ${esc(venue)}</title><style>
+      body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; padding: 30px 36px; font-size: 13.5px; }
+      h1 { font-size: 20px; margin: 0; color: #9b2c4d; } .m { color: #666; }
+      h2 { font-size: 13px; background: #f2e5ea; padding: 6px 10px; border-radius: 6px; margin: 22px 0 4px; }
+      table { border-collapse: collapse; width: 100%; }
+      th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: #777; border-bottom: 2px solid #ddd; padding: 6px 8px; }
+      td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+      .t { font-weight: 800; font-size: 15px; white-space: nowrap; } .s { font-weight: 700; }
+      .blank { color: #bbb; } @media print { body { padding: 0 } }
+    </style></head><body>
+      <h1>Darcybow — staff run sheet</h1>
+      <div class="m">${esc(venue)} · <b>${esc(dayLabel)}</b> · private appointments, up to ${cfg.slotCapacity} customers per slot</div>
+      ${(() => {
+        // Answers only, one per line, with a short label instead of the
+        // full question wording.
+        const label = q => /daughter'?s\s+name|child'?s\s+name/i.test(q) ? "Child's name"
+          : /school/i.test(q) ? 'School'
+          : /communion/i.test(q) ? 'Communion date'
+          : /occasion/i.test(q) ? 'Occasion' : '';
+        const answers = r => {
+          const all = ImportService._expandQas(r.qa ? r.qa.questions : []).filter(z => z.a);
+          const trio = all.filter(z => label(z.q));
+          const qas = trio.length ? trio : all;
+          return qas.length ? qas.map((z, n) => '<div>' + (n + 1) + '. ' +
+            (label(z.q) ? '<span class="m">' + label(z.q) + ':</span> ' : '') + '<b>' + esc(z.a) + '</b></div>').join('')
+            : '<span class="blank">—</span>';
+        };
+        const head = '<thead><tr><th style="width:60px">Time</th><th style="width:26%">Customer</th><th style="width:20%">Dress / occasion</th><th>Booking answers</th></tr></thead>';
+        return blockRows.map(b => `<h2>${b.label}</h2>
+        <table>${head}
+        <tbody>${b.rows.map(r => `<tr>
+          <td class="t">${esc(r.a.time)}</td>
+          <td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
+          <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' · ' + esc(r.dress.size) + '</span><br>' : ''}<span class="m">${esc(r.occasion)}</span></td>
+          <td>${answers(r)}</td>
+        </tr>`).join('')}</tbody></table>`).join('') +
+        (unslotted.length ? `<h2>No slot time yet</h2><table>${head}
+        <tbody>${unslotted.map(r => `<tr>
+          <td class="t blank">____</td><td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
+          <td>${r.dress ? esc(r.dress.title) : '—'}</td>
+          <td>${answers(r)}</td>
+        </tr>`).join('')}</tbody></table>` : '');
+      })()}
+    </body></html>`;
+    UI.modal(`
+      <h3>Staff run sheet — ${esc(venue)}, ${esc(dayLabel)}</h3>
+      <p class="small muted">One sheet for the whole day: time, customer, who it's for, dress and their booking answers. Balances are deliberately left off.</p>
+      <iframe class="invoice-frame" id="runframe"></iframe>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
+        <button class="primary" onclick="document.getElementById('runframe').contentWindow.print()">🖨 Print / save PDF</button></div>`, true);
+    document.getElementById('runframe').srcdoc = html;
+  },
+};
+
+/* =============================== BOOT =============================== */
+(function boot() {
+  Store.load();
+  // Clean up any question blobs stored by earlier imports (idempotent).
+  let migrated = false;
+  for (const a of DB.appointments || []) {
+    const before = (a.questions || []).length;
+    a.questions = ImportService._expandQas(a.questions || []);
+    if (a.questions.length !== before) migrated = true;
+    const dq = a.questions.find(qa => /daughter'?s\s+name/i.test(qa.q));
+    if (dq && dq.a) {
+      const c = (DB.customers || []).find(x => x.id === a.customerId);
+      if (c && !c.daughterName) { c.daughterName = dq.a; migrated = true; }
+    }
+  }
+  if (migrated) Store.save();
+  Domain.refreshAll();
+  window.addEventListener('hashchange', App.route);
+  App.route();
+  // Served as the Apps Script web app → refresh from Shopify on every open.
+  if (LiveSync.available()) LiveSync.sync();
+})();
+</script>
+</body>
+</html>
