@@ -1389,7 +1389,12 @@ Pages.customers = () => {
       ...orders.flatMap(o => Domain.itemsOf(o.id).map(i => i.title + ' ' + i.styleCode)),
     ].join(' ').toLowerCase();
     return q.split(/\s+/).every(w => hay.includes(w));
-  }).sort((a, b) => a.name.localeCompare(b.name));
+  }).sort((a, b) => {
+    // Most recent order first (falling back to when the customer appeared).
+    const la = Domain.ordersOf(a.id).reduce((m, o) => o.createdAt > m ? o.createdAt : m, a.createdAt || '');
+    const lb = Domain.ordersOf(b.id).reduce((m, o) => o.createdAt > m ? o.createdAt : m, b.createdAt || '');
+    return la < lb ? 1 : la > lb ? -1 : a.name.localeCompare(b.name);
+  });
   return `
     <div class="flex" style="justify-content:space-between; margin-bottom:14px">
       <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
@@ -1485,7 +1490,7 @@ Pages.venueDetail = (venueName) => {
     const appts = AppointlyService.bookingsFor(c.id);
     const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
     const last = appts[0];
-    const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
+    const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
     return { o, c, upcoming, last, dress };
   });
   const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
@@ -1892,12 +1897,22 @@ const ImportService = {
     const stubById = new Map(b.customers.map(c => [c.id, c]));
     const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
     const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
-    let merged = 0, added = 0, skipped = 0;
+    let merged = 0, added = 0, created = 0;
     for (const a of b.appointments) {
       const stub = stubById.get(a.customerId);
-      const real = (stub && ((stub.email && byEmail.get(stub.email.toLowerCase()))
-        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone))))) || null;
-      if (!real) { skipped++; continue; }
+      if (!stub) continue;
+      let real = (stub.email && byEmail.get(stub.email.toLowerCase()))
+        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone))) || null;
+      // Bookings made without a Shopify order (added by staff, or no deposit
+      // paid online) belong to customers Shopify has never seen — create them.
+      if (!real) {
+        real = { id: uid(), name: stub.name, daughterName: stub.daughterName || '', email: stub.email || '',
+          phone: stub.phone || '', address: stub.address || '', notes: '', createdAt: nowIso() };
+        DB.customers.push(real);
+        if (real.email) byEmail.set(real.email.toLowerCase(), real);
+        if (ImportService._digits(real.phone)) byPhone.set(ImportService._digits(real.phone), real);
+        created++;
+      }
       if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
       a.customerId = real.id; a.source = 'appointly_csv';
       const existing = DB.appointments.find(x => x.customerId === real.id && x.appointmentAt === a.appointmentAt);
@@ -1911,7 +1926,7 @@ const ImportService = {
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
-    UI.toast('Booking answers merged — ' + merged + ' matched to existing bookings, ' + added + ' added' + (skipped ? ', ' + skipped + ' skipped (no matching customer)' : '') + '.');
+    UI.toast('Booking answers merged — ' + merged + ' matched to existing bookings, ' + added + ' added' + (created ? ', ' + created + ' new customers created (booked without an order)' : '') + '.');
   },
   preview() {
     try {
@@ -2017,7 +2032,13 @@ const LiveSync = {
       if (!eventHotel && bookingTitle) {
         const stripped = bookingTitle.split(/\s+Event\b/i)[0].trim();
         const atIdx = stripped.toLowerCase().lastIndexOf(' at ');
-        eventHotel = atIdx > 0 ? stripped.slice(0, atIdx).trim() + ' — ' + stripped.slice(atIdx + 4).trim() : stripped;
+        let occ = atIdx > 0 ? stripped.slice(0, atIdx).trim() : '';
+        let ven = atIdx > 0 ? stripped.slice(atIdx + 4).trim() : stripped;
+        // Titles often carry the dates ("The Cashel Palace, Tipperary - 19th &
+        // 20th September 2026"); drop that so every variant of the same venue
+        // lands on ONE venue tile instead of splitting the group.
+        ven = ven.replace(/\s*[-–]\s*(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day\b|\d{1,2}(?:st|nd|rd|th)\b)[\s\S]*$/i, '').trim() || ven;
+        eventHotel = occ ? occ + ' — ' + ven : ven;
       }
       const eventDate = cls.eventDate || (eventHotel ? cls.bDate : '');
       const order = { id: uid(), customerId: cust.id, reference: so.name || ('SHOP-' + (orders.length + 1)),
@@ -2052,7 +2073,17 @@ const LiveSync = {
       const oc = oldCustById.get(a.customerId);
       const nc = (oc && ((oc.email && byEmail.get(String(oc.email).toLowerCase()))
         || (ImportService._digits(oc.phone) && byPhone.get(ImportService._digits(oc.phone))))) || null;
-      if (!nc) continue;
+      if (!nc) {
+        // Customer exists only in Appointly (booked without an order) —
+        // carry them and their booking through the sync untouched.
+        if (oc) {
+          customers.push(oc);
+          if (oc.email) byEmail.set(String(oc.email).toLowerCase(), oc);
+          if (ImportService._digits(oc.phone)) byPhone.set(ImportService._digits(oc.phone), oc);
+          appointments.push(a);
+        }
+        continue;
+      }
       a.customerId = nc.id;
       if (oc.daughterName && !nc.daughterName) nc.daughterName = oc.daughterName;
       const existing = appointments.find(x => x.customerId === nc.id && x.appointmentAt === a.appointmentAt);
@@ -2292,8 +2323,11 @@ const Actions = {
       const c = Domain.customer(o.customerId);
       const a = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
         .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
-      const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0] || Domain.itemsOf(o.id)[0];
-      rows.push({ c, o, a, dress, occasion: (parts[0] || '').trim() });
+      const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
+      // Booking answers can live on an earlier appointment than the event slot.
+      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
+        .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim() });
     }
     const blockRows = [];
     for (let h = cfg.startHour; h < cfg.endHour; h++) {
@@ -2315,23 +2349,25 @@ const Actions = {
       <h1>Darcybow — staff run sheet</h1>
       <div class="m">${esc(venue)} · <b>${esc(dayLabel)}</b> · private appointments, up to ${cfg.slotCapacity} customers per slot</div>
       ${blockRows.map(b => `<h2>${b.label}</h2>
-        <table><thead><tr><th style="width:70px">Time</th><th>Customer</th><th>For</th><th>Dress / occasion</th><th style="width:120px">Staff</th></tr></thead>
+        <table><thead><tr><th style="width:60px">Time</th><th style="width:22%">Customer</th><th style="width:12%">For</th><th style="width:18%">Dress / occasion</th><th>Booking answers</th></tr></thead>
         <tbody>${b.rows.map(r => `<tr>
           <td class="t">${esc(r.a.time)}</td>
           <td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
           <td>${esc(r.c.daughterName || '—')}</td>
-          <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' · ' + esc(r.dress.size) + '</span>' : '—'}<br><span class="m">${esc(r.occasion)}</span></td>
-          <td class="s">${r.a.staffName ? esc(r.a.staffName) : '<span class="blank">____________</span>'}</td>
+          <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' · ' + esc(r.dress.size) + '</span><br>' : ''}<span class="m">${esc(r.occasion)}</span></td>
+          <td>${r.qa ? r.qa.questions.filter(z => z.a).map(z => '<div><span class="m">' + esc(z.q) + '</span><br><b>' + esc(z.a) + '</b></div>').join('') : '<span class="blank">—</span>'}</td>
         </tr>`).join('')}</tbody></table>`).join('')}
-      ${unslotted.length ? `<h2>No slot time yet</h2><table><tbody>${unslotted.map(r => `<tr>
-          <td class="t blank">____</td><td class="s">${esc(r.c.name)}</td><td>${esc(r.c.daughterName || '—')}</td>
-          <td>${r.dress ? esc(r.dress.title) : '—'}</td>
-          <td class="s">${r.a && r.a.staffName ? esc(r.a.staffName) : '<span class="blank">____________</span>'}</td>
+      ${unslotted.length ? `<h2>No slot time yet</h2><table>
+        <thead><tr><th style="width:60px">Time</th><th style="width:22%">Customer</th><th style="width:12%">For</th><th style="width:18%">Dress / occasion</th><th>Booking answers</th></tr></thead>
+        <tbody>${unslotted.map(r => `<tr>
+          <td class="t blank" style="width:60px">____</td><td class="s" style="width:22%">${esc(r.c.name)}</td><td style="width:12%">${esc(r.c.daughterName || '—')}</td>
+          <td style="width:18%">${r.dress ? esc(r.dress.title) : '—'}</td>
+          <td>${r.qa ? r.qa.questions.filter(z => z.a).map(z => '<div><span class="m">' + esc(z.q) + '</span><br><b>' + esc(z.a) + '</b></div>').join('') : '<span class="blank">—</span>'}</td>
         </tr>`).join('')}</tbody></table>` : ''}
     </body></html>`;
     UI.modal(`
       <h3>Staff run sheet — ${esc(venue)}, ${esc(dayLabel)}</h3>
-      <p class="small muted">One sheet for the whole day: time, customer, who it's for, dress and assigned staff. Balances are deliberately left off.</p>
+      <p class="small muted">One sheet for the whole day: time, customer, who it's for, dress and their booking answers. Balances are deliberately left off.</p>
       <iframe class="invoice-frame" id="runframe"></iframe>
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
         <button class="primary" onclick="document.getElementById('runframe').contentWindow.print()">🖨 Print / save PDF</button></div>`, true);
