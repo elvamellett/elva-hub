@@ -1969,7 +1969,31 @@ const ImportService = {
    environment and pulls live data through google.script.run. ---- */
 const LiveSync = {
   syncing: false,
+  _diag: null,
   available: () => typeof google !== 'undefined' && google.script && google.script.run,
+  // One-screen debugging aid: what Shopify sent per order and how it was read.
+  report() {
+    const rows = LiveSync._diag;
+    if (!rows || !rows.length) { UI.err(new Error('Run “Sync from Shopify now” first, then open the report.')); return; }
+    const withProps = rows.filter(r => r.raw.length);
+    const withDate = withProps.filter(r => r.bDate);
+    const tally = new Map();
+    for (const r of rows) { const k = r.venue || '(no venue found)'; tally.set(k, (tally.get(k) || 0) + 1); }
+    const fmt = r => r.ref + ' · created ' + r.created + ' · read: date=' + (r.bDate || '✗') + ' time=' + (r.bTime || '✗') + ' venue=' + (r.venue || '✗') + '\n  ' + r.raw.join('\n  ');
+    const problems = withProps.filter(r => !r.bDate || !r.venue).slice(0, 6);
+    const good = withProps.filter(r => r.bDate && r.venue).slice(0, 2);
+    UI.modal(`
+      <h3>Booking data report</h3>
+      <p class="small muted">Screenshot this box top to bottom — it shows exactly what Shopify sent and how each order was read.</p>
+      <pre style="white-space:pre-wrap; background:var(--grey-bg); padding:12px; border-radius:8px; font-size:.72rem; max-height:55vh; overflow:auto">${esc(
+        'Orders from Shopify: ' + rows.length +
+        '\nWith Apntly booking info on them: ' + withProps.length +
+        '\n  … where the booking date could be read: ' + withDate.length +
+        '\n\nOrders per venue:\n' + [...tally.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => '  ' + v + ' × ' + k).join('\n') +
+        (problems.length ? '\n\n—— Booking info that could NOT be fully read ——\n' + problems.map(fmt).join('\n\n') : '\n\nEvery order with booking info was read successfully.') +
+        (good.length ? '\n\n—— Examples that read fine ——\n' + good.map(fmt).join('\n\n') : ''))}</pre>
+      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">Close</button></div>`, true);
+  },
   sync() {
     if (!LiveSync.available()) { UI.err(new Error('Live sync only works when the dashboard is opened from its Google Apps Script web-app link — see Connect data.')); return; }
     if (LiveSync.syncing) return;
@@ -2000,6 +2024,7 @@ const LiveSync = {
       const digits = ImportService._digits(c.phone);
       if (digits) byPhone.set(digits, c);
     }
+    const diagRows = [];
     for (const so of p.orders || []) {
       let cust = (so.customer && so.customer.id != null && bySrcId.get(String(so.customer.id)))
         || (so.email && byEmail.get(String(so.email).toLowerCase())) || null;
@@ -2015,11 +2040,14 @@ const LiveSync = {
       // and the venue lives in the event product's title, e.g.
       //   "Darcy Day Out at Castlemartyr Resort Event - 26th & 27th September 2026".
       let bookingTitle = '';
+      const rawProps = [];
       for (const li of so.line_items || []) {
         const props = li.properties || [];
+        if (props.length) rawProps.push('[item] ' + String(li.title || '').slice(0, 90));
         if (!bookingTitle && props.some(p => /^_booking/i.test(String(p.name || '')))) bookingTitle = String(li.title || '');
         for (const p of props) {
           const n = String(p.name || '').trim(), v = String(p.value || '').trim();
+          rawProps.push(n + ' = ' + v.slice(0, 90));
           if (!n || !v) continue;
           const dt = v.match(/Date:\s*(.+?)\s*Time:\s*([\d:]+\s*(?:AM|PM)?)/i);
           if (dt && (/^booking$/i.test(n) || !n.startsWith('_'))) { pairs.push(['Booking Date', dt[1]], ['Booking Time', dt[2]]); continue; }
@@ -2061,7 +2089,10 @@ const LiveSync = {
           time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
           bookedAt: order.createdAt, syncedAt: nowIso(), questions: cls.qas });
       }
+      diagRows.push({ ref: order.reference, created: String(so.created_at || '').slice(0, 10),
+        raw: rawProps, bDate: cls.bDate, bTime: cls.bTime, venue: eventHotel });
     }
+    LiveSync._diag = diagRows;
     if (!customers.length) throw new Error('Shopify returned no customers — check the token scopes (read_customers, read_orders).');
     // Booking answers merged in from an Appointly CSV (and hand-logged
     // appointments) must survive re-syncs: re-link them to the freshly
@@ -2145,6 +2176,7 @@ Pages.importPage = () => {
     <div class="card" style="max-width:780px">
       <p class="small" style="margin-top:0">✅ This copy is running as your Google Apps Script web app — it can pull straight from Shopify, and the booking answers come with the orders.</p>
       <button class="primary" onclick="LiveSync.sync()">⟳ Sync from Shopify now</button>
+      <button onclick="LiveSync.report()" style="margin-left:8px">🔍 Booking data report</button>
       ${DB.importInfo && DB.importInfo.live ? `<span class="small muted" style="margin-left:10px">Last sync ${fmtDateTime(DB.importInfo.at)}</span>` : ''}
       <p class="small muted" style="margin-bottom:0; margin-top:10px">It also syncs by itself every time the page opens. If a sync fails, check the Script properties in the Apps Script project settings: SHOPIFY_STORE plus either SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET or SHOPIFY_TOKEN.</p>
     </div>`
