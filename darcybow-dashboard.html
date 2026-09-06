@@ -1431,7 +1431,7 @@ Pages.customers = () => {
             <td><span class="cname">${esc(c.name)}</span>${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
-            <td class="small">${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
+            <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
             <td class="small">${upcoming ? `<b>${fmtDate(upcoming.appointmentAt)}</b>${upcoming.time ? ' · <span class="vclock" style="font-size:.9rem">' + esc(upcoming.time) + '</span>' : ''}` : '<span class="muted">—</span>'}</td>
             <td>${answered ? `<span class="badge b-brand">${answered} booking${answered === 1 ? '' : 's'}</span>` : '<span class="muted small">none yet</span>'}</td></tr>`;
         }).join('') || '<tr><td colspan="6" class="muted">No customers match.</td></tr>'}
@@ -1898,6 +1898,7 @@ const ImportService = {
     const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
     const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
     let merged = 0, added = 0, created = 0;
+    const resolved = [];
     for (const a of b.appointments) {
       const stub = stubById.get(a.customerId);
       if (!stub) continue;
@@ -1915,7 +1916,17 @@ const ImportService = {
       }
       if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
       a.customerId = real.id; a.source = 'appointly_csv';
-      const existing = DB.appointments.find(x => x.customerId === real.id && x.appointmentAt === a.appointmentAt);
+      resolved.push(a);
+    }
+    // The Appointly export is the truth for bookings: for customers in it,
+    // drop order-derived bookings whose dates the export doesn't confirm
+    // (Shopify's copy of the date can be wrong or stale).
+    const csvCusts = new Set(resolved.map(a => a.customerId));
+    const csvDates = new Set(resolved.map(a => a.customerId + '|' + a.appointmentAt));
+    DB.appointments = DB.appointments.filter(x =>
+      !(x.source === 'appointly' && csvCusts.has(x.customerId) && !csvDates.has(x.customerId + '|' + x.appointmentAt)));
+    for (const a of resolved) {
+      const existing = DB.appointments.find(x => x.customerId === a.customerId && x.appointmentAt === a.appointmentAt);
       if (existing) {
         if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
         if (!existing.time && a.time) existing.time = a.time;
@@ -2123,6 +2134,17 @@ const LiveSync = {
         if (!existing.time && a.time) existing.time = a.time;
         if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
       } else appointments.push(a);
+    }
+    // Where the Appointly export has spoken for a customer, its dates win
+    // over the copy on the Shopify order — every sync, not just at import.
+    const csvCust2 = new Set(), csvKeep2 = new Set();
+    for (const a of appointments) if (a.source === 'appointly_csv' || a.source === 'manual') {
+      csvCust2.add(a.customerId);
+      csvKeep2.add(a.customerId + '|' + a.appointmentAt);
+    }
+    for (let i = appointments.length - 1; i >= 0; i--) {
+      const a = appointments[i];
+      if (a.source === 'appointly' && csvCust2.has(a.customerId) && !csvKeep2.has(a.customerId + '|' + a.appointmentAt)) appointments.splice(i, 1);
     }
     // Shopify customer lists collect spam/newsletter signups. Keep only
     // people with an actual order or booking (when there are orders at all).
