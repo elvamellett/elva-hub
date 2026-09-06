@@ -1441,21 +1441,38 @@ Pages.customers = () => {
 /* =============================== VENUES =============================== */
 const fmtWd = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
 
-// Orders grouped by venue (the part after the "—" in event/hotel),
-// sorted chronologically by each venue's next event date.
+// Everyone attending each venue, from BOTH sources: orders with event info,
+// plus bookings (e.g. from the Appointly export) whose service names the
+// venue — so customers without a Shopify order still appear. Where a booking
+// exists for a customer at a venue, its date wins over the order's copy.
 function venueGroups() {
+  const venOf = eh => { const p = String(eh).split(/\s+—\s+/); return (p[1] || p[0]).trim(); };
+  const apptBy = new Map(); // customerId|venue → best appointment (export wins)
+  for (const a of DB.appointments) {
+    if (!a.eventHotel) continue;
+    const k = a.customerId + '|' + venOf(a.eventHotel);
+    const cur = apptBy.get(k);
+    if (!cur || (a.source === 'appointly_csv' && cur.source !== 'appointly_csv')) apptBy.set(k, a);
+  }
   const groups = new Map();
+  const seen = new Set();
+  const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
   for (const o of DB.orders) {
     if (!o.eventHotel) continue;
-    const parts = o.eventHotel.split(/\s+—\s+/);
-    const venue = (parts[1] || parts[0]).trim();
-    if (!groups.has(venue)) groups.set(venue, []);
-    groups.get(venue).push(o);
+    const venue = venOf(o.eventHotel);
+    const a = apptBy.get(o.customerId + '|' + venue);
+    push(venue, a && a.appointmentAt !== o.eventDate ? Object.assign({}, o, { eventDate: a.appointmentAt }) : o);
+    seen.add(o.customerId + '|' + venue);
+  }
+  for (const [k, a] of apptBy) {
+    if (seen.has(k)) continue;
+    push(venOf(a.eventHotel), { id: 'appt-' + a.id, customerId: a.customerId, reference: '', status: 'confirmed',
+      createdAt: a.bookedAt || nowIso(), eventHotel: a.eventHotel, eventDate: a.appointmentAt, planType: null, staffNotes: '' });
   }
   return [...groups.entries()].map(([venue, orders]) => {
     const dates = [...new Set(orders.map(o => o.eventDate).filter(Boolean))].sort();
     const nextDate = dates.find(d => d >= todayStr()) || null;
-    const occasions = [...new Set(orders.map(o => (o.eventHotel.split(/\s+—\s+/)[0] || '').trim()).filter(Boolean))];
+    const occasions = [...new Set(orders.map(o => (String(o.eventHotel).split(/\s+—\s+/)[0] || '').trim()).filter(Boolean))];
     return { venue, orders, dates, nextDate, occasions };
   }).sort((a, b) => (a.nextDate || '9999-' + (a.dates.slice(-1)[0] || '')) < (b.nextDate || '9999-' + (b.dates.slice(-1)[0] || '')) ? -1 : 1);
 }
@@ -1741,6 +1758,36 @@ const ImportService = {
     }
     return out;
   },
+  // "Darcy Day Out at The Cashel Palace, Tipperary - 19th & 20th September
+  // 2026 (Deleted)" → "Darcy Day Out — The Cashel Palace, Tipperary".
+  _eventFromTitle(t) {
+    const stripped = String(t || '').split(/\s+Event\b/i)[0].replace(/\s*\(deleted\)\s*/ig, ' ').trim();
+    const atIdx = stripped.toLowerCase().lastIndexOf(' at ');
+    const occ = atIdx > 0 ? stripped.slice(0, atIdx).trim() : '';
+    let ven = atIdx > 0 ? stripped.slice(atIdx + 4).trim() : stripped;
+    ven = ven.replace(/\s*[-–]\s*(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day\b|\d{1,2}(?:st|nd|rd|th)\b)[\s\S]*$/i, '').trim() || ven;
+    return occ ? occ + ' — ' + ven : ven;
+  },
+  // The booking questions include contact fields (Address 1/2/3, Postcode,
+  // Mobile, Email) — fold those into the customer record and keep only the
+  // real questions.
+  _absorbContactQas(cust, qas) {
+    const rest = [];
+    const addr = { a1: '', a2: '', a3: '', post: '' };
+    for (const qa of qas) {
+      const q = String(qa.q || '').toLowerCase();
+      if (/^address\s*1/.test(q)) addr.a1 = qa.a;
+      else if (/^address\s*2/.test(q)) addr.a2 = qa.a;
+      else if (/^address\s*3/.test(q)) addr.a3 = qa.a;
+      else if (/^(post\s*code|postcode|eircode)/.test(q)) addr.post = qa.a;
+      else if (/^(mobile|phone|contact)\b/.test(q)) { if (cust && !cust.phone) cust.phone = qa.a; }
+      else if (/^e-?mail/.test(q)) { /* already keyed on email */ }
+      else rest.push(qa);
+    }
+    const full = [addr.a1, addr.a2, addr.a3, addr.post].filter(Boolean).join(', ');
+    if (full && cust && !cust.address) cust.address = full;
+    return rest;
+  },
   // Sort an order's attribute [key, value] pairs into booking details,
   // event info and question answers. Shared by the CSV importer and the
   // live Shopify sync (Appointly writes bookings onto orders this way).
@@ -1876,17 +1923,24 @@ const ImportService = {
       const qCols = withQ.length ? withQ
         : H.filter(h => h && !known.has(h) && !/\bid\b|created|updated|duration|price|amount|currency|order|payment|end time|timezone/i.test(h));
       if (!qCols.length) warnings.push('Appointly file: no question columns found — booking answers may be missing.');
+      const orderCol = col(H, 'order');
       for (const r of s.appointly.records) {
         if (!((email && r[email]) || (name && r[name]))) continue;
         if (statusCol && /cancel/i.test(r[statusCol])) continue;
         const cust = findOrCreateCustomer(name ? r[name] : '', email ? r[email] : '', phone ? r[phone] : '');
-        const d = normDate(date ? r[date] : '');
-        const qas = ImportService._expandQas(qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a));
+        // "Appointment Time" often carries date AND time in one cell.
+        const rawWhen = (date ? r[date] : '') || (time ? r[time] : '');
+        const d = normDate(rawWhen);
+        const qas = ImportService._absorbContactQas(cust,
+          ImportService._expandQas(qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a)));
         const dq = qas.find(qa => /daughter'?s\s+name/i.test(qa.q));
         if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
+        const svcRaw = (service ? r[service] : '').replace(/\s*\(deleted\)\s*/ig, ' ').trim();
+        const eventHotel = /\sat\s/i.test(svcRaw) ? ImportService._eventFromTitle(svcRaw) : '';
         appointments.push({ id: uid(), customerId: cust.id, source: 'appointly',
-          service: [service ? r[service] : '', location ? r[location] : ''].filter(Boolean).join(' — ') || 'Appointment',
-          appointmentAt: d || todayStr(), time: normTime(time ? r[time] : ''),
+          service: [eventHotel || svcRaw, location ? r[location] : ''].filter(Boolean).join(' — ') || 'Appointment',
+          eventHotel, _orderRef: orderCol ? (r[orderCol] || '').trim() : '',
+          appointmentAt: d || todayStr(), time: normTime((time ? r[time] : '') || rawWhen),
           status: (d || todayStr()) >= todayStr() ? 'upcoming' : 'completed',
           bookedAt: nowIso(), syncedAt: nowIso(), staffName: staff ? r[staff] : '',
           questions: qas });
@@ -1921,11 +1975,14 @@ const ImportService = {
     const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
     let merged = 0, added = 0, created = 0;
     const resolved = [];
+    const custById = new Map(DB.customers.map(c => [c.id, c]));
+    const byOrderRef = new Map(DB.orders.map(o => [String(o.reference || '').trim(), o.customerId]));
     for (const a of b.appointments) {
       const stub = stubById.get(a.customerId);
       if (!stub) continue;
       let real = (stub.email && byEmail.get(stub.email.toLowerCase()))
-        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone))) || null;
+        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone)))
+        || (a._orderRef && custById.get(byOrderRef.get(a._orderRef))) || null;
       // Bookings made without a Shopify order (added by staff, or no deposit
       // paid online) belong to customers Shopify has never seen — create them.
       if (!real) {
@@ -1937,22 +1994,26 @@ const ImportService = {
         created++;
       }
       if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
+      if (stub.phone && !real.phone) real.phone = stub.phone;
+      if (stub.address && !real.address) real.address = stub.address;
       a.customerId = real.id; a.source = 'appointly_csv';
       resolved.push(a);
     }
     // The Appointly export is the truth for bookings: for customers in it,
-    // drop order-derived bookings whose dates the export doesn't confirm
-    // (Shopify's copy of the date can be wrong or stale).
+    // drop bookings (order-derived or from an older export) whose dates
+    // this export doesn't confirm.
     const csvCusts = new Set(resolved.map(a => a.customerId));
     const csvDates = new Set(resolved.map(a => a.customerId + '|' + a.appointmentAt));
     DB.appointments = DB.appointments.filter(x =>
-      !(x.source === 'appointly' && csvCusts.has(x.customerId) && !csvDates.has(x.customerId + '|' + x.appointmentAt)));
+      !((x.source === 'appointly' || x.source === 'appointly_csv') && csvCusts.has(x.customerId) && !csvDates.has(x.customerId + '|' + x.appointmentAt)));
     for (const a of resolved) {
       const existing = DB.appointments.find(x => x.customerId === a.customerId && x.appointmentAt === a.appointmentAt);
       if (existing) {
         if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
         if (!existing.time && a.time) existing.time = a.time;
         if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
+        if (!existing.eventHotel && a.eventHotel) existing.eventHotel = a.eventHotel;
+        existing.source = 'appointly_csv'; // export-backed: survives every re-sync
         merged++;
       } else { DB.appointments.push(a); added++; }
     }
@@ -2090,17 +2151,7 @@ const LiveSync = {
       }
       const cls = ImportService._classifyAttrs(pairs);
       let eventHotel = cls.eventHotel;
-      if (!eventHotel && bookingTitle) {
-        const stripped = bookingTitle.split(/\s+Event\b/i)[0].trim();
-        const atIdx = stripped.toLowerCase().lastIndexOf(' at ');
-        let occ = atIdx > 0 ? stripped.slice(0, atIdx).trim() : '';
-        let ven = atIdx > 0 ? stripped.slice(atIdx + 4).trim() : stripped;
-        // Titles often carry the dates ("The Cashel Palace, Tipperary - 19th &
-        // 20th September 2026"); drop that so every variant of the same venue
-        // lands on ONE venue tile instead of splitting the group.
-        ven = ven.replace(/\s*[-–]\s*(?:(?:mon|tues|wednes|thurs|fri|satur|sun)day\b|\d{1,2}(?:st|nd|rd|th)\b)[\s\S]*$/i, '').trim() || ven;
-        eventHotel = occ ? occ + ' — ' + ven : ven;
-      }
+      if (!eventHotel && bookingTitle) eventHotel = ImportService._eventFromTitle(bookingTitle);
       const eventDate = cls.eventDate || (eventHotel ? cls.bDate : '');
       const order = { id: uid(), customerId: cust.id, reference: so.name || ('SHOP-' + (orders.length + 1)),
         status: so.cancelled_at ? 'cancelled' : 'confirmed', createdAt: so.created_at || nowIso(),
@@ -2114,13 +2165,13 @@ const LiveSync = {
           colour: vp[0] || '', size: vp[1] || '', quantity: li.quantity || 1, retailPriceCents: parseEuros(li.price) || 0 });
       }
       // Apntly's first custom question asks for the daughter's name — use it.
-      const qas2 = ImportService._expandQas(cls.qas);
+      const qas2 = ImportService._absorbContactQas(cust, ImportService._expandQas(cls.qas));
       const dq = qas2.find(qa => /daughter'?s\s+name/i.test(qa.q));
       if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
       if (cls.bDate || qas2.length) {
         const at = cls.bDate || ImportService._normDate(order.createdAt.slice(0, 10)) || todayStr();
         appointments.push({ id: uid(), customerId: cust.id, source: 'appointly', service: cls.bService || eventHotel || 'Booking',
-          time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
+          eventHotel, time: cls.bTime, staffName: cls.bStaff, appointmentAt: at, status: at >= todayStr() ? 'upcoming' : 'completed',
           bookedAt: order.createdAt, syncedAt: nowIso(), questions: qas2 });
       }
       diagRows.push({ ref: order.reference, created: String(so.created_at || '').slice(0, 10),
@@ -2156,6 +2207,8 @@ const LiveSync = {
         if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
         if (!existing.time && a.time) existing.time = a.time;
         if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
+        if (!existing.eventHotel && a.eventHotel) existing.eventHotel = a.eventHotel;
+        existing.source = 'appointly_csv'; // keep the export-backed marker alive
       } else appointments.push(a);
     }
     // Where the Appointly export has spoken for a customer, its dates win
@@ -2360,11 +2413,12 @@ const Actions = {
       return h >= cfg.startHour && h < cfg.endHour ? h - cfg.startHour + 1 : null;
     };
     const rows = [];
-    for (const o of DB.orders) {
-      if (!o.eventHotel || o.eventDate !== day) continue;
-      const parts = o.eventHotel.split(/\s+—\s+/);
-      if ((parts[1] || parts[0]).trim() !== venue) continue;
+    const group = venueGroups().find(x => x.venue === venue);
+    for (const o of (group ? group.orders : [])) {
+      if (o.eventDate !== day) continue;
+      const parts = String(o.eventHotel).split(/\s+—\s+/);
       const c = Domain.customer(o.customerId);
+      if (!c) continue;
       const slot = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
         .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
       // Booking answers can live on an earlier fitting appointment.
@@ -2393,11 +2447,12 @@ const Actions = {
     const hh = h => String(h).padStart(2, '0');
     const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const rows = [];
-    for (const o of DB.orders) {
-      if (!o.eventHotel || o.eventDate !== day) continue;
-      const parts = o.eventHotel.split(/\s+—\s+/);
-      if ((parts[1] || parts[0]).trim() !== venue) continue;
+    const group = venueGroups().find(x => x.venue === venue);
+    for (const o of (group ? group.orders : [])) {
+      if (o.eventDate !== day) continue;
+      const parts = String(o.eventHotel).split(/\s+—\s+/);
       const c = Domain.customer(o.customerId);
+      if (!c) continue;
       const a = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
         .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
       const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
@@ -2433,7 +2488,9 @@ const Actions = {
           : /communion/i.test(q) ? 'Communion date'
           : /occasion/i.test(q) ? 'Occasion' : '';
         const answers = r => {
-          const qas = ImportService._expandQas(r.qa ? r.qa.questions : []).filter(z => z.a);
+          const all = ImportService._expandQas(r.qa ? r.qa.questions : []).filter(z => z.a);
+          const trio = all.filter(z => label(z.q));
+          const qas = trio.length ? trio : all;
           return qas.length ? qas.map((z, n) => '<div>' + (n + 1) + '. ' +
             (label(z.q) ? '<span class="m">' + label(z.q) + ':</span> ' : '') + '<b>' + esc(z.a) + '</b></div>').join('')
             : '<span class="blank">—</span>';
