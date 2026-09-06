@@ -1389,12 +1389,14 @@ Pages.customers = () => {
       ...orders.flatMap(o => Domain.itemsOf(o.id).map(i => i.title + ' ' + i.styleCode)),
     ].join(' ').toLowerCase();
     return q.split(/\s+/).every(w => hay.includes(w));
-  }).sort((a, b) => {
-    // Most recent order first (falling back to when the customer appeared).
-    const la = Domain.ordersOf(a.id).reduce((m, o) => o.createdAt > m ? o.createdAt : m, a.createdAt || '');
-    const lb = Domain.ordersOf(b.id).reduce((m, o) => o.createdAt > m ? o.createdAt : m, b.createdAt || '');
-    return la < lb ? 1 : la > lb ? -1 : a.name.localeCompare(b.name);
-  });
+  }).map(c => {
+    // Most recent activity first: latest order, or latest booking for
+    // customers who only booked (no Shopify order).
+    let k = '';
+    for (const o of Domain.ordersOf(c.id)) if (o.createdAt > k) k = o.createdAt;
+    for (const a of AppointlyService.bookingsFor(c.id)) if ((a.bookedAt || '') > k) k = a.bookedAt;
+    return { c, k: k || c.createdAt || '' };
+  }).sort((a, b) => a.k < b.k ? 1 : a.k > b.k ? -1 : a.c.name.localeCompare(b.c.name)).map(x => x.c);
   return `
     <div class="flex" style="justify-content:space-between; margin-bottom:14px">
       <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
@@ -1924,6 +1926,7 @@ const ImportService = {
         : H.filter(h => h && !known.has(h) && !/\bid\b|created|updated|duration|price|amount|currency|order|payment|end time|timezone/i.test(h));
       if (!qCols.length) warnings.push('Appointly file: no question columns found — booking answers may be missing.');
       const orderCol = col(H, 'order');
+      const createdCol = col(H, 'createdat', 'created at', 'booked at', 'created');
       for (const r of s.appointly.records) {
         if (!((email && r[email]) || (name && r[name]))) continue;
         if (statusCol && /cancel/i.test(r[statusCol])) continue;
@@ -1942,7 +1945,8 @@ const ImportService = {
           eventHotel, _orderRef: orderCol ? (r[orderCol] || '').trim() : '',
           appointmentAt: d || todayStr(), time: normTime((time ? r[time] : '') || rawWhen),
           status: (d || todayStr()) >= todayStr() ? 'upcoming' : 'completed',
-          bookedAt: nowIso(), syncedAt: nowIso(), staffName: staff ? r[staff] : '',
+          bookedAt: (() => { const bd = new Date(createdCol ? r[createdCol] : ''); return isNaN(bd) ? nowIso() : bd.toISOString(); })(),
+          syncedAt: nowIso(), staffName: staff ? r[staff] : '',
           questions: qas });
       }
     }
