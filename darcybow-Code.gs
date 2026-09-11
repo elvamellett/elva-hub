@@ -91,6 +91,28 @@ var SCHOOLS_FILE_ = 'darcybow-schools.json';
 var INVOICES_FILE_ = 'darcybow-invoices.json';
 
 /**
+ * Emails an invoice from the owner's Gmail with the two-page PDF attached.
+ * payload: { to, isTest, subject, textBody, htmlBody, pdfHtml, filename, replyTo }
+ * isTest sends to the account that owns this script instead of the customer.
+ * Consumer Gmail allows roughly 100 sends per day.
+ */
+function sendInvoiceEmail(payload) {
+  try {
+    var p = JSON.parse(payload);
+    var to = p.isTest ? Session.getEffectiveUser().getEmail() : String(p.to || '').trim();
+    if (!to) return JSON.stringify({ error: 'No recipient email.' });
+    var pdf = Utilities.newBlob(p.pdfHtml, 'text/html', p.filename + '.html')
+      .getAs('application/pdf').setName(p.filename + '.pdf');
+    var opts = { htmlBody: p.htmlBody, attachments: [pdf], name: 'Darcybow' };
+    if (p.replyTo) opts.replyTo = p.replyTo;
+    GmailApp.sendEmail(to, p.subject, p.textBody || '', opts);
+    return JSON.stringify({ ok: true, sentTo: to });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+/**
  * Stores all invoices + invoice settings centrally (Drive) so every browser
  * shares them. Called automatically whenever an invoice or the invoice
  * settings are saved.

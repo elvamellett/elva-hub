@@ -2579,7 +2579,76 @@ const Invoices = {
     if (!DB.invoiceSettings) DB.invoiceSettings = { paymentTo: Object.assign({}, INV_DEFAULT_PAYTO),
       terms: INV_DEFAULT_TERMS, eventCodes: {}, passHash: '', updatedAt: nowIso() };
     if (!DB.invoiceSettings.eventCodes) DB.invoiceSettings.eventCodes = {};
+    if (!DB.invoiceSettings.emailTemplate) DB.invoiceSettings.emailTemplate = {
+      subject: 'Your Darcybow invoice — {{invoice_number}}',
+      body: 'Hi {{first_name}},\n\nThank you so much for your order with Darcybow! Your invoice ({{invoice_number}}) is attached.\n\nInvoice total: {{total}}\nRemainder to pay: {{remainder}}\n\nPayment details are on the invoice. If you have any questions, just reply to this email.\n\nDarcybow x',
+      replyTo: '',
+    };
     return DB.invoiceSettings;
+  },
+  emailVars(inv) {
+    const t = Invoices.totals(inv);
+    return {
+      name: inv.contact.name, first_name: (inv.contact.name || '').split(' ')[0],
+      invoice_number: inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq,
+      total: eurPlain(t.linesTotal), paid: eurPlain(t.paidCents),
+      remainder: (inv.paidInFull || t.remainderCents <= 0) ? 'nothing — paid in full!' : eurPlain(Math.max(t.remainderCents, 0)),
+      issue_date: inv.issueDate,
+    };
+  },
+  fill: (tpl, vars) => String(tpl || '').replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] != null ? vars[k] : ''),
+  sendModal() {
+    const inv = Invoices.save(true);
+    if (!inv) return;
+    if (!inv.contact.email) { UI.err(new Error('No email on the invoice — add one in “Bill to” first.')); return; }
+    const st = Invoices.settings();
+    const vars = Invoices.emailVars(inv);
+    UI.modal(`
+      <h3>✉ Send invoice ${esc(vars.invoice_number)}</h3>
+      <p class="small muted">The two-page invoice PDF is attached automatically. Sent from your Gmail — check with a test first.</p>
+      <label class="f">To</label><input id="em-to" style="width:100%" value="${esc(inv.contact.email)}">
+      <label class="f">Subject</label><input id="em-subject" style="width:100%" value="${esc(Invoices.fill(st.emailTemplate.subject, vars))}">
+      <label class="f">Message</label><textarea id="em-body" rows="9" style="width:100%">${esc(Invoices.fill(st.emailTemplate.body, vars))}</textarea>
+      ${inv.sentAt ? `<p class="small muted">Last sent ${fmtDateTime(inv.sentAt)}.</p>` : ''}
+      <div class="modalfoot">
+        <button onclick="UI.closeModal()">Cancel</button>
+        <button onclick="Invoices.sendEmail(true)">📧 Send test to me</button>
+        <button class="primary" onclick="Invoices.sendEmail(false)">✉ Send to customer</button>
+      </div>`, true);
+  },
+  sendEmail(isTest) {
+    const inv = Invoices.invFor(InvDraft ? InvDraft.customerId : '') || InvDraft;
+    if (!inv) return;
+    if (typeof LiveSync === 'undefined' || !LiveSync.available()) {
+      UI.err(new Error('Email sending only works from the live dashboard link (the Google web app).')); return;
+    }
+    const to = document.getElementById('em-to').value.trim();
+    const subject = document.getElementById('em-subject').value;
+    const bodyText = document.getElementById('em-body').value;
+    if (!isTest && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { UI.err(new Error('That customer email doesn\'t look right.')); return; }
+    const vars = Invoices.emailVars(inv);
+    const payload = {
+      to, isTest: !!isTest, subject: isTest ? '[TEST] ' + subject : subject,
+      textBody: bodyText,
+      htmlBody: bodyText.split('\n').map(l => esc(l) || '&nbsp;').join('<br>'),
+      pdfHtml: Invoices.docHtml(inv, true),
+      filename: (inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq).replace(/[\\/:*?"<>|]/g, '-'),
+      replyTo: Invoices.settings().emailTemplate.replyTo || '',
+    };
+    UI.toast(isTest ? 'Sending test…' : 'Sending invoice…');
+    google.script.run
+      .withSuccessHandler(res => {
+        try {
+          const r = JSON.parse(res);
+          if (r.error) { UI.err(new Error(r.error)); return; }
+          if (isTest) { UI.toast('Test sent to your own inbox (' + (r.sentTo || 'you') + ') — check it before sending to the customer.'); return; }
+          inv.sentAt = nowIso(); inv.updatedAt = nowIso();
+          Store.save(); Invoices._push(); UI.closeModal(); App.route();
+          UI.toast('Invoice emailed to ' + to + ' ✓');
+        } catch (e) { UI.err(e); }
+      })
+      .withFailureHandler(e => UI.err(e))
+      .sendInvoiceEmail(JSON.stringify(payload));
   },
   _hash(s) { let h = 5381; for (const ch of String(s)) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return String(h); },
   unlocked() { const st = Invoices.settings(); return !!st.passHash && localStorage.getItem('darcybow-inv-unlock') === st.passHash; },
@@ -2611,8 +2680,10 @@ const Invoices = {
   },
   statusBadge(custId) {
     const s = Invoices.status(custId);
+    const inv = Invoices.invFor(custId);
+    const sent = inv && inv.sentAt ? ' · sent ✉' : '';
     return s === 'paid' ? '<span class="badge b-green">Invoice · paid in full</span>'
-      : s === 'invoiced' ? '<span class="badge b-blue">Invoiced</span>'
+      : s === 'invoiced' ? '<span class="badge b-blue">Invoiced' + sent + '</span>'
       : '<span class="badge b-grey">Not invoiced</span>';
   },
   // Event code from the hotel the customer is linked to: remembered override,
@@ -2734,6 +2805,10 @@ const Invoices = {
         <div><label class="f">Swift / B.I.C.</label><input id="ist-sw" value="${esc(p.swift)}"></div>
         <div><label class="f">I.B.A.N.</label><input id="ist-ib" value="${esc(p.iban)}"></div>
       </div>
+      <h2 class="small" style="margin-top:14px">Email template <span class="muted" style="text-transform:none">— placeholders: {{first_name}} {{name}} {{invoice_number}} {{total}} {{remainder}} {{issue_date}}</span></h2>
+      <label class="f">Subject</label><input id="ist-em-subject" style="width:100%" value="${esc(st.emailTemplate.subject)}">
+      <label class="f">Message</label><textarea id="ist-em-body" rows="8" style="width:100%; font-size:.82rem">${esc(st.emailTemplate.body)}</textarea>
+      <label class="f">Reply-to address (optional)</label><input id="ist-em-replyto" style="width:100%" value="${esc(st.emailTemplate.replyTo || '')}" placeholder="edellemellett@gmail.com">
       <h2 class="small" style="margin-top:14px">Terms &amp; conditions (page 2 of every invoice)</h2>
       <textarea id="ist-terms" rows="12" style="width:100%; font-size:.82rem">${esc(st.terms)}</textarea>
       <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
@@ -2744,12 +2819,13 @@ const Invoices = {
     const v = id => document.getElementById(id).value;
     st.paymentTo = { accountName: v('ist-an'), accountDetails: v('ist-ad'), accountNo: v('ist-no'),
       sortCode: v('ist-sc'), swift: v('ist-sw'), iban: v('ist-ib') };
+    st.emailTemplate = { subject: v('ist-em-subject'), body: v('ist-em-body'), replyTo: v('ist-em-replyto').trim() };
     st.terms = v('ist-terms');
     st.updatedAt = nowIso();
     Store.save(); Invoices._push(); UI.closeModal(); UI.toast('Invoice settings saved.');
   },
   /* --------- the two-page invoice document (matches the PDF design) --------- */
-  docHtml(inv) {
+  docHtml(inv, pdfMode) {
     const st = Invoices.settings();
     const t = Invoices.totals(inv);
     const num = inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq;
@@ -2787,16 +2863,17 @@ const Invoices = {
       .inner { padding: 10mm 16mm 0; flex: 1; display: flex; flex-direction: column; }
       .logo { text-align: center; margin: 6mm 0 4mm; } .logo img { width: 62mm; }
       .invttl { text-align: center; letter-spacing: .5em; font-size: 12pt; color: #536161; margin-bottom: 8mm; }
-      .meta { display: flex; justify-content: space-between; font-size: 9.5pt; margin-bottom: 8mm; }
-      .meta .l { padding-top: 2mm; } .meta .l div { margin-bottom: 3mm; }
-      .meta .r { text-align: left; line-height: 1.55; border-left: 1px solid #c9cecd; padding-left: 6mm; min-width: 52mm; }
+      table.meta { width: 100%; font-size: 9.5pt; margin-bottom: 8mm; border-collapse: collapse; }
+      .meta td.l { vertical-align: top; padding-top: 2mm; } .meta td.l div { margin-bottom: 3mm; }
+      .meta td.r { vertical-align: top; text-align: left; line-height: 1.55; border-left: 1px solid #c9cecd; padding-left: 6mm; width: 60mm; }
       table.inv { border-collapse: collapse; width: 100%; font-size: 9.5pt; }
       .inv th { font-weight: 400; letter-spacing: .25em; font-size: 8.5pt; color: #536161; padding: 3mm 2mm; text-align: center; border-bottom: 1.5px solid #536161; }
       .inv th.pl { text-align: left; }
       .inv td { border-bottom: 1px solid #6b7677; padding: 3.4mm 2mm; height: 6.5mm; }
       .inv td.c { border-left: 1px solid #6b7677; text-align: center; width: 24mm; }
       .inv td.pl { text-align: left; }
-      .payrow { display: flex; justify-content: space-between; margin-top: 8mm; font-size: 8.5pt; }
+      table.payrow { width: 100%; margin-top: 8mm; font-size: 8.5pt; border-collapse: collapse; }
+      .payrow > tbody > tr > td { vertical-align: top; }
       .payto { line-height: 1.7; } .payto .h { font-variant: small-caps; font-weight: 700; color: #536161; }
       .payto table td { padding: 0 2mm 0 0; vertical-align: top; }
       .payto td.k { font-variant: small-caps; color: #536161; white-space: nowrap; }
@@ -2809,28 +2886,36 @@ const Invoices = {
       .th { font-weight: 700; color: #536161; margin: 5mm 0 1.5mm; font-size: 10.5pt; }
       .tl { font-size: 9.5pt; line-height: 1.65; margin-left: 4mm; }
       @media screen { .pg { margin: 10px auto; box-shadow: 0 2px 14px rgba(0,0,0,.25); } body { background: #666; } }
+      ${pdfMode ? `
+      /* Google's HTML→PDF converter predates flexbox — flow layout instead. */
+      body { background: #fff; }
+      .pg { display: block; width: auto; min-height: 0; margin: 0; box-shadow: none; }
+      .inner { display: block; padding: 4mm 6mm 0; }
+      .p2 { page-break-before: always; }
+      .foot { margin-top: 12mm; }
+      ` : ''}
     </style></head><body>
     <div class="pg">
       <div class="inner">
         <div class="logo"><img src="${DARCYBOW_LOGO}" alt="Darcybow"></div>
         <div class="invttl">INVOICE</div>
-        <div class="meta">
-          <div class="l">
+        <table class="meta"><tr>
+          <td class="l">
             <div>Invoice #: ${esc(num)}</div>
             <div>Issue Date: ${esc(dateStr)}</div>
-          </div>
-          <div class="r">
+          </td>
+          <td class="r">
             <b>${esc(inv.contact.name)}</b><br>
             ${String(inv.contact.address || '').split('\n').filter(s => s.trim()).map(s => esc(s.trim()) + '<br>').join('')}
             ${esc(inv.contact.phone)}<br>${esc(inv.contact.email)}
-          </div>
-        </div>
+          </td>
+        </tr></table>
         <table class="inv">
           <thead><tr><th class="pl">PRODUCT / SERVICE</th><th>QTY</th><th>PRICE</th><th>TOTAL</th></tr></thead>
           <tbody>${rows.join('')}</tbody>
         </table>
-        <div class="payrow">
-          <div class="payto">
+        <table class="payrow"><tr>
+          <td><div class="payto">
             <div class="h">Payment To:</div>
             <table>
               <tr><td class="k">Account Name:</td><td>${esc(st.paymentTo.accountName)}</td></tr>
@@ -2840,9 +2925,9 @@ const Invoices = {
               <tr><td class="k">Swift / B.I.C.:</td><td>${esc(st.paymentTo.swift)}</td></tr>
               <tr><td class="k">I.B.A.N.:</td><td>${esc(st.paymentTo.iban)}</td></tr>
             </table>
-          </div>
-          <div class="paysum">${pay.map(p => esc(p)).join('<br>')}</div>
-        </div>
+          </div></td>
+          <td style="width:58mm"><div class="paysum">${pay.map(p => esc(p)).join('<br>')}</div></td>
+        </tr></table>
         <div class="thanks">WE APPRECIATE YOUR BUSINESS!</div>
       </div>
       <div class="foot">DARCYBOW - EDELLE (+353) 87 6007560 •<br>EDELLEMELLETT@GMAIL.COM • WWW.DARCYBOW.IE</div>
@@ -2898,10 +2983,11 @@ Pages.invoice = (custId) => {
           ? `<button onclick="Invoices.markPaid('${custId}', false)">↩ Not fully paid</button>`
           : `<button onclick="Invoices.markPaid('${custId}', true)">✓ Mark paid in full</button>`) : ''}
         <button onclick="Invoices.save()">💾 Save</button>
+        <button onclick="Invoices.sendModal()">✉ Send invoice</button>
         <button class="primary" onclick="Invoices.preview()">👁 Preview &amp; Download PDF</button>
       </div>
     </div>
-    <p class="sub">Invoice #: <b id="inv-num-preview">${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</b></p>
+    <p class="sub">Invoice #: <b id="inv-num-preview">${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</b>${existing && existing.sentAt ? ' · <span class="badge b-teal">✉ sent ' + fmtDateTime(existing.sentAt) + '</span>' : ''}</p>
     <datalist id="dresslist">${dressOptions}</datalist>
     <div class="cols2">
       <div class="card">
