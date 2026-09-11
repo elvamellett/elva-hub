@@ -47,18 +47,21 @@ function syncShopify() {
     }
     var token = getAccessToken_(store);
     var base = 'https://' + store + '/admin/api/2024-10/';
-    var bookingsCsv = '', schoolsJson = '';
+    var bookingsCsv = '', schoolsJson = '', invoicesJson = '';
     try {
       var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
       if (files.hasNext()) bookingsCsv = files.next().getBlob().getDataAsString();
       var sFiles = DriveApp.getFilesByName(SCHOOLS_FILE_);
       if (sFiles.hasNext()) schoolsJson = sFiles.next().getBlob().getDataAsString();
+      var iFiles = DriveApp.getFilesByName(INVOICES_FILE_);
+      if (iFiles.hasNext()) invoicesJson = iFiles.next().getBlob().getDataAsString();
     } catch (eDrive) { /* Drive not authorised yet — sync still works without it */ }
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
       bookingsCsv: bookingsCsv,
       schoolsJson: schoolsJson,
+      invoicesJson: invoicesJson,
       syncedAt: new Date().toISOString(),
     });
   } catch (e) {
@@ -85,6 +88,23 @@ function saveBookingsCsv(text) {
 }
 
 var SCHOOLS_FILE_ = 'darcybow-schools.json';
+var INVOICES_FILE_ = 'darcybow-invoices.json';
+
+/**
+ * Stores all invoices + invoice settings centrally (Drive) so every browser
+ * shares them. Called automatically whenever an invoice or the invoice
+ * settings are saved.
+ */
+function saveInvoices(json) {
+  try {
+    var files = DriveApp.getFilesByName(INVOICES_FILE_);
+    if (files.hasNext()) files.next().setContent(json);
+    else DriveApp.createFile(INVOICES_FILE_, json, 'application/json');
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
 
 /**
  * Stores the staff-confirmed school name corrections (aliases and dismissed
