@@ -47,15 +47,18 @@ function syncShopify() {
     }
     var token = getAccessToken_(store);
     var base = 'https://' + store + '/admin/api/2024-10/';
-    var bookingsCsv = '';
+    var bookingsCsv = '', schoolsJson = '';
     try {
       var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
       if (files.hasNext()) bookingsCsv = files.next().getBlob().getDataAsString();
+      var sFiles = DriveApp.getFilesByName(SCHOOLS_FILE_);
+      if (sFiles.hasNext()) schoolsJson = sFiles.next().getBlob().getDataAsString();
     } catch (eDrive) { /* Drive not authorised yet — sync still works without it */ }
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
       bookingsCsv: bookingsCsv,
+      schoolsJson: schoolsJson,
       syncedAt: new Date().toISOString(),
     });
   } catch (e) {
@@ -75,6 +78,24 @@ function saveBookingsCsv(text) {
     var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
     if (files.hasNext()) files.next().setContent(text);
     else DriveApp.createFile(BOOKINGS_FILE_, text, 'text/csv');
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+var SCHOOLS_FILE_ = 'darcybow-schools.json';
+
+/**
+ * Stores the staff-confirmed school name corrections (aliases and dismissed
+ * match suggestions) centrally, so every browser shares the same school
+ * groupings. Called automatically when staff confirm or correct a school.
+ */
+function saveSchools(json) {
+  try {
+    var files = DriveApp.getFilesByName(SCHOOLS_FILE_);
+    if (files.hasNext()) files.next().setContent(json);
+    else DriveApp.createFile(SCHOOLS_FILE_, json, 'application/json');
     return JSON.stringify({ ok: true });
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });

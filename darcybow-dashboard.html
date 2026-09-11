@@ -1301,6 +1301,7 @@ const App = {
       ['dashboard', '⌂', 'Dashboard'],
       ['customers', '👥', 'Customers', () => DB.customers.length],
       ['venues', '📍', 'Venues'],
+      ['schools', '🏫', 'Schools', () => Schools.groups().length],
       ['import', '⇪', 'Connect data'],
     ];
     document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
@@ -1309,7 +1310,7 @@ const App = {
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
       venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
-      import: Pages.importPage,
+      schools: Pages.schools, import: Pages.importPage,
     };
     main.innerHTML = (pages[page] || Pages.dashboard)();
     main.scrollTop = 0;
@@ -1479,6 +1480,138 @@ function venueGroups() {
   }).sort((a, b) => (a.nextDate || '9999-' + (a.dates.slice(-1)[0] || '')) < (b.nextDate || '9999-' + (b.dates.slice(-1)[0] || '')) ? -1 : 1);
 }
 
+/* ---------------- Schools: matching, aliases, one-dress-per-school ----------------
+   The school answer matters commercially: only one girl per school may buy a
+   given dress. Names arrive misspelt and abbreviated, so grouping works in
+   layers: exact match after normalisation, staff-confirmed aliases (stored
+   centrally so every browser shares them), and fuzzy suggestions (edit
+   distance + initials) that staff confirm or dismiss manually. ---- */
+const Schools = {
+  norm(s) {
+    return String(s || '').toLowerCase().replace(/[’'".,()\/\-&!?]+/g, ' ').replace(/\s+/g, ' ').trim();
+  },
+  aliases: () => DB.schoolAliases || (DB.schoolAliases = {}),
+  notSameList: () => DB.schoolNotSame || (DB.schoolNotSame = []),
+  // The raw school answer on a customer's bookings (latest wins).
+  of(customerId) {
+    let school = '';
+    for (const a of DB.appointments) {
+      if (a.customerId !== customerId) continue;
+      for (const qa of (a.questions || [])) if (/school/i.test(qa.q) && qa.a) school = qa.a;
+    }
+    return String(school).trim();
+  },
+  initials(s) {
+    return Schools.norm(s).split(' ').filter(w => w && !['the', 'of', 'and'].includes(w)).map(w => w[0]).join('');
+  },
+  lev(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 99;
+    const m = a.length, n = b.length;
+    let prev = Array.from({ length: n + 1 }, (_, j) => j);
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[n];
+  },
+  similar(a, b) {
+    if (!a || !b || a === b) return false;
+    if (a.length >= 5 && b.length >= 5 && (a.includes(b) || b.includes(a))) return true;
+    const fa = a.replace(/\s/g, ''), fb = b.replace(/\s/g, '');
+    const ia = Schools.initials(a), ib = Schools.initials(b);
+    if (ia.length >= 3 && ia === fb) return true; // "MAMJS" typed for the long name
+    if (ib.length >= 3 && ib === fa) return true;
+    if (Math.min(a.length, b.length) > 5 && Schools.lev(a, b) <= 2) return true; // spelling slips
+    return false;
+  },
+  groups() {
+    const aliases = Schools.aliases();
+    const map = new Map();
+    for (const c of DB.customers) {
+      const raw = Schools.of(c.id);
+      if (!raw) continue;
+      const n = Schools.norm(raw);
+      const alias = aliases[n];
+      const key = alias ? Schools.norm(alias) : n;
+      if (!map.has(key)) map.set(key, { key, name: alias || raw, members: [] });
+      const g = map.get(key);
+      if (alias) g.name = alias;
+      else if (raw.length > g.name.length) g.name = raw;
+      const orders = Domain.ordersOf(c.id);
+      const items = orders.flatMap(o => Domain.itemsOf(o.id));
+      const latest = orders.slice().sort((x, y) => x.createdAt < y.createdAt ? 1 : -1)[0];
+      g.members.push({ c, raw, dress: items.filter(i => i.category === 'dress')[0] || null,
+        event: latest ? latest.eventHotel : '' });
+    }
+    return [...map.values()].sort((a, b) => b.members.length - a.members.length || a.name.localeCompare(b.name));
+  },
+  suggestions() {
+    const gs = Schools.groups();
+    const dismissed = new Set(Schools.notSameList());
+    const out = [];
+    for (let i = 0; i < gs.length && out.length < 12; i++) {
+      for (let j = i + 1; j < gs.length && out.length < 12; j++) {
+        const pairKey = [gs[i].key, gs[j].key].sort().join('||');
+        if (dismissed.has(pairKey)) continue;
+        if (Schools.similar(gs[i].key, gs[j].key)) out.push({ a: gs[i], b: gs[j], pairKey });
+      }
+    }
+    return out;
+  },
+  // Same-school (and same-dress!) info for one customer's profile.
+  clashes(customerId) {
+    const raw = Schools.of(customerId);
+    if (!raw) return null;
+    const aliases = Schools.aliases();
+    const n = Schools.norm(raw);
+    const key = aliases[n] ? Schools.norm(aliases[n]) : n;
+    const g = Schools.groups().find(x => x.key === key);
+    if (!g) return null;
+    const mine = g.members.find(m => m.c.id === customerId);
+    const others = g.members.filter(m => m.c.id !== customerId);
+    const dressClash = (mine && mine.dress) ? others.filter(o => o.dress && o.dress.title === mine.dress.title) : [];
+    return { name: g.name, others, dressClash };
+  },
+  _save() {
+    Store.save();
+    if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
+      try { google.script.run.saveSchools(JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList() })); } catch (e) { /* non-fatal */ }
+    }
+    App.route();
+  },
+  confirmSame(aKeyEnc, bKeyEnc) {
+    const aKey = decodeURIComponent(aKeyEnc), bKey = decodeURIComponent(bKeyEnc);
+    const gs = Schools.groups();
+    const a = gs.find(g => g.key === aKey), b = gs.find(g => g.key === bKey);
+    if (!a || !b) return;
+    const name = prompt('These are the same school — type its correct full name:', a.name.length >= b.name.length ? a.name : b.name);
+    if (!name || !name.trim()) return;
+    const aliases = Schools.aliases();
+    for (const m of [...a.members, ...b.members]) aliases[Schools.norm(m.raw)] = name.trim();
+    Schools._save();
+    UI.toast('Merged under “' + name.trim() + '” — shared with everyone who opens the dashboard.');
+  },
+  notSame(pairKey) {
+    const list = Schools.notSameList();
+    if (!list.includes(pairKey)) list.push(pairKey);
+    Schools._save();
+  },
+  rename(keyEnc) {
+    const key = decodeURIComponent(keyEnc);
+    const g = Schools.groups().find(x => x.key === key);
+    if (!g) return;
+    const name = prompt('Correct name / spelling for this school:', g.name);
+    if (!name || !name.trim()) return;
+    const aliases = Schools.aliases();
+    for (const m of g.members) aliases[Schools.norm(m.raw)] = name.trim();
+    Schools._save();
+    UI.toast('School name corrected to “' + name.trim() + '”.');
+  },
+};
+
 /* ---- Venues board: big clean bubbles, no customers, chronological ---- */
 Pages.venues = () => {
   const cards = venueGroups();
@@ -1510,7 +1643,7 @@ Pages.venueDetail = (venueName) => {
     const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
     const last = appts[0];
     const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
-    return { o, c, upcoming, last, dress };
+    return { o, c, upcoming, last, dress, school: Schools.of(c.id) };
   });
   const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
   const dayChips = v.dates.map(d => ({
@@ -1524,7 +1657,7 @@ Pages.venueDetail = (venueName) => {
       <div class="vtime">${timeHtml}</div>
       <div style="flex:1; min-width:0">
         <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
-        <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}</span>
+        <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}${r.school ? ' · 🏫 ' + esc(r.school) : ''}</span>
       </div>
       ${appt && appt.staffName ? `<div><span class="badge b-grey">${esc(appt.staffName)}</span></div>` : ''}
       <div style="text-align:right">
@@ -1612,10 +1745,59 @@ Pages.venueDetail = (venueName) => {
     ${body}`;
 };
 
+/* =============================== SCHOOLS =============================== */
+let schoolQuery = '';
+Pages.schools = () => {
+  const all = Schools.groups();
+  const q = schoolQuery.trim().toLowerCase();
+  const gs = all.filter(g => !q || (g.name + ' ' + g.members.map(m => m.c.name + ' ' + (m.c.daughterName || '') + ' ' + m.raw).join(' ')).toLowerCase().includes(q));
+  const sugg = q ? [] : Schools.suggestions();
+  const noSchool = DB.customers.filter(c => !Schools.of(c.id)).length;
+  return `
+    <h1>Schools <span class="muted" style="font-size:1rem; font-weight:400">${all.length}</span></h1>
+    <p class="sub">One dress per school — every customer grouped by their daughter's school so clashes stand out. A red badge means two girls from the same school have the <b>same dress</b>.</p>
+    <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search school, customer or daughter…"
+      value="${esc(schoolQuery)}" oninput="schoolQuery = this.value; App.route()">
+    ${sugg.length ? `<h2>Possibly the same school — you decide</h2>
+      <p class="small muted">Spelling variations and abbreviations spotted automatically. “Same school…” merges them under the correct name (shared with everyone); “Different” hides the suggestion.</p>
+      ${sugg.map(s => `<div class="card" style="margin-bottom:10px"><div class="flex" style="flex-wrap:wrap; align-items:center">
+        <div style="flex:1; min-width:260px"><b>${esc(s.a.name)}</b> <span class="small muted">(${s.a.members.length})</span>
+          <span class="muted"> ↔ </span> <b>${esc(s.b.name)}</b> <span class="small muted">(${s.b.members.length})</span></div>
+        <button class="small primary" onclick="Schools.confirmSame('${encodeURIComponent(s.a.key)}','${encodeURIComponent(s.b.key)}')">Same school…</button>
+        <button class="small" onclick="Schools.notSame('${esc(s.pairKey)}')">Different</button>
+      </div></div>`).join('')}` : ''}
+    <h2>Schools (${gs.length})</h2>
+    ${gs.map(g => {
+      const dressCount = {};
+      for (const m of g.members) if (m.dress) dressCount[m.dress.title] = (dressCount[m.dress.title] || 0) + 1;
+      const hasClash = Object.values(dressCount).some(n => n > 1);
+      return `<div class="card" style="margin-bottom:12px${hasClash ? '; border-color:#e8a1a1' : ''}">
+        <div class="flex" style="align-items:center">
+          <b>🏫 ${esc(g.name)}</b>
+          <span class="badge b-grey">${g.members.length} customer${g.members.length === 1 ? '' : 's'}</span>
+          ${hasClash ? '<span class="badge b-red">⚠ same dress twice!</span>' : ''}
+          <span style="flex:1"></span>
+          <button class="small" onclick="Schools.rename('${encodeURIComponent(g.key)}')">✏️ Correct name</button>
+        </div>
+        <div class="tablewrap" style="margin-top:10px"><table>
+          <thead><tr><th>Daughter</th><th>Customer</th><th>Dress</th><th>Event</th><th>As written</th></tr></thead>
+          <tbody>${g.members.map(m => `<tr class="click" onclick="App.go('#/customer/${m.c.id}')">
+            <td><b>${esc(m.c.daughterName || '—')}</b></td>
+            <td>${esc(m.c.name)}</td>
+            <td>${m.dress ? (dressCount[m.dress.title] > 1 ? '<span class="badge b-red">⚠ ' + esc(m.dress.title) + '</span>' : esc(m.dress.title)) : '<span class="muted">none yet</span>'}</td>
+            <td class="small">${UI.eventBadge(m.event).split('<br>')[0]}</td>
+            <td class="small muted">${esc(m.raw)}</td>
+          </tr>`).join('')}</tbody></table></div>
+      </div>`;
+    }).join('') || '<div class="card muted">No schools on file yet — they arrive with the Appointly booking answers.</div>'}
+    ${noSchool ? `<p class="small muted">${noSchool} customer${noSchool === 1 ? ' has' : 's have'} no school on file (no booking answer yet).</p>` : ''}`;
+};
+
 Pages.customerDetail = (id) => {
   const c = Domain.customer(id);
   if (!c) return '<h1>Customer not found</h1>';
   const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
+  const schoolInfo = Schools.clashes(c.id);
   return `
     <p><a class="plain" href="#/customers">← Customers</a></p>
     <h1>${esc(c.name)}</h1>
@@ -1629,7 +1811,10 @@ Pages.customerDetail = (id) => {
         <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
         <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
         <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
+        ${schoolInfo ? `<div class="dl-row"><span class="dl-label">School</span><span class="dl-value">🏫 ${esc(schoolInfo.name)}</span></div>` : ''}
         ${c.notes ? `<div class="dl-row"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes)} <span class="small muted">(internal)</span></span></div>` : ''}
+        ${schoolInfo && schoolInfo.dressClash.length ? `<div class="note err" style="margin-bottom:0">⚠ <b>SAME DRESS, SAME SCHOOL:</b> ${schoolInfo.dressClash.map(o => esc(o.c.name) + (o.c.daughterName ? ' (for ' + esc(o.c.daughterName) + ')' : '')).join(', ')} — one dress per school!</div>`
+        : schoolInfo && schoolInfo.others.length ? `<div class="note" style="margin-bottom:0">🏫 ${schoolInfo.others.length} more customer${schoolInfo.others.length === 1 ? '' : 's'} from this school: ${schoolInfo.others.map(o => esc(o.c.name) + (o.dress ? ' — ' + esc(o.dress.title) : '')).join(' · ')}. <a class="plain" href="#/schools">Schools page →</a></div>` : ''}
       </div>
       <div class="card" style="grid-row: span 2">
         <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
@@ -2249,6 +2434,16 @@ const LiveSync = {
     Store.save(); Domain.refreshAll(); App.route();
     UI.toast('Live sync complete — ' + kept.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings' +
       (skipped > 0 ? ' (' + skipped + ' contacts with no orders — newsletter/spam signups — left out).' : '.'));
+    // Shared school corrections (aliases + dismissed suggestions) — union
+    // the central copy with anything decided locally.
+    if (p.schoolsJson) {
+      try {
+        const sj = JSON.parse(p.schoolsJson);
+        DB.schoolAliases = Object.assign({}, sj.aliases || {}, DB.schoolAliases || {});
+        DB.schoolNotSame = [...new Set([...(sj.notSame || []), ...(DB.schoolNotSame || [])])];
+        Store.save();
+      } catch (e) { /* non-fatal */ }
+    }
     // Replay the centrally stored Appointly export (put there by whoever
     // imported it last) so this browser has the bookings and answers too.
     if (p.bookingsCsv) {
@@ -2546,6 +2741,8 @@ const Actions = {
 /* =============================== BOOT =============================== */
 (function boot() {
   Store.load();
+  DB.schoolAliases = DB.schoolAliases || {};
+  DB.schoolNotSame = DB.schoolNotSame || [];
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {
