@@ -105,8 +105,23 @@ function sendInvoiceEmail(payload) {
       .getAs('application/pdf').setName(p.filename + '.pdf');
     var opts = { htmlBody: p.htmlBody, attachments: [pdf], name: 'Darcybow' };
     if (p.replyTo) opts.replyTo = p.replyTo;
+    // Send from the business address once it's a verified "Send mail as"
+    // alias in this Gmail account; until then, fall back and say so.
+    var warning = '';
+    var from = String(p.fromAddress || '').trim();
+    if (from) {
+      var me = '';
+      try { me = Session.getEffectiveUser().getEmail(); } catch (eMe) {}
+      var aliases = [];
+      try { aliases = GmailApp.getAliases() || []; } catch (eAl) {}
+      if (from.toLowerCase() === String(me).toLowerCase() || aliases.join(',').toLowerCase().split(',').indexOf(from.toLowerCase()) !== -1) {
+        opts.from = from;
+      } else {
+        warning = 'Sent from ' + me + ' — to send from ' + from + ', add it in that Gmail account under Settings → Accounts and Import → “Send mail as”, verify it, and it will be used automatically.';
+      }
+    }
     GmailApp.sendEmail(to, p.subject, p.textBody || '', opts);
-    return JSON.stringify({ ok: true, sentTo: to });
+    return JSON.stringify({ ok: true, sentTo: to, warning: warning });
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });
   }
@@ -180,6 +195,50 @@ function getAccessToken_(store) {
   var ttl = Math.max(60, Math.min(21540, (Number(body.expires_in) || 86400) - 300));
   cache.put('shopify_cc_token', body.access_token, ttl);
   return body.access_token;
+}
+
+/**
+ * Builds the production board as a real .xlsx and returns it base64-encoded
+ * for the browser to download. One block per dress: title, size tally,
+ * column headers, rows, blank line.
+ */
+function exportProductionXlsx(payload) {
+  var ss = null;
+  try {
+    var p = JSON.parse(payload);
+    ss = SpreadsheetApp.create('Darcybow production ' + p.date);
+    var sh = ss.getSheets()[0];
+    sh.setName('Production');
+    var rows = [];
+    var bolds = []; // 1-based row numbers to embolden
+    rows.push(['DARCYBOW PRODUCTION — ' + p.date, '', '', '', '', '', '', '', '']);
+    bolds.push(rows.length);
+    rows.push(['', '', '', '', '', '', '', '', '']);
+    for (var g = 0; g < p.groups.length; g++) {
+      var grp = p.groups[g];
+      rows.push([grp.dress.toUpperCase() + '   (' + grp.tally + ')', '', '', '', '', '', '', '', '']);
+      bolds.push(rows.length);
+      rows.push(['Size', 'Colour', 'Qty', 'Customer', 'Daughter', 'Phone', 'Email', 'Accessories', 'Notes']);
+      bolds.push(rows.length);
+      for (var r = 0; r < grp.rows.length; r++) {
+        var x = grp.rows[r];
+        rows.push([x.size, x.colour, x.qty, x.customer, x.daughter, "'" + String(x.phone || ''), x.email, x.accessories, x.notes]);
+      }
+      rows.push(['', '', '', '', '', '', '', '', '']);
+    }
+    sh.getRange(1, 1, rows.length, 9).setValues(rows);
+    for (var b = 0; b < bolds.length; b++) sh.getRange(bolds[b], 1, 1, 9).setFontWeight('bold');
+    for (var c2 = 1; c2 <= 9; c2++) sh.autoResizeColumn(c2);
+    SpreadsheetApp.flush();
+    var url = 'https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx';
+    var blob = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getBlob();
+    var name = 'Darcybow production ' + p.date + '.xlsx';
+    DriveApp.getFileById(ss.getId()).setTrashed(true);
+    return JSON.stringify({ b64: Utilities.base64Encode(blob.getBytes()), name: name });
+  } catch (e) {
+    try { if (ss) DriveApp.getFileById(ss.getId()).setTrashed(true); } catch (e2) {}
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
 }
 
 /** Follows Shopify's Link-header pagination, 250 records per page. */

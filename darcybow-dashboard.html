@@ -1302,6 +1302,7 @@ const App = {
       ['customers', '👥', 'Customers', () => DB.customers.length],
       ['venues', '📍', 'Venues'],
       ['schools', '🏫', 'Schools', () => Schools.groups().length],
+      ['production', '🧵', 'Production', () => (typeof Production !== 'undefined' ? Production.entries().length : 0)],
       ['import', '⇪', 'Connect data'],
     ];
     document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
@@ -1310,7 +1311,7 @@ const App = {
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
       venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
-      schools: Pages.schools, import: Pages.importPage, invoice: () => Pages.invoice(arg),
+      schools: Pages.schools, production: Pages.production, import: Pages.importPage, invoice: () => Pages.invoice(arg),
     };
     main.innerHTML = (pages[page] || Pages.dashboard)();
     main.scrollTop = 0;
@@ -2584,6 +2585,7 @@ const Invoices = {
       body: 'Hi {{first_name}},\n\nThank you so much for your order with Darcybow! Your invoice ({{invoice_number}}) is attached.\n\nInvoice total: {{total}}\nRemainder to pay: {{remainder}}\n\nPayment details are on the invoice. If you have any questions, just reply to this email.\n\nDarcybow x',
       replyTo: '',
     };
+    if (DB.invoiceSettings.emailTemplate.fromAddress == null) DB.invoiceSettings.emailTemplate.fromAddress = 'edelle@darcybow.ie';
     return DB.invoiceSettings;
   },
   emailVars(inv) {
@@ -2634,6 +2636,7 @@ const Invoices = {
       pdfHtml: Invoices.docHtml(inv, true),
       filename: (inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq).replace(/[\\/:*?"<>|]/g, '-'),
       replyTo: Invoices.settings().emailTemplate.replyTo || '',
+      fromAddress: Invoices.settings().emailTemplate.fromAddress || '',
     };
     UI.toast(isTest ? 'Sending test…' : 'Sending invoice…');
     google.script.run
@@ -2641,6 +2644,7 @@ const Invoices = {
         try {
           const r = JSON.parse(res);
           if (r.error) { UI.err(new Error(r.error)); return; }
+          if (r.warning) UI.toast('⚠ ' + r.warning, 9000);
           if (isTest) { UI.toast('Test sent to your own inbox (' + (r.sentTo || 'you') + ') — check it before sending to the customer.'); return; }
           inv.sentAt = nowIso(); inv.updatedAt = nowIso();
           Store.save(); Invoices._push(); UI.closeModal(); App.route();
@@ -2808,7 +2812,9 @@ const Invoices = {
       <h2 class="small" style="margin-top:14px">Email template <span class="muted" style="text-transform:none">— placeholders: {{first_name}} {{name}} {{invoice_number}} {{total}} {{remainder}} {{issue_date}}</span></h2>
       <label class="f">Subject</label><input id="ist-em-subject" style="width:100%" value="${esc(st.emailTemplate.subject)}">
       <label class="f">Message</label><textarea id="ist-em-body" rows="8" style="width:100%; font-size:.82rem">${esc(st.emailTemplate.body)}</textarea>
-      <label class="f">Reply-to address (optional)</label><input id="ist-em-replyto" style="width:100%" value="${esc(st.emailTemplate.replyTo || '')}" placeholder="edellemellett@gmail.com">
+      <label class="f">Send from address</label><input id="ist-em-from" style="width:100%" value="${esc(st.emailTemplate.fromAddress || '')}" placeholder="edelle@darcybow.ie">
+      <p class="small muted" style="margin:4px 0 0">Used automatically once this address is added as a “Send mail as” alias in the Gmail account that runs this dashboard (Gmail → ⚙ Settings → Accounts and Import → “Send mail as” → Add another email address → verify). Until then, emails send from that Gmail account and you'll see a reminder.</p>
+      <label class="f">Reply-to address (optional)</label><input id="ist-em-replyto" style="width:100%" value="${esc(st.emailTemplate.replyTo || '')}" placeholder="edelle@darcybow.ie">
       <h2 class="small" style="margin-top:14px">Terms &amp; conditions (page 2 of every invoice)</h2>
       <textarea id="ist-terms" rows="12" style="width:100%; font-size:.82rem">${esc(st.terms)}</textarea>
       <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
@@ -2819,7 +2825,7 @@ const Invoices = {
     const v = id => document.getElementById(id).value;
     st.paymentTo = { accountName: v('ist-an'), accountDetails: v('ist-ad'), accountNo: v('ist-no'),
       sortCode: v('ist-sc'), swift: v('ist-sw'), iban: v('ist-ib') };
-    st.emailTemplate = { subject: v('ist-em-subject'), body: v('ist-em-body'), replyTo: v('ist-em-replyto').trim() };
+    st.emailTemplate = { subject: v('ist-em-subject'), body: v('ist-em-body'), replyTo: v('ist-em-replyto').trim(), fromAddress: v('ist-em-from').trim() };
     st.terms = v('ist-terms');
     st.updatedAt = nowIso();
     Store.save(); Invoices._push(); UI.closeModal(); UI.toast('Invoice settings saved.');
@@ -2953,6 +2959,130 @@ const Invoices = {
         <button class="primary" onclick="document.getElementById('invframe').contentWindow.print()">⬇ Download PDF</button></div>`, true);
     document.getElementById('invframe').srcdoc = Invoices.docHtml(inv);
   },
+};
+
+/* =============================== PRODUCTION =============================== */
+/* Once an invoice exists and money has been taken, the order goes to the
+   manufacturer. Grouped BY DRESS so size runs are obvious, with per-size
+   tallies, the customer's details, their accessories, and an editable note
+   per order. Exports the whole board as a real Excel file via the backend. */
+const Production = {
+  isDress(title) {
+    const t = String(title || '');
+    return Invoices.dressTitles().includes(t) || /dress|gown/i.test(t);
+  },
+  entries() {
+    const out = [];
+    for (const inv of (DB.invoices || [])) {
+      const t = Invoices.totals(inv);
+      if (!(inv.paidInFull || t.paidCents > 0)) continue; // deposit taken = in production
+      const c = Domain.customer(inv.customerId);
+      const dressLines = [], accessories = [];
+      for (const l of (inv.lines || [])) {
+        if (!l.title) continue;
+        (Production.isDress(l.title) ? dressLines : accessories).push(l);
+      }
+      if (!dressLines.length) continue;
+      const orders = Domain.ordersOf(inv.customerId);
+      const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+      out.push({ inv, name: (c && c.name) || inv.contact.name, daughter: (c && c.daughterName) || '',
+        phone: inv.contact.phone || (c && c.phone) || '', email: inv.contact.email || (c && c.email) || '',
+        dressLines, accessories, event: latest ? latest.eventHotel : '' });
+    }
+    return out;
+  },
+  groups(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const map = new Map();
+    for (const e of Production.entries()) {
+      for (const l of e.dressLines) {
+        const hay = (l.title + ' ' + l.colour + ' ' + l.size + ' ' + e.name + ' ' + e.daughter + ' ' + e.event).toLowerCase();
+        if (q && !hay.includes(q)) continue;
+        if (!map.has(l.title)) map.set(l.title, []);
+        map.get(l.title).push({ e, l });
+      }
+    }
+    const sizeKey = s => { const n = parseFloat(String(s).replace(/[^\d.]/g, '')); return isNaN(n) ? 999 : n; };
+    return [...map.entries()].map(([dress, rows]) => {
+      rows.sort((a, b) => sizeKey(a.l.size) - sizeKey(b.l.size) || a.e.name.localeCompare(b.e.name));
+      const tally = new Map();
+      for (const r of rows) { const k = r.l.size || '—'; tally.set(k, (tally.get(k) || 0) + (r.l.qty || 1)); }
+      return { dress, rows, tally: [...tally.entries()] };
+    }).sort((a, b) => b.rows.length - a.rows.length || a.dress.localeCompare(b.dress));
+  },
+  setNote(invId, value) {
+    if (!Invoices.unlocked()) { UI.err(new Error('Notes need the invoicing passcode.')); return; }
+    const inv = (DB.invoices || []).find(i => i.id === invId);
+    if (!inv) return;
+    inv.productionNotes = value; inv.updatedAt = nowIso();
+    Store.save(); Invoices._push();
+  },
+  accessoriesText: e => e.accessories.map(a => a.title + (a.qty > 1 ? ' ×' + a.qty : '')).join(', '),
+  exportXlsx() {
+    if (typeof LiveSync === 'undefined' || !LiveSync.available()) {
+      UI.err(new Error('The Excel export needs the live dashboard link (the Google web app).')); return;
+    }
+    const groups = Production.groups('').map(g => ({
+      dress: g.dress,
+      tally: g.tally.map(([size, n]) => size + ' × ' + n).join(', '),
+      rows: g.rows.map(r => ({ size: r.l.size || '', colour: r.l.colour || '', qty: r.l.qty || 1,
+        customer: r.e.name, daughter: r.e.daughter, phone: r.e.phone, email: r.e.email,
+        accessories: Production.accessoriesText(r.e), notes: r.e.inv.productionNotes || '', event: r.e.event })),
+    }));
+    if (!groups.length) { UI.err(new Error('Nothing in production yet.')); return; }
+    UI.toast('Building the Excel file…');
+    google.script.run
+      .withSuccessHandler(res => {
+        try {
+          const r = JSON.parse(res);
+          if (r.error) { UI.err(new Error(r.error)); return; }
+          const a = document.createElement('a');
+          a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + r.b64;
+          a.download = r.name;
+          document.body.appendChild(a); a.click(); a.remove();
+          UI.toast('Excel file downloaded.');
+        } catch (e) { UI.err(e); }
+      })
+      .withFailureHandler(e => UI.err(e))
+      .exportProductionXlsx(JSON.stringify({ groups, date: todayStr() }));
+  },
+};
+
+let prodQuery = '';
+Pages.production = () => {
+  const groups = Production.groups(prodQuery);
+  const total = Production.entries().length;
+  const canEdit = Invoices.unlocked();
+  return `
+    <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:4px">
+      <h1 style="margin:0">Production <span class="muted" style="font-size:1rem; font-weight:400">${total}</span></h1>
+      <button class="primary" onclick="Production.exportXlsx()">⬇ Download Excel</button>
+    </div>
+    <p class="sub">Everyone whose invoice has money taken, grouped by dress for the manufacturer — size runs at a glance.${canEdit ? '' : ' Notes are locked (invoicing passcode).'}</p>
+    <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search dress, size, customer, event…"
+      value="${esc(prodQuery)}" oninput="prodQuery = this.value; App.route()">
+    ${groups.map(g => `
+      <div class="card" style="margin-bottom:14px">
+        <div class="flex" style="align-items:center; flex-wrap:wrap">
+          <b style="font-size:1.05rem">👗 ${esc(g.dress)}</b>
+          <span class="badge b-grey">${g.rows.reduce((s, r) => s + (r.l.qty || 1), 0)} to make</span>
+          <span style="flex:1"></span>
+          ${g.tally.map(([size, n]) => `<span class="badge b-brand">${esc(size)} × ${n}</span>`).join(' ')}
+        </div>
+        <div class="tablewrap" style="margin-top:10px"><table>
+          <thead><tr><th>Size</th><th>Colour</th><th class="num">Qty</th><th>Customer</th><th>Accessories</th><th style="min-width:220px">Notes</th></tr></thead>
+          <tbody>${g.rows.map(r => `<tr>
+            <td><b>${esc(r.l.size || '—')}</b></td>
+            <td>${esc(r.l.colour || '—')}</td>
+            <td class="num">${r.l.qty || 1}</td>
+            <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a>${r.e.daughter ? `<br><span class="small muted">for ${esc(r.e.daughter)}</span>` : ''}
+              <br><span class="small muted">${UI.eventBadge(r.e.event).split('<br>')[0]}</span></td>
+            <td class="small">${esc(Production.accessoriesText(r.e)) || '<span class="muted">—</span>'}</td>
+            <td>${canEdit
+              ? `<input class="mini" style="width:100%" value="${esc(r.e.inv.productionNotes || '')}" placeholder="Add a note…" onchange="Production.setNote('${r.e.inv.id}', this.value)">`
+              : `<span class="small">${esc(r.e.inv.productionNotes || '—')}</span>`}</td>
+          </tr>`).join('')}</tbody></table></div>
+      </div>`).join('') || '<div class="card muted">Nothing in production yet — orders appear here once their invoice has a deposit or payment recorded.</div>'}`;
 };
 
 /* ---- Invoice builder page ---- */
