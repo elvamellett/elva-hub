@@ -229,7 +229,7 @@
   <aside id="sidebar">
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
-    <div class="demo"><button onclick="App.resetDemo()">↺ Reset demo data</button></div>
+    <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -237,19 +237,20 @@
 <script>
 "use strict";
 /* =====================================================================
-   Darcybow Customers & Events — single-file VIEWING platform.
+   Darcybow Customers & Events — the single-file dashboard.
 
-   Phase 1 is deliberately read-only: Shopify (customers, orders,
-   products) and Appointly (bookings + the questions each customer
-   answered) are pulled together into one place for staff to browse.
-   The ONLY actions are printing — A4 customer sheets (details + the
-   Appointly booking answers) and the staff run sheet for an event day.
+   Shopify (customers, orders) and Appointly (bookings + the questions
+   each customer answered) pulled together into one place, with the
+   working layers on top: A4 customer sheets and staff run sheets,
+   venue/event-day planning, school grouping (one dress per school),
+   invoicing with Gmail sending, and the production board with Excel
+   export. Browsing is open to everyone with the link; invoicing and
+   notes are passcode-gated.
 
-   Runs fully offline on seeded mock data (persisted in localStorage).
-   External integrations are isolated in ShopifyService /
-   AppointlyService below, each with a clearly marked LIVE CREDENTIAL
-   SEAM where the real API credentials plug in — once filled, the same
-   screens fill with real data and nothing else changes.
+   Runs standalone on seeded sample data, or live as a Google Apps
+   Script web app (see darcybow-Code.gs) where it syncs Shopify on
+   every open and shares imported bookings, school corrections and
+   invoices through Drive files so every browser sees the same thing.
    ===================================================================== */
 
 /* ---------------------- small utilities ---------------------- */
@@ -1285,9 +1286,13 @@ const UI = {
 
 const App = {
   resetDemo() {
-    if (!confirm('Reset all demo data back to the seeded sample set?')) return;
+    const live = !!DB.importInfo;
+    if (!confirm(live
+      ? 'Clear this browser\'s copy of the data? It will re-fill from Shopify (and the shared bookings) on the next sync — invoices, school corrections and notes are stored centrally and come back too.'
+      : 'Reset all demo data back to the seeded sample set?')) return;
     Store.reset(); Domain.refreshAll(); App.route();
-    UI.toast('Demo data reset.');
+    UI.toast(live ? 'Cleared — syncing fresh data.' : 'Demo data reset.');
+    if (typeof LiveSync !== 'undefined' && LiveSync.available()) LiveSync.sync();
   },
 
   /* ---------- router ---------- */
@@ -1318,6 +1323,8 @@ const App = {
 
     const s = document.getElementById('pagesearch');
     if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+    const rb = document.getElementById('resetbtn');
+    if (rb) rb.textContent = DB.importInfo ? '↺ Clear & re-sync data' : '↺ Reset demo data';
   },
   go(hash) { if (location.hash === hash) App.route(); else location.hash = hash; },
 };
@@ -1332,7 +1339,7 @@ Pages.dashboard = () => {
   const nextVenues = venueGroups().filter(v => v.nextDate).slice(0, 6);
   return `
     <h1>Dashboard</h1>
-    <p class="sub">Everything Shopify + Appointly know, side by side: customers, what they ordered, when they're booked in and the answers they gave. Viewing only — printing is the one action.</p>
+    <p class="sub">Everything Shopify + Appointly know, side by side: customers, what they ordered, when they're booked in and the answers they gave — with printing, invoicing and the production board built on top.</p>
     <div class="statrow">
       <div class="stat"><div class="l">Customers</div><div class="v">${DB.customers.length}</div></div>
       <div class="stat"><div class="l">Orders</div><div class="v">${DB.orders.length}</div></div>
@@ -3166,12 +3173,9 @@ Pages.invoice = (custId) => {
     </div>`;
 };
 
-/* =============================== PRINTING (the only actions) =============================== */
-/* This build is a viewing platform: staff browse what Shopify + Appointly
-   feed in, and the only thing it DOES is print — A4 customer sheets
-   (contact details + the Appointly booking answers) and the staff run
-   sheet for an event day. Editing, payments, invoicing and reminders
-   come back in a later phase. */
+/* =============================== PRINTING =============================== */
+/* A4 customer sheets (contact details + the Appointly booking answers)
+   and the staff run sheet for an event day. */
 const Actions = {
   /* Shared A4 sheet builder — one page per customer. Each row:
      { c, items, orderRef, qa, headline, slotMain, slotSub, staffName } */
