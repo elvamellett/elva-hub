@@ -2313,6 +2313,15 @@ const LiveSync = {
       .syncShopify();
   },
   // Shopify Admin API JSON → the dashboard's own shape.
+  // Order-independent fingerprint of an invoices payload, ignoring the
+  // fields that legitimately change every sync (customer ids are rebuilt),
+  // so we can tell whether the central Drive copy is missing local edits.
+  _invFp(o) {
+    const inv = (o.invoices || []).map(v => { const c = Object.assign({}, v); delete c.customerId; delete c._venueKey; return c; })
+      .sort((a, b) => String(a.id) < String(b.id) ? -1 : 1);
+    const st = o.settings ? Object.assign({}, o.settings, { eventCodes: Object.entries((o.settings && o.settings.eventCodes) || {}).sort() }) : null;
+    return JSON.stringify({ inv, st });
+  },
   applyPayload(p) {
     if (p.error) throw new Error(p.error);
     const customers = [], orders = [], orderItems = [], appointments = [];
@@ -2458,7 +2467,16 @@ const LiveSync = {
         DB.schoolAliases = Object.assign({}, sj.aliases || {}, DB.schoolAliases || {});
         DB.schoolNotSame = [...new Set([...(sj.notSame || []), ...(DB.schoolNotSame || [])])];
         Store.save();
+        // Self-heal: if this browser holds school decisions the central copy
+        // is missing (a background save that never landed), upload the merged
+        // result now so nothing typed in here can be lost.
+        const sfp = o => JSON.stringify([Object.entries(o.a || {}).sort(), [...(o.n || [])].sort()]);
+        if (sfp({ a: sj.aliases, n: sj.notSame }) !== sfp({ a: DB.schoolAliases, n: DB.schoolNotSame })) Schools._save();
       } catch (e) { /* non-fatal */ }
+    } else if (Object.keys(DB.schoolAliases || {}).length || (DB.schoolNotSame || []).length) {
+      // Central store is empty but this browser has decisions — the first
+      // upload must have failed. Put them back.
+      Schools._save();
     }
     // Shared invoices: merge (newest edit wins per invoice), then re-link to
     // the freshly built customers by email/phone — customer ids change on
@@ -2472,8 +2490,24 @@ const LiveSync = {
           if (!cur || String(inv.updatedAt || '') > String(cur.updatedAt || '')) byId.set(inv.id, inv);
         }
         DB.invoices = [...byId.values()];
-        if (ij.settings && (!DB.invoiceSettings || String(ij.settings.updatedAt || '') > String(DB.invoiceSettings.updatedAt || ''))) DB.invoiceSettings = ij.settings;
+        if (ij.settings) {
+          const mine = DB.invoiceSettings;
+          const winner = (!mine || String(ij.settings.updatedAt || '') > String(mine.updatedAt || '')) ? ij.settings : mine;
+          const loser = winner === ij.settings ? mine : ij.settings;
+          // Venue→code memory is additive: keep codes learned in ANY browser,
+          // whichever settings copy is newer overall.
+          winner.eventCodes = Object.assign({}, (loser && loser.eventCodes) || {}, winner.eventCodes || {});
+          DB.invoiceSettings = winner;
+        }
+        // Self-heal: if this browser holds invoice edits the central copy is
+        // missing (a background save that never landed), upload the merged
+        // result now so nothing typed in here can be lost.
+        if (LiveSync._invFp(ij) !== LiveSync._invFp({ invoices: DB.invoices, settings: DB.invoiceSettings })) Invoices._push();
       } catch (e) { /* non-fatal */ }
+    } else if ((DB.invoices || []).length) {
+      // Central store is empty but this browser has invoices — the first
+      // upload must have failed. Put them back.
+      Invoices._push();
     }
     for (const inv of (DB.invoices || [])) {
       const em = String((inv.contact && inv.contact.email) || '').toLowerCase();
