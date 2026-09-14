@@ -59,6 +59,7 @@ function syncShopify() {
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
+      products: fetchCatalogue_(store),
       bookingsCsv: bookingsCsv,
       schoolsJson: schoolsJson,
       invoicesJson: invoicesJson,
@@ -67,6 +68,39 @@ function syncShopify() {
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });
   }
+}
+
+/**
+ * The public product catalogue of the online store — every published
+ * product with its variant options (colours, sizes) and prices. Read from
+ * the storefront's public products.json, so it needs NO extra Shopify
+ * scopes and always mirrors what's on the website. Non-fatal: an empty
+ * list is returned on any error and the dress dropdowns fall back to
+ * titles seen on past orders.
+ */
+function fetchCatalogue_(store) {
+  var out = [];
+  try {
+    for (var page = 1; page <= 8; page++) {
+      var resp = UrlFetchApp.fetch('https://' + store + '/products.json?limit=250&page=' + page,
+        { muteHttpExceptions: true, followRedirects: true });
+      if (resp.getResponseCode() !== 200) break;
+      var prods = (JSON.parse(resp.getContentText()) || {}).products || [];
+      for (var i = 0; i < prods.length; i++) {
+        var p = prods[i];
+        out.push({
+          title: p.title,
+          product_type: p.product_type || '',
+          options: (p.options || []).map(function (o) { return { name: o.name, values: o.values || [] }; }),
+          variants: (p.variants || []).map(function (v) {
+            return { option1: v.option1, option2: v.option2, option3: v.option3, price: v.price };
+          }),
+        });
+      }
+      if (prods.length < 250) break;
+    }
+  } catch (e) { /* storefront unreachable — dropdowns fall back gracefully */ }
+  return out;
 }
 
 var BOOKINGS_FILE_ = 'darcybow-bookings.csv';

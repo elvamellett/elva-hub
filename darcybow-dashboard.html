@@ -2322,6 +2322,28 @@ const LiveSync = {
     const st = o.settings ? Object.assign({}, o.settings, { eventCodes: Object.entries((o.settings && o.settings.eventCodes) || {}).sort() }) : null;
     return JSON.stringify({ inv, st });
   },
+  // Shopify storefront products.json → { title, colours[], sizes[], priceCents }.
+  // Option names vary (Colour/Color, Size/Age), so match loosely; where the
+  // options carry no values, derive them from the variants instead.
+  _mapCatalogue(list) {
+    const out = [];
+    for (const p of list || []) {
+      const title = String(p.title || '').trim();
+      if (!title) continue;
+      let colours = [], sizes = [];
+      const clean = vals => [...new Set((vals || []).filter(v => v && !/^default title$/i.test(String(v))).map(v => String(v).trim()))];
+      (p.options || []).forEach((o, idx) => {
+        let vals = clean(o.values);
+        if (!vals.length) vals = clean((p.variants || []).map(v => v['option' + (idx + 1)]));
+        const n = String(o.name || '');
+        if (/colou?r/i.test(n)) colours = vals;
+        else if (/size|age/i.test(n)) sizes = vals;
+      });
+      const priceCents = parseEuros(p.variants && p.variants[0] ? p.variants[0].price : '') || 0;
+      out.push({ title, colours, sizes, priceCents, type: String(p.product_type || '') });
+    }
+    return out;
+  },
   applyPayload(p) {
     if (p.error) throw new Error(p.error);
     const customers = [], orders = [], orderItems = [], appointments = [];
@@ -2453,6 +2475,9 @@ const LiveSync = {
     }
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    // The website's product catalogue (fetched server-side from the public
+    // storefront) — powers the dress/colour/size dropdowns on invoices.
+    if (Array.isArray(p.products) && p.products.length) DB.catalogue = LiveSync._mapCatalogue(p.products);
     for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
       if (Array.isArray(DB[k])) DB[k] = [];
     DB.importInfo = { at: nowIso(), live: true, counts: { customers: kept.length, orders: orders.length, bookings: appointments.length } };
@@ -2761,6 +2786,38 @@ const Invoices = {
   },
   dressTitles() {
     return [...new Set(DB.orderItems.filter(i => i.category === 'dress' && i.title).map(i => i.title))].sort();
+  },
+  // Product catalogue for the invoice dropdowns: the live website list
+  // (synced from darcybow.ie on every sync) when connected, else the
+  // sample catalogue in demo mode.
+  catalogue() {
+    if (Array.isArray(DB.catalogue) && DB.catalogue.length) return DB.catalogue;
+    if (DB.importInfo) return []; // real data, catalogue not synced yet — never show demo products
+    return (DB.products || []).filter(p => p.active !== false).map(p => ({
+      title: p.title, colours: p.colours || [], sizes: p.sizes || [], priceCents: p.retailPriceCents || 0 }));
+  },
+  catFor(title) {
+    const t = String(title || '').trim().toLowerCase();
+    return t ? Invoices.catalogue().find(p => String(p.title).toLowerCase() === t) || null : null;
+  },
+  // Dress dropdown = every product on the website, plus anything seen on
+  // past orders (bespoke lines typed in before stay available).
+  productTitles() {
+    return [...new Set([...Invoices.catalogue().map(p => p.title), ...Invoices.dressTitles()])].sort((a, b) => a.localeCompare(b));
+  },
+  // A dress was picked or edited on line i → refresh that line's colour and
+  // size options from the catalogue and prefill the price if it's empty.
+  lineChanged(i) {
+    const tEl = document.getElementById('inv-l' + i + '-title');
+    const p = tEl ? Invoices.catFor(tEl.value) : null;
+    const fill = (id, vals) => { const dl = document.getElementById(id); if (dl) dl.innerHTML = (vals || []).map(v => `<option value="${esc(v)}">`).join(''); };
+    fill('dl-colour-' + i, p ? p.colours : []);
+    fill('dl-size-' + i, p ? p.sizes : []);
+    const priceEl = document.getElementById('inv-l' + i + '-price');
+    if (p && priceEl && !priceEl.value.trim() && p.priceCents) {
+      priceEl.value = p.priceCents % 100 ? (p.priceCents / 100).toFixed(2) : String(p.priceCents / 100);
+    }
+    Invoices.recalc();
   },
   blank(custId) {
     const c = Domain.customer(custId);
@@ -3143,7 +3200,7 @@ Pages.invoice = (custId) => {
   inv._venueKey = Invoices.codeFor(custId).venueKey;
   const t = Invoices.totals(inv);
   const status = Invoices.status(custId);
-  const dressOptions = Invoices.dressTitles().map(d => `<option value="${esc(d)}">`).join('');
+  const dressOptions = Invoices.productTitles().map(d => `<option value="${esc(d)}">`).join('');
   return `
     <p><a class="plain" href="#/customer/${custId}">← ${esc(c.name)}</a></p>
     <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap">
@@ -3190,15 +3247,17 @@ Pages.invoice = (custId) => {
     <h2>Dress lines</h2>
     <div class="tablewrap"><table>
       <thead><tr><th>Dress</th><th>Colour</th><th>Size</th><th class="num">Qty</th><th class="num">Price (€)</th><th class="num">Total</th><th></th></tr></thead>
-      <tbody>${inv.lines.map((l, i) => `<tr>
-        <td><input list="dresslist" id="inv-l${i}-title" style="width:100%; min-width:220px" value="${esc(l.title)}" placeholder="Choose or type a dress…"></td>
-        <td><input id="inv-l${i}-colour" style="width:110px" value="${esc(l.colour)}"></td>
-        <td><input id="inv-l${i}-size" style="width:90px" value="${esc(l.size)}"></td>
+      <tbody>${inv.lines.map((l, i) => { const cp = Invoices.catFor(l.title); return `<tr>
+        <td><input list="dresslist" id="inv-l${i}-title" style="width:100%; min-width:220px" value="${esc(l.title)}" placeholder="Choose or type a dress…" oninput="Invoices.lineChanged(${i})">
+          <datalist id="dl-colour-${i}">${(cp ? cp.colours : []).map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+          <datalist id="dl-size-${i}">${(cp ? cp.sizes : []).map(v => `<option value="${esc(v)}">`).join('')}</datalist></td>
+        <td><input id="inv-l${i}-colour" list="dl-colour-${i}" style="width:110px" value="${esc(l.colour)}" placeholder="Colour…"></td>
+        <td><input id="inv-l${i}-size" list="dl-size-${i}" style="width:90px" value="${esc(l.size)}" placeholder="Size…"></td>
         <td class="num"><input id="inv-l${i}-qty" type="number" min="1" style="width:64px" value="${l.qty}" oninput="Invoices.recalc()"></td>
         <td class="num"><input id="inv-l${i}-price" style="width:90px" value="${l.priceCents ? (l.priceCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></td>
         <td class="num"><b id="inv-l${i}-total">${eurPlain(l.priceCents * l.qty)}</b></td>
         <td><button class="small danger" onclick="Invoices.removeLine(${i})">✕</button></td>
-      </tr>`).join('')}</tbody></table></div>
+      </tr>`; }).join('')}</tbody></table></div>
     <div class="toolbar"><button class="small" onclick="Invoices.addLine()">+ Add line</button></div>
     <div class="statrow" style="max-width:760px">
       <div class="stat"><div class="l">Invoice total</div><div class="v" id="inv-total">${eurPlain(t.linesTotal)}</div></div>
