@@ -2652,6 +2652,7 @@ const Invoices = {
       replyTo: '',
     };
     if (DB.invoiceSettings.emailTemplate.fromAddress == null) DB.invoiceSettings.emailTemplate.fromAddress = 'edelle@darcybow.ie';
+    if (DB.invoiceSettings.emailTemplate.copyTo == null) DB.invoiceSettings.emailTemplate.copyTo = 'edelle@darcybow.ie';
     return DB.invoiceSettings;
   },
   emailVars(inv) {
@@ -2703,6 +2704,7 @@ const Invoices = {
       filename: (inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq).replace(/[\\/:*?"<>|]/g, '-'),
       replyTo: Invoices.settings().emailTemplate.replyTo || '',
       fromAddress: Invoices.settings().emailTemplate.fromAddress || '',
+      bcc: Invoices.settings().emailTemplate.copyTo || '',
     };
     UI.toast(isTest ? 'Sending test…' : 'Sending invoice…');
     google.script.run
@@ -2913,6 +2915,8 @@ const Invoices = {
       <label class="f">Send from address</label><input id="ist-em-from" style="width:100%" value="${esc(st.emailTemplate.fromAddress || '')}" placeholder="edelle@darcybow.ie">
       <p class="small muted" style="margin:4px 0 0">Used automatically once this address is added as a “Send mail as” alias in the Gmail account that runs this dashboard (Gmail → ⚙ Settings → Accounts and Import → “Send mail as” → Add another email address → verify). Until then, emails send from that Gmail account and you'll see a reminder.</p>
       <label class="f">Reply-to address (optional)</label><input id="ist-em-replyto" style="width:100%" value="${esc(st.emailTemplate.replyTo || '')}" placeholder="edelle@darcybow.ie">
+      <label class="f">Send a copy of every invoice email to (optional)</label><input id="ist-em-copyto" style="width:100%" value="${esc(st.emailTemplate.copyTo || '')}" placeholder="edelle@darcybow.ie">
+      <p class="small muted" style="margin:4px 0 0">A hidden copy (the customer can't see it) of each invoice email lands in this inbox — so what went out is always visible in Outlook. Leave blank to turn off.</p>
       <h2 class="small" style="margin-top:14px">Terms &amp; conditions (page 2 of every invoice)</h2>
       <textarea id="ist-terms" rows="12" style="width:100%; font-size:.82rem">${esc(st.terms)}</textarea>
       <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
@@ -2923,7 +2927,8 @@ const Invoices = {
     const v = id => document.getElementById(id).value;
     st.paymentTo = { accountName: v('ist-an'), accountDetails: v('ist-ad'), accountNo: v('ist-no'),
       sortCode: v('ist-sc'), swift: v('ist-sw'), iban: v('ist-ib') };
-    st.emailTemplate = { subject: v('ist-em-subject'), body: v('ist-em-body'), replyTo: v('ist-em-replyto').trim(), fromAddress: v('ist-em-from').trim() };
+    st.emailTemplate = { subject: v('ist-em-subject'), body: v('ist-em-body'), replyTo: v('ist-em-replyto').trim(),
+      fromAddress: v('ist-em-from').trim(), copyTo: v('ist-em-copyto').trim() };
     st.terms = v('ist-terms');
     st.updatedAt = nowIso();
     Store.save(); Invoices._push(); UI.closeModal(); UI.toast('Invoice settings saved.');

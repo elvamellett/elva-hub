@@ -139,6 +139,9 @@ function sendInvoiceEmail(payload) {
       .getAs('application/pdf').setName(p.filename + '.pdf');
     var opts = { htmlBody: p.htmlBody, attachments: [pdf], name: 'Darcybow' };
     if (p.replyTo) opts.replyTo = p.replyTo;
+    // Blind copy of every real send to the business inbox (Outlook), so the
+    // owner sees exactly what went out even though Gmail did the sending.
+    if (p.bcc && !p.isTest && String(p.bcc).toLowerCase() !== to.toLowerCase()) opts.bcc = String(p.bcc).trim();
     // Send from the business address once it's a verified "Send mail as"
     // alias in this Gmail account; until then, fall back and say so.
     var warning = '';
