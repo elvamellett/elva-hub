@@ -2735,9 +2735,10 @@ const Invoices = {
         try {
           const h = JSON.parse(res);
           box.className = 'note ' + (h.canSend ? 'ok' : 'err');
-          box.innerHTML = h.canSend
+          box.innerHTML = (h.canSend
             ? '✅ Email is connected — this will send from <b>' + esc(h.account || 'the dashboard account') + '</b>. The two-page invoice PDF is attached automatically.'
-            : '⚠ <b>This copy of the dashboard is not allowed to send email — you are on an OLD link.</b> In Apps Script: Deploy → New deployment → Web app → Execute as Me → Anyone with a Google account → Deploy, then open the NEW link it shows and send from there.';
+            : '⚠ <b>This copy of the dashboard is not allowed to send email.</b> Screenshot this box — the line below says exactly why.')
+            + (h.detail ? '<br><span class="small mono">' + esc(h.detail) + '</span>' : '');
         } catch (e) { /* leave the strip as-is */ }
       })
       .withFailureHandler(() => {

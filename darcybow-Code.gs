@@ -212,7 +212,7 @@ function ownerEmail_() {
  * the cheapest call that requires the Gmail scope.
  */
 function emailHealth() {
-  var out = { canSend: false, account: '', error: '' };
+  var out = { canSend: false, account: '', error: '', detail: '' };
   try {
     GmailApp.getAliases();
     out.canSend = true;
@@ -220,6 +220,23 @@ function emailHealth() {
     out.error = String((e && e.message) || e);
   }
   try { out.account = ownerEmail_(); } catch (e2) { /* ignore */ }
+  // Diagnostic line: which script, which account, which permissions this
+  // running copy actually holds — so a screenshot pins the problem exactly.
+  try {
+    var scriptId = '';
+    try { scriptId = ScriptApp.getScriptId(); } catch (eSid) {}
+    var scopes = '';
+    try {
+      var resp = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + ScriptApp.getOAuthToken(),
+        { muteHttpExceptions: true });
+      var d = JSON.parse(resp.getContentText());
+      scopes = String(d.scope || '').split(' ').map(function (s) {
+        return s.replace('https://www.googleapis.com/auth/', '').replace('https://mail.google.com/', 'FULL-GMAIL');
+      }).join(', ');
+      if (!out.account && d.email) out.account = d.email;
+    } catch (eTok) { scopes = '(could not read: ' + String(eTok && eTok.message || eTok) + ')'; }
+    out.detail = 'account=' + (out.account || '?') + ' · script=…' + String(scriptId).slice(-8) + ' · permissions: ' + (scopes || '?');
+  } catch (e3) { /* diagnostics are best-effort */ }
   return JSON.stringify(out);
 }
 
