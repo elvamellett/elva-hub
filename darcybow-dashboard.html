@@ -1806,6 +1806,8 @@ Pages.customerDetail = (id) => {
   if (!c) return '<h1>Customer not found</h1>';
   const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
   const schoolInfo = Schools.clashes(c.id);
+  const canEditNotes = Invoices.unlocked();
+  setTimeout(() => Emails.load(id), 60); // fill the email module once the page is on screen
   return `
     <p><a class="plain" href="#/customers">← Customers</a></p>
     <h1>${esc(c.name)}</h1>
@@ -1856,6 +1858,18 @@ Pages.customerDetail = (id) => {
           </div>`;
         }).join('') || '<div class="card muted">No orders yet.</div>'}
       </div>
+    </div>
+    <h2>Emails</h2>
+    <div class="card">
+      <div class="flex" style="justify-content:space-between; flex-wrap:wrap; align-items:center">
+        <b>✉ Email history with ${esc(c.name)}</b>
+        <button class="small" onclick="Emails.open('${c.id}')">📧 Open the full thread</button>
+      </div>
+      <div id="emaillist" style="margin-top:8px"><span class="small muted">…</span></div>
+      <label class="f" style="margin-top:14px">Email notes${canEditNotes ? '' : ' <span class="muted" style="text-transform:none">(read-only — invoicing passcode to edit)</span>'}</label>
+      ${canEditNotes
+        ? `<textarea rows="3" style="width:100%" placeholder="e.g. Emailed about changing the size to Age 9 — confirmed." onchange="CustNotes.set('${c.id}', this.value)">${esc(CustNotes.get(c))}</textarea>`
+        : `<div class="small">${CustNotes.get(c) ? esc(CustNotes.get(c)) : '<span class="muted">No notes yet.</span>'}</div>`}
     </div>`;
 };
 </script>
@@ -2534,6 +2548,23 @@ const LiveSync = {
       // upload must have failed. Put them back.
       Invoices._push();
     }
+    // Shared per-customer email notes (keyed by email) — newest edit wins,
+    // and local-only notes self-heal back to the central store.
+    if (p.notesJson) {
+      try {
+        const nj = JSON.parse(p.notesJson);
+        const server = (nj && nj.notes) || {};
+        const merged = Object.assign({}, server);
+        for (const k of Object.keys(DB.custNotes || {})) {
+          const mine = DB.custNotes[k];
+          if (!merged[k] || String(mine.updatedAt || '') > String(merged[k].updatedAt || '')) merged[k] = mine;
+        }
+        DB.custNotes = merged;
+        if (CustNotes._fp(server) !== CustNotes._fp(merged)) CustNotes._push();
+      } catch (e) { /* non-fatal */ }
+    } else if (Object.keys(DB.custNotes || {}).length) {
+      CustNotes._push();
+    }
     for (const inv of (DB.invoices || [])) {
       const em = String((inv.contact && inv.contact.email) || '').toLowerCase();
       const ph = ImportService._digits((inv.contact && inv.contact.phone) || '');
@@ -3064,6 +3095,75 @@ const Invoices = {
   },
 };
 
+/* =============================== EMAILS PER CUSTOMER =============================== */
+/* Live view of the correspondence with one customer: recent threads from
+   the mailbox that does the sending (invoices out; incoming mail too once
+   Outlook forwards a copy), plus a shared "email notes" box keyed by the
+   customer's email address so it survives re-syncs and reaches every browser. */
+const CustNotes = {
+  key: c => String((c && c.email) || '').trim().toLowerCase(),
+  get(c) { const k = CustNotes.key(c); return (k && DB.custNotes && DB.custNotes[k] && DB.custNotes[k].text) || ''; },
+  set(custId, text) {
+    if (!Invoices.unlocked()) { UI.err(new Error('Email notes need the invoicing passcode.')); return; }
+    const c = Domain.customer(custId);
+    const k = CustNotes.key(c);
+    if (!k) { UI.err(new Error('This customer has no email address to attach the note to.')); return; }
+    DB.custNotes = DB.custNotes || {};
+    DB.custNotes[k] = { text: String(text), updatedAt: nowIso() };
+    Store.save(); CustNotes._push();
+    UI.toast('Email note saved — shared with every browser.');
+  },
+  _push() {
+    if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
+      try { google.script.run.saveNotes(JSON.stringify({ notes: DB.custNotes || {} })); } catch (e) { /* non-fatal */ }
+    }
+  },
+  _fp: o => JSON.stringify(Object.entries(o || {}).map(([k, v]) => [k, v && v.text, v && v.updatedAt]).sort()),
+};
+
+const Emails = {
+  gmailUrl: em => 'https://mail.google.com/mail/u/0/#search/' + encodeURIComponent(em),
+  open(custId) {
+    const c = Domain.customer(custId);
+    if (!c || !c.email) { UI.err(new Error('No email address on this customer.')); return; }
+    window.open(Emails.gmailUrl(c.email), '_blank');
+  },
+  load(custId) {
+    const c = Domain.customer(custId);
+    const box = document.getElementById('emaillist');
+    if (!box || !c || !c.email) return;
+    if (typeof LiveSync === 'undefined' || !LiveSync.available()) {
+      box.innerHTML = '<span class="small muted">Live email history appears here when the dashboard is opened from its web-app link.</span>';
+      return;
+    }
+    box.innerHTML = '<span class="small muted">Checking the mailbox…</span>';
+    google.script.run
+      .withSuccessHandler(res => {
+        const el = document.getElementById('emaillist');
+        if (!el) return; // navigated away meanwhile
+        try {
+          const r = JSON.parse(res);
+          if (r.error) { el.innerHTML = '<span class="small muted">Couldn’t read emails: ' + esc(r.error) + '</span>'; return; }
+          if (!r.threads || !r.threads.length) {
+            el.innerHTML = '<span class="small muted">No emails with this customer in the dashboard mailbox yet.</span>'; return;
+          }
+          el.innerHTML = r.threads.map(t => `
+            <div class="dl-row" style="align-items:flex-start">
+              <span class="dl-label">${esc(fmtDateTime(t.lastAt).split(',')[0])}</span>
+              <span style="flex:1; min-width:0"><b>${esc(t.subject)}</b>
+                <span class="small muted">· ${t.count} message${t.count === 1 ? '' : 's'} · latest from ${esc(String(t.lastFrom).replace(/<[^>]*>/g, '').trim())}</span>
+                <br><span class="small">${esc(t.summary || '')}</span></span>
+            </div>`).join('');
+        } catch (e) { el.innerHTML = '<span class="small muted">Couldn’t read the email list.</span>'; }
+      })
+      .withFailureHandler(() => {
+        const el = document.getElementById('emaillist');
+        if (el) el.innerHTML = '<span class="small muted">Couldn’t reach the mailbox just now — try re-opening this page.</span>';
+      })
+      .fetchCustomerEmails(c.email);
+  },
+};
+
 /* =============================== PRODUCTION =============================== */
 /* Once an invoice exists and money has been taken, the order goes to the
    manufacturer. Grouped BY DRESS so size runs are obvious, with per-size
@@ -3503,6 +3603,7 @@ const Actions = {
   DB.schoolAliases = DB.schoolAliases || {};
   DB.schoolNotSame = DB.schoolNotSame || [];
   DB.invoices = DB.invoices || [];
+  DB.custNotes = DB.custNotes || {};
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {

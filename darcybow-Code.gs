@@ -47,7 +47,7 @@ function syncShopify() {
     }
     var token = getAccessToken_(store);
     var base = 'https://' + store + '/admin/api/2024-10/';
-    var bookingsCsv = '', schoolsJson = '', invoicesJson = '';
+    var bookingsCsv = '', schoolsJson = '', invoicesJson = '', notesJson = '';
     try {
       var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
       if (files.hasNext()) bookingsCsv = files.next().getBlob().getDataAsString();
@@ -55,6 +55,8 @@ function syncShopify() {
       if (sFiles.hasNext()) schoolsJson = sFiles.next().getBlob().getDataAsString();
       var iFiles = DriveApp.getFilesByName(INVOICES_FILE_);
       if (iFiles.hasNext()) invoicesJson = iFiles.next().getBlob().getDataAsString();
+      var nFiles = DriveApp.getFilesByName(NOTES_FILE_);
+      if (nFiles.hasNext()) notesJson = nFiles.next().getBlob().getDataAsString();
     } catch (eDrive) { /* Drive not authorised yet — sync still works without it */ }
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
@@ -63,6 +65,7 @@ function syncShopify() {
       bookingsCsv: bookingsCsv,
       schoolsJson: schoolsJson,
       invoicesJson: invoicesJson,
+      notesJson: notesJson,
       syncedAt: new Date().toISOString(),
     });
   } catch (e) {
@@ -123,6 +126,57 @@ function saveBookingsCsv(text) {
 
 var SCHOOLS_FILE_ = 'darcybow-schools.json';
 var INVOICES_FILE_ = 'darcybow-invoices.json';
+var NOTES_FILE_ = 'darcybow-notes.json';
+
+/**
+ * Stores per-customer email notes centrally (keyed by customer email), so
+ * every browser shares the same notes across re-syncs.
+ */
+function saveNotes(json) {
+  try {
+    var files = DriveApp.getFilesByName(NOTES_FILE_);
+    if (files.hasNext()) files.next().setContent(json);
+    else DriveApp.createFile(NOTES_FILE_, json, 'application/json');
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+/**
+ * Recent email threads between this mailbox and one customer, newest first.
+ * Powers the live Emails module on the customer page. Each thread comes back
+ * with the latest message's date, sender and a one-line summary (the opening
+ * of its text, quoted reply history stripped).
+ */
+function fetchCustomerEmails(email) {
+  try {
+    var em = String(email || '').trim();
+    if (!em || em.indexOf('@') < 0) return JSON.stringify({ threads: [] });
+    var threads = GmailApp.search('from:' + em + ' OR to:' + em + ' OR cc:' + em, 0, 10);
+    var out = [];
+    for (var i = 0; i < threads.length; i++) {
+      var t = threads[i];
+      var msgs = t.getMessages();
+      var last = msgs[msgs.length - 1];
+      var body = String(last.getPlainBody() || '');
+      // Cut quoted history so the summary is only the newest words.
+      body = body.split(/\r?\n\s*(?:On .{0,120}wrote:|-{3,}\s*Original Message|From:\s)/i)[0];
+      body = body.replace(/\s+/g, ' ').trim();
+      out.push({
+        subject: t.getFirstMessageSubject() || '(no subject)',
+        count: t.getMessageCount(),
+        lastAt: last.getDate().toISOString(),
+        lastFrom: String(last.getFrom() || ''),
+        summary: body.slice(0, 240),
+      });
+    }
+    out.sort(function (a, b) { return a.lastAt < b.lastAt ? 1 : -1; });
+    return JSON.stringify({ threads: out });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
 
 /**
  * Emails an invoice from the owner's Gmail with the two-page PDF attached.
