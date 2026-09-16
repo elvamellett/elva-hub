@@ -191,8 +191,29 @@ function fetchCustomerEmails(email) {
  */
 function ownerEmail_() {
   try { var e = Session.getEffectiveUser().getEmail(); if (e) return e; } catch (err) { /* scope not granted */ }
-  try { return DriveApp.getRootFolder().getOwner().getEmail(); } catch (err2) { /* ignore */ }
+  try { var e1 = Session.getActiveUser().getEmail(); if (e1) return e1; } catch (errA) { /* ignore */ }
+  // A file's owner is always readable under the Drive scope the dashboard
+  // already holds — probe one of our own files (creating a throwaway one
+  // if none exists yet).
+  try {
+    var it = DriveApp.getFilesByName(INVOICES_FILE_);
+    var f = it.hasNext() ? it.next() : DriveApp.createFile('darcybow-owner-probe.txt', 'safe to delete');
+    var owner = f.getOwner();
+    var e2 = owner ? owner.getEmail() : '';
+    if (f.getName() === 'darcybow-owner-probe.txt') f.setTrashed(true);
+    if (e2) return e2;
+  } catch (err2) { /* ignore */ }
   return '';
+}
+
+/**
+ * Run this from the editor (Run ▸ testEmailSetup) to prove email sending
+ * works end to end: it emails "Darcybow test" to the dashboard's own inbox.
+ */
+function testEmailSetup() {
+  var me = ownerEmail_();
+  if (!me) throw new Error('Could not work out this account\'s own email address.');
+  GmailApp.sendEmail(me, 'Darcybow test', 'The dashboard can send email — all working. (Sent to: ' + me + ')');
 }
 
 function sendInvoiceEmail(payload) {
