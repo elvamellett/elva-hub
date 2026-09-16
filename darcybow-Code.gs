@@ -184,11 +184,24 @@ function fetchCustomerEmails(email) {
  * isTest sends to the account that owns this script instead of the customer.
  * Consumer Gmail allows roughly 100 sends per day.
  */
+/**
+ * The dashboard account's own email address, without insisting on the
+ * userinfo scope: Session first, then the Drive root folder's owner
+ * (Drive access is always granted — the shared data files live there).
+ */
+function ownerEmail_() {
+  try { var e = Session.getEffectiveUser().getEmail(); if (e) return e; } catch (err) { /* scope not granted */ }
+  try { return DriveApp.getRootFolder().getOwner().getEmail(); } catch (err2) { /* ignore */ }
+  return '';
+}
+
 function sendInvoiceEmail(payload) {
   try {
     var p = JSON.parse(payload);
-    var to = p.isTest ? Session.getEffectiveUser().getEmail() : String(p.to || '').trim();
-    if (!to) return JSON.stringify({ error: 'No recipient email.' });
+    var to = p.isTest ? ownerEmail_() : String(p.to || '').trim();
+    if (!to) return JSON.stringify({ error: p.isTest
+      ? 'Could not work out your own address for the test — try “Send to customer” with your own email typed in the To box instead.'
+      : 'No recipient email.' });
     var pdf = Utilities.newBlob(p.pdfHtml, 'text/html', p.filename + '.html')
       .getAs('application/pdf').setName(p.filename + '.pdf');
     var opts = { htmlBody: p.htmlBody, attachments: [pdf], name: 'Darcybow' };
@@ -201,8 +214,7 @@ function sendInvoiceEmail(payload) {
     var warning = '';
     var from = String(p.fromAddress || '').trim();
     if (from) {
-      var me = '';
-      try { me = Session.getEffectiveUser().getEmail(); } catch (eMe) {}
+      var me = ownerEmail_();
       var aliases = [];
       try { aliases = GmailApp.getAliases() || []; } catch (eAl) {}
       if (from.toLowerCase() === String(me).toLowerCase() || aliases.join(',').toLowerCase().split(',').indexOf(from.toLowerCase()) !== -1) {
