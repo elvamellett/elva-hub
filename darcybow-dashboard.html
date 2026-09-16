@@ -2705,7 +2705,7 @@ const Invoices = {
     const vars = Invoices.emailVars(inv);
     UI.modal(`
       <h3>✉ Send invoice ${esc(vars.invoice_number)}</h3>
-      <p class="small muted">The two-page invoice PDF is attached automatically. Sent from your Gmail — check with a test first.</p>
+      <div id="em-health" class="note info">Checking the email connection…</div>
       <label class="f">To</label><input id="em-to" style="width:100%" value="${esc(inv.contact.email)}">
       <label class="f">Subject</label><input id="em-subject" style="width:100%" value="${esc(Invoices.fill(st.emailTemplate.subject, vars))}">
       <label class="f">Message</label><textarea id="em-body" rows="9" style="width:100%">${esc(Invoices.fill(st.emailTemplate.body, vars))}</textarea>
@@ -2715,6 +2715,36 @@ const Invoices = {
         <button onclick="Invoices.sendEmail(true)">📧 Send test to me</button>
         <button class="primary" onclick="Invoices.sendEmail(false)">✉ Send to customer</button>
       </div>`, true);
+    Invoices._checkHealth();
+  },
+  // Fills the strip at the top of the send window: green when THIS copy of
+  // the dashboard is allowed to send email, red (with the reason) when the
+  // open link is an old deployment without the Gmail permission.
+  _checkHealth() {
+    const el = document.getElementById('em-health');
+    if (!el) return;
+    if (typeof LiveSync === 'undefined' || !LiveSync.available()) {
+      el.className = 'note';
+      el.textContent = 'Sending only works from the live dashboard link (the Google web app).';
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(res => {
+        const box = document.getElementById('em-health');
+        if (!box) return;
+        try {
+          const h = JSON.parse(res);
+          box.className = 'note ' + (h.canSend ? 'ok' : 'err');
+          box.innerHTML = h.canSend
+            ? '✅ Email is connected — this will send from <b>' + esc(h.account || 'the dashboard account') + '</b>. The two-page invoice PDF is attached automatically.'
+            : '⚠ <b>This copy of the dashboard is not allowed to send email — you are on an OLD link.</b> In Apps Script: Deploy → New deployment → Web app → Execute as Me → Anyone with a Google account → Deploy, then open the NEW link it shows and send from there.';
+        } catch (e) { /* leave the strip as-is */ }
+      })
+      .withFailureHandler(() => {
+        const box = document.getElementById('em-health');
+        if (box) { box.className = 'note err'; box.textContent = '⚠ Could not reach the email engine — reload the page and try again.'; }
+      })
+      .emailHealth();
   },
   sendEmail(isTest) {
     const inv = Invoices.invFor(InvDraft ? InvDraft.customerId : '') || InvDraft;

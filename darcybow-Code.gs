@@ -207,6 +207,23 @@ function ownerEmail_() {
 }
 
 /**
+ * One-glance health check shown in the send window: proves whether THIS
+ * deployment is allowed to use Gmail, and as which account. getAliases is
+ * the cheapest call that requires the Gmail scope.
+ */
+function emailHealth() {
+  var out = { canSend: false, account: '', error: '' };
+  try {
+    GmailApp.getAliases();
+    out.canSend = true;
+  } catch (e) {
+    out.error = String((e && e.message) || e);
+  }
+  try { out.account = ownerEmail_(); } catch (e2) { /* ignore */ }
+  return JSON.stringify(out);
+}
+
+/**
  * Run this from the editor (Run ▸ testEmailSetup) to prove email sending
  * works end to end: it emails "Darcybow test" to the dashboard's own inbox.
  */
