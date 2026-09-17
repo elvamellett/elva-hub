@@ -1866,9 +1866,9 @@ Pages.customerDetail = (id) => {
         <button class="small" onclick="Emails.open('${c.id}')">📧 Open the full thread</button>
       </div>
       <div id="emaillist" style="margin-top:8px"><span class="small muted">…</span></div>
-      <label class="f" style="margin-top:14px">Email notes${canEditNotes ? '' : ' <span class="muted" style="text-transform:none">(read-only — invoicing passcode to edit)</span>'}</label>
+      <label class="f" style="margin-top:14px">Notes${canEditNotes ? '' : ' <span class="muted" style="text-transform:none">(read-only — invoicing passcode to edit)</span>'}</label>
       ${canEditNotes
-        ? `<textarea rows="3" style="width:100%" placeholder="e.g. Emailed about changing the size to Age 9 — confirmed." onchange="CustNotes.set('${c.id}', this.value)">${esc(CustNotes.get(c))}</textarea>`
+        ? `<textarea rows="3" style="width:100%" placeholder="e.g. Size changed to 3 — deposit to follow Friday." onchange="CustNotes.set('${c.id}', this.value)">${esc(CustNotes.get(c))}</textarea>`
         : `<div class="small">${CustNotes.get(c) ? esc(CustNotes.get(c)) : '<span class="muted">No notes yet.</span>'}</div>`}
     </div>`;
 };
@@ -2669,6 +2669,11 @@ const INV_DEFAULT_TERMS = [
   'Use a reputable alteration service and agree on the price before starting any work.',
 ].join('\n');
 const eurPlain = c => '€' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
+// House standards — always offered in the dropdowns alongside whatever the
+// website lists for the chosen dress.
+const DEFAULT_COLOURS = ['Off-White', 'Warm Ivory', 'White', 'Antique Cream'];
+const DEFAULT_SIZES = ['1', '2', '3', '4'];
+const PAY_METHODS = ['Cash', 'SumUp'];
 
 let InvDraft = null;
 
@@ -2877,9 +2882,9 @@ const Invoices = {
   lineChanged(i) {
     const tEl = document.getElementById('inv-l' + i + '-title');
     const p = tEl ? Invoices.catFor(tEl.value) : null;
-    const fill = (id, vals) => { const dl = document.getElementById(id); if (dl) dl.innerHTML = (vals || []).map(v => `<option value="${esc(v)}">`).join(''); };
-    fill('dl-colour-' + i, p ? p.colours : []);
-    fill('dl-size-' + i, p ? p.sizes : []);
+    const fill = (id, vals) => { const dl = document.getElementById(id); if (dl) dl.innerHTML = [...new Set(vals || [])].map(v => `<option value="${esc(v)}">`).join(''); };
+    fill('dl-colour-' + i, [...(p ? p.colours : []), ...DEFAULT_COLOURS]);
+    fill('dl-size-' + i, [...(p ? p.sizes : []), ...DEFAULT_SIZES]);
     const priceEl = document.getElementById('inv-l' + i + '-price');
     if (p && priceEl && !priceEl.value.trim() && p.priceCents) {
       priceEl.value = p.priceCents % 100 ? (p.priceCents / 100).toFixed(2) : String(p.priceCents / 100);
@@ -2898,7 +2903,9 @@ const Invoices = {
       lines: dresses.length ? dresses.map(d => ({ title: d.title, colour: d.colour || '', size: d.size || '',
         qty: d.quantity || 1, priceCents: d.retailPriceCents || 0 }))
         : [{ title: '', colour: '', size: '', qty: 1, priceCents: 0 }],
-      depositCents: 0, otherPaidCents: 0, sterling: { gbpCents: 0, rate: 0 },
+      depositCents: 0, depositMethod: '', depositDate: '',
+      otherPaidCents: 0, otherMethod: '', otherDate: '',
+      note: '', sterling: { gbpCents: 0, rate: 0 },
       paidInFull: false, createdAt: nowIso(), updatedAt: nowIso(),
     };
   },
@@ -2915,7 +2922,12 @@ const Invoices = {
       priceCents: parseEuros(v('inv-l' + i + '-price')) || 0,
     }));
     InvDraft.depositCents = parseEuros(v('inv-dep')) || 0;
+    InvDraft.depositMethod = v('inv-dep-method');
+    InvDraft.depositDate = v('inv-dep-date');
     InvDraft.otherPaidCents = parseEuros(v('inv-other')) || 0;
+    InvDraft.otherMethod = v('inv-other-method');
+    InvDraft.otherDate = v('inv-other-date');
+    InvDraft.note = v('inv-note').trim();
     InvDraft.sterling = { gbpCents: parseEuros(v('inv-gbp')) || 0, rate: parseFloat(v('inv-rate')) || 0 };
     return InvDraft;
   },
@@ -3016,9 +3028,11 @@ const Invoices = {
         <td class="c">${l ? eurPlain(l.priceCents * l.qty) : ''}</td></tr>`);
     }
     const gbp = inv.sterling && inv.sterling.gbpCents > 0 && inv.sterling.rate > 0 ? inv.sterling : null;
+    const when = ds => { const p2 = String(ds || '').split('-'); return p2.length === 3 ? p2[2] + '/' + p2[1] + '/' + p2[0] : ''; };
+    const paySuffix = (m, d2) => { const bits = [m, when(d2)].filter(Boolean).join(' '); return bits ? ' — ' + bits : ''; };
     const pay = [];
-    if (inv.depositCents > 0) pay.push('Deposit paid ' + eurPlain(inv.depositCents));
-    if (inv.otherPaidCents > 0) pay.push('Paid ' + eurPlain(inv.otherPaidCents));
+    if (inv.depositCents > 0) pay.push('Deposit paid ' + eurPlain(inv.depositCents) + paySuffix(inv.depositMethod, inv.depositDate));
+    if (inv.otherPaidCents > 0) pay.push('Paid ' + eurPlain(inv.otherPaidCents) + paySuffix(inv.otherMethod, inv.otherDate));
     if (gbp) {
       pay.push('Paid sterling @ £' + gbp.rate);
       pay.push(eurPlain(t.sterlingEur) + ' = £' + ((gbp.gbpCents / 100) % 1 ? (gbp.gbpCents / 100).toFixed(2) : Math.round(gbp.gbpCents / 100)));
@@ -3088,6 +3102,7 @@ const Invoices = {
           <thead><tr><th class="pl">PRODUCT / SERVICE</th><th>QTY</th><th>PRICE</th><th>TOTAL</th></tr></thead>
           <tbody>${rows.join('')}</tbody>
         </table>
+        ${inv.note ? '<div style="margin-top:4mm; font-size:9.5pt; color:#3d4547;"><i>Note: ' + esc(inv.note) + '</i></div>' : ''}
         <table class="payrow"><tr>
           <td><div class="payto">
             <div class="h">Payment To:</div>
@@ -3379,13 +3394,23 @@ Pages.invoice = (custId) => {
           <div><label class="f">Number</label><input id="inv-seq" type="number" min="1" value="${inv.seq}" oninput="Invoices.recalc()"></div>
           <div><label class="f">Issue date</label><input id="inv-date" type="date" value="${esc(inv.issueDate)}"></div>
         </div>
+        <label class="f">Note (printed on the invoice — optional)</label>
+        <input id="inv-note" style="width:100%" value="${esc(inv.note || '')}" placeholder="e.g. Balance due before collection.">
         <h2 style="margin-top:14px">Payments received</h2>
+        ${(() => {
+          const methodSel = (id, cur) => `<select id="${id}"><option value="">—</option>${PAY_METHODS.map(m => `<option ${cur === m ? 'selected' : ''}>${m}</option>`).join('')}</select>`;
+          return `
         <div class="formgrid">
           <div><label class="f">Deposit paid (€)</label><input id="inv-dep" value="${inv.depositCents ? (inv.depositCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
-          <div><label class="f">Other payments (€)</label><input id="inv-other" value="${inv.otherPaidCents ? (inv.otherPaidCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
+          <div><label class="f">Deposit — Cash or SumUp</label>${methodSel('inv-dep-method', inv.depositMethod || '')}</div>
+          <div><label class="f">Deposit — date taken</label><input id="inv-dep-date" type="date" value="${esc(inv.depositDate || '')}"></div>
+          <div><label class="f">Balance / other payment (€)</label><input id="inv-other" value="${inv.otherPaidCents ? (inv.otherPaidCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
+          <div><label class="f">Balance — Cash or SumUp</label>${methodSel('inv-other-method', inv.otherMethod || '')}</div>
+          <div><label class="f">Balance — date taken</label><input id="inv-other-date" type="date" value="${esc(inv.otherDate || '')}"></div>
           <div><label class="f">Paid sterling (£)</label><input id="inv-gbp" value="${inv.sterling && inv.sterling.gbpCents ? (inv.sterling.gbpCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
           <div><label class="f">Exchange rate (e.g. 1.15)</label><input id="inv-rate" value="${inv.sterling && inv.sterling.rate ? inv.sterling.rate : ''}" oninput="Invoices.recalc()" placeholder="1.15"> <span class="small muted" id="inv-ster-eur">${t.sterlingEur ? '= ' + eurPlain(t.sterlingEur) : ''}</span></div>
-        </div>
+        </div>`;
+        })()}
       </div>
     </div>
     <h2>Dress lines</h2>
@@ -3393,8 +3418,8 @@ Pages.invoice = (custId) => {
       <thead><tr><th>Dress</th><th>Colour</th><th>Size</th><th class="num">Qty</th><th class="num">Price (€)</th><th class="num">Total</th><th></th></tr></thead>
       <tbody>${inv.lines.map((l, i) => { const cp = Invoices.catFor(l.title); return `<tr>
         <td><input list="dresslist" id="inv-l${i}-title" style="width:100%; min-width:220px" value="${esc(l.title)}" placeholder="Choose or type a dress…" oninput="Invoices.lineChanged(${i})">
-          <datalist id="dl-colour-${i}">${(cp ? cp.colours : []).map(v => `<option value="${esc(v)}">`).join('')}</datalist>
-          <datalist id="dl-size-${i}">${(cp ? cp.sizes : []).map(v => `<option value="${esc(v)}">`).join('')}</datalist></td>
+          <datalist id="dl-colour-${i}">${[...new Set([...(cp ? cp.colours : []), ...DEFAULT_COLOURS])].map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+          <datalist id="dl-size-${i}">${[...new Set([...(cp ? cp.sizes : []), ...DEFAULT_SIZES])].map(v => `<option value="${esc(v)}">`).join('')}</datalist></td>
         <td><input id="inv-l${i}-colour" list="dl-colour-${i}" style="width:110px" value="${esc(l.colour)}" placeholder="Colour…"></td>
         <td><input id="inv-l${i}-size" list="dl-size-${i}" style="width:90px" value="${esc(l.size)}" placeholder="Size…"></td>
         <td class="num"><input id="inv-l${i}-qty" type="number" min="1" style="width:64px" value="${l.qty}" oninput="Invoices.recalc()"></td>
