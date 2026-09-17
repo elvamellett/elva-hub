@@ -1458,27 +1458,46 @@ const fmtWd = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday:
 // exists for a customer at a venue, its date wins over the order's copy.
 function venueGroups() {
   const venOf = eh => { const p = String(eh).split(/\s+—\s+/); return (p[1] || p[0]).trim(); };
-  const apptBy = new Map(); // customerId|venue → best appointment (export wins)
+  // ALL of a customer's appointments per venue (twins book twice!), export
+  // rows preferred, in date+time order — each of their orders consumes the
+  // next one so two bookings give two rows on the right days.
+  const apptsBy = new Map(); // customerId|venue → sorted appointments
   for (const a of DB.appointments) {
     if (!a.eventHotel) continue;
     const k = a.customerId + '|' + venOf(a.eventHotel);
-    const cur = apptBy.get(k);
-    if (!cur || (a.source === 'appointly_csv' && cur.source !== 'appointly_csv')) apptBy.set(k, a);
+    if (!apptsBy.has(k)) apptsBy.set(k, []);
+    apptsBy.get(k).push(a);
+  }
+  for (const [k, list] of apptsBy) {
+    const csv = list.filter(a => a.source === 'appointly_csv');
+    const use = (csv.length ? csv : list).slice()
+      .sort((p, q) => ((p.appointmentAt || '') + (p.time || '')) < ((q.appointmentAt || '') + (q.time || '')) ? -1 : 1);
+    apptsBy.set(k, use);
   }
   const groups = new Map();
   const seen = new Set();
+  const taken = new Map();
   const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
   for (const o of DB.orders) {
     if (!o.eventHotel) continue;
     const venue = venOf(o.eventHotel);
-    const a = apptBy.get(o.customerId + '|' + venue);
+    const k = o.customerId + '|' + venue;
+    const list = apptsBy.get(k);
+    let a = null;
+    if (list && list.length) {
+      const i = taken.get(k) || 0;
+      a = list[Math.min(i, list.length - 1)];
+      taken.set(k, i + 1);
+    }
     push(venue, a && a.appointmentAt !== o.eventDate ? Object.assign({}, o, { eventDate: a.appointmentAt }) : o);
-    seen.add(o.customerId + '|' + venue);
+    seen.add(k);
   }
-  for (const [k, a] of apptBy) {
+  for (const [k, list] of apptsBy) {
     if (seen.has(k)) continue;
-    push(venOf(a.eventHotel), { id: 'appt-' + a.id, customerId: a.customerId, reference: '', status: 'confirmed',
-      createdAt: a.bookedAt || nowIso(), eventHotel: a.eventHotel, eventDate: a.appointmentAt, planType: null, staffNotes: '' });
+    for (const a of list) {
+      push(venOf(a.eventHotel), { id: 'appt-' + a.id, customerId: a.customerId, reference: '', status: 'confirmed',
+        createdAt: a.bookedAt || nowIso(), eventHotel: a.eventHotel, eventDate: a.appointmentAt, planType: null, staffNotes: '' });
+    }
   }
   return [...groups.entries()].map(([venue, orders]) => {
     const dates = [...new Set(orders.map(o => o.eventDate).filter(Boolean))].sort();
@@ -1486,6 +1505,21 @@ function venueGroups() {
     const occasions = [...new Set(orders.map(o => (String(o.eventHotel).split(/\s+—\s+/)[0] || '').trim()).filter(Boolean))];
     return { venue, orders, dates, nextDate, occasions };
   }).sort((a, b) => (a.nextDate || '9999-' + (a.dates.slice(-1)[0] || '')) < (b.nextDate || '9999-' + (b.dates.slice(-1)[0] || '')) ? -1 : 1);
+}
+
+// Twins & double bookings: hand out one customer's appointments for a day
+// ONE AT A TIME, in time order, so each of their rows/sheets gets its own
+// slot (first row 13:00, second row 14:00) instead of all showing the first.
+function dayApptTaker(day) {
+  const used = new Map();
+  return custId => {
+    const list = DB.appointments.filter(x => x.customerId === custId && x.appointmentAt === day)
+      .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1);
+    if (!list.length) return null;
+    const i = used.get(custId) || 0;
+    used.set(custId, i + 1);
+    return list[Math.min(i, list.length - 1)];
+  };
 }
 
 /* ---------------- Schools: matching, aliases, one-dress-per-school ----------------
@@ -1652,10 +1686,14 @@ Pages.venueDetail = (venueName) => {
   const v = venueGroups().find(x => x.venue === venueName);
   if (!v) return `<p><a class="plain" href="#/venues">← Venues</a></p><h1>Venue not found</h1>`;
   if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueDayFilterVenue = venueName; }
+  const upUsed = new Map(); // twins: each of a customer's rows takes its own upcoming slot
   const allRows = v.orders.map(o => {
     const c = Domain.customer(o.customerId);
     const appts = AppointlyService.bookingsFor(c.id);
-    const upcoming = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
+    const ups = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1);
+    const ui = upUsed.get(c.id) || 0;
+    upUsed.set(c.id, ui + 1);
+    const upcoming = ups.length ? ups[Math.min(ui, ups.length - 1)] : undefined;
     const last = appts[0];
     const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
     return { o, c, upcoming, last, dress, school: Schools.of(c.id) };
@@ -1688,9 +1726,9 @@ Pages.venueDetail = (venueName) => {
     const cfg = DB.settings.eventDay;
     const dayRows = allRows.filter(r => r.o.eventDate === day);
     const slotted = [], notBooked = [];
+    const takeSlot = dayApptTaker(day);
     for (const r of dayRows) {
-      const a = DB.appointments.filter(x => x.customerId === r.c.id && x.appointmentAt === day)
-        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      const a = takeSlot(r.c.id);
       if (a) slotted.push({ ...r, a }); else notBooked.push(r);
     }
     const hh = h => String(h).padStart(2, '0');
@@ -2498,7 +2536,10 @@ const LiveSync = {
       }
       a.customerId = nc.id;
       if (oc.daughterName && !nc.daughterName) nc.daughterName = oc.daughterName;
-      const existing = appointments.find(x => x.customerId === nc.id && x.appointmentAt === a.appointmentAt);
+      // Match on time as well as day — twins have two bookings on the same
+      // day and each must keep its own slot.
+      const existing = appointments.find(x => x.customerId === nc.id && x.appointmentAt === a.appointmentAt
+        && (!x.time || !a.time || x.time === a.time));
       if (existing) {
         // The export row is the current truth — its values WIN over the
         // copy stamped on the Shopify order at booking time (reschedules).
@@ -2517,12 +2558,12 @@ const LiveSync = {
     const csvCust2 = new Set(), csvKeep2 = new Set();
     for (const a of appointments) if (a.source === 'appointly_csv' || a.source === 'manual') {
       csvCust2.add(a.customerId);
-      csvKeep2.add(a.customerId + '|' + a.appointmentAt);
+      csvKeep2.add(a.customerId + '|' + a.appointmentAt + '|' + (a.time || ''));
     }
     for (let i = appointments.length - 1; i >= 0; i--) {
       const a = appointments[i];
       if (a.source !== 'appointly') continue;
-      const key = a.customerId + '|' + a.appointmentAt;
+      const key = a.customerId + '|' + a.appointmentAt + '|' + (a.time || '');
       if (csvKeep2.has(key)) continue;
       // With a known export time: anything booked before it that the export
       // doesn't confirm is gone (rescheduled or cancelled); anything booked
@@ -3581,7 +3622,9 @@ const Actions = {
         ${line('Bag:', '30%')}${line('Other:', '62%')}</div>
         <h2>Staff notes</h2>
         <div class="notes"></div>
-        <div class="foot">${line('Taken by:', '40%')}${line('Deposit / payment taken:', '52%')}</div>
+        <h2>Payment taken today</h2>
+        <div>${line('Deposit — cash (€):', '30%')}${line('Deposit — card / SumUp (€):', '32%')}${line('Remainder to pay (€):', '29%')}</div>
+        <div class="foot">${line('Taken by:', '45%')}</div>
       </div>`).join('')}
     </body></html>`;
   },
@@ -3641,13 +3684,13 @@ const Actions = {
     };
     const rows = [];
     const group = venueGroups().find(x => x.venue === venue);
+    const takeSlot = dayApptTaker(day);
     for (const o of (group ? group.orders : [])) {
       if (o.eventDate !== day) continue;
       const parts = String(o.eventHotel).split(/\s+—\s+/);
       const c = Domain.customer(o.customerId);
       if (!c) continue;
-      const slot = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
-        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      const slot = takeSlot(c.id);
       // Booking answers can live on an earlier fitting appointment.
       const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
         .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
@@ -3675,13 +3718,13 @@ const Actions = {
     const dayLabel = new Date(day + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const rows = [];
     const group = venueGroups().find(x => x.venue === venue);
+    const takeSlot = dayApptTaker(day);
     for (const o of (group ? group.orders : [])) {
       if (o.eventDate !== day) continue;
       const parts = String(o.eventHotel).split(/\s+—\s+/);
       const c = Domain.customer(o.customerId);
       if (!c) continue;
-      const a = DB.appointments.filter(x => x.customerId === c.id && x.appointmentAt === day)
-        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1)[0];
+      const a = takeSlot(c.id);
       const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
       // Booking answers can live on an earlier appointment than the event slot.
       const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
