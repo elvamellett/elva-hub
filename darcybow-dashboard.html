@@ -2692,7 +2692,7 @@ const Invoices = {
       name: inv.contact.name, first_name: (inv.contact.name || '').split(' ')[0],
       invoice_number: inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq,
       total: eurPlain(t.linesTotal), paid: eurPlain(t.paidCents),
-      remainder: (inv.paidInFull || t.remainderCents <= 0) ? 'nothing — paid in full!' : eurPlain(Math.max(t.remainderCents, 0)),
+      remainder: (inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'nothing — paid in full!' : eurPlain(Math.max(t.remainderCents, 0)),
       issue_date: inv.issueDate,
     };
   },
@@ -2810,7 +2810,10 @@ const Invoices = {
   status(custId) {
     const inv = Invoices.invFor(custId);
     if (!inv) return null;
-    return (inv.paidInFull || Invoices.totals(inv).remainderCents <= 0) ? 'paid' : 'invoiced';
+    // "Paid in full" only when there is a real total that's covered, or it
+    // was explicitly marked paid — an empty €0 invoice is NOT paid.
+    const t = Invoices.totals(inv);
+    return (inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'paid' : 'invoiced';
   },
   statusBadge(custId) {
     const s = Invoices.status(custId);
@@ -3020,7 +3023,7 @@ const Invoices = {
       pay.push('Paid sterling @ £' + gbp.rate);
       pay.push(eurPlain(t.sterlingEur) + ' = £' + ((gbp.gbpCents / 100) % 1 ? (gbp.gbpCents / 100).toFixed(2) : Math.round(gbp.gbpCents / 100)));
     }
-    pay.push((inv.paidInFull || t.remainderCents <= 0) ? 'PAID IN FULL' : 'remainder ' + eurPlain(Math.max(t.remainderCents, 0)));
+    pay.push((inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'PAID IN FULL' : 'remainder ' + eurPlain(Math.max(t.remainderCents, 0)));
     const terms = String(st.terms || '').split('\n').map(line => {
       const s = line.trim();
       if (!s) return '';
@@ -3174,7 +3177,12 @@ const Emails = {
         if (!el) return; // navigated away meanwhile
         try {
           const r = JSON.parse(res);
-          if (r.error) { el.innerHTML = '<span class="small muted">Couldn’t read emails: ' + esc(r.error) + '</span>'; return; }
+          if (r.error) {
+            el.innerHTML = '<span class="small muted">' + (/permission/i.test(r.error)
+              ? 'Email history isn’t switched on for this copy of the dashboard — everything else works as normal.'
+              : 'Couldn’t read emails just now — try re-opening this page.') + '</span>';
+            return;
+          }
           if (!r.threads || !r.threads.length) {
             el.innerHTML = '<span class="small muted">No emails with this customer in the dashboard mailbox yet.</span>'; return;
           }
@@ -3457,7 +3465,7 @@ const Actions = {
         ${line('Dress / style:', '58%')}${line('Size:', '36%')}
         ${line('Colour:', '46%')}${line('Alterations:', '48%')}
         <div style="margin-top:4px">${line('Bow:', '30%')}${line('Veil:', '30%')}${line('Shoes:', '31%')}
-        ${line('Bag:', '30%')}${line('Tiara:', '30%')}${line('Other:', '31%')}</div>
+        ${line('Bag:', '30%')}${line('Other:', '62%')}</div>
         <h2>Staff notes</h2>
         <div class="notes"></div>
         <div class="foot">${line('Taken by:', '40%')}${line('Deposit / payment taken:', '52%')}</div>
