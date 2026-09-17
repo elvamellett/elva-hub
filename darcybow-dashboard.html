@@ -1551,8 +1551,15 @@ const Schools = {
       const orders = Domain.ordersOf(c.id);
       const items = orders.flatMap(o => Domain.itemsOf(o.id));
       const latest = orders.slice().sort((x, y) => x.createdAt < y.createdAt ? 1 : -1)[0];
-      g.members.push({ c, raw, dress: items.filter(i => i.category === 'dress')[0] || null,
-        event: latest ? latest.eventHotel : '' });
+      // The event (occasion + venue) can live on the order or, for
+      // booking-only customers, on the appointment itself.
+      let ev = (latest && latest.eventHotel) || '';
+      if (!ev) {
+        const appt = DB.appointments.filter(x => x.customerId === c.id && x.eventHotel)
+          .sort((p, q) => (p.appointmentAt || '') < (q.appointmentAt || '') ? 1 : -1)[0];
+        if (appt) ev = appt.eventHotel;
+      }
+      g.members.push({ c, raw, dress: items.filter(i => i.category === 'dress')[0] || null, event: ev });
     }
     return [...map.values()].sort((a, b) => b.members.length - a.members.length || a.name.localeCompare(b.name));
   },
@@ -1793,7 +1800,7 @@ Pages.schools = () => {
             <td><b>${esc(m.c.daughterName || '—')}</b></td>
             <td>${esc(m.c.name)}</td>
             <td>${m.dress ? (dressCount[m.dress.title] > 1 ? '<span class="badge b-red">⚠ ' + esc(m.dress.title) + '</span>' : esc(m.dress.title)) : '<span class="muted">none yet</span>'}</td>
-            <td class="small">${UI.eventBadge(m.event).split('<br>')[0]}</td>
+            <td class="small">${m.event ? UI.eventBadge(m.event).replace('<br>', ' ') : '<span class="muted">—</span>'}</td>
             <td class="small muted">${esc(m.raw)}</td>
           </tr>`).join('')}</tbody></table></div>
       </div>`;
@@ -2187,7 +2194,7 @@ const ImportService = {
     const stubById = new Map(b.customers.map(c => [c.id, c]));
     const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
     const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
-    let merged = 0, added = 0, created = 0;
+    let added = 0, created = 0;
     const resolved = [];
     const custById = new Map(DB.customers.map(c => [c.id, c]));
     const byOrderRef = new Map(DB.orders.map(o => [String(o.reference || '').trim(), o.customerId]));
@@ -2213,28 +2220,34 @@ const ImportService = {
       a.customerId = real.id; a.source = 'appointly_csv';
       resolved.push(a);
     }
-    // The Appointly export is the truth for bookings: for customers in it,
-    // drop bookings (order-derived or from an older export) whose dates
-    // this export doesn't confirm.
-    const csvCusts = new Set(resolved.map(a => a.customerId));
-    const csvDates = new Set(resolved.map(a => a.customerId + '|' + a.appointmentAt));
-    DB.appointments = DB.appointments.filter(x =>
-      !((x.source === 'appointly' || x.source === 'appointly_csv') && csvCusts.has(x.customerId) && !csvDates.has(x.customerId + '|' + x.appointmentAt)));
+    // The export is the COMPLETE current truth for online bookings:
+    // rows from any older export are replaced wholesale, and order-stamped
+    // bookings made BEFORE this export was generated are dropped — that is
+    // how reschedules (the export's new time wins) and outright
+    // cancellations (no row in the export = gone) both take effect.
+    // Bookings made through Shopify AFTER the export was generated survive
+    // until the next export speaks for them.
+    let exportCut = '';
+    const cCol2 = ImportService._col(ImportService.state.appointly.headers, 'createdat', 'created at', 'booked at', 'created');
+    for (const r of ImportService.state.appointly.records) {
+      const d0 = new Date(cCol2 ? r[cCol2] : '');
+      if (!isNaN(d0)) { const iso = d0.toISOString(); if (iso > exportCut) exportCut = iso; }
+    }
+    if (exportCut) DB.exportInfo = { at: exportCut };
+    else exportCut = (DB.exportInfo && DB.exportInfo.at) || '';
+    DB.appointments = DB.appointments.filter(x => x.source === 'manual'
+      || (x.source === 'appointly' && !(exportCut && String(x.bookedAt || '') <= exportCut)));
+    const seenKeys = new Set();
     for (const a of resolved) {
-      const existing = DB.appointments.find(x => x.customerId === a.customerId && x.appointmentAt === a.appointmentAt);
-      if (existing) {
-        if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
-        if (!existing.time && a.time) existing.time = a.time;
-        if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
-        if (!existing.eventHotel && a.eventHotel) existing.eventHotel = a.eventHotel;
-        existing.source = 'appointly_csv'; // export-backed: survives every re-sync
-        merged++;
-      } else { DB.appointments.push(a); added++; }
+      const k = a.customerId + '|' + a.appointmentAt + '|' + (a.time || '');
+      if (seenKeys.has(k)) continue; // duplicate rows in the export
+      seenKeys.add(k);
+      DB.appointments.push(a); added++;
     }
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
-    UI.toast('Booking answers merged — ' + merged + ' matched to existing bookings, ' + added + ' added' + (created ? ', ' + created + ' new customers created (booked without an order)' : '') + '.');
+    UI.toast('Booking export applied — ' + added + ' current bookings' + (created ? ', ' + created + ' new customers (booked without an order)' : '') + '. Reschedules and cancellations made in Appointly are now reflected.');
     // Manually imported here → store the export centrally so every other
     // browser opening the dashboard link receives it on its next sync.
     if (!fromServer && rawCsv && LiveSync.available()) {
@@ -2487,15 +2500,20 @@ const LiveSync = {
       if (oc.daughterName && !nc.daughterName) nc.daughterName = oc.daughterName;
       const existing = appointments.find(x => x.customerId === nc.id && x.appointmentAt === a.appointmentAt);
       if (existing) {
-        if (!existing.questions.length && a.questions.length) existing.questions = a.questions;
-        if (!existing.time && a.time) existing.time = a.time;
-        if (!existing.staffName && a.staffName) existing.staffName = a.staffName;
-        if (!existing.eventHotel && a.eventHotel) existing.eventHotel = a.eventHotel;
-        existing.source = 'appointly_csv'; // keep the export-backed marker alive
+        // The export row is the current truth — its values WIN over the
+        // copy stamped on the Shopify order at booking time (reschedules).
+        if (a.questions.length) existing.questions = a.questions;
+        if (a.time) existing.time = a.time;
+        if (a.staffName) existing.staffName = a.staffName;
+        if (a.eventHotel) existing.eventHotel = a.eventHotel;
+        existing.source = 'appointly_csv';
       } else appointments.push(a);
     }
-    // Where the Appointly export has spoken for a customer, its dates win
-    // over the copy on the Shopify order — every sync, not just at import.
+    // The export speaks for the whole booking book: order-stamped rows it
+    // doesn't confirm are either reschedules (stale copies) or outright
+    // cancellations — drop them when they predate the export. Bookings
+    // made after the export stay until the next export covers them.
+    const exportCut2 = (DB.exportInfo && DB.exportInfo.at) || '';
     const csvCust2 = new Set(), csvKeep2 = new Set();
     for (const a of appointments) if (a.source === 'appointly_csv' || a.source === 'manual') {
       csvCust2.add(a.customerId);
@@ -2503,7 +2521,14 @@ const LiveSync = {
     }
     for (let i = appointments.length - 1; i >= 0; i--) {
       const a = appointments[i];
-      if (a.source === 'appointly' && csvCust2.has(a.customerId) && !csvKeep2.has(a.customerId + '|' + a.appointmentAt)) appointments.splice(i, 1);
+      if (a.source !== 'appointly') continue;
+      const key = a.customerId + '|' + a.appointmentAt;
+      if (csvKeep2.has(key)) continue;
+      // With a known export time: anything booked before it that the export
+      // doesn't confirm is gone (rescheduled or cancelled); anything booked
+      // after it is new and stays. Without one (old imports): fall back to
+      // dropping unconfirmed rows for customers the export covers.
+      if (exportCut2 ? String(a.bookedAt || '') <= exportCut2 : csvCust2.has(a.customerId)) appointments.splice(i, 1);
     }
     // Shopify customer lists collect spam/newsletter signups. Keep only
     // people with an actual order or booking (when there are orders at all).
