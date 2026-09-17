@@ -62,6 +62,7 @@ function syncShopify() {
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
       products: fetchCatalogue_(store),
+      store: store,
       bookingsCsv: bookingsCsv,
       schoolsJson: schoolsJson,
       invoicesJson: invoicesJson,

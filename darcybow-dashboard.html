@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 34</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 35</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1870,7 +1870,7 @@ Pages.customerDetail = (id) => {
         <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
         <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
         ${schoolInfo ? `<div class="dl-row"><span class="dl-label">School</span><span class="dl-value">🏫 ${esc(schoolInfo.name)}</span></div>` : ''}
-        ${c.notes ? `<div class="dl-row"><span class="dl-label">Staff notes</span><span class="dl-value">${esc(c.notes)} <span class="small muted">(internal)</span></span></div>` : ''}
+        ${c.notes ? `<div class="dl-row"><span class="dl-label">Notes from Shopify</span><span class="dl-value">${esc(c.notes)}</span></div>` : ''}
         ${schoolInfo && schoolInfo.dressClash.length ? `<div class="note err" style="margin-bottom:0">⚠ <b>SAME DRESS, SAME SCHOOL:</b> ${schoolInfo.dressClash.map(o => esc(o.c.name) + (o.c.daughterName ? ' (for ' + esc(o.c.daughterName) + ')' : '')).join(', ')} — one dress per school!</div>`
         : schoolInfo && schoolInfo.others.length ? `<div class="note" style="margin-bottom:0">🏫 ${schoolInfo.others.length} more customer${schoolInfo.others.length === 1 ? '' : 's'} from this school: ${schoolInfo.others.map(o => esc(o.c.name) + (o.dress ? ' — ' + esc(o.dress.title) : '')).join(' · ')}. <a class="plain" href="#/schools">Schools page →</a></div>` : ''}
       </div>
@@ -1891,12 +1891,20 @@ Pages.customerDetail = (id) => {
         ${AppointlyService.isLive() || DB.importInfo ? '' : '<div class="seam" style="margin-bottom:0">📅 Appointly — sample data. Bring in the real booking answers on the <a class="plain" href="#/import">Connect data</a> page.</div>'}
       </div>
       <div>
+        <div class="card" style="margin-bottom:20px">
+          <h2 style="margin-top:0">Notes${canEditNotes ? '' : ' <span class="muted small" style="font-weight:400; text-transform:none">(read-only — invoicing passcode to edit)</span>'}</h2>
+          ${canEditNotes
+            ? `<textarea rows="3" style="width:100%" placeholder="e.g. Size changed to 3 — deposit to follow Friday." onchange="CustNotes.set('${c.id}', this.value)">${esc(CustNotes.get(c))}</textarea>
+               <p class="small muted" style="margin:6px 0 0">Saved centrally — every device sees these. The client can read them but not edit.</p>`
+            : `<div class="small">${CustNotes.get(c) ? esc(CustNotes.get(c)) : '<span class="muted">No notes yet.</span>'}</div>`}
+        </div>
         <h2 style="margin-top:0">Orders (${orders.length})</h2>
         ${orders.map(o => {
           const items = Domain.itemsOf(o.id);
+          const shopUrl = o.sourceId ? 'https://admin.shopify.com/store/' + (DB.shopSub || 'darcybow') + '/orders/' + o.sourceId : '';
           return `<div class="card" style="margin-bottom:12px">
             <div class="flex" style="justify-content:space-between">
-              <b>${esc(o.reference)}</b>
+              ${shopUrl ? `<a class="plain" href="${shopUrl}" target="_blank" title="Open this order in Shopify">${esc(o.reference)} ↗</a>` : `<b>${esc(o.reference)}</b>`}
               <span style="margin-left:auto" class="small muted">${fmtDateTime(o.createdAt).split(',')[0]}</span>
             </div>
             <div class="small muted" style="margin-top:6px">${items.map(i => esc(i.title) + (i.colour || i.size ? ' (' + [i.colour, i.size].filter(Boolean).map(esc).join(', ') + ')' : '')).join(' · ')}</div>
@@ -1912,10 +1920,6 @@ Pages.customerDetail = (id) => {
         <button class="small" onclick="Emails.open('${c.id}')">📧 Open the full thread</button>
       </div>
       <div id="emaillist" style="margin-top:8px"><span class="small muted">…</span></div>
-      <label class="f" style="margin-top:14px">Notes${canEditNotes ? '' : ' <span class="muted" style="text-transform:none">(read-only — invoicing passcode to edit)</span>'}</label>
-      ${canEditNotes
-        ? `<textarea rows="3" style="width:100%" placeholder="e.g. Size changed to 3 — deposit to follow Friday." onchange="CustNotes.set('${c.id}', this.value)">${esc(CustNotes.get(c))}</textarea>`
-        : `<div class="small">${CustNotes.get(c) ? esc(CustNotes.get(c)) : '<span class="muted">No notes yet.</span>'}</div>`}
     </div>`;
 };
 </script>
@@ -2439,6 +2443,7 @@ const LiveSync = {
   },
   applyPayload(p) {
     if (p.error) throw new Error(p.error);
+    if (p.store) DB.shopSub = String(p.store).replace(/\..*$/, ''); // for admin deep-links
     const customers = [], orders = [], orderItems = [], appointments = [];
     const byEmail = new Map(), byPhone = new Map(), bySrcId = new Map();
     for (const sc of p.customers || []) {
@@ -2489,6 +2494,7 @@ const LiveSync = {
       if (!eventHotel && bookingTitle) eventHotel = ImportService._eventFromTitle(bookingTitle);
       const eventDate = cls.eventDate || (eventHotel ? cls.bDate : '');
       const order = { id: uid(), customerId: cust.id, reference: so.name || ('SHOP-' + (orders.length + 1)),
+        sourceId: so.id != null ? String(so.id) : '',
         status: so.cancelled_at ? 'cancelled' : 'confirmed', createdAt: so.created_at || nowIso(),
         eventHotel, eventDate, planType: null, staffNotes: so.note || '' };
       orders.push(order);
