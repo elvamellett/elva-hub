@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 37</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 38</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1538,6 +1538,33 @@ function dayApptTaker(day) {
   };
 }
 
+// Staff can retime a booking by hand (✎ Change time on the customer's page).
+// Live syncs and CSV imports rebuild the appointment list from source data,
+// so each edit is stored in DB.timeEdits and re-applied after every rebuild —
+// until an Appointly export confirms the new time itself, at which point the
+// edit has served its purpose and is retired.
+function applyTimeEdits() {
+  if (!Array.isArray(DB.timeEdits) || !DB.timeEdits.length) return;
+  const custById = new Map(DB.customers.map(c => [c.id, c]));
+  DB.timeEdits = DB.timeEdits.filter(e => {
+    const cand = DB.appointments.filter(a => {
+      const c = custById.get(a.customerId);
+      if (!c) return false;
+      return (e.email && String(c.email || '').toLowerCase() === e.email)
+        || (e.phone && ImportService._digits(c.phone) === e.phone);
+    }).filter(a => a.appointmentAt === e.date);
+    if (!cand.length) return false; // booking gone altogether — edit obsolete
+    if (cand.some(a => (a.time || '') === e.to)) return false; // export caught up — retire
+    // Twins have two same-day bookings: bookedAt pins the edit to the right one.
+    const hit = cand.find(a => (a.time || '') === e.from && String(a.bookedAt || '') === String(e.bookedAt || ''))
+      || cand.find(a => (a.time || '') === e.from);
+    if (!hit) return false; // original slot no longer exists
+    hit.time = e.to;
+    if (e.staff) hit.staffName = e.staff;
+    return true; // keep, so the next rebuild gets it again
+  });
+}
+
 /* ---------------- Schools: matching, aliases, one-dress-per-school ----------------
    The school answer matters commercially: only one girl per school may buy a
    given dress. Names arrive misspelt and abbreviated, so grouping works in
@@ -1901,6 +1928,7 @@ Pages.customerDetail = (id) => {
               <b>${esc(a.service)}</b>
               <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
               <span class="small muted">${fmtDate(a.appointmentAt)}${a.time ? ' · <b>' + esc(a.time) + '</b>' : ''}${a.source === 'appointly' ? ' · booked online' : ' · logged by staff'}</span>
+              ${a.status === 'upcoming' ? `<button class="small" onclick="Actions.changeApptTime('${a.id}')">✎ Change time</button>` : ''}
             </div>
             ${a.staffName ? `<div class="small" style="margin-bottom:8px">Looked after by <b>${esc(a.staffName)}</b></div>` : ''}
             ${a.questions.length ? a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
@@ -2318,6 +2346,7 @@ const ImportService = {
       seenKeys.add(k);
       DB.appointments.push(a); added++;
     }
+    applyTimeEdits();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
@@ -2646,6 +2675,7 @@ const LiveSync = {
     }
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    applyTimeEdits();
     // The website's product catalogue (fetched server-side from the public
     // storefront) — powers the dress/colour/size dropdowns on invoices.
     if (Array.isArray(p.products) && p.products.length) DB.catalogue = LiveSync._mapCatalogue(p.products);
@@ -3727,14 +3757,52 @@ const Actions = {
       'One A4 page per customer: contact details plus the questions they answered when booking through Appointly. Print the lot or save as one PDF.',
       Actions._sheetHtml(rows, 'Customer sheets — all customers'), rows.length);
   },
-  /* Single customer, from their page. */
+  /* Retime a booking by hand — sticks through syncs via DB.timeEdits. */
+  changeApptTime(apptId) {
+    const a = DB.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    const c = Domain.customer(a.customerId) || {};
+    const raw = prompt(`New time for ${c.name || 'this booking'} on ${fmtDate(a.appointmentAt)} — type e.g. “2”, “2:30pm” or “14:00”:`, a.time || '');
+    if (raw == null) return;
+    const t = Actions._parseTime(raw);
+    if (!t) { UI.toast('Couldn’t read that time — try “2pm” or “14:00”.'); return; }
+    DB.timeEdits = DB.timeEdits || [];
+    DB.timeEdits.push({ id: uid(), email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone || ''),
+      date: a.appointmentAt, from: a.time || '', to: t, bookedAt: a.bookedAt || '', at: nowIso() });
+    a.time = t;
+    Store.save(); App.route();
+    UI.toast(`${c.name || 'Booking'} moved to ${t} on ${fmtDate(a.appointmentAt)} — this sticks through syncs until an Appointly export confirms it.`);
+  },
+  // Shop hours run midday-ish: a bare "2" means 2pm, "11" means 11am.
+  _parseTime(raw) {
+    const m = String(raw).trim().toLowerCase().match(/^(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?$/);
+    if (!m) return '';
+    let h = parseInt(m[1], 10); const mm = m[2] || '00';
+    if (h > 23 || parseInt(mm, 10) > 59) return '';
+    if (m[3] === 'pm' && h < 12) h += 12;
+    else if (m[3] === 'am' && h === 12) h = 0;
+    else if (!m[3] && h >= 1 && h <= 8) h += 12;
+    return String(h).padStart(2, '0') + ':' + mm;
+  },
+  /* Single customer, from their page. Twins get one sheet per booking, each
+     with its own time, staff member and child's name. */
   printCustomerSheet(customerId) {
     const c = Domain.customer(customerId);
     if (!c) return;
-    const rows = [Actions._customerRow(c)];
+    const base = Actions._customerRow(c);
+    const ups = AppointlyService.bookingsFor(c.id).filter(a => a.appointmentAt >= todayStr())
+      .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1);
+    // Only a same-day double booking (twins) warrants a sheet per slot — a
+    // fitting on another day doesn't need its own page.
+    const dayUps = ups.filter(a => a.appointmentAt === (ups[0] && ups[0].appointmentAt));
+    const rows = dayUps.length > 1 ? dayUps.map(a => ({ ...base,
+        qa: (a.questions && a.questions.some(z => z.a)) ? a : base.qa,
+        kid: apptDaughter(a) || c.daughterName,
+        slotMain: a.time || '—', slotSub: fmtDate(a.appointmentAt), staffName: a.staffName || '' }))
+      : [base];
     Actions._sheetModal(`Customer sheet — ${esc(c.name)}`,
       'Contact details plus the questions they answered when booking through Appointly.',
-      Actions._sheetHtml(rows, `Customer sheet — ${c.name}`), 1);
+      Actions._sheetHtml(rows, `Customer sheet — ${c.name}`), rows.length);
   },
   /* One event day at one venue: a sheet per booked customer, in slot order. */
   printCustomerSheets(venueEnc, day) {
@@ -3867,6 +3935,7 @@ const Actions = {
   DB.schoolNotSame = DB.schoolNotSame || [];
   DB.invoices = DB.invoices || [];
   DB.custNotes = DB.custNotes || {};
+  DB.timeEdits = DB.timeEdits || [];
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {
