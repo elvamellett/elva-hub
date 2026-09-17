@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 36</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 37</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1428,6 +1428,12 @@ Pages.customers = () => {
       </select>
       ${customerEventFilter || customerDressFilter || customerQuery ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; App.route()">✕ Clear</button>` : ''}
     </div>
+    ${(() => {
+      const flagged = DB.customers.filter(c => c.addressCheck);
+      return flagged.length ? `<div class="note" style="margin-bottom:14px">📍 <b>Address check — ${flagged.length} customer${flagged.length === 1 ? '' : 's'} where Shopify's saved profile address doesn't match their latest order:</b>
+        ${flagged.map(c => `<a class="plain" href="#/customer/${c.id}" style="font-weight:600">${esc(c.name)}</a> (order ${esc(c.addressCheck.ref)} — using “${esc(c.address)}”, profile says “${esc(c.addressCheck.was)}”)`).join(' · ')}.
+        The dashboard uses the order address; correct the profile on Shopify if it should say something else.</div>` : '';
+    })()}
     <div class="tablewrap"><table class="roomy">
       <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th>Next appointment</th><th>Booking answers</th></tr></thead>
       <tbody>
@@ -1441,7 +1447,7 @@ Pages.customers = () => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname">${esc(c.name)}</span>${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
+            <td><span class="cname">${esc(c.name)}</span>${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order — profile on Shopify disagrees">📍 address</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
@@ -1880,7 +1886,8 @@ Pages.customerDetail = (id) => {
         <h2 style="margin-top:0">Details</h2>
         <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
         <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
-        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}</span></div>
+        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''}</span></div>
+        ${c.addressCheck ? `<div class="note" style="margin-bottom:0">📍 <b>Address check:</b> this customer's saved Shopify profile says “${esc(c.addressCheck.was)}”, but their latest order ${esc(c.addressCheck.ref)} was placed with the delivery address above — the dashboard now uses the order address. If the profile one is actually correct, fix it on the customer in Shopify and re-sync.</div>` : ''}
         ${schoolInfo ? `<div class="dl-row"><span class="dl-label">School</span><span class="dl-value">🏫 ${esc(schoolInfo.name)}</span></div>` : ''}
         ${c.notes ? `<div class="dl-row"><span class="dl-label">Notes from Shopify</span><span class="dl-value">${esc(c.notes)}</span></div>` : ''}
         ${schoolInfo && schoolInfo.dressClash.length ? `<div class="note err" style="margin-bottom:0">⚠ <b>SAME DRESS, SAME SCHOOL:</b> ${schoolInfo.dressClash.map(o => esc(o.c.name) + (o.c.daughterName ? ' (for ' + esc(o.c.daughterName) + ')' : '')).join(', ')} — one dress per school!</div>`
@@ -2483,6 +2490,7 @@ const LiveSync = {
       if (digits) byPhone.set(digits, c);
     }
     const diagRows = [];
+    const shipByCust = new Map(); // customer → their newest order's ship-to address
     for (const so of p.orders || []) {
       let cust = (so.customer && so.customer.id != null && bySrcId.get(String(so.customer.id)))
         || (so.email && byEmail.get(String(so.email).toLowerCase())) || null;
@@ -2522,6 +2530,17 @@ const LiveSync = {
         status: so.cancelled_at ? 'cancelled' : 'confirmed', createdAt: so.created_at || nowIso(),
         eventHotel, eventDate, planType: null, staffNotes: so.note || '' };
       orders.push(order);
+      // The address typed at checkout (what the order page on Shopify shows)
+      // is fresher than the profile address Shopify keeps on the customer —
+      // families move and the profile lags behind. Remember each customer's
+      // newest one so it can win below.
+      const sa = so.shipping_address || so.billing_address;
+      const shipTo = sa ? [sa.address1, sa.address2, sa.city, sa.province, sa.zip].filter(Boolean).join(', ') : '';
+      if (shipTo && !so.cancelled_at) {
+        const prevShip = shipByCust.get(cust);
+        const shipAt = String(so.created_at || '');
+        if (!prevShip || shipAt > prevShip.at) shipByCust.set(cust, { at: shipAt, addr: shipTo, ref: so.name || '' });
+      }
       for (const li of so.line_items || []) {
         const vt = String(li.variant_title || '');
         const vp = (/^default title$/i.test(vt) ? '' : vt).split(' / ').map(s => s.trim());
@@ -2543,6 +2562,17 @@ const LiveSync = {
         raw: rawProps, bDate: cls.bDate, bTime: cls.bTime, venue: eventHotel });
     }
     LiveSync._diag = diagRows;
+    // Latest order's delivery address wins over the saved profile address,
+    // and any disagreement is kept on the customer so the Customers page and
+    // their own page can flag it for review (spotted first on Kirsty Lyons:
+    // profile said Malahide, order shipped to Wexford).
+    const normAddr = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (const [c, s] of shipByCust) {
+      c.addressCheck = null;
+      if (!s.addr || normAddr(s.addr) === normAddr(c.address)) continue;
+      if (c.address) c.addressCheck = { was: c.address, ref: s.ref };
+      c.address = s.addr;
+    }
     if (!customers.length) throw new Error('Shopify returned no customers — check the token scopes (read_customers, read_orders).');
     // Booking answers merged in from an Appointly CSV (and hand-logged
     // appointments) must survive re-syncs: re-link them to the freshly
