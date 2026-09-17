@@ -229,7 +229,8 @@
   <aside id="sidebar">
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
-    <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button></div>
+    <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 34</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2555,10 +2556,11 @@ const LiveSync = {
     // cancellations — drop them when they predate the export. Bookings
     // made after the export stay until the next export covers them.
     const exportCut2 = (DB.exportInfo && DB.exportInfo.at) || '';
-    const csvCust2 = new Set(), csvKeep2 = new Set();
+    const csvCust2 = new Set(), csvKeep2 = new Set(), csvKeepDay = new Set();
     for (const a of appointments) if (a.source === 'appointly_csv' || a.source === 'manual') {
       csvCust2.add(a.customerId);
       csvKeep2.add(a.customerId + '|' + a.appointmentAt + '|' + (a.time || ''));
+      csvKeepDay.add(a.customerId + '|' + a.appointmentAt);
     }
     for (let i = appointments.length - 1; i >= 0; i--) {
       const a = appointments[i];
@@ -2567,9 +2569,11 @@ const LiveSync = {
       if (csvKeep2.has(key)) continue;
       // With a known export time: anything booked before it that the export
       // doesn't confirm is gone (rescheduled or cancelled); anything booked
-      // after it is new and stays. Without one (old imports): fall back to
-      // dropping unconfirmed rows for customers the export covers.
-      if (exportCut2 ? String(a.bookedAt || '') <= exportCut2 : csvCust2.has(a.customerId)) appointments.splice(i, 1);
+      // after it is new and stays. Without one (data imported by an older
+      // version): only drop rows on days the export doesn't confirm at all,
+      // so a twin's second same-day slot is never swallowed.
+      if (exportCut2 ? String(a.bookedAt || '') <= exportCut2
+        : (csvCust2.has(a.customerId) && !csvKeepDay.has(a.customerId + '|' + a.appointmentAt))) appointments.splice(i, 1);
     }
     // Shopify customer lists collect spam/newsletter signups. Keep only
     // people with an actual order or booking (when there are orders at all).
