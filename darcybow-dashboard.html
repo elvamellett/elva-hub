@@ -2282,6 +2282,33 @@ const ImportService = {
   },
 };
 
+/* ---- Backup: everything this browser holds (invoices, notes, school
+   corrections, bookings) as one downloadable file, restorable on any
+   copy of the dashboard. The belt-and-braces layer under the live sync. ---- */
+const Backup = {
+  download() {
+    const json = JSON.stringify(DB);
+    const a = document.createElement('a');
+    a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+    a.download = 'darcybow-backup-' + todayStr() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    UI.toast('Backup downloaded — keep the file somewhere safe.');
+  },
+  async restore(input) {
+    try {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      if (!Invoices.unlocked() && !Invoices.unlock()) { input.value = ''; return; }
+      const data = JSON.parse(await f.text());
+      if (!data || !Array.isArray(data.customers)) throw new Error('That file doesn’t look like a Darcybow backup.');
+      if (!confirm('Restore this backup? It replaces what this browser currently holds, then re-syncs from Shopify.')) { input.value = ''; return; }
+      DB = data; Store.save(); Domain.refreshAll(); App.route();
+      UI.toast('Backup restored.');
+      if (typeof LiveSync !== 'undefined' && LiveSync.available()) LiveSync.sync();
+    } catch (e) { input.value = ''; UI.err(e); }
+  },
+};
+
 /* ---- Live sync: this same file, served as a Google Apps Script web
    app (see Code.gs), gains a server that calls the Shopify Admin API
    with the token kept in Script properties. The page detects that
@@ -2612,6 +2639,12 @@ Pages.importPage = () => {
     <div class="toolbar">
       <button class="primary" ${any ? '' : 'disabled'} onclick="ImportService.preview()">Preview import…</button>
       <button onclick="App.resetDemo()">↺ Back to sample data</button>
+    </div>
+    <h2 style="margin-top:28px">Backup</h2>
+    <div class="card" style="max-width:780px">
+      <p class="small" style="margin-top:0">Belt and braces: download everything this browser holds — invoices, notes, school corrections, bookings — as one file. Keep it safe; restore it here on any copy of the dashboard (restoring needs the invoicing passcode).</p>
+      <button class="primary" onclick="Backup.download()">⬇ Download backup file</button>
+      <label class="btn" style="cursor:pointer; display:inline-block; margin-left:8px">⬆ Restore from backup<input type="file" accept=".json,application/json" style="display:none" onchange="Backup.restore(this)"></label>
     </div>
     <h2 style="margin-top:28px">Route 2 — live dashboard (free, via Google Apps Script)</h2>
     ${LiveSync.available() ? `
