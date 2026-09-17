@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 35</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 36</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1362,9 +1362,10 @@ Pages.dashboard = () => {
           <thead><tr><th>When</th><th>Customer</th><th>Type</th><th>Staff</th></tr></thead>
           <tbody>${upcomingAppts.slice(0, 8).map(a => {
             const c = Domain.customer(a.customerId);
+            const kid = apptDaughter(a) || (c && c.daughterName) || '';
             return `<tr class="click" onclick="App.go('#/customer/${a.customerId}')">
               <td><b>${fmtDate(a.appointmentAt)}</b>${a.time ? ' · <span class="vclock" style="font-size:.95rem">' + esc(a.time) + '</span>' : ''}</td>
-              <td><b>${esc(c ? c.name : '—')}</b>${c && c.daughterName ? `<br><span class="muted small">for ${esc(c.daughterName)}</span>` : ''}</td>
+              <td><b>${esc(c ? c.name : '—')}</b>${kid ? `<br><span class="muted small">for ${esc(kid)}</span>` : ''}</td>
               <td class="small">${esc(a.service)}</td>
               <td class="small">${esc(a.staffName || '—')}</td></tr>`;
           }).join('')}</tbody></table></div>`
@@ -1506,6 +1507,14 @@ function venueGroups() {
     const occasions = [...new Set(orders.map(o => (String(o.eventHotel).split(/\s+—\s+/)[0] || '').trim()).filter(Boolean))];
     return { venue, orders, dates, nextDate, occasions };
   }).sort((a, b) => (a.nextDate || '9999-' + (a.dates.slice(-1)[0] || '')) < (b.nextDate || '9999-' + (b.dates.slice(-1)[0] || '')) ? -1 : 1);
+}
+
+// The child a specific booking is for (twins: each booking names its own
+// child in the answers, which beats the single name on the customer record).
+function apptDaughter(a) {
+  if (!a || !a.questions) return '';
+  const q = a.questions.find(x => /daughter'?s\s+name|child'?s\s+name/i.test(String(x.q)) && x.a);
+  return q ? String(q.a).trim() : '';
 }
 
 // Twins & double bookings: hand out one customer's appointments for a day
@@ -1706,11 +1715,13 @@ Pages.venueDetail = (venueName) => {
     count: allRows.filter(r => r.o.eventDate === d).length,
   }));
   const key = r => r.upcoming ? r.upcoming.appointmentAt + 'T' + (r.upcoming.time || '00:00') : (r.last ? r.last.appointmentAt + 'T' + (r.last.time || '00:00') : '');
-  const row = (r, timeHtml, appt) => `
+  const row = (r, timeHtml, appt) => {
+    const kid = (appt && apptDaughter(appt)) || r.c.daughterName;
+    return `
     <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
       <div class="vtime">${timeHtml}</div>
       <div style="flex:1; min-width:0">
-        <span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
+        <span class="cname">${esc(r.c.name)}</span>${kid ? ` <span class="small muted">for ${esc(kid)}</span>` : ''}
         <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' · event ' + fmtWd(r.o.eventDate) : ''}${r.school ? ' · 🏫 ' + esc(r.school) : ''}</span>
       </div>
       ${appt && appt.staffName ? `<div><span class="badge b-grey">${esc(appt.staffName)}</span></div>` : ''}
@@ -1718,6 +1729,7 @@ Pages.venueDetail = (venueName) => {
         ${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}
       </div>
     </div>`;
+  };
 
   let body;
   if (venueDayFilter) {
@@ -2239,6 +2251,7 @@ const ImportService = {
     const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
     let added = 0, created = 0;
     const resolved = [];
+    const daughters = new Map();
     const custById = new Map(DB.customers.map(c => [c.id, c]));
     const byOrderRef = new Map(DB.orders.map(o => [String(o.reference || '').trim(), o.customerId]));
     for (const a of b.appointments) {
@@ -2262,6 +2275,17 @@ const ImportService = {
       if (stub.address && !real.address) real.address = stub.address;
       a.customerId = real.id; a.source = 'appointly_csv';
       resolved.push(a);
+      const dn = apptDaughter(a);
+      if (dn) {
+        if (!daughters.has(real.id)) daughters.set(real.id, []);
+        if (!daughters.get(real.id).includes(dn)) daughters.get(real.id).push(dn);
+      }
+    }
+    // Twins: a customer whose bookings name different children gets them all
+    // on the record — "Emmie Humphreys & Carrie Humphreys".
+    for (const [cid, names] of daughters) {
+      const cRec = custById.get(cid) || DB.customers.find(x => x.id === cid);
+      if (cRec && names.length) cRec.daughterName = names.join(' & ');
     }
     // The export is the COMPLETE current truth for online bookings:
     // rows from any older export are replaced wholesale, and order-stamped
@@ -3614,7 +3638,7 @@ const Actions = {
           <div class="staffbox"><div class="m">Staff member</div>
             <div class="s">${esc(r.staffName || '')}</div></div>
         </div>
-        <div class="cust">${esc(r.c.name)}${r.c.daughterName ? ' <span class="m" style="font-weight:400">— for ' + esc(r.c.daughterName) + '</span>' : ''}</div>
+        <div class="cust">${esc(r.c.name)}${(r.kid || r.c.daughterName) ? ' <span class="m" style="font-weight:400">— for ' + esc(r.kid || r.c.daughterName) + '</span>' : ''}</div>
         <div class="grid">
           <div><b>Phone:</b> ${esc(r.c.phone || '—')}</div>
           <div><b>Email:</b> ${esc(r.c.email || '—')}</div>
@@ -3701,12 +3725,14 @@ const Actions = {
       const c = Domain.customer(o.customerId);
       if (!c) continue;
       const slot = takeSlot(c.id);
-      // Booking answers can live on an earlier fitting appointment.
-      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
+      // This slot's own answers first (twins: each booking names its child);
+      // else answers can live on an earlier fitting appointment.
+      const qaFallback = DB.appointments.filter(x => x.customerId === c.id && x.questions.length)
         .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      const qa = (slot && slot.questions && slot.questions.some(z => z.a)) ? slot : qaFallback;
       const blk = slot ? blockOf(slot.time) : null;
       rows.push({
-        c, qa, items: Domain.itemsOf(o.id), orderRef: o.reference,
+        c, qa, kid: apptDaughter(slot) || '', items: Domain.itemsOf(o.id), orderRef: o.reference,
         headline: esc(venue) + ' · <b>' + esc(dayLabel) + '</b> · ' + esc((parts[0] || '').trim()),
         slotMain: slot && slot.time ? slot.time : '—',
         slotSub: blk ? 'Block ' + blk : 'No slot booked',
@@ -3736,9 +3762,11 @@ const Actions = {
       if (!c) continue;
       const a = takeSlot(c.id);
       const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
-      // Booking answers can live on an earlier appointment than the event slot.
-      const qa = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
+      // This slot's own answers first (twins: each booking names its child);
+      // else answers can live on an earlier appointment than the event slot.
+      const qaFallback = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
         .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
+      const qa = (a && a.questions && a.questions.some(z => z.a)) ? a : qaFallback;
       rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim() });
     }
     const blockRows = [];
