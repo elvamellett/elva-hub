@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 40</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 41</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2307,6 +2307,27 @@ const ImportService = {
       if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
       if (stub.phone && !real.phone) real.phone = stub.phone;
       if (stub.address && !real.address) real.address = stub.address;
+      // Same person, two Shopify records: the booking email matched one
+      // customer while its order number belongs to another (booked with a
+      // second email). Fold the order's record into this one — orders,
+      // invoices and the newest delivery address all move across.
+      const refOwner = a._orderRef ? custById.get(byOrderRef.get(String(a._orderRef).trim())) : null;
+      if (refOwner && refOwner.id !== real.id) {
+        const normA2 = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        for (const o of DB.orders) if (o.customerId === refOwner.id) o.customerId = real.id;
+        for (const ap of DB.appointments) if (ap.customerId === refOwner.id) ap.customerId = real.id;
+        for (const inv of DB.invoices || []) if (inv.customerId === refOwner.id) inv.customerId = real.id;
+        if (refOwner.address && normA2(refOwner.address) !== normA2(real.address)) {
+          real.addressCheck = refOwner.addressCheck || (real.address ? { was: real.address, ref: String(a._orderRef).trim() } : null);
+          real.address = refOwner.address;
+        }
+        if (!real.phone && refOwner.phone) real.phone = refOwner.phone;
+        if (!real.notes && refOwner.notes) real.notes = refOwner.notes;
+        DB.customers = DB.customers.filter(x => x.id !== refOwner.id);
+        custById.delete(refOwner.id);
+        if (refOwner.email) byEmail.set(String(refOwner.email).toLowerCase(), real);
+        if (ImportService._digits(refOwner.phone)) byPhone.set(ImportService._digits(refOwner.phone), real);
+      }
       a.customerId = real.id; a.source = 'appointly_csv';
       resolved.push(a);
       const dn = apptDaughter(a);
@@ -2345,6 +2366,12 @@ const ImportService = {
       seenKeys.add(k);
       DB.appointments.push(a); added++;
     }
+    // An order-stamped copy of a booking the export already confirms (same
+    // customer, day and time — possible after the fold above) is a duplicate.
+    const csvKeys2 = new Set(DB.appointments.filter(x => x.source === 'appointly_csv')
+      .map(x => x.customerId + '|' + x.appointmentAt + '|' + (x.time || '')));
+    DB.appointments = DB.appointments.filter(x => !(x.source === 'appointly'
+      && csvKeys2.has(x.customerId + '|' + x.appointmentAt + '|' + (x.time || ''))));
     applyTimeEdits();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
@@ -2608,6 +2635,35 @@ const LiveSync = {
     // booking for the same day where one exists.
     const oldCustById = new Map((DB.customers || []).map(c => [c.id, c]));
     const preserved = (DB.appointments || []).filter(a => a.source === 'appointly_csv' || a.source === 'manual');
+    // Same person, two Shopify records: booked with one email, ordered with
+    // another. The order number on the booking links them — fold the order's
+    // record into the booking's record so the orders and the newest delivery
+    // address show in one place (first seen on Kirsty Lyons / order #5305,
+    // whose order and booking arrived under different customer records).
+    const refToCust = new Map(orders.map(o => [String(o.reference || '').trim(), o.customerId]));
+    const custByIdNew = new Map(customers.map(c => [c.id, c]));
+    for (const a of preserved) {
+      if (!a._orderRef) continue;
+      const oc0 = oldCustById.get(a.customerId);
+      const nc0 = (oc0 && ((oc0.email && byEmail.get(String(oc0.email).toLowerCase()))
+        || (ImportService._digits(oc0.phone) && byPhone.get(ImportService._digits(oc0.phone))))) || null;
+      const dup = custByIdNew.get(refToCust.get(String(a._orderRef).trim()));
+      if (!nc0 || !dup || dup.id === nc0.id) continue;
+      for (const o of orders) if (o.customerId === dup.id) o.customerId = nc0.id;
+      for (const ap of appointments) if (ap.customerId === dup.id) ap.customerId = nc0.id;
+      if (dup.address && normAddr(dup.address) !== normAddr(nc0.address)) {
+        nc0.addressCheck = dup.addressCheck || (nc0.address ? { was: nc0.address, ref: String(a._orderRef).trim() } : null);
+        nc0.address = dup.address;
+      }
+      if (!nc0.phone && dup.phone) nc0.phone = dup.phone;
+      if (!nc0.notes && dup.notes) nc0.notes = dup.notes;
+      const di = customers.indexOf(dup);
+      if (di >= 0) customers.splice(di, 1);
+      custByIdNew.delete(dup.id);
+      // The second email/phone belongs to the same human from now on.
+      if (dup.email) byEmail.set(String(dup.email).toLowerCase(), nc0);
+      if (ImportService._digits(dup.phone)) byPhone.set(ImportService._digits(dup.phone), nc0);
+    }
     for (const a of preserved) {
       const oc = oldCustById.get(a.customerId);
       const nc = (oc && ((oc.email && byEmail.get(String(oc.email).toLowerCase()))
