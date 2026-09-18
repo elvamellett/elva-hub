@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 41</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 42</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1393,6 +1393,7 @@ let customerEventFilter = '';
 let customerDressFilter = '';
 Pages.customers = () => {
   const q = customerQuery.trim().toLowerCase();
+  const dupFlags = Dupes.flaggedIds();
   const events = [...new Set(DB.orders.map(o => o.eventHotel).filter(Boolean))].sort();
   const dresses = [...new Set(DB.orderItems.filter(i => i.category === 'dress').map(i => i.title))].sort();
   const matches = DB.customers.filter(c => {
@@ -1446,7 +1447,7 @@ Pages.customers = () => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname">${esc(c.name)}</span>${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order — profile on Shopify disagrees">📍 address</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
+            <td><span class="cname">${esc(c.name)}</span>${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order — profile on Shopify disagrees">📍 address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter — open the page to review and merge">👥 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
@@ -1563,6 +1564,89 @@ function applyTimeEdits() {
     return true; // keep, so the next rebuild gets it again
   });
 }
+
+/* ---- Duplicate customer records: the Kirsty Lyons problem. One human can
+   exist twice on Shopify (booked with one email, ordered with another).
+   The order-number fold catches the linkable cases automatically; Dupes
+   keeps a look out for the rest — flagging records that share a phone
+   number, the same full name, or the same daughter — and lets staff merge
+   a confirmed pair. A confirmed merge is remembered in DB.custMerges and
+   re-applied after every sync and import, so it can never come back. ---- */
+const Dupes = {
+  _n: s => String(s || '').toLowerCase().replace(/[^a-z]/g, ''),
+  // Why two records look like the same person, or '' if they don't.
+  reason(a, b) {
+    const pa = ImportService._digits(a.phone), pb = ImportService._digits(b.phone);
+    if (pa && pa === pb) return 'same phone number';
+    if (Dupes._n(a.name) && Dupes._n(a.name) === Dupes._n(b.name)) return 'same name';
+    if (Dupes._n(a.daughterName) && Dupes._n(a.daughterName) === Dupes._n(b.daughterName)) return 'same daughter';
+    return '';
+  },
+  candidatesFor(c) {
+    return DB.customers.filter(x => x.id !== c.id && Dupes.reason(c, x))
+      .map(x => ({ c: x, why: Dupes.reason(c, x) }));
+  },
+  // ids of every customer involved in a suspect pair — one pass, for the list page.
+  flaggedIds() {
+    const byKey = new Map();
+    const add = (k, c) => { if (!k) return; if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(c.id); };
+    for (const c of DB.customers) {
+      add('p' + ImportService._digits(c.phone), c);
+      add('n' + Dupes._n(c.name), c);
+      add('d' + Dupes._n(c.daughterName), c);
+    }
+    const out = new Set();
+    for (const ids of byKey.values()) if (ids.length > 1) ids.forEach(id => out.add(id));
+    return out;
+  },
+  merge(keepId, dropId) {
+    const keep = Domain.customer(keepId), drop = Domain.customer(dropId);
+    if (!keep || !drop) return;
+    if (!confirm(`Merge “${drop.name}” into “${keep.name}”?\n\nOrders, bookings, invoices and details move onto ${keep.name}'s record and the duplicate disappears. The merge is remembered and re-applies itself after every future sync.`)) return;
+    Dupes.fold(keep, drop);
+    DB.custMerges = DB.custMerges || [];
+    DB.custMerges.push({ keep: { email: String(keep.email || '').toLowerCase(), phone: ImportService._digits(keep.phone) },
+      drop: { email: String(drop.email || '').toLowerCase(), phone: ImportService._digits(drop.phone) }, at: nowIso() });
+    Store.save(); Domain.refreshAll(); App.go('#/customer/' + keep.id); App.route();
+    UI.toast('Merged into one record — and remembered, so future syncs keep them together.');
+  },
+  // Move everything from drop onto keep and delete drop. Operates on DB.
+  fold(keep, drop) {
+    // The record with the newest order speaks for the delivery address —
+    // decide before the orders move across.
+    const newestOf = id => DB.orders.filter(o => o.customerId === id && o.status !== 'cancelled')
+      .sort((x, y) => x.createdAt < y.createdAt ? 1 : -1)[0];
+    const dropWinsAddress = !!drop.address && (!keep.address || !!drop.addressCheck
+      || ((newestOf(keep.id) || { createdAt: '' }).createdAt < (newestOf(drop.id) || { createdAt: '' }).createdAt));
+    for (const o of DB.orders) if (o.customerId === drop.id) o.customerId = keep.id;
+    for (const a of DB.appointments) if (a.customerId === drop.id) a.customerId = keep.id;
+    for (const inv of DB.invoices || []) if (inv.customerId === drop.id) inv.customerId = keep.id;
+    if (dropWinsAddress) {
+      if (keep.address && keep.address !== drop.address) keep.addressCheck = drop.addressCheck || { was: keep.address, ref: 'merged record' };
+      keep.address = drop.address;
+    }
+    if (!keep.phone && drop.phone) keep.phone = drop.phone;
+    if (!keep.email && drop.email) keep.email = drop.email;
+    if (!keep.daughterName && drop.daughterName) keep.daughterName = drop.daughterName;
+    if (!keep.notes && drop.notes) keep.notes = drop.notes;
+    DB.customers = DB.customers.filter(x => x.id !== drop.id);
+  },
+  // After every sync/import the records come back fresh from Shopify —
+  // re-apply each remembered merge by email/phone. Email is the identity;
+  // phone is only a fallback (a merged pair often SHARES the phone, so a
+  // phone match must never pick the record already chosen as the keeper).
+  reapply() {
+    for (const m of DB.custMerges || []) {
+      const byEmail = e => e ? DB.customers.find(c => String(c.email || '').toLowerCase() === e) : null;
+      const byPhone = (p, notId) => p ? DB.customers.find(c => ImportService._digits(c.phone) === p && c.id !== notId) : null;
+      const keep = byEmail(m.keep.email) || byPhone(m.keep.phone);
+      if (!keep) continue;
+      const dropByEmail = byEmail(m.drop.email);
+      const drop = (dropByEmail && dropByEmail.id !== keep.id ? dropByEmail : null) || byPhone(m.drop.phone, keep.id);
+      if (drop && drop.id !== keep.id) Dupes.fold(keep, drop);
+    }
+  },
+};
 
 /* ---------------- Schools: matching, aliases, one-dress-per-school ----------------
    The school answer matters commercially: only one girl per school may buy a
@@ -1897,6 +1981,7 @@ Pages.customerDetail = (id) => {
   const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
   const schoolInfo = Schools.clashes(c.id);
   const canEditNotes = Invoices.unlocked();
+  const dupPairs = Dupes.candidatesFor(c);
   setTimeout(() => Emails.load(id), 60); // fill the email module once the page is on screen
   return `
     <p><a class="plain" href="#/customers">← Customers</a></p>
@@ -1914,6 +1999,9 @@ Pages.customerDetail = (id) => {
         <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
         <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''}</span></div>
         ${c.addressCheck ? `<div class="note" style="margin-bottom:0">📍 <b>Address check:</b> this customer's saved Shopify profile says “${esc(c.addressCheck.was)}”, but their latest order ${esc(c.addressCheck.ref)} was placed with the delivery address above — the dashboard now uses the order address. If the profile one is actually correct, fix it on the customer in Shopify and re-sync.</div>` : ''}
+        ${dupPairs.length ? `<div class="note" style="margin-bottom:0">👥 <b>Possible duplicate record${dupPairs.length === 1 ? '' : 's'}:</b> ${dupPairs.map(d =>
+          `<a class="plain" href="#/customer/${d.c.id}" style="font-weight:600">${esc(d.c.name)}</a> (${d.why} · ${Domain.ordersOf(d.c.id).length} order${Domain.ordersOf(d.c.id).length === 1 ? '' : 's'}) <button class="small" onclick="Dupes.merge('${c.id}','${d.c.id}')">Merge into this record</button>`).join(' · ')}
+          — if it's the same person, merging puts their orders, bookings and address in one place, and the merge re-applies itself after every sync.</div>` : ''}
         ${schoolInfo ? `<div class="dl-row"><span class="dl-label">School</span><span class="dl-value">🏫 ${esc(schoolInfo.name)}</span></div>` : ''}
         ${c.notes ? `<div class="dl-row"><span class="dl-label">Notes from Shopify</span><span class="dl-value">${esc(c.notes)}</span></div>` : ''}
         ${schoolInfo && schoolInfo.dressClash.length ? `<div class="note err" style="margin-bottom:0">⚠ <b>SAME DRESS, SAME SCHOOL:</b> ${schoolInfo.dressClash.map(o => esc(o.c.name) + (o.c.daughterName ? ' (for ' + esc(o.c.daughterName) + ')' : '')).join(', ')} — one dress per school!</div>`
@@ -2372,6 +2460,7 @@ const ImportService = {
       .map(x => x.customerId + '|' + x.appointmentAt + '|' + (x.time || '')));
     DB.appointments = DB.appointments.filter(x => !(x.source === 'appointly'
       && csvKeys2.has(x.customerId + '|' + x.appointmentAt + '|' + (x.time || ''))));
+    Dupes.reapply();
     applyTimeEdits();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
@@ -2730,6 +2819,7 @@ const LiveSync = {
     }
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    Dupes.reapply();
     applyTimeEdits();
     // The website's product catalogue (fetched server-side from the public
     // storefront) — powers the dress/colour/size dropdowns on invoices.
@@ -4051,6 +4141,7 @@ const Gate = {
   DB.invoices = DB.invoices || [];
   DB.custNotes = DB.custNotes || {};
   DB.timeEdits = DB.timeEdits || [];
+  DB.custMerges = DB.custMerges || [];
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {
