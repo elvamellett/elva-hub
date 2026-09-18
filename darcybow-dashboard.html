@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 38</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 39</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3219,8 +3219,24 @@ const Invoices = {
       <p class="small muted" style="margin:4px 0 0">A hidden copy (the customer can't see it) of each invoice email lands in this inbox — so what went out is always visible in Outlook. Leave blank to turn off.</p>
       <h2 class="small" style="margin-top:14px">Terms &amp; conditions (page 2 of every invoice)</h2>
       <textarea id="ist-terms" rows="12" style="width:100%; font-size:.82rem">${esc(st.terms)}</textarea>
-      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+      <div class="modalfoot"><button onclick="Invoices.changePasscode()">🔑 Change passcode</button>
+        <button onclick="UI.closeModal()">Cancel</button>
         <button class="primary" onclick="Invoices.saveSettings()">Save settings</button></div>`, true);
+  },
+  /* Reachable only from inside settings, which already needed the current
+     passcode — so knowing the old one is a precondition for changing it. */
+  changePasscode() {
+    const st = Invoices.settings();
+    const p1 = prompt('New invoicing passcode (also guards notes and backup restores):');
+    if (p1 === null) return;
+    if (!p1.trim()) { UI.err(new Error('The passcode can’t be empty.')); return; }
+    const p2 = prompt('Type the new passcode again to confirm:');
+    if (p2 === null) return;
+    if (p1.trim() !== p2.trim()) { UI.err(new Error('The two didn’t match — passcode unchanged.')); return; }
+    st.passHash = Invoices._hash(p1.trim()); st.updatedAt = nowIso();
+    localStorage.setItem('darcybow-inv-unlock', st.passHash);
+    Store.save(); Invoices._push();
+    UI.toast('Passcode changed. Download a fresh backup file now — older backups still carry the old passcode.');
   },
   saveSettings() {
     const st = Invoices.settings();
