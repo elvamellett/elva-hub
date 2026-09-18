@@ -31,6 +31,30 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+/* ================== DASHBOARD PASSWORD — CHANGE THIS ==================
+ * Everyone opening the dashboard link must type this once per browser.
+ * Change the text between the quotes, save (⌘S), then deploy a new
+ * version — every browser is asked again after a password change.    */
+var SITE_PASSWORD = 'darcy2026';
+/* ====================================================================== */
+
+// A browser that knows the password holds this token; every data call
+// verifies it, so the customer data itself is locked, not just the page.
+function siteToken_() {
+  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'darcybow-gate|' + SITE_PASSWORD);
+  return Utilities.base64EncodeWebSafe(d);
+}
+function checkSitePassword(pw) {
+  Utilities.sleep(400); // slows down password guessing
+  if (String(pw || '').trim() === SITE_PASSWORD) return JSON.stringify({ ok: true, token: siteToken_() });
+  return JSON.stringify({ ok: false });
+}
+function gate_(token) {
+  if (String(token || '') !== siteToken_()) {
+    throw new Error('Locked — refresh the page and enter the dashboard password.');
+  }
+}
+
 /**
  * Called from the page via google.script.run. Returns a JSON string:
  * { customers: [...], orders: [...], bookingsCsv, syncedAt } or { error }.
@@ -38,8 +62,9 @@ function doGet() {
  * browser that opens the dashboard gets the imported bookings — not just the
  * browser that did the import.
  */
-function syncShopify() {
+function syncShopify(siteTok) {
   try {
+    gate_(siteTok);
     var props = PropertiesService.getScriptProperties();
     var store = (props.getProperty('SHOPIFY_STORE') || '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (!store) {
@@ -114,7 +139,8 @@ var BOOKINGS_FILE_ = 'darcybow-bookings.csv';
  * owner's Google Drive), so syncShopify can hand it to every browser that
  * opens the dashboard. Called automatically when an export is imported.
  */
-function saveBookingsCsv(text) {
+function saveBookingsCsv(siteTok, text) {
+  gate_(siteTok);
   try {
     var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
     if (files.hasNext()) files.next().setContent(text);
@@ -133,7 +159,8 @@ var NOTES_FILE_ = 'darcybow-notes.json';
  * Stores per-customer email notes centrally (keyed by customer email), so
  * every browser shares the same notes across re-syncs.
  */
-function saveNotes(json) {
+function saveNotes(siteTok, json) {
+  gate_(siteTok);
   try {
     var files = DriveApp.getFilesByName(NOTES_FILE_);
     if (files.hasNext()) files.next().setContent(json);
@@ -150,7 +177,8 @@ function saveNotes(json) {
  * with the latest message's date, sender and a one-line summary (the opening
  * of its text, quoted reply history stripped).
  */
-function fetchCustomerEmails(email) {
+function fetchCustomerEmails(siteTok, email) {
+  gate_(siteTok);
   try {
     var em = String(email || '').trim();
     if (!em || em.indexOf('@') < 0) return JSON.stringify({ threads: [] });
@@ -212,7 +240,8 @@ function ownerEmail_() {
  * deployment is allowed to use Gmail, and as which account. getAliases is
  * the cheapest call that requires the Gmail scope.
  */
-function emailHealth() {
+function emailHealth(siteTok) {
+  gate_(siteTok);
   var out = { canSend: false, account: '', error: '', detail: '' };
   try {
     GmailApp.getAliases();
@@ -251,7 +280,8 @@ function testEmailSetup() {
   GmailApp.sendEmail(me, 'Darcybow test', 'The dashboard can send email — all working. (Sent to: ' + me + ')');
 }
 
-function sendInvoiceEmail(payload) {
+function sendInvoiceEmail(siteTok, payload) {
+  gate_(siteTok);
   try {
     var p = JSON.parse(payload);
     var to = p.isTest ? ownerEmail_() : String(p.to || '').trim();
@@ -291,7 +321,8 @@ function sendInvoiceEmail(payload) {
  * shares them. Called automatically whenever an invoice or the invoice
  * settings are saved.
  */
-function saveInvoices(json) {
+function saveInvoices(siteTok, json) {
+  gate_(siteTok);
   try {
     var files = DriveApp.getFilesByName(INVOICES_FILE_);
     if (files.hasNext()) files.next().setContent(json);
@@ -307,7 +338,8 @@ function saveInvoices(json) {
  * match suggestions) centrally, so every browser shares the same school
  * groupings. Called automatically when staff confirm or correct a school.
  */
-function saveSchools(json) {
+function saveSchools(siteTok, json) {
+  gate_(siteTok);
   try {
     var files = DriveApp.getFilesByName(SCHOOLS_FILE_);
     if (files.hasNext()) files.next().setContent(json);
@@ -361,7 +393,8 @@ function getAccessToken_(store) {
  * for the browser to download. One block per dress: title, size tally,
  * column headers, rows, blank line.
  */
-function exportProductionXlsx(payload) {
+function exportProductionXlsx(siteTok, payload) {
+  gate_(siteTok);
   var ss = null;
   try {
     var p = JSON.parse(payload);

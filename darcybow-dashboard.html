@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 39</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 40</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1249,7 +1249,12 @@ const UI = {
     document.body.appendChild(t);
     setTimeout(() => t.remove(), ms);
   },
-  err(e) { UI.toast('⚠ ' + (e.message || e), 5000); },
+  err(e) {
+    const m = String((e && e.message) || e);
+    // Server rejected our site token (password was changed) → back to the lock page.
+    if (/enter the dashboard password/i.test(m)) { Gate.drop(); location.reload(); return; }
+    UI.toast('⚠ ' + m, 5000);
+  },
 
   badge(status) {
     const map = {
@@ -1428,12 +1433,6 @@ Pages.customers = () => {
       </select>
       ${customerEventFilter || customerDressFilter || customerQuery ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; App.route()">✕ Clear</button>` : ''}
     </div>
-    ${(() => {
-      const flagged = DB.customers.filter(c => c.addressCheck);
-      return flagged.length ? `<div class="note" style="margin-bottom:14px">📍 <b>Address check — ${flagged.length} customer${flagged.length === 1 ? '' : 's'} where Shopify's saved profile address doesn't match their latest order:</b>
-        ${flagged.map(c => `<a class="plain" href="#/customer/${c.id}" style="font-weight:600">${esc(c.name)}</a> (order ${esc(c.addressCheck.ref)} — using “${esc(c.address)}”, profile says “${esc(c.addressCheck.was)}”)`).join(' · ')}.
-        The dashboard uses the order address; correct the profile on Shopify if it should say something else.</div>` : '';
-    })()}
     <div class="tablewrap"><table class="roomy">
       <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th>Next appointment</th><th>Booking answers</th></tr></thead>
       <tbody>
@@ -1670,7 +1669,7 @@ const Schools = {
   _save() {
     Store.save();
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
-      try { google.script.run.saveSchools(JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList() })); } catch (e) { /* non-fatal */ }
+      try { google.script.run.saveSchools(Gate.token(), JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList() })); } catch (e) { /* non-fatal */ }
     }
     App.route();
   },
@@ -2354,7 +2353,7 @@ const ImportService = {
     // Manually imported here → store the export centrally so every other
     // browser opening the dashboard link receives it on its next sync.
     if (!fromServer && rawCsv && LiveSync.available()) {
-      try { google.script.run.saveBookingsCsv(rawCsv); } catch (e) { /* non-fatal */ }
+      try { google.script.run.saveBookingsCsv(Gate.token(), rawCsv); } catch (e) { /* non-fatal */ }
     }
   },
   preview() {
@@ -2467,7 +2466,7 @@ const LiveSync = {
         try { LiveSync.applyPayload(JSON.parse(payload)); } catch (e) { UI.err(e); }
       })
       .withFailureHandler(e => { LiveSync.syncing = false; UI.err(e); })
-      .syncShopify();
+      .syncShopify(Gate.token());
   },
   // Shopify Admin API JSON → the dashboard's own shape.
   // Order-independent fingerprint of an invoices payload, ignoring the
@@ -2510,7 +2509,7 @@ const LiveSync = {
       const name = [sc.first_name, sc.last_name].filter(Boolean).join(' ').trim() || sc.email || 'Unknown customer';
       const da = sc.default_address || {};
       const c = { id: uid(), name, daughterName: '', email: sc.email || '',
-        phone: sc.phone || da.phone || '', address: [da.address1, da.city, da.province, da.zip].filter(Boolean).join(', '),
+        phone: sc.phone || da.phone || '', address: [da.address1, da.address2, da.city, da.province, da.zip].filter(Boolean).join(', '),
         notes: sc.note || '', createdAt: sc.created_at || nowIso() };
       customers.push(c);
       if (sc.id != null) bySrcId.set(String(sc.id), c);
@@ -2973,7 +2972,7 @@ const Invoices = {
         const box = document.getElementById('em-health');
         if (box) { box.className = 'note err'; box.textContent = '⚠ Could not reach the email engine — reload the page and try again.'; }
       })
-      .emailHealth();
+      .emailHealth(Gate.token());
   },
   sendEmail(isTest) {
     const inv = Invoices.invFor(InvDraft ? InvDraft.customerId : '') || InvDraft;
@@ -3010,7 +3009,7 @@ const Invoices = {
         } catch (e) { UI.err(e); }
       })
       .withFailureHandler(e => UI.err(e))
-      .sendInvoiceEmail(JSON.stringify(payload));
+      .sendInvoiceEmail(Gate.token(), JSON.stringify(payload));
   },
   _hash(s) { let h = 5381; for (const ch of String(s)) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return String(h); },
   unlocked() { const st = Invoices.settings(); return !!st.passHash && localStorage.getItem('darcybow-inv-unlock') === st.passHash; },
@@ -3191,7 +3190,7 @@ const Invoices = {
   },
   _push() {
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
-      try { google.script.run.saveInvoices(JSON.stringify({ invoices: DB.invoices || [], settings: DB.invoiceSettings || null })); } catch (e) { /* non-fatal */ }
+      try { google.script.run.saveInvoices(Gate.token(), JSON.stringify({ invoices: DB.invoices || [], settings: DB.invoiceSettings || null })); } catch (e) { /* non-fatal */ }
     }
   },
   editSettings() {
@@ -3403,7 +3402,7 @@ const CustNotes = {
   },
   _push() {
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
-      try { google.script.run.saveNotes(JSON.stringify({ notes: DB.custNotes || {} })); } catch (e) { /* non-fatal */ }
+      try { google.script.run.saveNotes(Gate.token(), JSON.stringify({ notes: DB.custNotes || {} })); } catch (e) { /* non-fatal */ }
     }
   },
   _fp: o => JSON.stringify(Object.entries(o || {}).map(([k, v]) => [k, v && v.text, v && v.updatedAt]).sort()),
@@ -3453,7 +3452,7 @@ const Emails = {
         const el = document.getElementById('emaillist');
         if (el) el.innerHTML = '<span class="small muted">Couldn’t reach the mailbox just now — try re-opening this page.</span>';
       })
-      .fetchCustomerEmails(c.email);
+      .fetchCustomerEmails(Gate.token(), c.email);
   },
 };
 
@@ -3540,7 +3539,7 @@ const Production = {
         } catch (e) { UI.err(e); }
       })
       .withFailureHandler(e => UI.err(e))
-      .exportProductionXlsx(JSON.stringify({ groups, date: todayStr() }));
+      .exportProductionXlsx(Gate.token(), JSON.stringify({ groups, date: todayStr() }));
   },
 };
 
@@ -3945,6 +3944,50 @@ const Actions = {
 };
 
 /* =============================== BOOT =============================== */
+/* ---- Site lock: when served from the web-app link, the whole dashboard
+   sits behind a password. The server checks a token on EVERY data call,
+   so the customer data itself is locked — not just this page. ---- */
+const Gate = {
+  KEY: 'darcybow-site-token',
+  token() { try { return localStorage.getItem(Gate.KEY) || ''; } catch (e) { return ''; } },
+  drop() { try { localStorage.removeItem(Gate.KEY); } catch (e) { /* ignore */ } },
+  needed: () => LiveSync.available() && !Gate.token(),
+  show() {
+    document.body.innerHTML = `
+      <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#2a1420; padding:16px">
+        <form onsubmit="Gate.submit(); return false" style="background:#fff; border-radius:14px; padding:34px 38px; width:340px; max-width:100%; box-shadow:0 18px 60px rgba(0,0,0,.35); text-align:center">
+          <div style="font-size:1.5rem; font-weight:700; letter-spacing:.02em; color:#8c2f4e">Darcybow</div>
+          <div style="font-size:.78rem; color:#9a8b92; letter-spacing:.14em; margin:2px 0 20px">CUSTOMERS &amp; EVENTS</div>
+          <input id="gate-pw" type="password" autocomplete="current-password" placeholder="Dashboard password"
+            style="width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; text-align:center">
+          <div id="gate-err" style="color:#b3261e; font-size:.82rem; min-height:18px; margin-top:8px"></div>
+          <button style="width:100%; padding:11px; border-radius:8px; border:0; background:#8c2f4e; color:#fff; font-size:1rem; cursor:pointer">Open dashboard</button>
+          <div style="font-size:.75rem; color:#9a8b92; margin-top:14px">This browser stays signed in once the password is right.</div>
+        </form>
+      </div>`;
+    setTimeout(() => { const el = document.getElementById('gate-pw'); if (el) el.focus(); }, 50);
+  },
+  submit() {
+    const pw = (document.getElementById('gate-pw').value || '').trim();
+    const err = document.getElementById('gate-err');
+    if (!pw) return;
+    err.style.color = '#9a8b92'; err.textContent = 'Checking…';
+    google.script.run
+      .withSuccessHandler(res => {
+        try {
+          const r = JSON.parse(res);
+          if (r.ok && r.token) {
+            try { localStorage.setItem(Gate.KEY, r.token); } catch (e) { /* ignore */ }
+            location.reload(); return;
+          }
+        } catch (e) { /* treat as wrong password */ }
+        err.style.color = '#b3261e'; err.textContent = 'Wrong password — try again.';
+        document.getElementById('gate-pw').value = '';
+      })
+      .withFailureHandler(() => { err.style.color = '#b3261e'; err.textContent = 'Couldn’t check the password — try again.'; })
+      .checkSitePassword(pw);
+  },
+};
 (function boot() {
   Store.load();
   DB.schoolAliases = DB.schoolAliases || {};
@@ -3966,6 +4009,8 @@ const Actions = {
   }
   if (migrated) Store.save();
   Domain.refreshAll();
+  // Password page first when opened from the shared web-app link.
+  if (Gate.needed()) { Gate.show(); return; }
   window.addEventListener('hashchange', App.route);
   App.route();
   // Served as the Apps Script web app → refresh from Shopify on every open.
