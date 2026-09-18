@@ -71,6 +71,24 @@ function syncShopify(siteTok) {
       return JSON.stringify({ error: 'Not configured yet — add SHOPIFY_STORE (your .myshopify.com domain) in ⚙ Project Settings → Script properties, then sync again.' });
     }
     var token = getAccessToken_(store);
+    // Without the read_all_orders permission Shopify only hands an app the
+    // LAST 60 DAYS of orders — older orders (and the delivery addresses on
+    // them) silently never arrive. Detect that and tell the dashboard.
+    var scopeWarning = '';
+    try {
+      var scResp = UrlFetchApp.fetch('https://' + store + '/admin/oauth/access_scopes.json',
+        { headers: { 'X-Shopify-Access-Token': token }, muteHttpExceptions: true });
+      if (scResp.getResponseCode() === 200) {
+        var handles = (JSON.parse(scResp.getContentText()).access_scopes || [])
+          .map(function (s) { return s.handle; });
+        if (handles.indexOf('read_all_orders') === -1) {
+          scopeWarning = 'Shopify is only showing this dashboard the last 60 days of orders — ' +
+            'older orders and their delivery addresses are invisible. Fix (one tick): Shopify admin → ' +
+            'Settings → Apps and sales channels → Develop apps → open the dashboard’s app → ' +
+            'Configuration → Admin API integration → Edit → tick read_all_orders → Save, then sync again.';
+        }
+      }
+    } catch (eScopes) { /* scope probe is best-effort */ }
     var base = 'https://' + store + '/admin/api/2024-10/';
     var bookingsCsv = '', schoolsJson = '', invoicesJson = '', notesJson = '';
     try {
@@ -92,6 +110,7 @@ function syncShopify(siteTok) {
       schoolsJson: schoolsJson,
       invoicesJson: invoicesJson,
       notesJson: notesJson,
+      scopeWarning: scopeWarning,
       syncedAt: new Date().toISOString(),
     });
   } catch (e) {

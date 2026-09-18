@@ -230,7 +230,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 42</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 43</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1565,6 +1565,24 @@ function applyTimeEdits() {
   });
 }
 
+// A delivery address typed by staff (✎ Edit on the customer's page) beats
+// everything Shopify sends: re-applied after every sync, import and merge,
+// and retired only when Shopify's own address catches up with it.
+function applyAddrEdits() {
+  if (!DB.addrEdits) return;
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const key of Object.keys(DB.addrEdits)) {
+    const e = DB.addrEdits[key];
+    const c = DB.customers.find(x => (e.email && String(x.email || '').toLowerCase() === e.email)
+      || (e.phone && ImportService._digits(x.phone) === e.phone));
+    if (!c) continue;
+    if (norm(c.address) === norm(e.text)) { delete DB.addrEdits[key]; c.addressManual = false; continue; }
+    c.address = e.text;
+    c.addressManual = true;
+    c.addressCheck = null; // a typed address overrides the mismatch flag
+  }
+}
+
 /* ---- Duplicate customer records: the Kirsty Lyons problem. One human can
    exist twice on Shopify (booked with one email, ordered with another).
    The order-number fold catches the linkable cases automatically; Dupes
@@ -1616,8 +1634,11 @@ const Dupes = {
     // decide before the orders move across.
     const newestOf = id => DB.orders.filter(o => o.customerId === id && o.status !== 'cancelled')
       .sort((x, y) => x.createdAt < y.createdAt ? 1 : -1)[0];
-    const dropWinsAddress = !!drop.address && (!keep.address || !!drop.addressCheck
-      || ((newestOf(keep.id) || { createdAt: '' }).createdAt < (newestOf(drop.id) || { createdAt: '' }).createdAt));
+    const dropWinsAddress = !keep.addressManual && !!drop.address && (!keep.address || !!drop.addressCheck
+      || ((newestOf(keep.id) || { createdAt: '' }).createdAt < (newestOf(drop.id) || { createdAt: '' }).createdAt)
+      // Neither record has a visible order: the record created most
+      // recently carries the address the customer gave most recently.
+      || (!newestOf(keep.id) && !newestOf(drop.id) && String(drop.createdAt || '') > String(keep.createdAt || '')));
     for (const o of DB.orders) if (o.customerId === drop.id) o.customerId = keep.id;
     for (const a of DB.appointments) if (a.customerId === drop.id) a.customerId = keep.id;
     for (const inv of DB.invoices || []) if (inv.customerId === drop.id) inv.customerId = keep.id;
@@ -1997,7 +2018,7 @@ Pages.customerDetail = (id) => {
         <h2 style="margin-top:0">Details</h2>
         <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '—')}</span></div>
         <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '—')}</span></div>
-        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''}</span></div>
+        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '—')}${c.addressManual ? ' <span class="badge b-amber" title="Typed by staff — syncs can’t overwrite it">✎ typed by staff</span>' : ''}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''} <button class="small" onclick="Actions.editAddress('${c.id}')">✎ Edit</button></span></div>
         ${c.addressCheck ? `<div class="note" style="margin-bottom:0">📍 <b>Address check:</b> this customer's saved Shopify profile says “${esc(c.addressCheck.was)}”, but their latest order ${esc(c.addressCheck.ref)} was placed with the delivery address above — the dashboard now uses the order address. If the profile one is actually correct, fix it on the customer in Shopify and re-sync.</div>` : ''}
         ${dupPairs.length ? `<div class="note" style="margin-bottom:0">👥 <b>Possible duplicate record${dupPairs.length === 1 ? '' : 's'}:</b> ${dupPairs.map(d =>
           `<a class="plain" href="#/customer/${d.c.id}" style="font-weight:600">${esc(d.c.name)}</a> (${d.why} · ${Domain.ordersOf(d.c.id).length} order${Domain.ordersOf(d.c.id).length === 1 ? '' : 's'}) <button class="small" onclick="Dupes.merge('${c.id}','${d.c.id}')">Merge into this record</button>`).join(' · ')}
@@ -2033,6 +2054,7 @@ Pages.customerDetail = (id) => {
             : `<div class="small">${CustNotes.get(c) ? esc(CustNotes.get(c)) : '<span class="muted">No notes yet.</span>'}</div>`}
         </div>
         <h2 style="margin-top:0">Orders (${orders.length})</h2>
+        ${!orders.length && DB.scopeWarning && AppointlyService.bookingsFor(c.id).length ? `<div class="note" style="margin-top:8px">This customer has a booking but no visible order — their order is probably older than 60 days, which Shopify is currently hiding from the dashboard. <a class="plain" href="#/import" style="font-weight:600">The one-tick fix is on Connect data →</a></div>` : ''}
         ${orders.map(o => {
           const items = Domain.itemsOf(o.id);
           const shopUrl = o.sourceId ? 'https://admin.shopify.com/store/' + (DB.shopSub || 'darcybow') + '/orders/' + o.sourceId : '';
@@ -2461,6 +2483,7 @@ const ImportService = {
     DB.appointments = DB.appointments.filter(x => !(x.source === 'appointly'
       && csvKeys2.has(x.customerId + '|' + x.appointmentAt + '|' + (x.time || ''))));
     Dupes.reapply();
+    applyAddrEdits();
     applyTimeEdits();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
@@ -2619,6 +2642,7 @@ const LiveSync = {
   applyPayload(p) {
     if (p.error) throw new Error(p.error);
     if (p.store) DB.shopSub = String(p.store).replace(/\..*$/, ''); // for admin deep-links
+    DB.scopeWarning = String(p.scopeWarning || '');
     const customers = [], orders = [], orderItems = [], appointments = [];
     const byEmail = new Map(), byPhone = new Map(), bySrcId = new Map();
     for (const sc of p.customers || []) {
@@ -2820,6 +2844,7 @@ const LiveSync = {
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
     Dupes.reapply();
+    applyAddrEdits();
     applyTimeEdits();
     // The website's product catalogue (fetched server-side from the public
     // storefront) — powers the dress/colour/size dropdowns on invoices.
@@ -2828,6 +2853,7 @@ const LiveSync = {
       if (Array.isArray(DB[k])) DB[k] = [];
     DB.importInfo = { at: nowIso(), live: true, counts: { customers: kept.length, orders: orders.length, bookings: appointments.length } };
     Store.save(); Domain.refreshAll(); App.route();
+    if (DB.scopeWarning) setTimeout(() => UI.toast('⚠ Shopify is hiding orders older than 60 days from the dashboard — open Connect data for the one-tick fix.', 12000), 2500);
     UI.toast('Live sync complete — ' + kept.length + ' customers, ' + orders.length + ' orders, ' + appointments.length + ' bookings' +
       (skipped > 0 ? ' (' + skipped + ' contacts with no orders — newsletter/spam signups — left out).' : '.'));
     // Shared school corrections (aliases + dismissed suggestions) — union
@@ -2955,6 +2981,7 @@ Pages.importPage = () => {
     ${LiveSync.available() ? `
     <div class="card" style="max-width:780px">
       <p class="small" style="margin-top:0">✅ This copy is running as your Google Apps Script web app — it can pull straight from Shopify, and the booking answers come with the orders.</p>
+      ${DB.scopeWarning ? `<div class="note err">⚠ ${esc(DB.scopeWarning)}</div>` : ''}
       <button class="primary" onclick="LiveSync.sync()">⟳ Sync from Shopify now</button>
       <button onclick="LiveSync.report()" style="margin-left:8px">🔍 Booking data report</button>
       ${DB.importInfo && DB.importInfo.live ? `<span class="small muted" style="margin-left:10px">Last sync ${fmtDateTime(DB.importInfo.at)}</span>` : ''}
@@ -3918,6 +3945,27 @@ const Actions = {
       'One A4 page per customer: contact details plus the questions they answered when booking through Appointly. Print the lot or save as one PDF.',
       Actions._sheetHtml(rows, 'Customer sheets — all customers'), rows.length);
   },
+  /* A delivery address typed here beats whatever Shopify sends — it sticks
+     through every sync via DB.addrEdits until Shopify catches up. */
+  editAddress(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const t = prompt(`Delivery address for ${c.name} (leave empty to go back to Shopify's address):`, c.address || '');
+    if (t === null) return;
+    DB.addrEdits = DB.addrEdits || {};
+    const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+    if (!t.trim()) {
+      delete DB.addrEdits[key];
+      c.addressManual = false;
+      Store.save(); App.route();
+      UI.toast('Typed address cleared — the next sync brings back Shopify\u2019s address.');
+      return;
+    }
+    DB.addrEdits[key] = { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone), text: t.trim(), at: nowIso() };
+    c.address = t.trim(); c.addressManual = true; c.addressCheck = null;
+    Store.save(); App.route();
+    UI.toast(`${c.name}'s delivery address updated — this sticks through every sync.`);
+  },
   /* Retime a booking by hand — sticks through syncs via DB.timeEdits. */
   changeApptTime(apptId) {
     const a = DB.appointments.find(x => x.id === apptId);
@@ -4142,6 +4190,7 @@ const Gate = {
   DB.custNotes = DB.custNotes || {};
   DB.timeEdits = DB.timeEdits || [];
   DB.custMerges = DB.custMerges || [];
+  DB.addrEdits = DB.addrEdits || {};
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {
