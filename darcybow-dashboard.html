@@ -232,7 +232,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 44</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 45</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1341,7 +1341,7 @@ const Pages = {};
 
 /* =============================== DASHBOARD =============================== */
 Pages.dashboard = () => {
-  const upcomingAppts = DB.appointments.filter(a => a.appointmentAt >= todayStr())
+  const upcomingAppts = DB.appointments.filter(a => a.appointmentAt >= todayStr() && !custCancelled(a.customerId))
     .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1);
   const withAnswers = new Set(DB.appointments.filter(a => a.questions.some(qa => qa.a)).map(a => a.customerId));
   const nextVenues = venueGroups().filter(v => v.nextDate).slice(0, 6);
@@ -1420,6 +1420,7 @@ Pages.customers = () => {
     <div class="flex" style="justify-content:space-between; margin-bottom:14px">
       <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
       <div class="flex">
+        <button onclick="Actions.addCustomer()">＋ Add customer</button>
         <button class="primary" onclick="Actions.printAllCustomerSheets()">🖨 Print all customer sheets</button>
       </div>
     </div>
@@ -1449,7 +1450,7 @@ Pages.customers = () => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname">${esc(c.name)}</span>${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order — profile on Shopify disagrees">📍 address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter — open the page to review and merge">👥 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
+            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order — profile on Shopify disagrees">📍 address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter — open the page to review and merge">👥 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
@@ -1473,7 +1474,7 @@ function venueGroups() {
   // next one so two bookings give two rows on the right days.
   const apptsBy = new Map(); // customerId|venue → sorted appointments
   for (const a of DB.appointments) {
-    if (!a.eventHotel) continue;
+    if (!a.eventHotel || custCancelled(a.customerId)) continue;
     const k = a.customerId + '|' + venOf(a.eventHotel);
     if (!apptsBy.has(k)) apptsBy.set(k, []);
     apptsBy.get(k).push(a);
@@ -1489,7 +1490,7 @@ function venueGroups() {
   const taken = new Map();
   const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
   for (const o of DB.orders) {
-    if (!o.eventHotel) continue;
+    if (!o.eventHotel || custCancelled(o.customerId)) continue;
     const venue = venOf(o.eventHotel);
     const k = o.customerId + '|' + venue;
     const list = apptsBy.get(k);
@@ -1531,8 +1532,9 @@ function apptDaughter(a) {
 function dayApptTaker(day) {
   const used = new Map();
   return custId => {
-    const list = DB.appointments.filter(x => x.customerId === custId && x.appointmentAt === day)
-      .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1);
+    const list = custCancelled(custId) ? []
+      : DB.appointments.filter(x => x.customerId === custId && x.appointmentAt === day)
+        .sort((p, q) => (p.time || '') < (q.time || '') ? -1 : 1);
     if (!list.length) return null;
     const i = used.get(custId) || 0;
     used.set(custId, i + 1);
@@ -1583,6 +1585,27 @@ function applyAddrEdits() {
     c.addressManual = true;
     c.addressCheck = null; // a typed address overrides the mismatch flag
   }
+}
+
+// Staff edits to a customer's details — and the cancelled flag — win over
+// whatever Shopify sends: re-applied after every sync and import, keyed by
+// email/phone like the address and time edits.
+function applyCustEdits() {
+  const m = DB.custEdits || {};
+  for (const k of Object.keys(m)) {
+    const e = m[k];
+    const c = DB.customers.find(x => (e.email && String(x.email || '').toLowerCase() === e.email)
+      || (e.phone && ImportService._digits(x.phone) === e.phone));
+    if (!c) continue;
+    if (e.name) c.name = e.name;
+    if (e.daughterName) c.daughterName = e.daughterName;
+    if (e.newPhone) c.phone = e.newPhone;
+    if ('cancelled' in e) c.cancelled = !!e.cancelled;
+  }
+}
+function custCancelled(customerId) {
+  const c = (DB.customers || []).find(x => x.id === customerId);
+  return !!(c && c.cancelled);
 }
 
 /* ---- Duplicate customer records: the Kirsty Lyons problem. One human can
@@ -1710,14 +1733,57 @@ const Schools = {
     Schools._save();
     UI.toast(added + ' school name' + (added === 1 ? '' : 's') + ' pulled in from the booking answers.');
   },
-  // The raw school answer on a customer's bookings (latest wins).
+  // The school on record: a staff correction wins over whatever was typed
+  // at booking; otherwise the raw booking answer (latest wins).
   of(customerId) {
+    const c = (DB.customers || []).find(x => x.id === customerId);
+    const e = c && Schools.editFor(c);
+    if (e) return e.school;
     let school = '';
     for (const a of DB.appointments) {
       if (a.customerId !== customerId) continue;
       for (const qa of (a.questions || [])) if (/school/i.test(qa.q) && qa.a) school = qa.a;
     }
     return String(school).trim();
+  },
+  // Corrections are keyed by email/phone so they survive every sync.
+  editFor(c) {
+    const m = DB.schoolEdits || {};
+    return (c.email && m[String(c.email).toLowerCase()]) || m['p' + ImportService._digits(c.phone)] || null;
+  },
+  setFor(custId, school) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    DB.schoolEdits = DB.schoolEdits || {};
+    const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+    const name = String(school || '').trim();
+    // Snap a typed spelling onto the pick-list entry it matches.
+    const hit = name && Schools.list().find(x => Schools.squash(x) === Schools.squash(name));
+    if (!name) delete DB.schoolEdits[key];
+    else DB.schoolEdits[key] = { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone), school: hit || name, at: nowIso() };
+    Schools._save();
+    UI.toast(name ? c.name + ' → “' + (hit || name) + '” — corrected, and it sticks through syncs.' : 'School correction cleared — the booking answer applies again.');
+  },
+  editModal(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    UI.modal(`
+      <h3>School for ${esc(c.name)}</h3>
+      <p class="small muted">Start typing to pick from the school list, or type the correct spelling. This wins over what was typed at booking and sticks through every sync.</p>
+      <input id="sch-edit" list="sch-edit-dl" style="width:100%" value="${esc(Schools.of(custId))}" placeholder="School…">
+      <datalist id="sch-edit-dl">${Schools.list().map(x => `<option value="${esc(x)}">`).join('')}</datalist>
+      <div class="modalfoot">
+        ${Schools.editFor(c) ? `<button onclick="UI.closeModal(); Schools.setFor('${custId}', '')">↩ Back to booking answer</button>` : ''}
+        <button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="UI.closeModal(); Schools.setFor('${custId}', document.getElementById('sch-edit').value)">Save</button>
+      </div>`);
+  },
+  // Drag a customer row onto another school card (Schools page).
+  dropCust(ev, nameEnc) {
+    ev.preventDefault();
+    const id = window.__dragCust;
+    window.__dragCust = null;
+    if (id) Schools.setFor(id, decodeURIComponent(nameEnc));
   },
   initials(s) {
     return Schools.norm(s).split(' ').filter(w => w && !['the', 'of', 'and'].includes(w)).map(w => w[0]).join('');
@@ -1803,7 +1869,7 @@ const Schools = {
   _save() {
     Store.save();
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
-      try { google.script.run.saveSchools(Gate.token(), JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList(), list: Schools.list() })); } catch (e) { /* non-fatal */ }
+      try { google.script.run.saveSchools(Gate.token(), JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList(), list: Schools.list(), edits: DB.schoolEdits || {} })); } catch (e) { /* non-fatal */ }
     }
     App.route();
   },
@@ -2070,7 +2136,7 @@ Pages.schools = () => {
   const noSchool = DB.customers.filter(c => !Schools.of(c.id)).length;
   return `
     <h1>Schools <span class="muted" style="font-size:1rem; font-weight:400">${all.length}</span></h1>
-    <p class="sub">One dress per school — every customer grouped by their daughter's school so clashes stand out. A red badge means two girls from the same school have the <b>same dress</b>.</p>
+    <p class="sub">One dress per school — every customer grouped by their daughter's school so clashes stand out. A red badge means two girls from the same school have the <b>same dress</b>. <b>Drag a customer's row onto another school's card</b> to move them there (fixes wrong or misspelt answers).</p>
     <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search school, customer or daughter…"
       value="${esc(schoolQuery)}" oninput="schoolQuery = this.value; App.route()">
     <div class="card" style="margin-bottom:14px">
@@ -2100,7 +2166,7 @@ Pages.schools = () => {
       const dressCount = {};
       for (const m of g.members) if (m.dress) dressCount[m.dress.title] = (dressCount[m.dress.title] || 0) + 1;
       const hasClash = Object.values(dressCount).some(n => n > 1);
-      return `<div class="card" style="margin-bottom:12px${hasClash ? '; border-color:#e8a1a1' : ''}">
+      return `<div class="card" style="margin-bottom:12px${hasClash ? '; border-color:#e8a1a1' : ''}" ondragover="event.preventDefault()" ondrop="Schools.dropCust(event,'${encodeURIComponent(g.name).replace(/'/g, '%27')}')">
         <div class="flex" style="align-items:center">
           <b>🏫 ${esc(g.name)}</b>
           <span class="badge b-grey">${g.members.length} customer${g.members.length === 1 ? '' : 's'}</span>
@@ -2110,7 +2176,7 @@ Pages.schools = () => {
         </div>
         <div class="tablewrap" style="margin-top:10px"><table>
           <thead><tr><th>Daughter</th><th>Customer</th><th>Dress</th><th>Event</th><th>As written</th></tr></thead>
-          <tbody>${g.members.map(m => `<tr class="click" onclick="App.go('#/customer/${m.c.id}')">
+          <tbody>${g.members.map(m => `<tr class="click" draggable="true" title="Drag onto another school card to move" ondragstart="window.__dragCust='${m.c.id}'; event.dataTransfer.setData('text/plain', 'cust')" onclick="App.go('#/customer/${m.c.id}')">
             <td><b>${esc(m.c.daughterName || '—')}</b></td>
             <td>${esc(m.c.name)}</td>
             <td>${m.dress ? (dressCount[m.dress.title] > 1 ? '<span class="badge b-red">⚠ ' + esc(m.dress.title) + '</span>' : esc(m.dress.title)) : '<span class="muted">none yet</span>'}</td>
@@ -2161,9 +2227,12 @@ Pages.customerDetail = (id) => {
     <p><a class="plain" href="#/customers">← Customers</a></p>
     <h1>${esc(c.name)}</h1>
     <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> · ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
+    ${c.cancelled ? '<div class="note err">🚫 <b>Cancelled</b> — this customer is off the day planners, run sheets and printed sheets. Reinstate them below if they come back.</div>' : ''}
     <div class="toolbar">
       <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">🖨 Print this customer's sheet (details + booking answers)</button>
       <button onclick="Invoices.open('${c.id}')">🧾 ${Invoices.invFor(c.id) ? 'Show invoice' : 'Create invoice'}</button>
+      <button onclick="Actions.editCustomer('${c.id}')">✎ Edit details</button>
+      <button onclick="Actions.toggleCancelled('${c.id}')">${c.cancelled ? '↩ Reinstate customer' : '🚫 Mark as cancelled'}</button>
       ${Invoices.statusBadge(c.id)}
     </div>
     <div class="cols2">
@@ -2176,7 +2245,7 @@ Pages.customerDetail = (id) => {
         ${dupPairs.length ? `<div class="note" style="margin-bottom:0">👥 <b>Possible duplicate record${dupPairs.length === 1 ? '' : 's'}:</b> ${dupPairs.map(d =>
           `<a class="plain" href="#/customer/${d.c.id}" style="font-weight:600">${esc(d.c.name)}</a> (${d.why} · ${Domain.ordersOf(d.c.id).length} order${Domain.ordersOf(d.c.id).length === 1 ? '' : 's'}) <button class="small" onclick="Dupes.merge('${c.id}','${d.c.id}')">Merge into this record</button>`).join(' · ')}
           — if it's the same person, merging puts their orders, bookings and address in one place, and the merge re-applies itself after every sync.</div>` : ''}
-        ${schoolInfo ? `<div class="dl-row"><span class="dl-label">School</span><span class="dl-value">🏫 ${esc(schoolInfo.name)}</span></div>` : ''}
+        <div class="dl-row"><span class="dl-label">School</span><span class="dl-value">${schoolInfo ? '🏫 ' + esc(schoolInfo.name) : (Schools.of(c.id) ? esc(Schools.of(c.id)) : '—')}${Schools.editFor(c) ? ' <span class="badge b-amber" title="Corrected by staff — wins over the booking answer">✎ corrected</span>' : ''} <button class="small" onclick="Schools.editModal('${c.id}')">✎ Edit</button></span></div>
         ${c.notes ? `<div class="dl-row"><span class="dl-label">Notes from Shopify</span><span class="dl-value">${esc(c.notes)}</span></div>` : ''}
         ${schoolInfo && schoolInfo.dressClash.length ? `<div class="note err" style="margin-bottom:0">⚠ <b>SAME DRESS, SAME SCHOOL:</b> ${schoolInfo.dressClash.map(o => esc(o.c.name) + (o.c.daughterName ? ' (for ' + esc(o.c.daughterName) + ')' : '')).join(', ')} — one dress per school!</div>`
         : schoolInfo && schoolInfo.others.length ? `<div class="note" style="margin-bottom:0">🏫 ${schoolInfo.others.length} more customer${schoolInfo.others.length === 1 ? '' : 's'} from this school: ${schoolInfo.others.map(o => esc(o.c.name) + (o.dress ? ' — ' + esc(o.dress.title) : '')).join(' · ')}. <a class="plain" href="#/schools">Schools page →</a></div>` : ''}
@@ -2637,6 +2706,7 @@ const ImportService = {
       && csvKeys2.has(x.customerId + '|' + x.appointmentAt + '|' + (x.time || ''))));
     Dupes.reapply();
     applyAddrEdits();
+    applyCustEdits();
     applyTimeEdits();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
@@ -2908,6 +2978,18 @@ const LiveSync = {
     // whose order and booking arrived under different customer records).
     const refToCust = new Map(orders.map(o => [String(o.reference || '').trim(), o.customerId]));
     const custByIdNew = new Map(customers.map(c => [c.id, c]));
+    // Customers added by hand on the dashboard have no Shopify record —
+    // carry them through every rebuild (if Shopify later knows their email
+    // or phone, the synced record takes over).
+    for (const oc of DB.customers || []) {
+      if (!oc.manual) continue;
+      const hit = (oc.email && byEmail.get(String(oc.email).toLowerCase()))
+        || (ImportService._digits(oc.phone) && byPhone.get(ImportService._digits(oc.phone)));
+      if (hit) continue;
+      customers.push(oc);
+      if (oc.email) byEmail.set(String(oc.email).toLowerCase(), oc);
+      if (ImportService._digits(oc.phone)) byPhone.set(ImportService._digits(oc.phone), oc);
+    }
     for (const a of preserved) {
       if (!a._orderRef) continue;
       const oc0 = oldCustById.get(a.customerId);
@@ -2991,13 +3073,14 @@ const LiveSync = {
     if (orders.length) {
       const used = new Set(orders.map(o => o.customerId));
       for (const a of appointments) used.add(a.customerId);
-      kept = customers.filter(c => used.has(c.id));
+      kept = customers.filter(c => used.has(c.id) || c.manual);
       if (!kept.length) kept = customers;
     }
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
     Dupes.reapply();
     applyAddrEdits();
+    applyCustEdits();
     applyTimeEdits();
     // The website's product catalogue (fetched server-side from the public
     // storefront) — powers the dress/colour/size dropdowns on invoices.
@@ -3016,6 +3099,10 @@ const LiveSync = {
         const sj = JSON.parse(p.schoolsJson);
         DB.schoolAliases = Object.assign({}, sj.aliases || {}, DB.schoolAliases || {});
         DB.schoolNotSame = [...new Set([...(sj.notSame || []), ...(DB.schoolNotSame || [])])];
+        const mergedEdits = Object.assign({}, sj.edits || {});
+        for (const [k, v] of Object.entries(DB.schoolEdits || {}))
+          if (!mergedEdits[k] || String(v.at || '') > String(mergedEdits[k].at || '')) mergedEdits[k] = v;
+        DB.schoolEdits = mergedEdits;
         const seenSch = new Set();
         DB.schoolList = [...(sj.list || []), ...(DB.schoolList || [])]
           .filter(x => { const n = Schools.squash(x); if (!n || seenSch.has(n)) return false; seenSch.add(n); return true; })
@@ -3024,10 +3111,10 @@ const LiveSync = {
         // Self-heal: if this browser holds school decisions the central copy
         // is missing (a background save that never landed), upload the merged
         // result now so nothing typed in here can be lost.
-        const sfp = o => JSON.stringify([Object.entries(o.a || {}).sort(), [...(o.n || [])].sort(), [...(o.l || [])].sort()]);
-        if (sfp({ a: sj.aliases, n: sj.notSame, l: sj.list }) !== sfp({ a: DB.schoolAliases, n: DB.schoolNotSame, l: DB.schoolList })) Schools._save();
+        const sfp = o => JSON.stringify([Object.entries(o.a || {}).sort(), [...(o.n || [])].sort(), [...(o.l || [])].sort(), Object.entries(o.e || {}).sort()]);
+        if (sfp({ a: sj.aliases, n: sj.notSame, l: sj.list, e: sj.edits }) !== sfp({ a: DB.schoolAliases, n: DB.schoolNotSame, l: DB.schoolList, e: DB.schoolEdits })) Schools._save();
       } catch (e) { /* non-fatal */ }
-    } else if (Object.keys(DB.schoolAliases || {}).length || (DB.schoolNotSame || []).length || (DB.schoolList || []).length) {
+    } else if (Object.keys(DB.schoolAliases || {}).length || (DB.schoolNotSame || []).length || (DB.schoolList || []).length || Object.keys(DB.schoolEdits || {}).length) {
       // Central store is empty but this browser has decisions — the first
       // upload must have failed. Put them back.
       Schools._save();
@@ -3501,7 +3588,14 @@ const Invoices = {
     InvDraft.otherMethod = v('inv-other-method');
     InvDraft.otherDate = v('inv-other-date');
     InvDraft.note = v('inv-note').trim();
-    if (document.getElementById('inv-school')) InvDraft.school = v('inv-school');
+    if (document.getElementById('inv-school')) {
+      // Typing filters the fixed list; whatever matches snaps to the exact
+      // list spelling, anything else is flagged and blocks saving.
+      const rawSchool = v('inv-school').trim();
+      const hit = rawSchool && Schools.list().find(x => Schools.squash(x) === Schools.squash(rawSchool));
+      InvDraft.school = hit || rawSchool;
+      InvDraft._schoolUnlisted = !!rawSchool && !hit;
+    }
     if (document.getElementById('inv-year')) InvDraft.commYear = v('inv-year');
     InvDraft.sterling = { gbpCents: parseEuros(v('inv-gbp')) || 0, rate: parseFloat(v('inv-rate')) || 0 };
     return InvDraft;
@@ -3526,6 +3620,11 @@ const Invoices = {
     // One dress per school per communion year: a clash blocks saving until
     // the override box is ticked and a reason given; every override is
     // logged with who, when and why.
+    if (inv._schoolUnlisted) {
+      UI.err(new Error('“' + inv.school + '” isn\u2019t on the school pick-list — pick a school from the list, or add it on the Schools page first.'));
+      return null;
+    }
+    delete inv._schoolUnlisted;
     const clashes = DressRegister.forInvoice(inv);
     if (clashes.length && !inv.clashOverride) {
       const okEl = document.getElementById('inv-override-ok');
@@ -4043,6 +4142,7 @@ Pages.invoice = (custId) => {
     <div id="inv-clash">${Invoices.clashBanner(inv)}</div>
     <p class="sub">Invoice #: <b id="inv-num-preview">${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</b>${existing && existing.sentAt ? ' · <span class="badge b-teal">✉ sent ' + fmtDateTime(existing.sentAt) + '</span>' : ''}</p>
     <datalist id="dresslist">${dressOptions}</datalist>
+    <datalist id="schoollist">${Schools.list().map(x => `<option value="${esc(x)}">`).join('')}</datalist>
     <div class="cols2">
       <div class="card">
         <h2 style="margin-top:0">Bill to</h2>
@@ -4061,12 +4161,8 @@ Pages.invoice = (custId) => {
           <div><label class="f">Number</label><input id="inv-seq" type="number" min="1" value="${inv.seq}" oninput="Invoices.recalc()"></div>
           <div><label class="f">Issue date</label><input id="inv-date" type="date" value="${esc(inv.issueDate)}"></div>
           <div><label class="f">School (one dress per school!)</label>
-            <select id="inv-school" style="width:100%" onchange="Invoices.clashWarn()">
-              <option value="">— pick school —</option>
-              ${[...new Set([...Schools.list(), ...(inv.school ? [inv.school] : [])])].sort((a, b) => a.localeCompare(b))
-                .map(x => `<option ${x === inv.school ? 'selected' : ''}>${esc(x)}</option>`).join('')}
-            </select>
-            ${Schools.list().length ? '' : '<span class="small muted">List is empty — add schools on the <a class="plain" href="#/schools">Schools page</a>.</span>'}</div>
+            <input id="inv-school" list="schoollist" style="width:100%" value="${esc(inv.school || '')}" placeholder="Start typing…" oninput="Invoices.clashWarn()">
+            ${Schools.list().length ? '<span class="small muted">Pick from the list — a school that isn\'t on it blocks saving.</span>' : '<span class="small muted">List is empty — add schools on the <a class="plain" href="#/schools">Schools page</a>.</span>'}</div>
           <div><label class="f">Communion year</label>
             <select id="inv-year" onchange="Invoices.clashWarn()">
               <option value="">—</option>
@@ -4210,10 +4306,80 @@ const Actions = {
   },
   /* Every customer in the system: details + Appointly answers, one A4 page each. */
   printAllCustomerSheets() {
-    const rows = DB.customers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(Actions._customerRow);
+    const rows = DB.customers.filter(c => !c.cancelled).sort((a, b) => a.name.localeCompare(b.name)).map(Actions._customerRow);
     Actions._sheetModal('Customer sheets — all customers',
       'One A4 page per customer: contact details plus the questions they answered when booking through Appointly. Print the lot or save as one PDF.',
       Actions._sheetHtml(rows, 'Customer sheets — all customers'), rows.length);
+  },
+  /* Customers added or corrected by hand. New customers carry manual:true
+     so every sync keeps them; edits live in DB.custEdits (keyed by
+     email/phone) and re-apply after every rebuild. */
+  addCustomer() {
+    UI.modal(`
+      <h3>Add a customer</h3>
+      <div class="formgrid">
+        <div><label class="f">Name (required)</label><input id="nc-name" placeholder="e.g. Mary Byrne"></div>
+        <div><label class="f">Daughter's name</label><input id="nc-daughter"></div>
+        <div><label class="f">Phone</label><input id="nc-phone"></div>
+        <div><label class="f">Email</label><input id="nc-email"></div>
+      </div>
+      <label class="f" style="margin-top:8px">Delivery address</label><input id="nc-address" style="width:100%">
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions._createCustomer()">＋ Add customer</button></div>`);
+    setTimeout(() => { const el = document.getElementById('nc-name'); if (el) el.focus(); }, 50);
+  },
+  _createCustomer() {
+    const v = id => (document.getElementById(id) || { value: '' }).value.trim();
+    if (!v('nc-name')) { UI.err(new Error('A name is needed.')); return; }
+    const c = { id: uid(), manual: true, name: v('nc-name'), daughterName: v('nc-daughter'),
+      phone: v('nc-phone'), email: v('nc-email').toLowerCase(), address: v('nc-address'), notes: '', createdAt: nowIso() };
+    DB.customers.push(c);
+    Store.save(); UI.closeModal(); App.go('#/customer/' + c.id);
+    UI.toast(c.name + ' added — hand-added customers survive every sync.');
+  },
+  editCustomer(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    UI.modal(`
+      <h3>Edit ${esc(c.name)}</h3>
+      <div class="formgrid">
+        <div><label class="f">Name</label><input id="ec-name" value="${esc(c.name)}"></div>
+        <div><label class="f">Daughter's name</label><input id="ec-daughter" value="${esc(c.daughterName || '')}"></div>
+        <div><label class="f">Phone</label><input id="ec-phone" value="${esc(c.phone || '')}"></div>
+      </div>
+      <p class="small muted" style="margin-bottom:0">Email, address, school and notes are edited from the customer page itself. Changes here stick through every sync.</p>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions._saveCustomerEdit('${custId}')">💾 Save</button></div>`);
+  },
+  _custEditKey(c) {
+    return (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone)) || c.id;
+  },
+  _saveCustomerEdit(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const v = id => (document.getElementById(id) || { value: '' }).value.trim();
+    if (!v('ec-name')) { UI.err(new Error('A name is needed.')); return; }
+    DB.custEdits = DB.custEdits || {};
+    const key = Actions._custEditKey(c);
+    const prev = DB.custEdits[key] || {};
+    DB.custEdits[key] = Object.assign({}, prev, { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone),
+      name: v('ec-name'), daughterName: v('ec-daughter'), newPhone: v('ec-phone'), at: nowIso() });
+    c.name = v('ec-name'); c.daughterName = v('ec-daughter'); if (v('ec-phone')) c.phone = v('ec-phone');
+    Store.save(); UI.closeModal(); App.route();
+    UI.toast('Details updated — the change sticks through syncs.');
+  },
+  toggleCancelled(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const to = !c.cancelled;
+    if (to && !confirm(c.name + ' — mark as CANCELLED?\n\nThey drop off the day planners, run sheets and printed sheets. Their record and history stay here, and you can reinstate them any time.')) return;
+    DB.custEdits = DB.custEdits || {};
+    const key = Actions._custEditKey(c);
+    DB.custEdits[key] = Object.assign({}, DB.custEdits[key] || {}, { email: String(c.email || '').toLowerCase(),
+      phone: ImportService._digits(c.phone), cancelled: to, at: nowIso() });
+    c.cancelled = to;
+    Store.save(); App.route();
+    UI.toast(to ? c.name + ' marked as cancelled.' : c.name + ' reinstated — back on the planners.');
   },
   /* A delivery address typed here beats whatever Shopify sends — it sticks
      through every sync via DB.addrEdits until Shopify catches up. */
@@ -4464,6 +4630,8 @@ const Gate = {
   DB.addrEdits = DB.addrEdits || {};
   DB.schoolList = DB.schoolList || [];
   DB.overrideLog = DB.overrideLog || [];
+  DB.schoolEdits = DB.schoolEdits || {};
+  DB.custEdits = DB.custEdits || {};
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {
