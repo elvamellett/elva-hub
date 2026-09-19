@@ -232,7 +232,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 45</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 46</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3679,7 +3679,14 @@ const Invoices = {
   // moment the dress, school or communion year changes.
   clashBanner(inv) {
     const clashes = DressRegister.forInvoice(inv);
-    if (!clashes.length) return '';
+    if (!clashes.length) {
+      // The one-dress-per-school check only runs once BOTH fields are set —
+      // nudge if one is filled and the other forgotten.
+      const hasDress = DressRegister.dressesOf(inv).length > 0;
+      if (hasDress && inv.school && !inv.commYear) return '<div class="note" id="inv-clash-nudge">👗 Pick a <b>Communion year</b> to switch on the one-dress-per-school check for this invoice.</div>';
+      if (hasDress && !inv.school && inv.commYear) return '<div class="note" id="inv-clash-nudge">👗 Pick the <b>School</b> to switch on the one-dress-per-school check for this invoice.</div>';
+      return '';
+    }
     const o = inv.clashOverride;
     return `<div class="clashbanner" id="inv-clash-banner">
       ${clashes.map(x => `⚠ <b>${esc(x.dress)}</b> already sold to <b>${esc(x.hit.school)}</b> for Communion ${esc(x.hit.year)} (${esc(x.hit.invoiceNo)}, ${esc(x.hit.customerName)})`).join('<br>')}
@@ -4162,7 +4169,8 @@ Pages.invoice = (custId) => {
           <div><label class="f">Issue date</label><input id="inv-date" type="date" value="${esc(inv.issueDate)}"></div>
           <div><label class="f">School (one dress per school!)</label>
             <input id="inv-school" list="schoollist" style="width:100%" value="${esc(inv.school || '')}" placeholder="Start typing…" oninput="Invoices.clashWarn()">
-            ${Schools.list().length ? '<span class="small muted">Pick from the list — a school that isn\'t on it blocks saving.</span>' : '<span class="small muted">List is empty — add schools on the <a class="plain" href="#/schools">Schools page</a>.</span>'}</div>
+            ${Schools.list().length ? '<span class="small muted">Start typing — it suggests from the school list. A school that isn\'t on the list blocks saving.</span>'
+              : `<span class="small muted">The school list is empty, so there's nothing to suggest yet.</span> <button class="small primary" onclick="Invoices.readForm(); Schools.seedList()">⤵ Pull every school name in from the bookings</button>`}</div>
           <div><label class="f">Communion year</label>
             <select id="inv-year" onchange="Invoices.clashWarn()">
               <option value="">—</option>
