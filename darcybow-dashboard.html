@@ -232,7 +232,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 48</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 49</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3815,7 +3815,7 @@ const Invoices = {
     const terms = String(st.terms || '').split('\n').map(line => {
       const s = line.trim();
       if (!s) return '';
-      return /^\d+\./.test(s) ? '<div class="th">' + esc(s) + '</div>' : '<div class="tl">' + esc(s) + '</div>';
+      return /^\d+\./.test(s) ? '<div class="th">' + esc(s.replace(/^\d+\.\s*/, '')) + '</div>' : '<div class="tl">' + esc(s) + '</div>';
     }).join('');
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(num)}</title><style>
       @page { size: A4; margin: 0; }
@@ -3845,9 +3845,15 @@ const Invoices = {
         padding: 5mm 4mm; margin: 6mm 0; }
       .foot { margin-top: auto; background: #4c5759; color: #e8ecec; text-align: center; font-size: 8.5pt;
         letter-spacing: .3em; padding: 5mm 6mm; line-height: 1.8; }
-      .p2 .h1 { text-align: center; font-size: 12.5pt; color: #536161; margin: 2mm 0 5mm; font-weight: 700; }
-      .th { font-weight: 700; color: #536161; margin: 3.5mm 0 1mm; font-size: 9.8pt; }
-      .tl { font-size: 8.8pt; line-height: 1.5; margin-left: 4mm; }
+      /* Page 2 mirrors the studio's policy sheet: sans-serif, airy, plain
+         bold headings with bulleted points, inside a light frame. */
+      .p2 { background: #fff; }
+      .p2 .inner { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; border: 1px solid #dcdcdc;
+        margin: 5mm; padding: 4mm 9mm 8mm; color: #4a4a4a; flex: 1; }
+      .p2 .logo { margin: 2mm 0 5mm; } .p2 .logo img { width: 44mm; }
+      .th { font-weight: 600; color: #303030; letter-spacing: .14em; margin: 5mm 0 2.5mm; font-size: 9.5pt; }
+      .tl { font-size: 8.8pt; line-height: 1.6; letter-spacing: .04em; margin: 0 0 1.8mm 4mm; position: relative; padding-left: 4mm; }
+      .tl:before { content: '•'; position: absolute; left: 0; }
       @media screen { .pg { margin: 10px auto; box-shadow: 0 2px 14px rgba(0,0,0,.25); } body { background: #666; } }
       ${pdfMode ? `
       /* Google's HTML→PDF converter predates flexbox — flow layout instead. */
@@ -3899,10 +3905,8 @@ const Invoices = {
     <div class="pg p2">
       <div class="inner">
         <div class="logo"><img src="${DARCYBOW_LOGO}" alt="Darcybow"></div>
-        <div class="h1">Key Points of the Dress Order Policy with Darcybow</div>
         ${terms}
       </div>
-      <div class="foot">DARCYBOW - EDELLE (+353) 87 6007560 •<br>EDELLE@DARCYBOW.IE • WWW.DARCYBOW.IE</div>
     </div>
     </body></html>`;
   },
