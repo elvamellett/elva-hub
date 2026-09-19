@@ -167,6 +167,8 @@
   .note.info { background: var(--blue-bg); border-color: #c3d0f5; color: #1e3a8a; }
   .note.ok { background: var(--green-bg); border-color: #bfe3cf; color: var(--green); }
   .note.err { background: var(--red-bg); border-color: #f3c2c2; color: var(--red); }
+  .clashbanner { background: var(--red-bg); border: 2.5px solid var(--red); color: var(--red); border-radius: 10px; padding: 14px 18px; font-size: 1.02rem; margin: 12px 0; }
+  .clashbanner input[type=text], .clashbanner input:not([type]) { border: 1px solid var(--red); }
   .muted { color: var(--muted); }
   .small { font-size: .8rem; }
   .mono { font-family: ui-monospace, Consolas, monospace; font-size: .84em; }
@@ -230,7 +232,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 43</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 44</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1681,6 +1683,33 @@ const Schools = {
   },
   aliases: () => DB.schoolAliases || (DB.schoolAliases = {}),
   notSameList: () => DB.schoolNotSame || (DB.schoolNotSame = []),
+  // The fixed pick-list invoices choose a school from — spelling can't drift.
+  list: () => DB.schoolList || (DB.schoolList = []),
+  squash: s => Schools.norm(s).replace(/\s+/g, ''),
+  addToList() {
+    const el = document.getElementById('sch-new');
+    const name = el ? el.value.trim() : '';
+    if (!name) return;
+    if (Schools.list().some(x => Schools.squash(x) === Schools.squash(name))) { UI.toast('“' + name + '” is already on the list.'); return; }
+    Schools.list().push(name);
+    DB.schoolList.sort((a, b) => a.localeCompare(b));
+    Schools._save();
+    UI.toast('“' + name + '” added to the school pick-list.');
+  },
+  removeFromList(enc) {
+    const name = decodeURIComponent(enc);
+    const used = (DB.invoices || []).some(i => i.school && Schools.norm(i.school) === Schools.norm(name));
+    if (used && !confirm('“' + name + '” is used on saved invoices — remove it from the pick-list anyway? (Those invoices keep their school.)')) return;
+    DB.schoolList = Schools.list().filter(x => x !== name);
+    Schools._save();
+  },
+  seedList() {
+    let added = 0;
+    for (const g of Schools.groups()) if (!Schools.list().some(x => Schools.squash(x) === Schools.squash(g.name))) { Schools.list().push(g.name); added++; }
+    DB.schoolList.sort((a, b) => a.localeCompare(b));
+    Schools._save();
+    UI.toast(added + ' school name' + (added === 1 ? '' : 's') + ' pulled in from the booking answers.');
+  },
   // The raw school answer on a customer's bookings (latest wins).
   of(customerId) {
     let school = '';
@@ -1774,7 +1803,7 @@ const Schools = {
   _save() {
     Store.save();
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
-      try { google.script.run.saveSchools(Gate.token(), JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList() })); } catch (e) { /* non-fatal */ }
+      try { google.script.run.saveSchools(Gate.token(), JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList(), list: Schools.list() })); } catch (e) { /* non-fatal */ }
     }
     App.route();
   },
@@ -1950,6 +1979,89 @@ Pages.venueDetail = (venueName) => {
 
 /* =============================== SCHOOLS =============================== */
 let schoolQuery = '';
+/* ---------------- Dress register: one dress style per school per communion
+   year. Derived live from the saved invoices, so an entry appears the moment
+   an invoice is created (saved) and disappears if the invoice is deleted or
+   cancelled. Each communion year is its own book — the same dress at the
+   same school in a different year is never a clash. ---- */
+const DressRegister = {
+  // Only dress lines count — two girls buying the same hair comb is fine.
+  isDress(title) {
+    const p = Invoices.catFor(title);
+    if (p && p.type) return /dress|gown|communion/i.test(p.type);
+    return /dress|gown/i.test(String(title || ''));
+  },
+  invoiceNo: inv => inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq,
+  dressesOf: inv => [...new Set((inv.lines || []).map(l => String(l.title || '').trim())
+    .filter(t => t && DressRegister.isDress(t)))],
+  entries() {
+    const out = [];
+    for (const inv of DB.invoices || []) {
+      if (inv.cancelled) continue;
+      if (!inv.school || !inv.commYear) continue;
+      for (const d of DressRegister.dressesOf(inv)) out.push({
+        dress: d, school: inv.school, year: String(inv.commYear),
+        customerName: (inv.contact && inv.contact.name) || '', customerId: inv.customerId,
+        invId: inv.id, invoiceNo: DressRegister.invoiceNo(inv),
+        date: inv.issueDate || String(inv.createdAt || '').slice(0, 10),
+        override: !!inv.clashOverride,
+        overrideReason: inv.clashOverride ? inv.clashOverride.reason : '',
+        overrideBy: inv.clashOverride ? inv.clashOverride.by : '',
+      });
+    }
+    return out;
+  },
+  _k: e => String(e.dress).trim().toLowerCase() + '||' + Schools.norm(e.school) + '||' + String(e.year),
+  // Register entries that clash with dress+school+year, excluding one invoice.
+  existing(dress, school, year, exceptInvId) {
+    if (!dress || !school || !year) return [];
+    const k = DressRegister._k({ dress, school, year });
+    return DressRegister.entries().filter(e => e.invId !== exceptInvId && DressRegister._k(e) === k);
+  },
+  // Clashes for a draft invoice: every dress line checked against the register.
+  forInvoice(inv) {
+    if (!inv || !inv.school || !inv.commYear) return [];
+    const out = [];
+    for (const d of DressRegister.dressesOf(inv))
+      for (const e of DressRegister.existing(d, inv.school, inv.commYear, inv.id)) out.push({ dress: d, hit: e });
+    return out;
+  },
+  // Does this customer's invoice sit in a clashing group? (sheets, day sheets)
+  flagFor(customerId) {
+    const inv = Invoices.invFor(customerId);
+    if (!inv) return null;
+    const clashes = DressRegister.forInvoice(inv);
+    if (!clashes.length) return null;
+    return {
+      overridden: !!inv.clashOverride,
+      reason: inv.clashOverride ? inv.clashOverride.reason : '',
+      text: clashes.map(x => x.dress + ' also sold to ' + x.hit.school + ' for Communion ' + x.hit.year
+        + ' (' + x.hit.invoiceNo + ', ' + x.hit.customerName + ')').join(' · '),
+    };
+  },
+  // One school's register lines, grouped by communion year (Schools page).
+  forSchoolKey(key) {
+    const byYear = new Map();
+    for (const e of DressRegister.entries()) {
+      if (Schools.norm(e.school) !== key) continue;
+      if (!byYear.has(e.year)) byYear.set(e.year, []);
+      byYear.get(e.year).push(e);
+    }
+    return [...byYear.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  },
+  schoolNames() {
+    const seen = new Map();
+    for (const e of DressRegister.entries()) if (!seen.has(Schools.norm(e.school))) seen.set(Schools.norm(e.school), e.school);
+    return seen;
+  },
+  years(current) {
+    const y = new Date().getFullYear();
+    const ys = new Set(['' + y, '' + (y + 1), '' + (y + 2), '' + (y + 3)]);
+    if (current) ys.add(String(current));
+    return [...ys].sort();
+  },
+};
+
 Pages.schools = () => {
   const all = Schools.groups();
   const q = schoolQuery.trim().toLowerCase();
@@ -1961,6 +2073,20 @@ Pages.schools = () => {
     <p class="sub">One dress per school — every customer grouped by their daughter's school so clashes stand out. A red badge means two girls from the same school have the <b>same dress</b>.</p>
     <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search school, customer or daughter…"
       value="${esc(schoolQuery)}" oninput="schoolQuery = this.value; App.route()">
+    <div class="card" style="margin-bottom:14px">
+      <div class="flex" style="align-items:center"><b>📋 School pick-list</b>
+        <span class="badge b-grey">${Schools.list().length} school${Schools.list().length === 1 ? '' : 's'}</span>
+        <span class="small muted">— invoices choose the school from this fixed list, so “St. Bridget's” and “St Brigids” can't drift apart.</span></div>
+      <div class="flex" style="flex-wrap:wrap; gap:6px; margin-top:10px">
+        ${Schools.list().map(x => `<span class="badge b-grey" style="font-size:.83rem">${esc(x)} <a class="plain" style="cursor:pointer" title="Remove from list" onclick="Schools.removeFromList('${encodeURIComponent(x)}')">✕</a></span>`).join('')
+          || '<span class="small muted">Empty — add schools below, or pull every name in from the booking answers.</span>'}
+      </div>
+      <div class="flex" style="margin-top:10px">
+        <input id="sch-new" placeholder="Add a school…" style="flex:1; max-width:340px" onkeydown="if(event.key==='Enter')Schools.addToList()">
+        <button class="small primary" onclick="Schools.addToList()">+ Add</button>
+        <button class="small" onclick="Schools.seedList()">⤵ Add all names from bookings</button>
+      </div>
+    </div>
     ${sugg.length ? `<h2>Possibly the same school — you decide</h2>
       <p class="small muted">Spelling variations and abbreviations spotted automatically. “Same school…” merges them under the correct name (shared with everyone); “Different” hides the suggestion.</p>
       ${sugg.map(s => `<div class="card" style="margin-bottom:10px"><div class="flex" style="flex-wrap:wrap; align-items:center">
@@ -1991,9 +2117,36 @@ Pages.schools = () => {
             <td class="small">${m.event ? UI.eventBadge(m.event).replace('<br>', ' ') : '<span class="muted">—</span>'}</td>
             <td class="small muted">${esc(m.raw)}</td>
           </tr>`).join('')}</tbody></table></div>
+        ${Pages._schoolRegisterHtml(g.key)}
       </div>`;
     }).join('') || '<div class="card muted">No schools on file yet — they arrive with the Appointly booking answers.</div>'}
+    ${(() => {
+      // Schools that exist only in the dress register (invoiced, but no
+      // booking answers yet) still get their card.
+      const shown = new Set(gs.map(g => g.key));
+      return [...DressRegister.schoolNames().entries()].filter(([k]) => !shown.has(k) && (!q || k.includes(q)))
+        .map(([k, name]) => `<div class="card" style="margin-bottom:12px">
+          <div class="flex" style="align-items:center"><b>🏫 ${esc(name)}</b> <span class="small muted">from the dress register</span></div>
+          ${Pages._schoolRegisterHtml(k)}
+        </div>`).join('');
+    })()}
     ${noSchool ? `<p class="small muted">${noSchool} customer${noSchool === 1 ? ' has' : 's have'} no school on file (no booking answer yet).</p>` : ''}`;
+};
+
+/* One school's dress-register lines, grouped by communion year. Duplicates
+   within a year and overridden entries show in red, with the reason. */
+Pages._schoolRegisterHtml = (key) => {
+  const reg = DressRegister.forSchoolKey(key);
+  if (!reg.length) return '';
+  return `<div style="margin-top:10px; border-top:1px solid var(--line); padding-top:8px">
+    <div class="small" style="font-weight:700; margin-bottom:2px">👗 Dresses assigned (from invoices)</div>
+    ${reg.map(([yr, es]) => `<div class="small" style="margin-top:3px"><b>Communion ${esc(yr)}:</b>
+      ${es.map(e => {
+        const dup = es.filter(x => x.dress.trim().toLowerCase() === e.dress.trim().toLowerCase()).length > 1;
+        const red = dup || e.override;
+        return `<span style="${red ? 'color:var(--red); font-weight:700' : ''}">${esc(e.dress)} (${esc(e.invoiceNo)}${e.customerName ? ', ' + esc(e.customerName) : ''})${e.override ? ' — override by ' + esc(e.overrideBy || 'staff') + ': “' + esc(e.overrideReason) + '”' : ''}</span>`;
+      }).join(' · ')}</div>`).join('')}
+  </div>`;
 };
 
 Pages.customerDetail = (id) => {
@@ -2863,14 +3016,18 @@ const LiveSync = {
         const sj = JSON.parse(p.schoolsJson);
         DB.schoolAliases = Object.assign({}, sj.aliases || {}, DB.schoolAliases || {});
         DB.schoolNotSame = [...new Set([...(sj.notSame || []), ...(DB.schoolNotSame || [])])];
+        const seenSch = new Set();
+        DB.schoolList = [...(sj.list || []), ...(DB.schoolList || [])]
+          .filter(x => { const n = Schools.squash(x); if (!n || seenSch.has(n)) return false; seenSch.add(n); return true; })
+          .sort((a, b) => a.localeCompare(b));
         Store.save();
         // Self-heal: if this browser holds school decisions the central copy
         // is missing (a background save that never landed), upload the merged
         // result now so nothing typed in here can be lost.
-        const sfp = o => JSON.stringify([Object.entries(o.a || {}).sort(), [...(o.n || [])].sort()]);
-        if (sfp({ a: sj.aliases, n: sj.notSame }) !== sfp({ a: DB.schoolAliases, n: DB.schoolNotSame })) Schools._save();
+        const sfp = o => JSON.stringify([Object.entries(o.a || {}).sort(), [...(o.n || [])].sort(), [...(o.l || [])].sort()]);
+        if (sfp({ a: sj.aliases, n: sj.notSame, l: sj.list }) !== sfp({ a: DB.schoolAliases, n: DB.schoolNotSame, l: DB.schoolList })) Schools._save();
       } catch (e) { /* non-fatal */ }
-    } else if (Object.keys(DB.schoolAliases || {}).length || (DB.schoolNotSame || []).length) {
+    } else if (Object.keys(DB.schoolAliases || {}).length || (DB.schoolNotSame || []).length || (DB.schoolList || []).length) {
       // Central store is empty but this browser has decisions — the first
       // upload must have failed. Put them back.
       Schools._save();
@@ -3219,8 +3376,9 @@ const Invoices = {
     const s = Invoices.status(custId);
     const inv = Invoices.invFor(custId);
     const sent = inv && inv.sentAt ? ' · sent ✉' : '';
-    return s === 'paid' ? '<span class="badge b-green">Invoice · paid in full</span>'
-      : s === 'invoiced' ? '<span class="badge b-blue">Invoiced' + sent + '</span>'
+    const ovr = inv && inv.clashOverride ? ' <span class="badge b-red" title="Dress clash overridden — ' + esc(inv.clashOverride.reason || '') + '">Overridden</span>' : '';
+    return s === 'paid' ? '<span class="badge b-green">Invoice · paid in full</span>' + ovr
+      : s === 'invoiced' ? '<span class="badge b-blue">Invoiced' + sent + '</span>' + ovr
       : '<span class="badge b-grey">Not invoiced</span>';
   },
   // Event code from the hotel the customer is linked to: remembered override,
@@ -3285,6 +3443,7 @@ const Invoices = {
       priceEl.value = p.priceCents % 100 ? (p.priceCents / 100).toFixed(2) : String(p.priceCents / 100);
     }
     Invoices.recalc();
+    Invoices.clashWarn();
   },
   blank(custId) {
     const c = Domain.customer(custId);
@@ -3301,6 +3460,25 @@ const Invoices = {
       depositCents: 0, depositMethod: '', depositDate: '',
       otherPaidCents: 0, otherMethod: '', otherDate: '',
       note: '', sterling: { gbpCents: 0, rate: 0 },
+      // One dress per school per communion year: prefill both from the
+      // booking answers where they match, staff confirm on the invoice.
+      school: (() => {
+        const raw = Schools.of(custId);
+        if (!raw) return '';
+        const n = Schools.norm(raw);
+        const key = Schools.aliases()[n] ? Schools.norm(Schools.aliases()[n]) : n;
+        return Schools.list().find(x => Schools.norm(x) === key) || '';
+      })(),
+      commYear: (() => {
+        for (const a of DB.appointments) {
+          if (a.customerId !== custId) continue;
+          for (const qa of (a.questions || [])) {
+            if (/communion/i.test(qa.q) && qa.a) { const m = String(qa.a).match(/20\d{2}/); if (m) return m[0]; }
+          }
+        }
+        return '';
+      })(),
+      clashOverride: null,
       paidInFull: false, createdAt: nowIso(), updatedAt: nowIso(),
     };
   },
@@ -3323,6 +3501,8 @@ const Invoices = {
     InvDraft.otherMethod = v('inv-other-method');
     InvDraft.otherDate = v('inv-other-date');
     InvDraft.note = v('inv-note').trim();
+    if (document.getElementById('inv-school')) InvDraft.school = v('inv-school');
+    if (document.getElementById('inv-year')) InvDraft.commYear = v('inv-year');
     InvDraft.sterling = { gbpCents: parseEuros(v('inv-gbp')) || 0, rate: parseFloat(v('inv-rate')) || 0 };
     return InvDraft;
   },
@@ -3343,6 +3523,26 @@ const Invoices = {
   save(silent) {
     const inv = Invoices.readForm();
     if (!inv) return null;
+    // One dress per school per communion year: a clash blocks saving until
+    // the override box is ticked and a reason given; every override is
+    // logged with who, when and why.
+    const clashes = DressRegister.forInvoice(inv);
+    if (clashes.length && !inv.clashOverride) {
+      const okEl = document.getElementById('inv-override-ok');
+      const reason = (document.getElementById('inv-override-reason') || { value: '' }).value.trim();
+      const by = (document.getElementById('inv-override-by') || { value: '' }).value.trim();
+      if (!okEl || !okEl.checked || !reason) {
+        Invoices.clashWarn();
+        UI.err(new Error('Dress clash — NOT saved. Tick “Override clash” and give a reason, or change the dress / school / year.'));
+        return null;
+      }
+      inv.clashOverride = { by: by || 'staff', at: nowIso(), reason };
+      DB.overrideLog = DB.overrideLog || [];
+      for (const x of clashes) DB.overrideLog.push({ at: inv.clashOverride.at, by: inv.clashOverride.by, reason,
+        invoiceNo: DressRegister.invoiceNo(inv), dress: x.dress, school: inv.school, year: String(inv.commYear), against: x.hit.invoiceNo });
+    } else if (!clashes.length && inv.clashOverride) {
+      inv.clashOverride = null; // the clash is gone — the tag goes with it
+    }
     inv.updatedAt = nowIso();
     const st = Invoices.settings();
     if (inv._venueKey && inv.code) { st.eventCodes[inv._venueKey] = inv.code; st.updatedAt = nowIso(); }
@@ -3353,6 +3553,16 @@ const Invoices = {
     App.route(); // refresh status badge / paid button (the preview modal sits above and survives)
     if (!silent) UI.toast('Invoice saved.');
     return inv;
+  },
+  remove(custId) {
+    const inv = Invoices.invFor(custId);
+    if (!inv) return;
+    if (!confirm('Delete this invoice? Its dress-register entry is removed with it. This cannot be undone.')) return;
+    DB.invoices = (DB.invoices || []).filter(x => x.id !== inv.id);
+    InvDraft = null;
+    Store.save(); Invoices._push();
+    App.go('#/customer/' + custId);
+    UI.toast('Invoice deleted — dress register updated.');
   },
   markPaid(custId, flag) {
     const inv = Invoices.invFor(custId);
@@ -3365,6 +3575,50 @@ const Invoices = {
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
       try { google.script.run.saveInvoices(Gate.token(), JSON.stringify({ invoices: DB.invoices || [], settings: DB.invoiceSettings || null })); } catch (e) { /* non-fatal */ }
     }
+  },
+  // The big red banner at the top of the invoice. Live: re-checked the
+  // moment the dress, school or communion year changes.
+  clashBanner(inv) {
+    const clashes = DressRegister.forInvoice(inv);
+    if (!clashes.length) return '';
+    const o = inv.clashOverride;
+    return `<div class="clashbanner" id="inv-clash-banner">
+      ${clashes.map(x => `⚠ <b>${esc(x.dress)}</b> already sold to <b>${esc(x.hit.school)}</b> for Communion ${esc(x.hit.year)} (${esc(x.hit.invoiceNo)}, ${esc(x.hit.customerName)})`).join('<br>')}
+      ${o ? `<div class="small" style="margin-top:8px">Overridden by <b>${esc(o.by || 'staff')}</b> on ${fmtDateTime(o.at)} — “${esc(o.reason || '')}”. <button class="small" onclick="Invoices.clearOverride()">↩ Remove override</button></div>`
+        : `<div style="margin-top:10px; font-size:.92rem">
+            <label style="display:inline-flex; align-items:center; gap:6px; font-weight:700"><input type="checkbox" id="inv-override-ok"> Override clash</label>
+            <input id="inv-override-by" placeholder="Your name" style="margin-left:10px; width:130px">
+            <input id="inv-override-reason" placeholder="Reason (required)" style="margin-left:6px; width:min(340px, 58%)">
+            <div class="small" style="margin-top:5px">Saving is <b>blocked</b> until the box is ticked and a reason is given. The override is logged.</div>
+          </div>`}
+    </div>`;
+  },
+  clashWarn() {
+    const el = document.getElementById('inv-clash');
+    if (!el) return;
+    Invoices.readForm();
+    if (!InvDraft) return;
+    // Keep whatever was typed into the override fields across re-renders.
+    const prev = {};
+    for (const id of ['inv-override-ok', 'inv-override-by', 'inv-override-reason']) {
+      const e = document.getElementById(id);
+      if (e) prev[id] = e.type === 'checkbox' ? e.checked : e.value;
+    }
+    el.innerHTML = Invoices.clashBanner(InvDraft);
+    for (const id of Object.keys(prev)) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      if (e.type === 'checkbox') e.checked = prev[id]; else e.value = prev[id];
+    }
+  },
+  clearOverride() {
+    Invoices.readForm();
+    if (!InvDraft || !InvDraft.clashOverride) return;
+    if (!confirm('Remove the override? The clash warning comes back and the invoice cannot be saved until it is resolved or overridden again.')) return;
+    InvDraft.clashOverride = null;
+    const saved = (DB.invoices || []).find(x => x.id === InvDraft.id);
+    if (saved) { saved.clashOverride = null; saved.updatedAt = nowIso(); Store.save(); Invoices._push(); }
+    App.route();
   },
   editSettings() {
     if (!Invoices.unlocked() && !Invoices.unlock()) return;
@@ -3743,7 +3997,7 @@ Pages.production = () => {
             <td><b>${esc(r.l.size || '—')}</b></td>
             <td>${esc(r.l.colour || '—')}</td>
             <td class="num">${r.l.qty || 1}</td>
-            <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a>${r.e.daughter ? `<br><span class="small muted">for ${esc(r.e.daughter)}</span>` : ''}
+            <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a>${r.e.inv.clashOverride ? ' <span class="badge b-red" title="Dress clash overridden — ' + esc(r.e.inv.clashOverride.reason || '') + '">Overridden</span>' : ''}${r.e.daughter ? `<br><span class="small muted">for ${esc(r.e.daughter)}</span>` : ''}
               <br><span class="small muted">${UI.eventBadge(r.e.event).split('<br>')[0]}</span></td>
             <td class="small">${esc(Production.accessoriesText(r.e)) || '<span class="muted">—</span>'}</td>
             <td>${canEdit
@@ -3776,6 +4030,7 @@ Pages.invoice = (custId) => {
     <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap">
       <h1 style="margin:0">Invoice ${Invoices.statusBadge(custId)}</h1>
       <div class="flex">
+        ${existing ? `<button class="danger" onclick="Invoices.remove('${custId}')">🗑 Delete invoice</button>` : ''}
         <button onclick="Invoices.editSettings()">⚙ Invoice settings</button>
         ${existing ? (status === 'paid'
           ? `<button onclick="Invoices.markPaid('${custId}', false)">↩ Not fully paid</button>`
@@ -3785,6 +4040,7 @@ Pages.invoice = (custId) => {
         <button class="primary" onclick="Invoices.preview()">👁 Preview &amp; Download PDF</button>
       </div>
     </div>
+    <div id="inv-clash">${Invoices.clashBanner(inv)}</div>
     <p class="sub">Invoice #: <b id="inv-num-preview">${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</b>${existing && existing.sentAt ? ' · <span class="badge b-teal">✉ sent ' + fmtDateTime(existing.sentAt) + '</span>' : ''}</p>
     <datalist id="dresslist">${dressOptions}</datalist>
     <div class="cols2">
@@ -3804,6 +4060,18 @@ Pages.invoice = (custId) => {
           <div><label class="f">Event code</label><input id="inv-code" value="${esc(inv.code)}" oninput="Invoices.recalc()"></div>
           <div><label class="f">Number</label><input id="inv-seq" type="number" min="1" value="${inv.seq}" oninput="Invoices.recalc()"></div>
           <div><label class="f">Issue date</label><input id="inv-date" type="date" value="${esc(inv.issueDate)}"></div>
+          <div><label class="f">School (one dress per school!)</label>
+            <select id="inv-school" style="width:100%" onchange="Invoices.clashWarn()">
+              <option value="">— pick school —</option>
+              ${[...new Set([...Schools.list(), ...(inv.school ? [inv.school] : [])])].sort((a, b) => a.localeCompare(b))
+                .map(x => `<option ${x === inv.school ? 'selected' : ''}>${esc(x)}</option>`).join('')}
+            </select>
+            ${Schools.list().length ? '' : '<span class="small muted">List is empty — add schools on the <a class="plain" href="#/schools">Schools page</a>.</span>'}</div>
+          <div><label class="f">Communion year</label>
+            <select id="inv-year" onchange="Invoices.clashWarn()">
+              <option value="">—</option>
+              ${DressRegister.years(inv.commYear).map(y => `<option ${String(y) === String(inv.commYear) ? 'selected' : ''}>${y}</option>`).join('')}
+            </select></div>
         </div>
         <label class="f">Note (printed on the invoice — optional)</label>
         <input id="inv-note" style="width:100%" value="${esc(inv.note || '')}" placeholder="e.g. Balance due before collection.">
@@ -3886,7 +4154,8 @@ const Actions = {
           <div class="staffbox"><div class="m">Staff member</div>
             <div class="s">${esc(r.staffName || '')}</div></div>
         </div>
-        <div class="cust">${esc(r.c.name)}${(r.kid || r.c.daughterName) ? ' <span class="m" style="font-weight:400">— for ' + esc(r.kid || r.c.daughterName) + '</span>' : ''}</div>
+        <div class="cust"${r.clash ? ' style="color:#b3261e"' : ''}>${esc(r.c.name)}${(r.kid || r.c.daughterName) ? ' <span class="m" style="font-weight:400">— for ' + esc(r.kid || r.c.daughterName) + '</span>' : ''}</div>
+        ${r.clash ? `<div style="border:2.5px solid #b3261e; color:#b3261e; border-radius:8px; padding:6px 10px; margin:6px 0; font-weight:700">⚠ DRESS CLASH${r.clash.overridden ? ' — OVERRIDDEN: “' + esc(r.clash.reason) + '”' : ''} — ${esc(r.clash.text)}</div>` : ''}
         <div class="grid">
           <div><b>Phone:</b> ${esc(r.c.phone || '—')}</div>
           <div><b>Email:</b> ${esc(r.c.email || '—')}</div>
@@ -3930,6 +4199,7 @@ const Actions = {
     const qa = appts.filter(a => a.questions.length).sort((a, b) => a.appointmentAt < b.appointmentAt ? 1 : -1)[0];
     return {
       c, qa,
+      clash: DressRegister.flagFor(c.id),
       items: o ? Domain.itemsOf(o.id) : [],
       orderRef: o ? o.reference : '',
       headline: o && o.eventHotel ? esc(o.eventHotel) + (o.eventDate ? ' · <b>' + esc(fmtDate(o.eventDate)) + '</b>' : '') : 'No event on file',
@@ -4040,6 +4310,7 @@ const Actions = {
       const blk = slot ? blockOf(slot.time) : null;
       rows.push({
         c, qa, kid: apptDaughter(slot) || '', items: Domain.itemsOf(o.id), orderRef: o.reference,
+        clash: DressRegister.flagFor(c.id),
         headline: esc(venue) + ' · <b>' + esc(dayLabel) + '</b> · ' + esc((parts[0] || '').trim()),
         slotMain: slot && slot.time ? slot.time : '—',
         slotSub: blk ? 'Block ' + blk : 'No slot booked',
@@ -4074,7 +4345,7 @@ const Actions = {
       const qaFallback = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
         .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
       const qa = (a && a.questions && a.questions.some(z => z.a)) ? a : qaFallback;
-      rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim() });
+      rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim(), clash: DressRegister.flagFor(c.id) });
     }
     const blockRows = [];
     for (let h = cfg.startHour; h < cfg.endHour; h++) {
@@ -4113,14 +4384,14 @@ const Actions = {
         const head = '<thead><tr><th style="width:60px">Time</th><th style="width:26%">Customer</th><th style="width:20%">Dress / occasion</th><th>Booking answers</th></tr></thead>';
         return blockRows.map(b => `<h2>${b.label}</h2>
         <table>${head}
-        <tbody>${b.rows.map(r => `<tr>
-          <td class="t">${esc(r.a.time)}</td>
+        <tbody>${b.rows.map(r => `<tr${r.clash ? ' style="background:#fdecec; color:#b3261e"' : ''}>
+          <td class="t">${esc(r.a.time)}${r.clash ? '<div style="font-size:10px; font-weight:800">⚠ CLASH' + (r.clash.overridden ? ' (o/r)' : '') + '</div>' : ''}</td>
           <td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
           <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' · ' + esc(r.dress.size) + '</span><br>' : ''}<span class="m">${esc(r.occasion)}</span></td>
           <td>${answers(r)}</td>
         </tr>`).join('')}</tbody></table>`).join('') +
         (unslotted.length ? `<h2>No slot time yet</h2><table>${head}
-        <tbody>${unslotted.map(r => `<tr>
+        <tbody>${unslotted.map(r => `<tr${r.clash ? ' style="background:#fdecec; color:#b3261e"' : ''}>
           <td class="t blank">____</td><td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
           <td>${r.dress ? esc(r.dress.title) : '—'}</td>
           <td>${answers(r)}</td>
@@ -4191,6 +4462,8 @@ const Gate = {
   DB.timeEdits = DB.timeEdits || [];
   DB.custMerges = DB.custMerges || [];
   DB.addrEdits = DB.addrEdits || {};
+  DB.schoolList = DB.schoolList || [];
+  DB.overrideLog = DB.overrideLog || [];
   // Clean up any question blobs stored by earlier imports (idempotent).
   let migrated = false;
   for (const a of DB.appointments || []) {
