@@ -232,7 +232,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 46</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 47</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3305,7 +3305,7 @@ const eurPlain = c => '€' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Mat
 // website lists for the chosen dress.
 const DEFAULT_COLOURS = ['Off-White', 'Warm Ivory', 'White', 'Antique Cream'];
 const DEFAULT_SIZES = ['1', '2', '3', '4'];
-const PAY_METHODS = ['Cash', 'SumUp'];
+const PAY_METHODS = ['Cash', 'SumUp', 'Shopify'];
 
 let InvDraft = null;
 
@@ -3563,7 +3563,7 @@ const Invoices = {
             if (/communion/i.test(qa.q) && qa.a) { const m = String(qa.a).match(/20\d{2}/); if (m) return m[0]; }
           }
         }
-        return '';
+        return String(new Date().getFullYear() + 1); // this season sells NEXT year's communions
       })(),
       clashOverride: null,
       paidInFull: false, createdAt: nowIso(), updatedAt: nowIso(),
@@ -4127,6 +4127,7 @@ Pages.invoice = (custId) => {
     InvDraft = existing ? JSON.parse(JSON.stringify(existing)) : Invoices.blank(custId);
   }
   const inv = InvDraft;
+  if (!inv.commYear) inv.commYear = String(new Date().getFullYear() + 1); // older drafts pick up the default too
   inv._venueKey = Invoices.codeFor(custId).venueKey;
   const t = Invoices.totals(inv);
   const status = Invoices.status(custId);
@@ -4185,10 +4186,10 @@ Pages.invoice = (custId) => {
           return `
         <div class="formgrid">
           <div><label class="f">Deposit paid (€)</label><input id="inv-dep" value="${inv.depositCents ? (inv.depositCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
-          <div><label class="f">Deposit — Cash or SumUp</label>${methodSel('inv-dep-method', inv.depositMethod || '')}</div>
+          <div><label class="f">Deposit — Cash / SumUp / Shopify</label>${methodSel('inv-dep-method', inv.depositMethod || '')}</div>
           <div><label class="f">Deposit — date taken</label><input id="inv-dep-date" type="date" value="${esc(inv.depositDate || '')}"></div>
           <div><label class="f">Balance / other payment (€)</label><input id="inv-other" value="${inv.otherPaidCents ? (inv.otherPaidCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
-          <div><label class="f">Balance — Cash or SumUp</label>${methodSel('inv-other-method', inv.otherMethod || '')}</div>
+          <div><label class="f">Balance — Cash / SumUp / Shopify</label>${methodSel('inv-other-method', inv.otherMethod || '')}</div>
           <div><label class="f">Balance — date taken</label><input id="inv-other-date" type="date" value="${esc(inv.otherDate || '')}"></div>
           <div><label class="f">Paid sterling (£)</label><input id="inv-gbp" value="${inv.sterling && inv.sterling.gbpCents ? (inv.sterling.gbpCents / 100) : ''}" oninput="Invoices.recalc()" placeholder="0"></div>
           <div><label class="f">Exchange rate (e.g. 1.15)</label><input id="inv-rate" value="${inv.sterling && inv.sterling.rate ? inv.sterling.rate : ''}" oninput="Invoices.recalc()" placeholder="1.15"> <span class="small muted" id="inv-ster-eur">${t.sterlingEur ? '= ' + eurPlain(t.sterlingEur) : ''}</span></div>
