@@ -228,11 +228,31 @@
 </style>
 </head>
 <body>
+<script>
+/* Boot watchdog — deliberately tiny and self-contained. If the main code
+   below fails to start (truncated paste, mangled quotes, syntax error),
+   this paints a red bar saying exactly what went wrong instead of leaving
+   a silent blank page. */
+window.__bootDone = false;
+window.__bootErrors = [];
+window.onerror = function (msg, src, line) { window.__bootErrors.push(String(msg) + ' — line ' + line); };
+setTimeout(function () {
+  if (window.__bootDone) return;
+  var d = document.createElement('div');
+  d.id = 'bootfail';
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b><br>' +
+    (window.__bootErrors.length
+      ? 'Error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
+      : 'The pasted file is probably incomplete or was altered by a text editor. In Apps Script, index.html must be exactly <b>4696 lines</b> and its last line must be &lt;/html&gt;. Empty the file (\u2318A, Delete), paste the fresh copy again, save, then deploy a new version.');
+  document.body.appendChild(d);
+}, 2500);
+</script>
   <aside id="sidebar">
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 49</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 50</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -4664,11 +4684,12 @@ const Gate = {
   if (migrated) Store.save();
   Domain.refreshAll();
   // Password page first when opened from the shared web-app link.
-  if (Gate.needed()) { Gate.show(); return; }
+  if (Gate.needed()) { Gate.show(); window.__bootDone = true; return; }
   window.addEventListener('hashchange', App.route);
   App.route();
   // Served as the Apps Script web app → refresh from Shopify on every open.
   if (LiveSync.available()) LiveSync.sync();
+  window.__bootDone = true; // boot watchdog: made it to the end
 })();
 </script>
 </body>
