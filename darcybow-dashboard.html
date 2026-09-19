@@ -232,7 +232,7 @@
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">↺ Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 47</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 48</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3282,13 +3282,13 @@ const INV_TERMS_2025 = [
 // Current Dress Order Policy (2026/27).
 const INV_DEFAULT_TERMS = [
   '1. Order Accuracy & Personal Specifications',
-  'Customer Responsibility: Customers must thoroughly review all personal details, delivery addresses, dress styles, sizes, and colours before finalising an order.',
+  'Customer Responsibility: Customers must thoroughly review all personal details, delivery addresses, dress styles, sizes, and colours before finalizing an order.',
   'Specification Finality: Because Darcybow dresses are made-to-order and scheduled for production based on your specific selection, changes cannot be made once the order is processed.',
   '2. Payments, Deposits, & Cancellations',
   'Payment Requirement: Full payment or an agreed deposit is required before materials are allocated and production begins.',
   'Accepted Payment Methods: For one-to-one appointments, we accept cash and major debit/credit cards via SumUp.',
   'Deposit Policy: Deposits are non-refundable once production has commenced or materials have been cut, as these items are manufactured to order specifically for you. A deposit of 50% is paid on the day and the final 50% to be paid 4-6 weeks later.',
-  'Exclusion from Distance Selling Regulations: Please note that under Irish and EU consumer law, the standard 14-day online cooling-off period does not apply to goods that are made-to-order or clearly personalised.',
+  'Exclusion from Distance Selling Regulations: Please note that under Irish and EU consumer law, the standard 14-day online cooling-off period does not apply to goods that are made-to-order or clearly personalized.',
   '3. Production & Returns',
   'Returns Restriction: We do not accept returns or offer refunds for made-to-order dresses for a change of mind or event cancellation.',
   'Faulty Goods: In accordance with your statutory rights under the Consumer Rights Act, if a dress is proven to have a manufacturing fault upon arrival, Darcybow will provide a repair, replacement, or refund.',
@@ -3300,6 +3300,9 @@ const INV_DEFAULT_TERMS = [
   'Independent Service: The retail price of the dress covers manufacturing only; alteration costs are strictly excluded.',
   'Liability: Darcybow does not provide an alteration service. Any fit adjustments must be handled by an independent, reputable tailor at the customer’s expense. Darcybow accepts no liability for modifications or damage caused by third-party alteration services.',
 ].join('\n');
+// The first cut of the 2026/27 policy (two spellings differ) — recognised so
+// stored settings upgrade to the current wording automatically.
+const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '€' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
 // House standards — always offered in the dropdowns alongside whatever the
 // website lists for the chosen dress.
@@ -3316,7 +3319,7 @@ const Invoices = {
     if (!DB.invoiceSettings.eventCodes) DB.invoiceSettings.eventCodes = {};
     // Stored settings still carrying the previous seasons' policy text get
     // the current version automatically (hand-edited terms are left alone).
-    if (DB.invoiceSettings.terms === INV_TERMS_2025) {
+    if (DB.invoiceSettings.terms === INV_TERMS_2025 || DB.invoiceSettings.terms === INV_TERMS_2026_V1) {
       DB.invoiceSettings.terms = INV_DEFAULT_TERMS;
       DB.invoiceSettings.updatedAt = nowIso();
       Store.save(); Invoices._push();
@@ -3790,7 +3793,7 @@ const Invoices = {
     const dateStr = d.length === 3 ? d[2] + '/' + d[1] + '/' + d[0] : inv.issueDate;
     const lines = inv.lines.filter(l => l.title);
     const rows = [];
-    for (let i = 0; i < Math.max(7, lines.length); i++) {
+    for (let i = 0; i < Math.max(4, lines.length); i++) {
       const l = lines[i];
       rows.push(`<tr>
         <td class="pl">${l ? esc(l.title + (l.colour ? ' - ' + l.colour : '') + (l.size ? ' (' + l.size + ')' : '')) : ''}</td>
@@ -3817,38 +3820,39 @@ const Invoices = {
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(num)}</title><style>
       @page { size: A4; margin: 0; }
       body { margin: 0; font-family: "Georgia", "Times New Roman", serif; color: #3d4547; }
-      .pg { width: 210mm; min-height: 296mm; box-sizing: border-box; display: flex; flex-direction: column;
-        page-break-after: always; background: #fdfdfc; }
+      .pg { width: 210mm; height: 296mm; box-sizing: border-box; display: flex; flex-direction: column;
+        overflow: hidden; page-break-after: always; background: #fdfdfc; }
+      .pg:last-child { page-break-after: auto; }
       .inner { padding: 10mm 16mm 0; flex: 1; display: flex; flex-direction: column; }
-      .logo { text-align: center; margin: 6mm 0 4mm; } .logo img { width: 62mm; }
-      .invttl { text-align: center; letter-spacing: .5em; font-size: 12pt; color: #536161; margin-bottom: 8mm; }
-      table.meta { width: 100%; font-size: 9.5pt; margin-bottom: 8mm; border-collapse: collapse; }
+      .logo { text-align: center; margin: 4mm 0 3mm; } .logo img { width: 56mm; }
+      .invttl { text-align: center; letter-spacing: .5em; font-size: 12pt; color: #536161; margin-bottom: 6mm; }
+      table.meta { width: 100%; font-size: 9.5pt; margin-bottom: 6mm; border-collapse: collapse; }
       .meta td.l { vertical-align: top; padding-top: 2mm; } .meta td.l div { margin-bottom: 3mm; }
       .meta td.r { vertical-align: top; text-align: left; line-height: 1.55; border-left: 1px solid #c9cecd; padding-left: 6mm; width: 60mm; }
       table.inv { border-collapse: collapse; width: 100%; font-size: 9.5pt; }
       .inv th { font-weight: 400; letter-spacing: .25em; font-size: 8.5pt; color: #536161; padding: 3mm 2mm; text-align: center; border-bottom: 1.5px solid #536161; }
       .inv th.pl { text-align: left; }
-      .inv td { border-bottom: 1px solid #6b7677; padding: 3.4mm 2mm; height: 6.5mm; }
+      .inv td { border-bottom: 1px solid #6b7677; padding: 3mm 2mm; height: 6mm; }
       .inv td.c { border-left: 1px solid #6b7677; text-align: center; width: 24mm; }
       .inv td.pl { text-align: left; }
-      table.payrow { width: 100%; margin-top: 8mm; font-size: 8.5pt; border-collapse: collapse; }
+      table.payrow { width: 100%; margin-top: 6mm; font-size: 8.5pt; border-collapse: collapse; }
       .payrow > tbody > tr > td { vertical-align: top; }
       .payto { line-height: 1.7; } .payto .h { font-variant: small-caps; font-weight: 700; color: #536161; }
       .payto table td { padding: 0 2mm 0 0; vertical-align: top; }
       .payto td.k { font-variant: small-caps; color: #536161; white-space: nowrap; }
       .paysum { text-align: right; font-size: 10pt; line-height: 2; letter-spacing: .08em; color: #3d4547; border-left: 1px solid #c9cecd; padding-left: 6mm; }
       .thanks { border: 1.5px solid #536161; text-align: center; letter-spacing: .35em; font-size: 10.5pt; color: #3d4547;
-        padding: 9mm 4mm; margin: 10mm 0; }
+        padding: 5mm 4mm; margin: 6mm 0; }
       .foot { margin-top: auto; background: #4c5759; color: #e8ecec; text-align: center; font-size: 8.5pt;
-        letter-spacing: .3em; padding: 8mm 6mm; line-height: 2; }
-      .p2 .h1 { text-align: center; font-size: 13pt; color: #536161; margin: 4mm 0 8mm; font-weight: 700; }
-      .th { font-weight: 700; color: #536161; margin: 5mm 0 1.5mm; font-size: 10.5pt; }
-      .tl { font-size: 9.5pt; line-height: 1.65; margin-left: 4mm; }
+        letter-spacing: .3em; padding: 5mm 6mm; line-height: 1.8; }
+      .p2 .h1 { text-align: center; font-size: 12.5pt; color: #536161; margin: 2mm 0 5mm; font-weight: 700; }
+      .th { font-weight: 700; color: #536161; margin: 3.5mm 0 1mm; font-size: 9.8pt; }
+      .tl { font-size: 8.8pt; line-height: 1.5; margin-left: 4mm; }
       @media screen { .pg { margin: 10px auto; box-shadow: 0 2px 14px rgba(0,0,0,.25); } body { background: #666; } }
       ${pdfMode ? `
       /* Google's HTML→PDF converter predates flexbox — flow layout instead. */
       body { background: #fff; }
-      .pg { display: block; width: auto; min-height: 0; margin: 0; box-shadow: none; }
+      .pg { display: block; width: auto; height: auto; min-height: 0; overflow: visible; margin: 0; box-shadow: none; }
       .inner { display: block; padding: 4mm 6mm 0; }
       .p2 { page-break-before: always; }
       .foot { margin-top: 12mm; }
