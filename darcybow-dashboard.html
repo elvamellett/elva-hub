@@ -242,7 +242,7 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 52)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 53)</span><br>' +
     (cut
       ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>4700 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
@@ -255,7 +255,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 52</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 53</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1335,7 +1335,7 @@ const App = {
     const arg = (argRaw || '').split('?')[0];
     const nav = [
       ['dashboard', '\u2302', 'Dashboard'],
-      ['customers', '\ud83d\udc65', 'Customers', () => DB.customers.length],
+      ['customers', '\ud83d\udc65', 'Customers', () => seasonCustIds().size],
       ['venues', '\ud83d\udccd', 'Venues'],
       ['schools', '\ud83c\udfeb', 'Schools', () => Schools.groups().length],
       ['production', '\ud83e\uddf5', 'Production', () => (typeof Production !== 'undefined' ? Production.entries().length : 0)],
@@ -1372,7 +1372,7 @@ Pages.dashboard = () => {
     <h1>Dashboard</h1>
     <p class="sub">Everything Shopify + Appointly know, side by side: customers, what they ordered, when they're booked in and the answers they gave \u2014 with printing, invoicing and the production board built on top.</p>
     <div class="statrow">
-      <div class="stat"><div class="l">Customers</div><div class="v">${DB.customers.length}</div></div>
+      <div class="stat"><div class="l">Customers</div><div class="v">${seasonCustIds().size}</div></div>
       <div class="stat"><div class="l">Orders</div><div class="v">${DB.orders.length}</div></div>
       <div class="stat good"><div class="l">Upcoming appointments</div><div class="v">${upcomingAppts.length}</div></div>
       <div class="stat"><div class="l">Customers with booking answers</div><div class="v">${withAnswers.size}</div></div>
@@ -1419,9 +1419,11 @@ let customerDressFilter = '';
 Pages.customers = () => {
   const q = customerQuery.trim().toLowerCase();
   const dupFlags = Dupes.flaggedIds();
+  const inSeason = seasonCustIds();
   const events = [...new Set(DB.orders.map(o => o.eventHotel).filter(Boolean))].sort();
   const dresses = [...new Set(DB.orderItems.filter(i => i.category === 'dress').map(i => i.title))].sort();
   const matches = DB.customers.filter(c => {
+    if (!inSeason.has(c.id)) return false; // only 2025 activity \u2014 hidden this season
     const orders = Domain.ordersOf(c.id);
     if (customerEventFilter && !orders.some(o => o.eventHotel === customerEventFilter)) return false;
     if (customerDressFilter && !orders.some(o => Domain.itemsOf(o.id).some(i => i.title === customerDressFilter))) return false;
@@ -1498,6 +1500,8 @@ function venueGroups() {
   const apptsBy = new Map(); // customerId|venue \u2192 sorted appointments
   for (const a of DB.appointments) {
     if (!a.eventHotel || custCancelled(a.customerId)) continue;
+    if (String(a.appointmentAt || '') && a.appointmentAt < SEASON_START) continue; // last season
+
     const k = a.customerId + '|' + venOf(a.eventHotel);
     if (!apptsBy.has(k)) apptsBy.set(k, []);
     apptsBy.get(k).push(a);
@@ -1514,6 +1518,9 @@ function venueGroups() {
   const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
   for (const o of DB.orders) {
     if (!o.eventHotel || custCancelled(o.customerId)) continue;
+    // Last season's event days (e.g. October 2025) stay out of the venues.
+    if (o.eventDate && o.eventDate < SEASON_START) continue;
+    if (!o.eventDate && String(o.createdAt || '').slice(0, 10) < SEASON_START) continue;
     const venue = venOf(o.eventHotel);
     const k = o.customerId + '|' + venue;
     const list = apptsBy.get(k);
@@ -1625,6 +1632,20 @@ function applyCustEdits() {
     if (e.newPhone) c.phone = e.newPhone;
     if ('cancelled' in e) c.cancelled = !!e.cancelled;
   }
+}
+// The dashboard runs one season at a time: events from before this date are
+// hidden everywhere, and so are customers whose only activity is older.
+const SEASON_START = '2026-01-01';
+function seasonCustIds() {
+  const act = new Map(); // customerId -> newest activity date seen
+  const bump = (id, d) => { if (d && (!act.has(id) || d > act.get(id))) act.set(id, d); };
+  for (const c of DB.customers) bump(c.id, String(c.createdAt || '').slice(0, 10));
+  for (const o of DB.orders) { bump(o.customerId, String(o.createdAt || '').slice(0, 10)); bump(o.customerId, String(o.eventDate || '')); }
+  for (const a of DB.appointments) bump(a.customerId, String(a.appointmentAt || ''));
+  for (const i of DB.invoices || []) bump(i.customerId, '9999'); // invoiced = this season by definition
+  const out = new Set();
+  for (const [id, d] of act) if (d >= SEASON_START) out.add(id);
+  return out;
 }
 function custCancelled(customerId) {
   const c = (DB.customers || []).find(x => x.id === customerId);
@@ -1836,8 +1857,10 @@ const Schools = {
   },
   groups() {
     const aliases = Schools.aliases();
+    const inSeason = seasonCustIds();
     const map = new Map();
     for (const c of DB.customers) {
+      if (!inSeason.has(c.id)) continue; // last season only \u2014 hidden
       const raw = Schools.of(c.id);
       if (!raw) continue;
       const n = Schools.norm(raw);
@@ -1947,12 +1970,13 @@ Pages.venues = () => {
        gets its own filter chip alongside "All customers". ---- */
 let venueDayFilter = '';
 let venueDayFilterVenue = '';
+let venueCustQuery = '';
 Pages.venueDetail = (venueName) => {
   const v = venueGroups().find(x => x.venue === venueName);
   if (!v) return `<p><a class="plain" href="#/venues">\u2190 Venues</a></p><h1>Venue not found</h1>`;
-  if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueDayFilterVenue = venueName; }
+  if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueCustQuery = ''; venueDayFilterVenue = venueName; }
   const upUsed = new Map(); // twins: each of a customer's rows takes its own upcoming slot
-  const allRows = v.orders.map(o => {
+  const allRowsFull = v.orders.map(o => {
     const c = Domain.customer(o.customerId);
     const appts = AppointlyService.bookingsFor(c.id);
     const ups = appts.filter(a => a.appointmentAt >= todayStr()).sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1);
@@ -1963,6 +1987,10 @@ Pages.venueDetail = (venueName) => {
     const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
     return { o, c, upcoming, last, dress, school: Schools.of(c.id) };
   });
+  // Look a customer up by name (or daughter / school) within this venue.
+  const vq = venueCustQuery.trim().toLowerCase();
+  const allRows = !vq ? allRowsFull : allRowsFull.filter(r =>
+    (r.c.name + ' ' + (r.c.daughterName || '') + ' ' + (r.school || '')).toLowerCase().includes(vq));
   const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
   const dayChips = v.dates.map(d => ({
     date: d,
@@ -2059,6 +2087,8 @@ Pages.venueDetail = (venueName) => {
     <p><a class="plain" href="#/venues">\u2190 Venues</a></p>
     <h1 style="margin-bottom:2px">\ud83d\udccd ${esc(v.venue)}</h1>
     <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> \u00b7 ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} \u00b7 slot times from Appointly, in time order.</p>
+    <input id="pagesearch" class="searchbar" style="max-width:420px; margin-bottom:10px" placeholder="Search a customer at this venue\u2026 name, daughter or school"
+      value="${esc(venueCustQuery)}" oninput="venueCustQuery = this.value; App.route()">
     <div class="chips">
       <button class="chip ${!venueDayFilter ? 'on' : ''}" onclick="venueDayFilter=''; App.route()">All customers (${allRows.length})</button>
       ${dayChips.map(dc => `<button class="chip ${venueDayFilter === dc.date ? 'on' : ''}" onclick="venueDayFilter='${dc.date}'; App.route()">${esc(dc.label)} (${dc.count})</button>`).join('')}
@@ -4346,7 +4376,8 @@ const Actions = {
   },
   /* Every customer in the system: details + Appointly answers, one A4 page each. */
   printAllCustomerSheets() {
-    const rows = DB.customers.filter(c => !c.cancelled).sort((a, b) => a.name.localeCompare(b.name)).map(Actions._customerRow);
+    const inSeason = seasonCustIds();
+    const rows = DB.customers.filter(c => !c.cancelled && inSeason.has(c.id)).sort((a, b) => a.name.localeCompare(b.name)).map(Actions._customerRow);
     Actions._sheetModal('Customer sheets \u2014 all customers',
       'One A4 page per customer: contact details plus the questions they answered when booking through Appointly. Print the lot or save as one PDF.',
       Actions._sheetHtml(rows, 'Customer sheets \u2014 all customers'), rows.length);
