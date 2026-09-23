@@ -283,9 +283,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 75)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 76)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5982 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5999 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -297,7 +297,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 75</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 76</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2651,7 +2651,9 @@ Pages._schoolRegisterHtml = (key) => {
 
 Pages.customerDetail = (id) => {
   const c = Domain.customer(id);
-  if (!c) return '<h1>Customer not found</h1>';
+  if (!c) return `<h1>Customer not found</h1>
+    <div class="card" style="max-width:560px"><p class="small" style="margin-top:0">This page's link went stale (usually after a sync refreshed the customer list). She's still here \u2014 find her by name:</p>
+      <button class="primary" onclick="App.go('#/customers')">\ud83d\udc65 Open the customer directory</button></div>`;
   const orders = Domain.ordersOf(c.id).sort((a, b) => a.createdAt < b.createdAt ? 1 : -1);
   const schoolInfo = Schools.clashes(c.id);
   const canEditNotes = Invoices.unlocked();
@@ -3372,6 +3374,9 @@ const LiveSync = {
   applyPayload(p) {
     if (p.error) throw new Error(p.error);
     const prevAppts = apptSnapshot(); // to spot cancellations + reschedules
+    // Remember who each id belonged to, so the page being read survives.
+    const prevCustKey = new Map((DB.customers || []).map(x =>
+      [x.id, (x.email && String(x.email).toLowerCase()) || ('p' + ImportService._digits(x.phone))]));
     if (p.store) DB.shopSub = String(p.store).replace(/\..*$/, ''); // for admin deep-links
     DB.scopeWarning = String(p.scopeWarning || '');
     const customers = [], orders = [], orderItems = [], appointments = [];
@@ -3379,7 +3384,10 @@ const LiveSync = {
     for (const sc of p.customers || []) {
       const name = [sc.first_name, sc.last_name].filter(Boolean).join(' ').trim() || sc.email || 'Unknown customer';
       const da = sc.default_address || {};
-      const c = { id: uid(), name, daughterName: '', email: sc.email || '',
+      // Stable id (from Shopify's own customer id): syncs REBUILD this list,
+      // and random ids made the page you were reading vanish mid-visit
+      // ("Customer not found"). Same person, same id, every sync.
+      const c = { id: sc.id != null ? 'sc' + sc.id : uid(), name, daughterName: '', email: sc.email || '',
         phone: sc.phone || da.phone || '', address: [da.address1, da.address2, da.city, da.province, da.zip].filter(Boolean).join(', '),
         notes: sc.note || '', createdAt: sc.created_at || nowIso() };
       customers.push(c);
@@ -3697,6 +3705,15 @@ const LiveSync = {
       } catch (e) { /* non-fatal \u2014 manual import still available */ }
     }
     recordApptChanges(prevAppts);
+    // If the customer page on screen lost its id in the rebuild, find the
+    // same person by email/phone and stay on her page.
+    const m2 = String(location.hash || '').match(/^#\/customer\/([^?]+)/);
+    if (m2 && !Domain.customer(m2[1])) {
+      const key = prevCustKey.get(m2[1]);
+      const nc = key && key !== 'p' && DB.customers.find(x =>
+        ((x.email && String(x.email).toLowerCase()) || ('p' + ImportService._digits(x.phone))) === key);
+      if (nc) location.hash = '#/customer/' + nc.id;
+    }
   },
 };
 
