@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 58)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 59)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5134 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5327 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 58</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 59</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1419,6 +1419,19 @@ Pages.dashboard = () => {
     </div>
     ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">\u2705 Showing your ${DB.importInfo.live ? 'live Shopify + Appointly data \u2014 last sync' : 'imported Shopify + Appointly data \u2014 last import'} ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Connect data \u2192</a></div>`
       : `<div class="seam">\ud83d\udd0c Sample data \u2014 nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly \u2192</b></a> Sync live via the free Google web app, or drop in CSV exports \u2014 either fills these screens with the real customers and booking answers.</div>`}
+    ${(() => {
+      const wl = DB.customers.filter(x => x.waitlist && !x.cancelled)
+        .sort((a, b) => String(a.waitlist.at).localeCompare(String(b.waitlist.at)));
+      if (!wl.length) return '';
+      return `<h2>\u23f3 Waiting list \u2014 ${wl.length} to book in</h2>
+      <div class="tablewrap" style="margin-bottom:16px"><table>
+        <thead><tr><th>Customer</th><th>Waiting since</th><th>What she's waiting for</th><th>Phone</th></tr></thead>
+        <tbody>${wl.map(x => `<tr class="click" onclick="App.go('#/customer/${x.id}')">
+          <td><b>${esc(x.name)}</b>${x.daughterName ? `<br><span class="muted small">for ${esc(x.daughterName)}</span>` : ''}</td>
+          <td>${fmtDate(String(x.waitlist.at).slice(0, 10))}</td>
+          <td class="small">${esc(x.waitlist.note || '\u2014')}</td>
+          <td class="small">${esc(x.phone || '\u2014')}</td></tr>`).join('')}</tbody></table></div>`;
+    })()}
     <div class="cols2">
       <div>
         <h2>Next appointments</h2>
@@ -1449,6 +1462,7 @@ Pages.dashboard = () => {
 /* =============================== CUSTOMERS =============================== */
 let customerQuery = '';
 let customerEventFilter = '';
+let customerNoSchool = false; // show only customers with no school on file
 let customerDressFilter = '';
 Pages.customers = () => {
   const q = customerQuery.trim().toLowerCase();
@@ -1459,6 +1473,7 @@ Pages.customers = () => {
   const matches = DB.customers.filter(c => {
     if (!inSeason.has(c.id)) return false; // only 2025 activity \u2014 hidden this season
     const orders = Domain.ordersOf(c.id);
+    if (customerNoSchool && (Schools.of(c.id) || c.cancelled)) return false;
     if (customerEventFilter && !orders.some(o => o.eventHotel === customerEventFilter)) return false;
     if (customerDressFilter && !orders.some(o => Domain.itemsOf(o.id).some(i => i.title === customerDressFilter))) return false;
     if (!q) return true;
@@ -1494,7 +1509,9 @@ Pages.customers = () => {
         <option value="">All dresses</option>
         ${dresses.map(d => `<option value="${esc(d)}" ${customerDressFilter === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
       </select>
-      ${customerEventFilter || customerDressFilter || customerQuery ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; App.route()">\u2715 Clear</button>` : ''}
+      <button class="chip ${customerNoSchool ? 'on' : ''}" onclick="customerNoSchool = !customerNoSchool; App.route()"
+        title="Only customers with no school on file">\ud83c\udfeb No school (${DB.customers.filter(x => inSeason.has(x.id) && !x.cancelled && !Schools.of(x.id)).length})</button>
+      ${customerEventFilter || customerDressFilter || customerQuery || customerNoSchool ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; customerNoSchool=false; App.route()">\u2715 Clear</button>` : ''}
     </div>
     <div class="tablewrap"><table class="roomy">
       <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th>Next appointment</th><th>Booking answers</th></tr></thead>
@@ -1509,7 +1526,7 @@ Pages.customers = () => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${Invoices.invFor(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
+            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.invFor(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
@@ -1665,11 +1682,14 @@ function applyCustEdits() {
     if (e.daughterName) c.daughterName = e.daughterName;
     if (e.newPhone) c.phone = e.newPhone;
     if ('cancelled' in e) c.cancelled = !!e.cancelled;
+    if ('waitlist' in e) c.waitlist = e.waitlist || null;
   }
 }
-// The dashboard runs one season at a time: events from before this date are
-// hidden everywhere, and so are customers whose only activity is older.
-const SEASON_START = '2026-01-01';
+// The dashboard runs one season at a time \u2014 Sept 2026 to May 2027.
+// Events from before the season are hidden everywhere, and so are
+// customers, appointments, schools and bookings whose only activity is
+// older (last season's January\u2013May 2026 fittings included).
+const SEASON_START = '2026-09-01';
 function seasonCustIds() {
   const act = new Map(); // customerId -> newest activity date seen
   const bump = (id, d) => { if (d && (!act.has(id) || d > act.get(id))) act.set(id, d); };
@@ -2005,10 +2025,35 @@ Pages.venues = () => {
 let venueDayFilter = '';
 let venueDayFilterVenue = '';
 let venueCustQuery = '';
+let venueBoughtFilter = ''; // '' all \u00b7 'bought' \u00b7 'not'
+/* How many appointment slots a day has and which are still empty \u2014 for
+   offering a slot over the phone. Capacity per hour = how many staff
+   Appointly books in parallel that day (fallback: the settings figure);
+   the working window starts at the first booked hour. */
+function slotBoard(venue, day) {
+  const cfg = DB.settings.eventDay;
+  const appts = DB.appointments.filter(a => a.appointmentAt === day && a.time
+    && String(a.eventHotel || a.service || '').includes(venue)
+    && a.status !== 'cancelled' && !custCancelled(a.customerId));
+  const hourOf = t => parseInt(String(t).slice(0, 2), 10);
+  const staff = new Set(appts.map(a => a.staffName).filter(Boolean)).size;
+  const perHour = staff || cfg.slotCapacity;
+  const bookedHours = appts.map(a => hourOf(a.time)).filter(h => !isNaN(h));
+  const start = bookedHours.length ? Math.min(...bookedHours) : cfg.startHour;
+  const end = Math.max(cfg.endHour, ...bookedHours.map(h => h + 1));
+  const hours = [];
+  for (let h = start; h < end; h++) {
+    const booked = bookedHours.filter(x => x === h).length;
+    hours.push({ h, booked, free: Math.max(0, perHour - booked) });
+  }
+  const capacity = hours.reduce((n, x) => n + Math.max(perHour, x.booked), 0);
+  return { perHour, hours, capacity, booked: appts.length,
+    free: hours.reduce((n, x) => n + x.free, 0) };
+}
 Pages.venueDetail = (venueName) => {
   const v = venueGroups().find(x => x.venue === venueName);
   if (!v) return `<p><a class="plain" href="#/venues">\u2190 Venues</a></p><h1>Venue not found</h1>`;
-  if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueCustQuery = ''; venueDayFilterVenue = venueName; }
+  if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueCustQuery = ''; venueBoughtFilter = ''; venueDayFilterVenue = venueName; }
   const upUsed = new Map(); // twins: each of a customer's rows takes its own upcoming slot
   const allRowsFull = v.orders.map(o => {
     const c = Domain.customer(o.customerId);
@@ -2021,10 +2066,14 @@ Pages.venueDetail = (venueName) => {
     const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
     return { o, c, upcoming, last, dress, school: Schools.of(c.id) };
   });
-  // Look a customer up by name (or daughter / school) within this venue.
+  // Look a customer up by name (or daughter / school) within this venue,
+  // and filter to who has / hasn't bought.
   const vq = venueCustQuery.trim().toLowerCase();
-  const allRows = !vq ? allRowsFull : allRowsFull.filter(r =>
-    (r.c.name + ' ' + (r.c.daughterName || '') + ' ' + (r.school || '')).toLowerCase().includes(vq));
+  const boughtCust = new Set(allRowsFull.filter(r => Invoices.invFor(r.c.id)).map(r => r.c.id));
+  const allCust = new Set(allRowsFull.map(r => r.c.id));
+  const allRows = allRowsFull.filter(r =>
+    (!vq || (r.c.name + ' ' + (r.c.daughterName || '') + ' ' + (r.school || '')).toLowerCase().includes(vq))
+    && (!venueBoughtFilter || (venueBoughtFilter === 'bought') === boughtCust.has(r.c.id)));
   const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
   const dayChips = v.dates.map(d => ({
     date: d,
@@ -2086,25 +2135,29 @@ Pages.venueDetail = (venueName) => {
         const multi = watch.filter(w => w.girls.length > 1);
         const takenOnly = watch.filter(w => w.girls.length === 1 && w.taken.length);
         const clear = watch.filter(w => w.girls.length === 1 && !w.taken.length);
-        const girlsLine = w => w.girls.map(x => `<b>${esc(x.kid || x.c.name)}</b>${x.time ? ' (' + esc(x.time) + ')' : ''} \u2014 ${esc(x.c.name)}`).join(' \u00b7 ');
+        // At-a-glance: child + time only; the mother's name is one tap away.
+        const girlsLine = w => w.girls.map(x => `<b>${esc(x.kid || x.c.name)}</b>${x.time ? ' <span class="muted">' + esc(x.time) + '</span>' : ''}`).join(' \u00b7 ');
         const takenLine = w => w.taken.length
-          ? `<div class="small" style="color:var(--red); margin-top:3px"><b>\ud83d\udc57 Already taken for this school:</b> ${w.taken.map(t => `<b>${esc(t.dress)}</b> \u2014 ${esc(t.who)} (${esc(t.ref)}${t.year ? ', Communion ' + esc(t.year) : ''})${t.override ? ' [override]' : ''}`).join(' \u00b7 ')}</div>`
-          : `<div class="small" style="color:var(--green); margin-top:3px">No dress taken for this school yet \u2014 first sale claims it. Put the school on the invoice straight away.</div>`;
+          ? `<div class="small" style="color:var(--red); margin-top:2px">\ud83d\udc57 <b>Taken:</b> ${w.taken.map(t => `<b>${esc(t.dress)}</b> \u2014 ${esc(t.who)}${t.override ? ' [o/r]' : ''}`).join(' \u00b7 ')}</div>`
+          : '';
+        const noneBadge = w => w.taken.length ? '' : ' <span class="badge b-green">none taken yet</span>';
         return `<div class="card" style="margin-bottom:16px${multi.length ? '; border:2px solid var(--red)' : ''}">
           <div class="flex" style="align-items:center; flex-wrap:wrap">
-            <h2 style="margin:0">\ud83c\udfeb School watch \u2014 one dress per school</h2>
-            ${multi.length ? `<span class="badge b-red">\u26a0 ${multi.length} school${multi.length === 1 ? '' : 's'} with 2+ girls today</span>` : '<span class="badge b-green">No school sends more than one girl today</span>'}
+            <h2 style="margin:0">\ud83c\udfeb School watch</h2>
+            ${multi.length ? `<span class="badge b-red">\u26a0 ${multi.length} school${multi.length === 1 ? '' : 's'} with 2+ girls</span>` : '<span class="badge b-green">\u2713 no school sends 2 girls today</span>'}
+            <span class="small muted">one dress per school</span>
           </div>
-          ${multi.map(w => `<div style="border-left:4px solid var(--red); padding:6px 10px; margin-top:10px; background:var(--red-bg); border-radius:6px">
-            <b>${esc(w.name)}</b> <span class="badge b-red">${w.girls.length} girls today \u2014 same school!</span>
-            <div class="small" style="margin-top:3px">${girlsLine(w)}</div>
+          ${multi.map(w => `<div style="border-left:4px solid var(--red); padding:5px 10px; margin-top:8px; background:var(--red-bg); border-radius:6px">
+            <b>${esc(w.name)}</b> <span class="badge b-red">${w.girls.length} girls</span>${noneBadge(w)}
+            <div class="small" style="margin-top:1px">${girlsLine(w)}</div>
             ${takenLine(w)}
           </div>`).join('')}
-          ${takenOnly.map(w => `<div style="border-left:4px solid var(--amber, #b8860b); padding:6px 10px; margin-top:10px; border-radius:6px; background:var(--amber-bg)">
+          ${takenOnly.map(w => `<div style="border-left:4px solid var(--amber, #b8860b); padding:5px 10px; margin-top:8px; border-radius:6px; background:var(--amber-bg)">
             <b>${esc(w.name)}</b> <span class="small muted">${girlsLine(w)}</span>
             ${takenLine(w)}
           </div>`).join('')}
-          ${clear.length ? `<div class="small muted" style="margin-top:10px"><b>\u2713 No overlap:</b> ${clear.map(w => `${esc(w.name)} (${esc(w.girls[0].kid || w.girls[0].c.name)}${w.girls[0].time ? ', ' + esc(w.girls[0].time) : ''})`).join(' \u00b7 ')}</div>` : ''}
+          ${clear.length ? `<details style="margin-top:8px"><summary class="small muted" style="cursor:pointer">\u2713 ${clear.length} school${clear.length === 1 ? '' : 's'} with one girl and nothing taken \u2014 no overlap risk (tap to see)</summary>
+            <div class="small muted" style="margin-top:5px">${clear.map(w => `${esc(w.name)} \u2014 ${esc(w.girls[0].kid || w.girls[0].c.name)}${w.girls[0].time ? ' <span>' + esc(w.girls[0].time) + '</span>' : ''}`).join(' \u00b7 ')}</div></details>` : ''}
         </div>`;
       })()}
       ${blocks.map(b => `
@@ -2146,6 +2199,25 @@ Pages.venueDetail = (venueName) => {
             <button class="small danger" onclick="Actions.printSchoolWatch('${venueArg}','${dc.date}')">\ud83c\udfeb School watch</button>
           </div>`).join('')}
       </div>` : ''}
+      ${dayChips.length ? `<div class="card" style="margin-bottom:16px; padding-top:12px; padding-bottom:8px">
+        <h2 style="margin-top:0; margin-bottom:4px">\ud83d\udd50 Appointment slots</h2>
+        <p class="small muted" style="margin:0 0 4px">On the phone? Open a day to see the empty slots and offer one straight away.</p>
+        ${dayChips.map(dc => {
+          const sb = slotBoard(v.venue, dc.date);
+          const hh2 = h => String(h).padStart(2, '0') + ':00';
+          return `<details style="padding:9px 0; border-top:1px solid var(--line)">
+            <summary style="cursor:pointer"><b>${esc(dc.label)}</b>
+              <span class="badge b-grey">${sb.booked} of ${sb.capacity} booked</span>
+              ${sb.free ? `<span class="badge b-green">${sb.free} slot${sb.free === 1 ? '' : 's'} free</span>` : '<span class="badge b-red">FULL</span>'}
+              <span class="small muted">\u00b7 ${sb.perHour} per hour</span></summary>
+            <div class="flex" style="flex-wrap:wrap; gap:6px; margin-top:8px">
+              ${sb.hours.map(x => x.free
+                ? `<span class="badge b-green" style="font-size:.85rem">${hh2(x.h)} \u2014 ${x.free} free</span>`
+                : `<span class="badge b-grey" style="font-size:.85rem; opacity:.55">${hh2(x.h)} full</span>`).join('')}
+            </div>
+          </details>`;
+        }).join('')}
+      </div>` : ''}
       ${booked.length ? `<h2>Coming in (${booked.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
         ${booked.map(r => row(r, `<b>${fmtWd(r.upcoming.appointmentAt)}</b><br><span class="vclock">${esc(r.upcoming.time || '\u2014')}</span>`, r.upcoming)).join('')}</div>` : ''}
       ${noAppt.length ? `<h2>No appointment booked (${noAppt.length})</h2><div class="card" style="padding-top:6px; padding-bottom:6px">
@@ -2156,12 +2228,15 @@ Pages.venueDetail = (venueName) => {
   return `
     <p><a class="plain" href="#/venues">\u2190 Venues</a></p>
     <h1 style="margin-bottom:2px">\ud83d\udccd ${esc(v.venue)}</h1>
-    <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> \u00b7 ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} \u00b7 slot times from Appointly, in time order.</p>
+    <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> \u00b7 ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} \u00b7 <b>${boughtCust.size} of ${allCust.size} bought</b> \u00b7 slot times from Appointly.</p>
     <input id="pagesearch" class="searchbar" style="max-width:420px; margin-bottom:10px" placeholder="Search a customer at this venue\u2026 name, daughter or school"
       value="${esc(venueCustQuery)}" oninput="venueCustQuery = this.value; App.route()">
     <div class="chips">
       <button class="chip ${!venueDayFilter ? 'on' : ''}" onclick="venueDayFilter=''; App.route()">All customers (${allRows.length})</button>
       ${dayChips.map(dc => `<button class="chip ${venueDayFilter === dc.date ? 'on' : ''}" onclick="venueDayFilter='${dc.date}'; App.route()">${esc(dc.label)} (${dc.count})</button>`).join('')}
+      <span style="width:10px"></span>
+      <button class="chip ${venueBoughtFilter === 'bought' ? 'on' : ''}" onclick="venueBoughtFilter = venueBoughtFilter === 'bought' ? '' : 'bought'; App.route()">\ud83e\uddfe Bought (${boughtCust.size})</button>
+      <button class="chip ${venueBoughtFilter === 'not' ? 'on' : ''}" onclick="venueBoughtFilter = venueBoughtFilter === 'not' ? '' : 'not'; App.route()">Hasn\u2019t bought (${allCust.size - boughtCust.size})</button>
     </div>
     ${body}`;
 };
@@ -2325,22 +2400,22 @@ Pages.schools = () => {
   const noSchool = DB.customers.filter(c => !Schools.of(c.id)).length;
   return `
     <h1>Schools <span class="muted" style="font-size:1rem; font-weight:400">${all.length}</span></h1>
-    <p class="sub">One dress per school \u2014 every customer grouped by their daughter's school so clashes stand out. A red badge means two girls from the same school have the <b>same dress</b>. <b>Drag a customer's row onto another school's card</b> to move them there (fixes wrong or misspelt answers).</p>
+    <p class="sub">One dress per school. Red badge = two girls from the same school with the <b>same dress</b>. Drag a row onto another card to move a customer.</p>
     <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search school, customer or daughter\u2026"
       value="${esc(schoolQuery)}" oninput="schoolQuery = this.value; App.route()">
     <div class="card" style="margin-bottom:14px">
-      <div class="flex" style="align-items:center"><b>\ud83d\udccb School pick-list</b>
-        <span class="badge b-grey">${Schools.list().length} school${Schools.list().length === 1 ? '' : 's'}</span>
-        <span class="small muted">\u2014 invoices choose the school from this fixed list, so \u201cSt. Bridget's\u201d and \u201cSt Brigids\u201d can't drift apart.</span></div>
-      <div class="flex" style="flex-wrap:wrap; gap:6px; margin-top:10px">
-        ${Schools.list().map(x => `<span class="badge b-grey" style="font-size:.83rem">${esc(x)} <a class="plain" style="cursor:pointer" title="Remove from list" onclick="Schools.removeFromList('${encodeURIComponent(x)}')">\u2715</a></span>`).join('')
-          || '<span class="small muted">Empty \u2014 add schools below, or pull every name in from the booking answers.</span>'}
-      </div>
-      <div class="flex" style="margin-top:10px">
-        <input id="sch-new" placeholder="Add a school\u2026" style="flex:1; max-width:340px" onkeydown="if(event.key==='Enter')Schools.addToList()">
-        <button class="small primary" onclick="Schools.addToList()">+ Add</button>
-        <button class="small" onclick="Schools.seedList()">\u2935 Add all names from bookings</button>
-      </div>
+      <details ${window.__schoolListOpen ? 'open' : ''} ontoggle="window.__schoolListOpen = this.open">
+        <summary style="cursor:pointer; font-weight:700">\ud83d\udccb School pick-list \u2014 ${Schools.list().length} school${Schools.list().length === 1 ? '' : 's'} <span class="small muted" style="font-weight:400">(tap to manage \u00b7 invoices pick from this list)</span></summary>
+        <div class="flex" style="flex-wrap:wrap; gap:6px; margin-top:10px">
+          ${Schools.list().map(x => `<span class="badge b-grey" style="font-size:.83rem">${esc(x)} <a class="plain" style="cursor:pointer" title="Remove from list" onclick="Schools.removeFromList('${encodeURIComponent(x)}')">\u2715</a></span>`).join('')
+            || '<span class="small muted">Empty \u2014 add schools below, or pull every name in from the booking answers.</span>'}
+        </div>
+        <div class="flex" style="margin-top:10px">
+          <input id="sch-new" placeholder="Add a school\u2026" style="flex:1; max-width:340px" onkeydown="if(event.key==='Enter')Schools.addToList()">
+          <button class="small primary" onclick="Schools.addToList()">+ Add</button>
+          <button class="small" onclick="Schools.seedList()">\u2935 Add all names from bookings</button>
+        </div>
+      </details>
     </div>
     ${sugg.length ? `<h2>Possibly the same school \u2014 you decide</h2>
       <p class="small muted">Spelling variations and abbreviations spotted automatically. \u201cSame school\u2026\u201d merges them under the correct name (shared with everyone); \u201cDifferent\u201d hides the suggestion.</p>
@@ -2352,8 +2427,16 @@ Pages.schools = () => {
       </div></div>`).join('')}` : ''}
     <h2>Schools (${gs.length})</h2>
     ${gs.map(g => {
+      // The dress a girl "went for": her invoice's dress lines first (the
+      // real sale), else the dress on her Shopify order.
+      for (const m of g.members) {
+        const inv = Invoices.invFor(m.c.id);
+        const invDress = inv ? (inv.lines || []).filter(l => l.title && Production.isDress(l.title)).map(l => l.title) : [];
+        m.gotDress = invDress.length ? invDress.join(' + ') : (m.dress ? m.dress.title : '');
+        m.ordered = !!invDress.length;
+      }
       const dressCount = {};
-      for (const m of g.members) if (m.dress) dressCount[m.dress.title] = (dressCount[m.dress.title] || 0) + 1;
+      for (const m of g.members) if (m.gotDress) dressCount[m.gotDress] = (dressCount[m.gotDress] || 0) + 1;
       const hasClash = Object.values(dressCount).some(n => n > 1);
       return `<div class="card" style="margin-bottom:12px${hasClash ? '; border-color:#e8a1a1' : ''}" ondragover="event.preventDefault()" ondrop="Schools.dropCust(event,'${encodeURIComponent(g.name).replace(/'/g, '%27')}')">
         <div class="flex" style="align-items:center">
@@ -2368,7 +2451,7 @@ Pages.schools = () => {
           <tbody>${g.members.map(m => `<tr class="click" draggable="true" title="Drag onto another school card to move" ondragstart="window.__dragCust='${m.c.id}'; event.dataTransfer.setData('text/plain', 'cust')" onclick="App.go('#/customer/${m.c.id}')">
             <td><b>${esc(m.c.daughterName || '\u2014')}</b></td>
             <td>${esc(m.c.name)}</td>
-            <td>${m.dress ? (dressCount[m.dress.title] > 1 ? '<span class="badge b-red">\u26a0 ' + esc(m.dress.title) + '</span>' : esc(m.dress.title)) : '<span class="muted">none yet</span>'}</td>
+            <td>${m.gotDress ? (m.ordered ? '<span class="badge b-green">Ordered</span> ' : '') + (dressCount[m.gotDress] > 1 ? '<span class="badge b-red">\u26a0 ' + esc(m.gotDress) + '</span>' : '<b>' + esc(m.gotDress.replace(/ Communion Dress/g, '')) + '</b>') : '<span class="muted">\u2014</span>'}</td>
             <td class="small">${m.event ? UI.eventBadge(m.event).replace('<br>', ' ') : '<span class="muted">\u2014</span>'}</td>
             <td class="small muted">${esc(m.raw)}</td>
           </tr>`).join('')}</tbody></table></div>
@@ -2385,7 +2468,7 @@ Pages.schools = () => {
           ${Pages._schoolRegisterHtml(k)}
         </div>`).join('');
     })()}
-    ${noSchool ? `<p class="small muted">${noSchool} customer${noSchool === 1 ? ' has' : 's have'} no school on file (no booking answer yet).</p>` : ''}`;
+    ${noSchool ? `<p class="small"><a class="plain" style="cursor:pointer" onclick="customerNoSchool = true; App.go('#/customers')"><b>\ud83c\udfeb ${noSchool} customer${noSchool === 1 ? ' has' : 's have'} no school on file</b> \u2014 tap to see them</a></p>` : ''}`;
 };
 
 /* One school's dress-register lines, grouped by communion year. Duplicates
@@ -2417,11 +2500,13 @@ Pages.customerDetail = (id) => {
     <h1>${esc(c.name)}</h1>
     <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> \u00b7 ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
     ${c.cancelled ? '<div class="note err">\ud83d\udeab <b>Cancelled</b> \u2014 this customer is off the day planners, run sheets and printed sheets. Reinstate them below if they come back.</div>' : ''}
+    ${c.waitlist ? `<div class="note">\u23f3 <b>On the waiting list</b> since ${fmtDate(String(c.waitlist.at).slice(0, 10))}${c.waitlist.note ? ' \u2014 ' + esc(c.waitlist.note) : ''} \u00b7 she shows on the dashboard until booked in.</div>` : ''}
     <div class="toolbar">
       <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">\ud83d\udda8 Print this customer's sheet (details + booking answers)</button>
       <button onclick="Invoices.open('${c.id}')">\ud83e\uddfe ${Invoices.invFor(c.id) ? 'Show invoice' : 'Create invoice'}</button>
       <button onclick="Actions.editCustomer('${c.id}')">\u270e Edit details</button>
       <button onclick="Actions.toggleCancelled('${c.id}')">${c.cancelled ? '\u21a9 Reinstate customer' : '\ud83d\udeab Mark as cancelled'}</button>
+      <button onclick="Actions.toggleWaitlist('${c.id}')">${c.waitlist ? '\u2713 Take off waiting list' : '\u23f3 Add to waiting list'}</button>
       ${Invoices.statusBadge(c.id)}
     </div>
     ${(() => {
@@ -4406,8 +4491,8 @@ const Production = {
   entries() {
     const out = [];
     for (const inv of (DB.invoices || [])) {
+      if (inv.cancelled) continue;
       const t = Invoices.totals(inv);
-      if (!(inv.paidInFull || t.paidCents > 0)) continue; // deposit taken = in production
       const c = Domain.customer(inv.customerId);
       const dressLines = [], accessories = [];
       for (const l of (inv.lines || [])) {
@@ -4419,7 +4504,12 @@ const Production = {
       const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
       out.push({ inv, name: (c && c.name) || inv.contact.name, daughter: (c && c.daughterName) || '',
         phone: inv.contact.phone || (c && c.phone) || '', email: inv.contact.email || (c && c.email) || '',
-        dressLines, accessories, event: latest ? latest.eventHotel : '' });
+        dressLines, accessories, event: latest ? latest.eventHotel : '', eventDate: latest ? (latest.eventDate || '') : '',
+        school: inv.school || (c ? Schools.of(c.id) : '') || '',
+        totalCents: t.linesTotal,
+        paid: (inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'FULL'
+          : (t.paidCents > 0 ? 'DEP ' + eurPlain(t.paidCents) : 'NOT PAID'),
+        payType: inv.depositMethod || '' });
     }
     return out;
   },
@@ -4428,7 +4518,7 @@ const Production = {
     const map = new Map();
     for (const e of Production.entries()) {
       for (const l of e.dressLines) {
-        const hay = (l.title + ' ' + l.colour + ' ' + l.size + ' ' + e.name + ' ' + e.daughter + ' ' + e.event).toLowerCase();
+        const hay = (l.title + ' ' + l.colour + ' ' + l.size + ' ' + e.name + ' ' + e.daughter + ' ' + e.event + ' ' + e.school).toLowerCase();
         if (q && !hay.includes(q)) continue;
         if (!map.has(l.title)) map.set(l.title, []);
         map.get(l.title).push({ e, l });
@@ -4450,6 +4540,57 @@ const Production = {
     Store.save(); Invoices._push();
   },
   accessoriesText: e => e.accessories.map(a => a.title + (a.qty > 1 ? ' \u00d7' + a.qty : '')).join(', '),
+  /* The client's own production sheet has one list per event day (the tab
+     that goes to the dressmaker): total, payment, name, child, school,
+     dress, colour, size. Same thing here, straight from the invoices. */
+  byEvent(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const map = new Map();
+    for (const e of Production.entries()) {
+      for (const l of e.dressLines) {
+        const hay = (l.title + ' ' + l.colour + ' ' + l.size + ' ' + e.name + ' ' + e.daughter + ' ' + e.event + ' ' + e.school).toLowerCase();
+        if (q && !hay.includes(q)) continue;
+        const key = (e.event || 'No event on file') + '||' + (e.eventDate || '');
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push({ e, l });
+      }
+    }
+    return [...map.entries()].map(([key, rows]) => {
+      const [event, date] = key.split('||');
+      rows.sort((a, b) => a.e.name.localeCompare(b.e.name));
+      return { key, event, date, rows };
+    }).sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.event.localeCompare(b.event));
+  },
+  printEvent(key) {
+    const g = Production.byEvent('').find(x => x.key === key);
+    if (!g) return;
+    const title = g.event.replace(/^Darcy Day Out \u2014 /, '') + (g.date ? ' \u2014 ' + fmtWd(g.date) : '');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Production \u2014 ${esc(title)}</title><style>
+      @page { size: A4; margin: 12mm; }
+      body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; font-size: 12.5px; }
+      h1 { font-size: 18px; color: #9b2c4d; margin: 0 0 2px; }
+      .m { color: #666; margin-bottom: 10px; }
+      table { border-collapse: collapse; width: 100%; }
+      th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #9b2c4d;
+        border-bottom: 2px solid #9b2c4d; padding: 4px 6px; }
+      td { padding: 5px 6px; border-bottom: 1px solid #e8e0e4; vertical-align: top; }
+      td.num { text-align: right; }
+      tr { page-break-inside: avoid; }
+      .np { color: #b3261e; font-weight: 700; }
+    </style></head><body>
+      <h1>\ud83e\uddf5 Production \u2014 ${esc(title)}</h1>
+      <div class="m">${g.rows.length} dress${g.rows.length === 1 ? '' : 'es'} \u00b7 printed ${esc(fmtWd(todayStr()))}</div>
+      <table><thead><tr><th>Total</th><th>Type</th><th>Paid</th><th>Name</th><th>Child</th><th>School</th><th>Dress</th><th>Colour</th><th>Size</th></tr></thead>
+      <tbody>${g.rows.map(r => `<tr>
+        <td class="num">${eurPlain(r.e.totalCents)}</td><td>${esc(r.e.payType || '\u2014')}</td>
+        <td${r.e.paid === 'NOT PAID' ? ' class="np"' : ''}>${esc(r.e.paid)}</td>
+        <td><b>${esc(r.e.name)}</b></td><td>${esc(r.e.daughter || '')}</td><td>${esc(r.e.school || '')}</td>
+        <td><b>${esc(r.l.title.replace(/ Communion Dress$/i, ''))}</b></td><td>${esc(r.l.colour || '')}</td><td>${esc(r.l.size || '')}${r.l.qty > 1 ? ' \u00d7' + r.l.qty : ''}</td>
+      </tr>`).join('')}</tbody></table>
+    </body></html>`;
+    Actions._sheetModal('Production \u2014 ' + esc(title),
+      'One row per dress sold at this event \u2014 the list that goes to the dressmaker.', html, 1);
+  },
   exportXlsx() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available()) {
       UI.err(new Error('The Excel export needs the live dashboard link (the Google web app).')); return;
@@ -4481,18 +4622,47 @@ const Production = {
 };
 
 let prodQuery = '';
+let prodView = 'dress'; // 'dress' = size runs for the maker | 'event' = one list per event day
 Pages.production = () => {
   const groups = Production.groups(prodQuery);
-  const total = Production.entries().length;
+  const total = groups.reduce((s2, g) => s2 + g.rows.reduce((s3, r) => s3 + (r.l.qty || 1), 0), 0);
   const canEdit = Invoices.unlocked();
   return `
     <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:4px">
       <h1 style="margin:0">Production <span class="muted" style="font-size:1rem; font-weight:400">${total}</span></h1>
       <button class="primary" onclick="Production.exportXlsx()">\u2b07 Download Excel</button>
     </div>
-    <p class="sub">Everyone whose invoice has money taken, grouped by dress for the manufacturer \u2014 size runs at a glance.${canEdit ? '' : ' Notes are locked (invoicing passcode).'}</p>
-    <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search dress, size, customer, event\u2026"
+    <p class="sub">Every dress sold (one row per invoice line) \u2014 the live production sheet.${canEdit ? '' : ' Notes are locked (invoicing passcode).'}</p>
+    <div class="chips" style="margin-bottom:8px">
+      <button class="chip ${prodView === 'dress' ? 'on' : ''}" onclick="prodView = 'dress'; App.route()">\ud83d\udc57 By dress (size runs)</button>
+      <button class="chip ${prodView === 'event' ? 'on' : ''}" onclick="prodView = 'event'; App.route()">\ud83d\udccd By event day</button>
+    </div>
+    <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search dress, size, customer, school, event\u2026"
       value="${esc(prodQuery)}" oninput="prodQuery = this.value; App.route()">
+    ${prodView === 'event' ? Production.byEvent(prodQuery).map(g => `
+      <div class="card" style="margin-bottom:14px">
+        <div class="flex" style="align-items:center; flex-wrap:wrap">
+          <b style="font-size:1.05rem">\ud83d\udccd ${esc(g.event.replace(/^Darcy Day Out \u2014 /, ''))}</b>
+          ${g.date ? `<span class="badge b-grey">${fmtWd(g.date)}</span>` : ''}
+          <span class="badge b-brand">${g.rows.length} dress${g.rows.length === 1 ? '' : 'es'}</span>
+          <span style="flex:1"></span>
+          <button class="small" onclick="Production.printEvent('${g.key.replace(/'/g, '%27')}')">\ud83d\udda8 Print this event's list</button>
+        </div>
+        <div class="tablewrap" style="margin-top:10px"><table>
+          <thead><tr><th class="num">Total</th><th>Type</th><th>Paid</th><th>Customer</th><th>Child</th><th>School</th><th>Dress</th><th>Colour</th><th>Size</th></tr></thead>
+          <tbody>${g.rows.map(r => `<tr>
+            <td class="num">${eurPlain(r.e.totalCents)}</td>
+            <td class="small">${esc(r.e.payType || '\u2014')}</td>
+            <td class="small"${r.e.paid === 'NOT PAID' ? ' style="color:var(--red); font-weight:700"' : ''}>${esc(r.e.paid)}</td>
+            <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a></td>
+            <td class="small">${esc(r.e.daughter || '\u2014')}</td>
+            <td class="small">${esc(r.e.school || '\u2014')}</td>
+            <td><b>${esc(r.l.title.replace(/ Communion Dress$/i, ''))}</b>${r.e.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
+            <td>${esc(r.l.colour || '\u2014')}</td>
+            <td><b>${esc(r.l.size || '\u2014')}</b>${r.l.qty > 1 ? ' \u00d7' + r.l.qty : ''}</td>
+          </tr>`).join('')}</tbody></table></div>
+      </div>`).join('') || '<div class="card muted">No dresses sold yet \u2014 each saved invoice adds its dress lines here.</div>' : ''}
+    ${prodView === 'event' ? '' : `
     ${groups.map(g => `
       <div class="card" style="margin-bottom:14px">
         <div class="flex" style="align-items:center; flex-wrap:wrap">
@@ -4502,19 +4672,22 @@ Pages.production = () => {
           ${g.tally.map(([size, n]) => `<span class="badge b-brand">${esc(size)} \u00d7 ${n}</span>`).join(' ')}
         </div>
         <div class="tablewrap" style="margin-top:10px"><table>
-          <thead><tr><th>Size</th><th>Colour</th><th class="num">Qty</th><th>Customer</th><th>Accessories</th><th style="min-width:220px">Notes</th></tr></thead>
+          <thead><tr><th>Size</th><th>Colour</th><th class="num">Qty</th><th>Customer</th><th>School</th><th class="num">Total</th><th>Paid</th><th>Accessories</th><th style="min-width:180px">Notes</th></tr></thead>
           <tbody>${g.rows.map(r => `<tr>
             <td><b>${esc(r.l.size || '\u2014')}</b></td>
             <td>${esc(r.l.colour || '\u2014')}</td>
             <td class="num">${r.l.qty || 1}</td>
             <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a>${r.e.inv.clashOverride ? ' <span class="badge b-red" title="Dress clash overridden \u2014 ' + esc(r.e.inv.clashOverride.reason || '') + '">Overridden</span>' : ''}${r.e.daughter ? `<br><span class="small muted">for ${esc(r.e.daughter)}</span>` : ''}
               <br><span class="small muted">${UI.eventBadge(r.e.event).split('<br>')[0]}</span></td>
+            <td class="small">${esc(r.e.school || '\u2014')}</td>
+            <td class="num">${eurPlain(r.e.totalCents)}</td>
+            <td class="small"${r.e.paid === 'NOT PAID' ? ' style="color:var(--red); font-weight:700"' : ''}>${esc(r.e.paid)}${r.e.payType ? '<br><span class="muted">' + esc(r.e.payType) + '</span>' : ''}</td>
             <td class="small">${esc(Production.accessoriesText(r.e)) || '<span class="muted">\u2014</span>'}</td>
             <td>${canEdit
               ? `<input class="mini" style="width:100%" value="${esc(r.e.inv.productionNotes || '')}" placeholder="Add a note\u2026" onchange="Production.setNote('${r.e.inv.id}', this.value)">`
               : `<span class="small">${esc(r.e.inv.productionNotes || '\u2014')}</span>`}</td>
           </tr>`).join('')}</tbody></table></div>
-      </div>`).join('') || '<div class="card muted">Nothing in production yet \u2014 orders appear here once their invoice has a deposit or payment recorded.</div>'}`;
+      </div>`).join('') || '<div class="card muted">No dresses sold yet \u2014 each saved invoice adds its dress lines here.</div>'}`}`;
 };
 
 /* ---- Invoice builder page ---- */
@@ -4795,6 +4968,29 @@ const Actions = {
     Store.save(); App.route();
     UI.toast(to ? c.name + ' marked as cancelled.' : c.name + ' reinstated \u2014 back on the planners.');
   },
+  /* No confirmed date yet? Put her on the waiting list \u2014 she stays in a
+     strip on the dashboard until someone books her in, so nobody is
+     forgotten. Stored in custEdits so it sticks through every sync. */
+  toggleWaitlist(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    let wl;
+    if (c.waitlist) {
+      if (!confirm(c.name + ' \u2014 take off the waiting list?')) return;
+      wl = null;
+    } else {
+      const note = prompt('What is ' + c.name + ' waiting for?\n\ne.g. "Cancelled her slot \u2014 wants another event, no date confirmed yet"', '');
+      if (note === null) return;
+      wl = { at: nowIso(), note: note.trim() };
+    }
+    DB.custEdits = DB.custEdits || {};
+    const key = Actions._custEditKey(c);
+    DB.custEdits[key] = Object.assign({}, DB.custEdits[key] || {}, { email: String(c.email || '').toLowerCase(),
+      phone: ImportService._digits(c.phone), waitlist: wl, at: nowIso() });
+    c.waitlist = wl;
+    Store.save(); App.route();
+    UI.toast(wl ? c.name + ' is on the waiting list \u2014 front of the dashboard until booked in.' : c.name + ' taken off the waiting list.');
+  },
   /* A delivery address typed here beats whatever Shopify sends \u2014 it sticks
      through every sync via DB.addrEdits until Shopify catches up. */
   editAddress(custId) {
@@ -4915,17 +5111,15 @@ const Actions = {
     const multi = watch.filter(w => w.girls.length > 1);
     const takenOnly = watch.filter(w => w.girls.length === 1 && w.taken.length);
     const clear = watch.filter(w => w.girls.length === 1 && !w.taken.length);
-    const girls = w => w.girls.map(x => '<b>' + esc(x.kid || x.c.name) + '</b>' + (x.time ? ' (' + esc(x.time) + ')' : '') + ' \u2014 ' + esc(x.c.name)).join(' \u00b7 ');
+    const girls = w => w.girls.map(x => '<b>' + esc(x.kid || x.c.name) + '</b>' + (x.time ? ' (' + esc(x.time) + ')' : '')).join(' \u00b7 ');
     const takenTable = w => w.taken.length
       ? `<table class="tk"><thead><tr><th>DRESS \u2014 DO NOT SELL AGAIN</th><th>Who has it</th><th>Invoice / order</th></tr></thead>
          <tbody>${w.taken.map(t => `<tr><td class="d">${esc(t.dress)}</td><td>${esc(t.who)}</td><td>${esc(t.ref)}${t.year ? ' \u00b7 Communion ' + esc(t.year) : ''}${t.override ? ' \u00b7 OVERRIDE' : ''}</td></tr>`).join('')}</tbody></table>`
-      : '<div class="ok">No dress taken for this school yet \u2014 the FIRST sale claims it. Put the school on the invoice immediately.</div>';
+      : '<div class="ok">none taken yet</div>';
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>School watch \u2014 ${esc(venue)}</title><style>
       @page { size: A4; margin: 12mm; }
       body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; font-size: 13px; }
       h1 { font-size: 19px; color: #9b2c4d; margin: 0; }
-      .rule { border: 2.5px solid #b3261e; color: #b3261e; font-weight: 800; text-align: center; padding: 7px; border-radius: 8px;
-        margin: 10px 0 14px; font-size: 15px; letter-spacing: .04em; }
       .sch { border: 2px solid #ddd; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; page-break-inside: avoid; }
       .sch.hot { border-color: #b3261e; background: #fdecec; }
       .sch.warm { border-color: #b8860b; background: #fdf6e3; }
@@ -4944,24 +5138,23 @@ const Actions = {
     </style></head><body>
       <h1>\ud83c\udfeb School watch \u2014 ${esc(venue)}</h1>
       <div class="m">${esc(dayLabel)} \u00b7 ${watch.reduce((n2, w) => n2 + w.girls.length, 0)} girls \u00b7 ${watch.length} schools</div>
-      <div class="rule">ONE DRESS PER SCHOOL \u2014 CHECK THIS SHEET BEFORE SELLING ANY DRESS</div>
-      ${multi.length ? `<h2>\u26a0 SCHOOLS WITH 2 OR MORE GIRLS TODAY \u2014 HIGHEST ATTENTION</h2>
+      ${multi.length ? `<h2>\u26a0 2 OR MORE GIRLS TODAY</h2>
         ${multi.map(w => `<div class="sch hot">
-          <div class="nm">${esc(w.name)} <span class="cnt">\u2014 ${w.girls.length} girls today</span></div>
+          <div class="nm">${esc(w.name)} <span class="cnt">\u2014 ${w.girls.length} girls</span></div>
           <div class="g">${girls(w)}</div>
           ${takenTable(w)}
         </div>`).join('')}` : ''}
-      ${takenOnly.length ? `<h2>Schools with a dress already taken (one girl in today)</h2>
+      ${takenOnly.length ? `<h2>\ud83d\udc57 Dress already taken \u2014 one girl in today</h2>
         ${takenOnly.map(w => `<div class="sch warm">
           <div class="nm">${esc(w.name)}</div>
           <div class="g">${girls(w)}</div>
           ${takenTable(w)}
         </div>`).join('')}` : ''}
-      ${clear.length ? `<h2>\u2713 No overlap \u2014 one girl, nothing taken yet</h2>
+      ${clear.length ? `<h2>\u2713 One girl \u2014 no overlap</h2>
         <div class="clear">${clear.map(w => `<div><b>${esc(w.name)}</b> \u2014 ${esc(w.girls[0].kid || w.girls[0].c.name)}${w.girls[0].time ? ' (' + esc(w.girls[0].time) + ')' : ''}</div>`).join('')}</div>` : ''}
     </body></html>`;
     Actions._sheetModal(`School watch \u2014 ${esc(venue)}, ${esc(dayLabel)}`,
-      'Every school in that day: girls and times, and the dresses already taken per school. Print one for the staff table.',
+      'Girls and times per school, and any dress already taken. Print one for the staff table.',
       html, 1);
   },
   printRunSheet(venueEnc, day) {
