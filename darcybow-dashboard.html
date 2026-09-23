@@ -273,7 +273,7 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 66)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 67)</span><br>' +
     (cut
       ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5889 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 66</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 67</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2711,7 +2711,7 @@ Pages.customerDetail = (id) => {
               </div>`).join('')}
             <label style="width:110px; height:140px; border:2px dashed var(--line); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:.8rem; text-align:center">
               \ud83d\udcf7<br>\uff0b Add photo
-              <input type="file" accept="image/*" capture="environment" hidden onchange="Photos.add('${c.id}', this)">
+              <input type="file" accept="image/&#42;" capture="environment" hidden onchange="Photos.add('${c.id}', this)">
             </label>
           </div>
         </div>
@@ -2726,7 +2726,7 @@ Pages.customerDetail = (id) => {
         ${!orders.length && DB.scopeWarning && AppointlyService.bookingsFor(c.id).length ? `<div class="note" style="margin-top:8px">This customer has a booking but no visible order \u2014 their order is probably older than 60 days, which Shopify is currently hiding from the dashboard. <a class="plain" href="#/import" style="font-weight:600">The one-tick fix is on Connect data \u2192</a></div>` : ''}
         ${orders.map(o => {
           const items = Domain.itemsOf(o.id);
-          const shopUrl = o.sourceId ? 'https://admin.shopify.com/store/' + (DB.shopSub || 'darcybow') + '/orders/' + o.sourceId : '';
+          const shopUrl = o.sourceId ? 'https:\/\/admin.shopify.com/store/' + (DB.shopSub || 'darcybow') + '/orders/' + o.sourceId : '';
           return `<div class="card" style="margin-bottom:12px">
             <div class="flex" style="justify-content:space-between">
               ${shopUrl ? `<a class="plain" href="${shopUrl}" target="_blank" title="Open this order in Shopify">${esc(o.reference)} \u2197</a>` : `<b>${esc(o.reference)}</b>`}
@@ -4695,7 +4695,7 @@ const CustNotes = {
 };
 
 const Emails = {
-  gmailUrl: em => 'https://mail.google.com/mail/u/0/#search/' + encodeURIComponent(em),
+  gmailUrl: em => 'https:\/\/mail.google.com/mail/u/0/#search/' + encodeURIComponent(em),
   open(custId) {
     const c = Domain.customer(custId);
     if (!c || !c.email) { UI.err(new Error('No email address on this customer.')); return; }
