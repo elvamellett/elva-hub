@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 70)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 71)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5945 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5952 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 70</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 71</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1452,7 +1452,11 @@ Pages.dashboard = () => {
       <button onclick="App.go('#/venues')">Venues</button>
     </div>
     ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">\u2705 Showing your ${DB.importInfo.live ? 'live Shopify + Appointly data \u2014 last sync' : 'imported Shopify + Appointly data \u2014 last import'} ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Connect data \u2192</a></div>`
-      : `<div class="seam">\ud83d\udd0c Sample data \u2014 nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly \u2192</b></a> Sync live via the free Google web app, or drop in CSV exports \u2014 either fills these screens with the real customers and booking answers.</div>`}
+      : (typeof LiveSync !== 'undefined' && LiveSync.available())
+        ? (LiveSync.syncing
+          ? '<div class="note info" style="margin:0 0 16px">\u23f3 <b>Fetching the live data for this device\u2026</b> The sample numbers disappear in a moment \u2014 the first pull can take half a minute on a phone.</div>'
+          : `<div class="note" style="margin:0 0 16px">\u26a0 <b>This device hasn\u2019t pulled the data yet</b> \u2014 every phone and laptop keeps its own copy and fills it from Shopify on first sync. ${LiveSync.lastError ? 'Last try failed: <b>' + esc(LiveSync.lastError) + '</b> \u00b7 ' : ''}<a class="plain" style="cursor:pointer" onclick="LiveSync.sync()"><b>\u27f3 Tap here to sync now</b></a></div>`)
+        : `<div class="seam">\ud83d\udd0c Sample data \u2014 nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly \u2192</b></a> Sync live via the free Google web app, or drop in CSV exports \u2014 either fills these screens with the real customers and booking answers.</div>`}
     ${(() => {
       const wl = DB.customers.filter(x => x.waitlist && !x.cancelled)
         .sort((a, b) => String(a.waitlist.at).localeCompare(String(b.waitlist.at)));
@@ -3308,13 +3312,16 @@ const LiveSync = {
     if (!LiveSync.available()) { UI.err(new Error('Live sync only works when the dashboard is opened from its Google Apps Script web-app link \u2014 see Connect data.')); return; }
     if (LiveSync.syncing) return;
     LiveSync.syncing = true;
+    LiveSync.lastError = '';
     UI.toast('Syncing from Shopify\u2026');
+    App.route(); // the dashboard strip flips to "fetching..."
     google.script.run
       .withSuccessHandler(payload => {
         LiveSync.syncing = false;
-        try { LiveSync.applyPayload(JSON.parse(payload)); } catch (e) { UI.err(e); }
+        try { LiveSync.applyPayload(JSON.parse(payload)); }
+        catch (e) { LiveSync.lastError = String((e && e.message) || e); UI.err(e); App.route(); }
       })
-      .withFailureHandler(e => { LiveSync.syncing = false; UI.err(e); })
+      .withFailureHandler(e => { LiveSync.syncing = false; LiveSync.lastError = String((e && e.message) || e); UI.err(e); App.route(); })
       .syncShopify(Gate.token());
   },
   // Shopify Admin API JSON \u2192 the dashboard's own shape.
