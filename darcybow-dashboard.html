@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 78)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 79)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6056 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6086 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 78</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 79</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1675,6 +1675,25 @@ function apptDaughter(a) {
 // Twins & double bookings: hand out one customer's appointments for a day
 // ONE AT A TIME, in time order, so each of their rows/sheets gets its own
 // slot (first row 13:00, second row 14:00) instead of all showing the first.
+function dedupeDayRows(rows) {
+  const seen = new Set();
+  return rows.filter(r => {
+    // Key on THIS ROW's own child name, else its own slot time: a duplicate
+    // order reuses the same slot (collapses), twins each hold their own
+    // booking (kept).
+    let kid = '';
+    if (r.kid) kid = r.kid;
+    else if (r.a) kid = apptDaughter(r.a) || '';
+    else if (r.upcoming) kid = apptDaughter(r.upcoming) || '';
+    else if (r.last) kid = apptDaughter(r.last) || '';
+    const t = (r.a && r.a.time) || (r.upcoming && r.upcoming.time)
+      || (r._t && r._t !== '99' ? r._t : '') || '';
+    const k = (r.c ? r.c.id : '?') + '|' + (String(kid).trim().toLowerCase() || 't' + t);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
 function dayApptTaker(day) {
   const used = new Map();
   return custId => {
@@ -2191,7 +2210,7 @@ Pages.venueDetail = (venueName) => {
   if (!v) return `<p><a class="plain" href="#/venues">\u2190 Venues</a></p><h1>Venue not found</h1>`;
   if (venueDayFilterVenue !== venueName) { venueDayFilter = ''; venueCustQuery = ''; venueBoughtFilter = ''; venueDayFilterVenue = venueName; }
   const upUsed = new Map(); // twins: each of a customer's rows takes its own upcoming slot
-  const allRowsFull = v.orders.map(o => {
+  const allRowsFull = dedupeDayRows(v.orders.map(o => {
     const c = Domain.customer(o.customerId);
     // Only THIS venue's slots count here. A visit or booking at a DIFFERENT
     // venue must never show up as this venue's slot (the mix-up where a
@@ -2209,7 +2228,7 @@ Pages.venueDetail = (venueName) => {
     const last = appts[0];
     const dress = Domain.itemsOf(o.id).filter(i => i.category === 'dress')[0];
     return { o, c, upcoming, last, dress, school: Schools.of(c.id) };
-  });
+  }));
   // Look a customer up by name (or daughter / school) within this venue,
   // and filter to who has / hasn't bought.
   const vq = venueCustQuery.trim().toLowerCase();
@@ -2440,6 +2459,13 @@ function schoolWatch(venue, day) {
     map.get(key).girls.push({ c, kid: (a && apptDaughter(a)) || c.daughterName || '', time: (a && a.time) || '' });
   }
   const out = [...map.values()].map(g => {
+    const seenG = new Set();
+    g.girls = g.girls.filter(x => {
+      const k = x.c.id + '|' + String(x.kid || '').trim().toLowerCase();
+      if (seenG.has(k)) return false;
+      seenG.add(k);
+      return true;
+    });
     g.girls.sort((x, y) => (x.time || '99') < (y.time || '99') ? -1 : 1);
     // Two girls from the SAME school in the SAME appointment block: both
     // families are in at once \u2014 the riskiest overlap of all.
@@ -5788,6 +5814,8 @@ const Actions = {
         _t: (slot && slot.time) || '99',
       });
     }
+    const dedupedCS = dedupeDayRows(rows);
+    rows.length = 0; Array.prototype.push.apply(rows, dedupedCS);
     rows.sort((a, b) => a._t < b._t ? -1 : 1);
     Actions._sheetModal(`Customer sheets \u2014 ${esc(venue)}, ${esc(dayLabel)}`,
       'One A4 page per customer, in block order, staff name top-right for sorting into piles. Print the lot before the event.',
@@ -5888,6 +5916,8 @@ const Actions = {
       const qa = (a && a.questions && a.questions.some(z => z.a)) ? a : qaFallback;
       rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim(), clash: DressRegister.flagFor(c.id) });
     }
+    const dedupedRS = dedupeDayRows(rows);
+    rows.length = 0; Array.prototype.push.apply(rows, dedupedRS);
     const blockRows = [];
     for (let h = cfg.startHour; h < cfg.endHour; h++) {
       const inBlock = rows.filter(r => r.a && r.a.time && r.a.time >= hh(h) + ':00' && r.a.time < hh(h + 1) + ':00')
