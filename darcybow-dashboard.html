@@ -175,7 +175,38 @@
   .right { text-align: right; }
   .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } body { flex-direction: column; } #sidebar { width: 100%; height: auto; position: static; } }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+
+  /* ---------- Phones: sidebar becomes a sticky top bar with a swipeable
+     menu row; everything stacks, touch targets grow, and no page needs
+     sideways scrolling (wide tables scroll inside their own frame). ---- */
+  @media (max-width: 760px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 40; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+    #sidebar .logo { padding: 9px 14px 2px; display: flex; align-items: baseline; gap: 8px; }
+    #sidebar .logo b { font-size: 1.02rem; }
+    #sidebar .logo span { display: inline; margin: 0; font-size: .58rem; }
+    #sidebar nav { display: flex; overflow-x: auto; padding: 4px 8px 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    #sidebar nav::-webkit-scrollbar { display: none; }
+    #sidebar nav a { flex: 0 0 auto; padding: 8px 11px; margin: 0 2px; font-size: .86rem; white-space: nowrap; }
+    #sidebar nav a .cnt { margin-left: 6px; }
+    #sidebar .staffbox, #sidebar .demo { display: none; } /* Clear & re-sync stays a laptop-only button */
+    #main { padding: 13px 12px 70px; }
+    h1 { font-size: 1.32rem; }
+    .searchbar { max-width: 100% !important; }
+    input, select, textarea { font-size: 16px; } /* stops iOS zooming in on focus */
+    button { min-height: 38px; }
+    button.small, .chip { min-height: 34px; }
+    .toolbar button, .flex button { flex-shrink: 0; }
+    #modalroot .box, #modalroot .box.wide { width: calc(100vw - 12px); max-width: none; margin: 2vh auto; padding: 14px 14px 16px; max-height: 94vh; }
+    .vrow { flex-wrap: wrap; gap: 6px 12px; }
+    .vtime { min-width: 62px; }
+    .invoice-frame { height: 58vh; }
+    .formgrid { grid-template-columns: 1fr 1fr; gap: 0 10px; }
+    .statrow { grid-template-columns: 1fr 1fr; }
+    th, td { padding: 8px 8px; }
+    .clashbanner { font-size: .95rem; padding: 11px 12px; }
+  }
   a.plain { color: var(--brand); text-decoration: none; font-weight: 600; }
   a.plain:hover { text-decoration: underline; }
   .timeline { list-style: none; margin: 0; padding: 0; }
@@ -242,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 56)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 57)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5040 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5071 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -255,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 56</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 57</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
