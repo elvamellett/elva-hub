@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 64)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 65)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5732 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5814 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 64</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 65</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1735,6 +1735,56 @@ function seasonCustIds() {
   for (const [id, d] of act) if (d >= SEASON_START) out.add(id);
   return out;
 }
+/* ---- Booking-change watch: every sync REBUILDS the appointment list
+   from Shopify + Appointly, so cancellations and reschedules flow in on
+   their own. These helpers additionally NOTICE the difference and pin a
+   note on the customer's page: "Changed: Cashel Palace, Sat 19 Sept,
+   15:00 -> Castlemartyr, Sun 27 Sept, 17:00". ---- */
+function apptSnapshot() {
+  const map = new Map();
+  const venOf = eh => { const p = String(eh || '').split(/\s+\u2014\s+/); return (p[1] || p[0] || '').trim(); };
+  for (const a of DB.appointments || []) {
+    if (!a.appointmentAt || a.appointmentAt < SEASON_START) continue;
+    const c = (DB.customers || []).find(x => x.id === a.customerId);
+    if (!c) continue;
+    const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+    if (!key || key === 'p') continue;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push({ v: venOf(a.eventHotel), d: a.appointmentAt, t: a.time || '' });
+  }
+  return map;
+}
+function recordApptChanges(prev) {
+  if (!prev || !prev.size) return; // first fill \u2014 nothing to compare against
+  const now = apptSnapshot();
+  DB.apptChanges = DB.apptChanges || {};
+  const label = x => (x.v ? x.v + ' \u00b7 ' : '') + fmtWd(x.d) + (x.t ? ' \u00b7 ' + x.t : '');
+  let changed = false;
+  for (const [key, oldList] of prev) {
+    const newLeft = (now.get(key) || []).slice();
+    const oldLeft = [];
+    for (const o of oldList) {
+      const i = newLeft.findIndex(n => n.v === o.v && n.d === o.d && n.t === o.t);
+      if (i >= 0) newLeft.splice(i, 1); else oldLeft.push(o);
+    }
+    if (!oldLeft.length) continue;
+    oldLeft.sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t));
+    newLeft.sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t));
+    const list = DB.apptChanges[key] = DB.apptChanges[key] || [];
+    const sigs = new Set(list.map(x => x.from + '|' + x.to));
+    for (let i = 0; i < oldLeft.length; i++) {
+      const from = label(oldLeft[i]);
+      const to = i < newLeft.length ? label(newLeft[i]) : '';
+      // A past slot that simply happened is not a cancellation.
+      if (!to && oldLeft[i].d < todayStr()) continue;
+      if (sigs.has(from + '|' + to)) continue;
+      list.push({ at: nowIso(), from, to, gone: !to });
+      changed = true;
+    }
+    if (list.length > 8) DB.apptChanges[key] = list.slice(-8);
+  }
+  if (changed) { Store.save(); if (typeof Staff !== 'undefined') Staff.maybePush(); }
+}
 function custCancelled(customerId) {
   const c = (DB.customers || []).find(x => x.id === customerId);
   return !!(c && c.cancelled);
@@ -2571,6 +2621,13 @@ Pages.customerDetail = (id) => {
     <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> \u00b7 ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
     ${c.cancelled ? '<div class="note err">\ud83d\udeab <b>Cancelled</b> \u2014 this customer is off the day planners, run sheets and printed sheets. Reinstate them below if they come back.</div>' : ''}
     ${c.waitlist ? `<div class="note">\u23f3 <b>On the waiting list</b> since ${fmtDate(String(c.waitlist.at).slice(0, 10))}${c.waitlist.note ? ' \u2014 ' + esc(c.waitlist.note) : ''} \u00b7 she shows on the dashboard until booked in.</div>` : ''}
+    ${(() => {
+      const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+      return ((DB.apptChanges || {})[key] || []).filter(x => !x.hidden).slice(-3).reverse().map(ch => `
+        <div class="note info">\u21c4 <b>Booking ${ch.gone ? 'cancelled' : 'changed'}:</b> ${esc(ch.from)}${ch.gone ? '' : ' \u2192 <b>' + esc(ch.to) + '</b>'}
+          <span class="small muted">\u00b7 noticed ${fmtDate(String(ch.at).slice(0, 10))}</span>
+          <a class="plain" style="float:right; cursor:pointer" title="Dismiss this note" onclick="Actions.dismissApptChange('${encodeURIComponent(key)}','${encodeURIComponent(ch.from + '|' + ch.to)}')">\u2715</a></div>`).join('');
+    })()}
     <div class="toolbar">
       <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">\ud83d\udda8 Print this customer's sheet (details + booking answers)</button>
       <button onclick="Invoices.open('${c.id}')">\ud83e\uddfe ${Invoices.invFor(c.id) ? 'Show invoice' : 'Create invoice'}</button>
@@ -2996,6 +3053,9 @@ const ImportService = {
     return !!(s.appointly && !s.customers && !s.orders && DB.importInfo);
   },
   mergeAppointly(fromServer) {
+    // Manual import: diff here. From the server, applyPayload diffs once
+    // at the end of the whole pipeline instead.
+    const prevAppts = fromServer ? null : apptSnapshot();
     const rawCsv = ImportService.state.appointly && ImportService.state.appointly.raw;
     const b = ImportService.build();
     const stubById = new Map(b.customers.map(c => [c.id, c]));
@@ -3097,6 +3157,7 @@ const ImportService = {
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
+    if (prevAppts) recordApptChanges(prevAppts);
     UI.toast('Booking export applied \u2014 ' + added + ' current bookings' + (created ? ', ' + created + ' new customers (booked without an order)' : '') + '. Reschedules and cancellations made in Appointly are now reflected.');
     // Manually imported here \u2192 store the export centrally so every other
     // browser opening the dashboard link receives it on its next sync.
@@ -3250,6 +3311,7 @@ const LiveSync = {
   },
   applyPayload(p) {
     if (p.error) throw new Error(p.error);
+    const prevAppts = apptSnapshot(); // to spot cancellations + reschedules
     if (p.store) DB.shopSub = String(p.store).replace(/\..*$/, ''); // for admin deep-links
     DB.scopeWarning = String(p.scopeWarning || '');
     const customers = [], orders = [], orderItems = [], appointments = [];
@@ -3574,6 +3636,7 @@ const LiveSync = {
         }
       } catch (e) { /* non-fatal \u2014 manual import still available */ }
     }
+    recordApptChanges(prevAppts);
   },
 };
 
@@ -4425,7 +4488,7 @@ const Staff = {
   payload() {
     return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
       custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [],
-      checklist: DB.prodChecklist || [] });
+      checklist: DB.prodChecklist || [], apptChanges: DB.apptChanges || {} });
   },
   maybePush() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
@@ -4464,6 +4527,20 @@ const Staff = {
       if (!r || String(i.at || '') > String(r.at || '')) cById.set(i.id, i);
     }
     if (cById.size) DB.prodChecklist = [...cById.values()];
+    // Booking-change notes: union per customer, a dismissal anywhere sticks.
+    const acR = sj.apptChanges || {};
+    DB.apptChanges = DB.apptChanges || {};
+    for (const k of new Set([...Object.keys(acR), ...Object.keys(DB.apptChanges)])) {
+      const bySig = new Map();
+      for (const x of [...(acR[k] || []), ...(DB.apptChanges[k] || [])]) {
+        const sig = x.from + '|' + x.to;
+        const cur = bySig.get(sig);
+        if (!cur) bySig.set(sig, Object.assign({}, x));
+        else cur.hidden = cur.hidden || x.hidden;
+      }
+      const arr = [...bySig.values()].sort((a, b) => String(a.at).localeCompare(String(b.at)));
+      if (arr.length) DB.apptChanges[k] = arr.slice(-8);
+    }
     // Self-heal: this device holds corrections the central copy lacks.
     if (Staff.payload() !== json) { Staff._last = ''; Staff.maybePush(); }
   },
@@ -5363,6 +5440,11 @@ const Actions = {
   /* No confirmed date yet? Put her on the waiting list \u2014 she stays in a
      strip on the dashboard until someone books her in, so nobody is
      forgotten. Stored in custEdits so it sticks through every sync. */
+  dismissApptChange(keyEnc, sigEnc) {
+    const key = decodeURIComponent(keyEnc), sig = decodeURIComponent(sigEnc);
+    for (const x of (DB.apptChanges || {})[key] || []) if (x.from + '|' + x.to === sig) x.hidden = true;
+    Store.save(); App.route();
+  },
   toggleWaitlist(custId) {
     const c = Domain.customer(custId);
     if (!c) return;
