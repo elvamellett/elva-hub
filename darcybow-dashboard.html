@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 71)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 72)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5952 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5966 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 71</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 72</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -5722,21 +5722,36 @@ const Actions = {
     const multi = watch.filter(w => w.girls.length > 1);
     const takenOnly = watch.filter(w => w.girls.length === 1 && w.taken.length);
     const clear = watch.filter(w => w.girls.length === 1 && !w.taken.length);
-    const girls = w => w.girls.map(x => '<b>' + esc(x.kid || x.c.name) + '</b>' + (x.time ? ' (' + esc(x.time) + ')' : '')).join(' \u00b7 ');
+    // One chip per time block: shared blocks (the real danger) are the ONLY
+    // red thing in a school's box.
+    const slotChips = w => {
+      const byH = new Map();
+      for (const x of w.girls) {
+        const h = x.time ? String(x.time).slice(0, 2) : '';
+        if (!byH.has(h)) byH.set(h, []);
+        byH.get(h).push(x);
+      }
+      return [...byH.entries()].sort((a, b) => ((a[0] || '99') < (b[0] || '99') ? -1 : 1)).map(([h, arr]) =>
+        arr.length > 1
+          ? `<span class="slot bad">\u26a0 ${h ? h + ':00' : 'no time'} \u00b7 ${arr.map(x => esc(x.kid || x.c.name)).join(' + ')} \u2014 in together</span>`
+          : `<span class="slot">${esc(arr[0].time || 'no time')} \u00b7 ${esc(arr[0].kid || arr[0].c.name)}</span>`).join('');
+    };
     const takenTable = w => w.taken.length
       ? `<table class="tk"><thead><tr><th>DRESS \u2014 DO NOT SELL AGAIN</th><th>Who has it</th><th>Invoice / order</th></tr></thead>
          <tbody>${w.taken.map(t => `<tr><td class="d">${esc(t.dress)}</td><td>${esc(t.who)}</td><td>${esc(t.ref)}${t.year ? ' \u00b7 Communion ' + esc(t.year) : ''}${t.override ? ' \u00b7 OVERRIDE' : ''}</td></tr>`).join('')}</tbody></table>`
-      : '<div class="ok">none taken yet</div>';
+      : '';
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>School watch \u2014 ${esc(venue)}</title><style>
       @page { size: A4; margin: 12mm; }
       body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2229; margin: 0; font-size: 13px; }
       h1 { font-size: 19px; color: #9b2c4d; margin: 0; }
-      .sch { border: 2px solid #ddd; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; page-break-inside: avoid; }
-      .sch.hot { border-color: #b3261e; background: #fdecec; }
-      .sch.warm { border-color: #b8860b; background: #fdf6e3; }
-      .nm { font-size: 16px; font-weight: 800; }
-      .cnt { color: #b3261e; font-weight: 800; }
-      .g { margin: 3px 0; }
+      .sch { border: 1px solid #ddd; border-left: 4px solid #ccc; border-radius: 8px; padding: 8px 12px 9px; margin-bottom: 8px; page-break-inside: avoid; background: #fff; }
+      .sch.hot { border-left-color: #b3261e; }
+      .sch.warm { border-left-color: #b8860b; }
+      .nm { font-size: 15px; font-weight: 800; }
+      .gc { display: inline-block; background: #eee; color: #444; border-radius: 10px; padding: 1px 9px; font-size: 11px; font-weight: 700; vertical-align: 2px; margin-left: 4px; }
+      .slot { display: inline-block; border: 1px solid #ddd; border-radius: 6px; padding: 2px 9px; margin: 4px 6px 0 0; font-size: 12.5px; }
+      .slot b { font-weight: 700; }
+      .slot.bad { border: 2px solid #b3261e; background: #fdecec; color: #b3261e; font-weight: 800; }
       table.tk { border-collapse: collapse; width: 100%; margin-top: 5px; }
       .tk th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #b3261e; border-bottom: 2px solid #b3261e; padding: 3px 6px; }
       .tk td { padding: 4px 6px; border-bottom: 1px solid #e5c9c9; }
@@ -5751,15 +5766,14 @@ const Actions = {
       <div class="m">${esc(dayLabel)} \u00b7 ${watch.reduce((n2, w) => n2 + w.girls.length, 0)} girls \u00b7 ${watch.length} schools</div>
       ${multi.length ? `<h2>\u26a0 2 OR MORE GIRLS TODAY</h2>
         ${multi.map(w => `<div class="sch hot">
-          <div class="nm">${esc(w.name)} <span class="cnt">\u2014 ${w.girls.length} girls</span></div>
-          ${(w.sameBlock || []).map(sb => `<div style="color:#b3261e; font-weight:800">\u26a0 SAME ${sb.hour}:00 SLOT: ${sb.girls.map(x => esc(x.kid || x.c.name)).join(' + ')} \u2014 in at the same time!</div>`).join('')}
-          <div class="g">${girls(w)}</div>
+          <div class="nm">${esc(w.name)}<span class="gc">${w.girls.length} girls</span></div>
+          ${slotChips(w)}
           ${takenTable(w)}
         </div>`).join('')}` : ''}
       ${takenOnly.length ? `<h2>\ud83d\udc57 Dress already taken \u2014 one girl in today</h2>
         ${takenOnly.map(w => `<div class="sch warm">
           <div class="nm">${esc(w.name)}</div>
-          <div class="g">${girls(w)}</div>
+          ${slotChips(w)}
           ${takenTable(w)}
         </div>`).join('')}` : ''}
       ${clear.length ? `<h2>\u2713 One girl \u2014 no overlap</h2>
