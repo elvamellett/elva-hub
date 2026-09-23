@@ -275,7 +275,7 @@ setTimeout(function () {
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
   d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 65)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5814 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5824 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -4558,32 +4558,42 @@ const Photos = {
     const c = Domain.customer(custId);
     if (!c || !input.files || !input.files[0]) return;
     const f = input.files[0];
+    // iPhones shoot HEIC by default; laptop browsers cannot read that
+    // format at all, so name the problem instead of a vague error.
+    const heic = /\.hei[cf]$/i.test(f.name || '') || /hei[cf]/i.test(f.type || '');
     const url = URL.createObjectURL(f);
     const img = new Image();
     img.onload = () => {
       // Phone photos are 3-5MB \u2014 far too big for the browser store.
-      // Downscale + JPEG keeps a readable sheet at ~200-400KB.
-      const MAX = 1600;
-      const sc = Math.min(1, MAX / Math.max(img.width, img.height));
-      const cv = document.createElement('canvas');
-      cv.width = Math.max(1, Math.round(img.width * sc));
-      cv.height = Math.max(1, Math.round(img.height * sc));
-      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-      const data = cv.toDataURL('image/jpeg', 0.72);
-      URL.revokeObjectURL(url);
+      // Downscale + JPEG, and if the store is nearly full, retry smaller
+      // and smaller before giving up \u2014 a readable sheet beats no sheet.
       DB.custPhotos = DB.custPhotos || {};
       const k = Photos.key(c);
       DB.custPhotos[k] = DB.custPhotos[k] || [];
-      DB.custPhotos[k].push({ id: uid(), data, at: nowIso(), name: f.name || 'sheet photo' });
-      try { Store.save(); } catch (e) {
-        DB.custPhotos[k].pop();
-        UI.err(new Error('Not enough storage room for this photo \u2014 delete an older photo somewhere first.'));
+      let saved = false;
+      for (const [MAX, q] of [[1600, 0.72], [1280, 0.6], [960, 0.55], [720, 0.45]]) {
+        const sc = Math.min(1, MAX / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(img.width * sc));
+        cv.height = Math.max(1, Math.round(img.height * sc));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        DB.custPhotos[k].push({ id: uid(), data: cv.toDataURL('image/jpeg', q), at: nowIso(), name: f.name || 'sheet photo' });
+        try { Store.save(); saved = true; break; }
+        catch (e) { DB.custPhotos[k].pop(); }
+      }
+      URL.revokeObjectURL(url);
+      if (!saved) {
+        UI.err(new Error('This browser\u2019s storage is full \u2014 photos live inside the browser, and there\u2019s no room left even at the smallest size. Delete an older sheet photo (on any customer\u2019s page) and try again.'));
         return;
       }
       App.route();
       UI.toast('Photo saved on ' + c.name + '\u2019s page \u2014 tap it to zoom.');
     };
-    img.onerror = () => { URL.revokeObjectURL(url); UI.err(new Error('That file doesn\u2019t look like a photo.')); };
+    img.onerror = () => { URL.revokeObjectURL(url);
+      UI.err(new Error(heic
+        ? 'This is an iPhone photo in HEIC format, which this computer\u2019s browser cannot read. Two easy fixes: open the dashboard link ON THE PHONE and add the photo there, or set iPhone Settings \u2192 Camera \u2192 Formats \u2192 Most Compatible so it takes JPEGs from now on.'
+        : 'That file doesn\u2019t look like a photo this browser can read.'));
+    };
     img.src = url;
   },
   remove(custId, photoId) {
