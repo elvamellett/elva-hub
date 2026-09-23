@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 63)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 64)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5687 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5732 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 63</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 64</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1361,9 +1361,41 @@ const App = {
   },
 
   /* ---------- router ---------- */
+  /* The dashboard runs inside Google's sandbox, where the browser's own
+     back button leaves the whole app instead of going back a page. So the
+     router keeps its own trail: App.back() (the \u2190 links, and the
+     Backspace key outside a text box) returns to the exact page you came
+     from \u2014 venue day view, search results and all. */
+  _hist: [],
+  _cur: null,
+  _popping: false,
+  back(fallback) {
+    if (document.getElementById('modalroot').classList.contains('open')) { UI.closeModal(); return; }
+    const prev = App._hist.pop();
+    const target = prev || fallback || '#/dashboard';
+    if (target !== (location.hash || '#/dashboard')) App._popping = true;
+    App.go(target);
+  },
+  backLabel(fallback) {
+    const h = App._hist[App._hist.length - 1] || '';
+    if (h.indexOf('#/venue/') === 0) return decodeURIComponent(h.slice(8).split('?')[0].replace(/%27/g, "'"));
+    if (h.indexOf('#/customers') === 0) return 'Customers';
+    if (h.indexOf('#/venues') === 0) return 'Venues';
+    if (h.indexOf('#/schools') === 0) return 'Schools';
+    if (h.indexOf('#/production') === 0) return 'Production';
+    if (h.indexOf('#/invoices') === 0) return 'Invoices';
+    if (h.indexOf('#/customer/') === 0) { const c = Domain.customer(h.slice(11).split('?')[0]); if (c) return c.name; }
+    if (h.indexOf('#/dashboard') === 0) return 'Dashboard';
+    return fallback || 'Back';
+  },
   route() {
     Domain.refreshAll();
     const hash = location.hash || '#/dashboard';
+    if (App._cur && App._cur !== hash) {
+      if (App._popping) App._popping = false;
+      else { App._hist.push(App._cur); if (App._hist.length > 60) App._hist.shift(); }
+    }
+    App._cur = hash;
     const [_, pageRaw, argRaw] = hash.split('/');
     const page = (pageRaw || '').split('?')[0];
     const arg = (argRaw || '').split('?')[0];
@@ -2534,7 +2566,7 @@ Pages.customerDetail = (id) => {
   const dupPairs = Dupes.candidatesFor(c);
   setTimeout(() => Emails.load(id), 60); // fill the email module once the page is on screen
   return `
-    <p><a class="plain" href="#/customers">\u2190 Customers</a></p>
+    <p><a class="plain" style="cursor:pointer" onclick="App.back('#/customers')">\u2190 ${esc(App.backLabel('Customers'))}</a></p>
     <h1>${esc(c.name)}</h1>
     <p class="sub">${c.daughterName ? 'Daughter: <b>' + esc(c.daughterName) + '</b> \u00b7 ' : ''}Customer since ${fmtDateTime(c.createdAt).split(',')[0]}</p>
     ${c.cancelled ? '<div class="note err">\ud83d\udeab <b>Cancelled</b> \u2014 this customer is off the day planners, run sheets and printed sheets. Reinstate them below if they come back.</div>' : ''}
@@ -5676,6 +5708,19 @@ const Gate = {
   // Password page first when opened from the shared web-app link.
   if (Gate.needed()) { Gate.show(); window.__bootDone = true; return; }
   window.addEventListener('hashchange', App.route);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Backspace') return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) {
+      // Backspace only types when there is text to delete \u2014 in an empty
+      // search box it still means "back a page".
+      const texty = t.tagName === 'TEXTAREA' || t.isContentEditable
+        || (t.tagName === 'INPUT' && !/^(checkbox|radio|button|range|file|color)$/.test(t.type || ''));
+      if (!texty || t.value || t.tagName === 'SELECT' || (t.type || '') === 'date') return;
+    }
+    e.preventDefault();
+    App.back();
+  });
   App.route();
   // Served as the Apps Script web app \u2192 refresh from Shopify on every open.
   if (LiveSync.available()) LiveSync.sync();
