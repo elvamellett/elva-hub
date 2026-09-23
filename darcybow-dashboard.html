@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 57)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 58)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5071 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5134 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 57</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 58</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -367,7 +367,10 @@ const Store = {
     DB = Seed.build();
     Store.save();
   },
-  save() { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); },
+  save() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+    try { Staff.maybePush(); } catch (e) { /* boot order / non-fatal */ }
+  },
   reset() { localStorage.removeItem(STORE_KEY); DB = Seed.build(); Store.save(); },
 };
 
@@ -3306,6 +3309,9 @@ const LiveSync = {
     }
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    DB.centralStatus = p.central ? !!p.central.ok : DB.centralStatus;
+    if (p.staffJson) Staff.merge(p.staffJson);
+    else if (p.central && p.central.ok) { Staff._last = ''; Staff.maybePush(); } // central alive but empty \u2014 seed it
     Dupes.reapply();
     applyAddrEdits();
     applyCustEdits();
@@ -3453,6 +3459,15 @@ Pages.importPage = () => {
     ${LiveSync.available() ? `
     <div class="card" style="max-width:780px">
       <p class="small" style="margin-top:0">\u2705 This copy is running as your Google Apps Script web app \u2014 it can pull straight from Shopify, and the booking answers come with the orders.</p>
+      ${DB.centralStatus === true
+        ? '<div class="note ok">\u2601 <b>Central sharing is ON.</b> Notes, invoices, bookings, school decisions, time changes and corrections flow to every laptop and phone automatically on each sync.</div>'
+        : DB.centralStatus === false
+          ? `<div class="note err">\u2601 <b>Central sharing is OFF</b> \u2014 right now each device keeps its own copy of notes, invoices and corrections. One-time fix (5 minutes, on the laptop):<br>
+             1. Open the Apps Script editor \u2192 \u2699 <b>Project Settings</b> \u2192 tick <b>\u201cShow \u2018appsscript.json\u2019 manifest file in editor\u201d</b>.<br>
+             2. Back in the editor, open <b>appsscript.json</b>, replace its contents with the manifest file Claude sent, \u2318S.<br>
+             3. Open <b>Code.gs</b>, pick <b>testEmailSetup</b> in the function dropdown at the top, press <b>\u25b6 Run</b>, and when Google asks, <b>review permissions \u2192 choose your account \u2192 Advanced \u2192 Go to (unsafe) \u2192 Allow</b>.<br>
+             4. Deploy \u2192 Manage deployments \u2192 \u270f \u2192 New version \u2192 Deploy, then press Sync here \u2014 this box turns green.</div>`
+          : ''}
       ${DB.scopeWarning ? `<div class="note err">\u26a0 ${esc(DB.scopeWarning)}</div>` : ''}
       <button class="primary" onclick="LiveSync.sync()">\u27f3 Sync from Shopify now</button>
       <button onclick="LiveSync.report()" style="margin-left:8px">\ud83d\udd0d Booking data report</button>
@@ -4158,6 +4173,54 @@ const Invoices = {
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
         <button class="primary" onclick="document.getElementById('invframe').contentWindow.print()">\u2b07 Download PDF</button></div>`, true);
     document.getElementById('invframe').srcdoc = Invoices.docHtml(inv);
+  },
+};
+
+/* ---- Staff corrections travel to every device: time changes, address and
+   detail edits, cancellations, merges and the override log are bundled into
+   one central file. Store.save pings a debounced push (fingerprint-skipped
+   when nothing changed), and every sync merges the central copy in before
+   the corrections are re-applied \u2014 so a time changed on one phone shows
+   on all eight within a sync. Photos stay per-device (too heavy to ship). */
+const Staff = {
+  _t: null,
+  _last: '',
+  payload() {
+    return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
+      custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [] });
+  },
+  maybePush() {
+    if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
+    clearTimeout(Staff._t);
+    Staff._t = setTimeout(() => {
+      const pl = Staff.payload();
+      if (pl === Staff._last) return;
+      Staff._last = pl;
+      try { google.script.run.saveStaff(Gate.token(), pl); } catch (e) { /* non-fatal */ }
+    }, 2500);
+  },
+  merge(json) {
+    let sj;
+    try { sj = JSON.parse(json); } catch (e) { return; }
+    const byId = new Map((sj.timeEdits || []).map(e => [e.id, e]));
+    for (const e of DB.timeEdits || []) if (!byId.has(e.id)) byId.set(e.id, e);
+    DB.timeEdits = [...byId.values()];
+    const newest = (remote, local) => {
+      const m = Object.assign({}, remote || {});
+      for (const [k, v] of Object.entries(local || {}))
+        if (!m[k] || String(v.at || '') > String(m[k].at || '')) m[k] = v;
+      return m;
+    };
+    DB.addrEdits = newest(sj.addrEdits, DB.addrEdits);
+    DB.custEdits = newest(sj.custEdits, DB.custEdits);
+    const sig = m2 => JSON.stringify([m2.keep, m2.drop]);
+    const seenM = new Set((DB.custMerges || []).map(sig));
+    for (const m2 of sj.custMerges || []) if (!seenM.has(sig(m2))) DB.custMerges.push(m2);
+    const oSig = o => String(o.at) + '|' + String(o.invoiceNo);
+    const seenO = new Set((DB.overrideLog || []).map(oSig));
+    for (const o of sj.overrideLog || []) if (!seenO.has(oSig(o))) DB.overrideLog.push(o);
+    // Self-heal: this device holds corrections the central copy lacks.
+    if (Staff.payload() !== json) { Staff._last = ''; Staff.maybePush(); }
   },
 };
 

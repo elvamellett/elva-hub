@@ -90,7 +90,8 @@ function syncShopify(siteTok) {
       }
     } catch (eScopes) { /* scope probe is best-effort */ }
     var base = 'https://' + store + '/admin/api/2024-10/';
-    var bookingsCsv = '', schoolsJson = '', invoicesJson = '', notesJson = '';
+    var bookingsCsv = '', schoolsJson = '', invoicesJson = '', notesJson = '', staffJson = '';
+    var central = { ok: false, reason: '' };
     try {
       var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
       if (files.hasNext()) bookingsCsv = files.next().getBlob().getDataAsString();
@@ -100,7 +101,13 @@ function syncShopify(siteTok) {
       if (iFiles.hasNext()) invoicesJson = iFiles.next().getBlob().getDataAsString();
       var nFiles = DriveApp.getFilesByName(NOTES_FILE_);
       if (nFiles.hasNext()) notesJson = nFiles.next().getBlob().getDataAsString();
-    } catch (eDrive) { /* Drive not authorised yet — sync still works without it */ }
+      var stFiles = DriveApp.getFilesByName(STAFF_FILE_);
+      if (stFiles.hasNext()) staffJson = stFiles.next().getBlob().getDataAsString();
+      central.ok = true; // Drive answered — central sharing is live
+    } catch (eDrive) {
+      // Drive not authorised yet — sync still works, each device on its own
+      central.reason = String((eDrive && eDrive.message) || eDrive);
+    }
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
@@ -110,6 +117,8 @@ function syncShopify(siteTok) {
       schoolsJson: schoolsJson,
       invoicesJson: invoicesJson,
       notesJson: notesJson,
+      staffJson: staffJson,
+      central: central,
       scopeWarning: scopeWarning,
       syncedAt: new Date().toISOString(),
     });
@@ -173,6 +182,24 @@ function saveBookingsCsv(siteTok, text) {
 var SCHOOLS_FILE_ = 'darcybow-schools.json';
 var INVOICES_FILE_ = 'darcybow-invoices.json';
 var NOTES_FILE_ = 'darcybow-notes.json';
+var STAFF_FILE_ = 'darcybow-staff.json';
+
+/**
+ * Stores the staff-made corrections centrally (time changes, address and
+ * detail edits, cancellations, merges, override log) so every phone and
+ * laptop opening the dashboard stays in step on event day.
+ */
+function saveStaff(siteTok, json) {
+  gate_(siteTok);
+  try {
+    var files = DriveApp.getFilesByName(STAFF_FILE_);
+    if (files.hasNext()) files.next().setContent(json);
+    else DriveApp.createFile(STAFF_FILE_, json, 'application/json');
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
 
 /**
  * Stores per-customer email notes centrally (keyed by customer email), so
