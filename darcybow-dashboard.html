@@ -183,9 +183,11 @@
      menu row; everything stacks, touch targets grow, and no page needs
      sideways scrolling (wide tables scroll inside their own frame). ---- */
   @media (max-width: 760px) {
-    html, body { overflow-x: hidden; max-width: 100vw; touch-action: pan-y pinch-zoom; }
-    #main { overflow-x: hidden; max-width: 100vw; box-sizing: border-box; }
-    #main .card { max-width: 100%; box-sizing: border-box; }
+    html, body { overflow: hidden; max-width: 100vw; height: 100vh; height: 100dvh; touch-action: pan-y pinch-zoom; }
+    #main { flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; max-width: 100vw; box-sizing: border-box; }
+    #main .card { max-width: 100%; box-sizing: border-box; min-width: 0; }
+    #main .cols2 > *, #main .flex > *, #main details.card > * { min-width: 0; }
+    #invpg1 { max-width: 100%; }
     #main h1, #main .sub, .dl-row, .dl-row > *, .qa, .qa * { overflow-wrap: anywhere; }
     td, th { overflow-wrap: anywhere; }
     body { flex-direction: column; }
@@ -283,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 76)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 77)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5999 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6004 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -297,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 76</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 77</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -4218,10 +4220,13 @@ const Invoices = {
     const W = 794, H = 1123; // an A4 page at screen resolution
     const w = host.clientWidth || 520;
     const sc = w / W;
+    host.style.position = 'relative';
     host.style.height = Math.ceil(H * sc) + 'px';
     const f = document.createElement('iframe');
     f.setAttribute('scrolling', 'no');
-    f.style.cssText = 'width:' + W + 'px; height:' + H + 'px; border:0; transform: scale(' + sc + '); transform-origin: top left; pointer-events: none; display: block;';
+    // absolute: the 794px-wide frame is scaled to fit visually and takes NO
+    // layout width, so it can never widen the page on a phone.
+    f.style.cssText = 'position:absolute; left:0; top:0; width:' + W + 'px; height:' + H + 'px; border:0; transform: scale(' + sc + '); transform-origin: top left; pointer-events: none; display: block;';
     f.srcdoc = doc;
     host.innerHTML = '';
     host.appendChild(f);
