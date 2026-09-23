@@ -43,16 +43,52 @@ function doGet() {
       if (m && parseInt(m[1], 10) > bestN) { bestN = parseInt(m[1], 10); best = f; }
     }
   } catch (eDrive) { /* Drive not authorised yet — the pasted copy serves */ }
-  var out;
+  var out = null;
   try {
-    out = best ? HtmlService.createHtmlOutput(best.getBlob().getDataAsString('UTF-8'))
-               : HtmlService.createHtmlOutputFromFile('index');
-  } catch (eRead) {
-    out = HtmlService.createHtmlOutputFromFile('index');
-  }
+    if (best) out = HtmlService.createHtmlOutput(wrapDashboard_(best.getBlob().getDataAsString('UTF-8')));
+  } catch (eRead) { out = null; }
+  if (!out) out = HtmlService.createHtmlOutputFromFile('index');
   return out
     .setTitle('Darcybow — Customers & Events')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/** The dashboard file goes to the browser as base64 (plain letters/digits
+ * only) and a tiny loader unpacks it there. Google's HTML compiler mangled
+ * a token in the raw file once it grew large — base64 gives it nothing
+ * it can touch, no matter what future versions of the file contain. */
+function wrapDashboard_(raw) {
+  var b64 = Utilities.base64Encode(raw, Utilities.Charset.UTF_8);
+  var parts = [];
+  for (var i = 0; i < b64.length; i += 4000) parts.push('"' + b64.slice(i, i + 4000) + '"');
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' +
+    '<div id="df-boot" style="font:15px sans-serif;color:#666;padding:24px">Loading the dashboard…</div>' +
+    '<script id="df-loader">\n' +
+    'var DF_B64 =\n' + parts.join(' +\n') + ';\n' +
+    '(function () {\n' +
+    '  try {\n' +
+    '    var doc = new DOMParser().parseFromString(atob(DF_B64), "text/html");\n' +
+    '    DF_B64 = null;\n' +
+    '    if (doc.title) document.title = doc.title;\n' +
+    '    var hn = doc.head.querySelectorAll("style,link,meta");\n' +
+    '    for (var i = 0; i < hn.length; i++) document.head.appendChild(document.importNode(hn[i], true));\n' +
+    '    var boot = document.getElementById("df-boot");\n' +
+    '    var kids = Array.prototype.slice.call(doc.body.childNodes);\n' +
+    '    for (var j = 0; j < kids.length; j++) document.body.appendChild(document.importNode(kids[j], true));\n' +
+    '    if (boot && boot.parentNode) boot.parentNode.removeChild(boot);\n' +
+    '    var ss = Array.prototype.slice.call(document.body.querySelectorAll("script"));\n' +
+    '    for (var k = 0; k < ss.length; k++) {\n' +
+    '      if (ss[k].id === "df-loader") continue;\n' +
+    '      var s = document.createElement("script");\n' +
+    '      s.textContent = ss[k].textContent;\n' +
+    '      ss[k].parentNode.replaceChild(s, ss[k]);\n' +
+    '    }\n' +
+    '  } catch (e) {\n' +
+    '    document.body.innerHTML = \'<div style="background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 sans-serif">' +
+    '<b>The dashboard could not unpack.</b> \' + String(e && e.message || e).replace(/</g, "&lt;") + \' \u2014 screenshot this and send it to Claude.</div>\';\n' +
+    '  }\n' +
+    '})();\n' +
+    '</script></body></html>';
 }
 
 /* ================== DASHBOARD PASSWORD — CHANGE THIS ==================
