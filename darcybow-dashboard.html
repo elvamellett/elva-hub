@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 65)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 66)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5824 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5889 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 65</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 66</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2139,7 +2139,11 @@ function slotBoard(venue, day) {
    placed (Elaine: order said Castlemartyr, she was seen and bought at
    Cashel Palace) \u2014 the booking says where she actually was. Falls back
    to the latest order when there are no bookings. */
-function saleVenueOf(customerId, refDate) {
+function saleVenueOf(inv) {
+  if (inv.venueOverride && inv.venueOverride.venue)
+    return { event: inv.venueOverride.venue, date: inv.venueOverride.date || '' };
+  const customerId = inv.customerId;
+  const refDate = inv.issueDate || inv.createdAt;
   const appts = DB.appointments.filter(a => a.customerId === customerId && a.eventHotel && a.appointmentAt);
   const ref = new Date(String(refDate || todayStr()).slice(0, 10) + 'T00:00').getTime();
   let best = null, bestD = Infinity;
@@ -4158,6 +4162,19 @@ const Invoices = {
   },
   /* One tap on the Invoices page: paid today (or the date typed next to the
      button), with how they paid. */
+  /* Puts a sale under a chosen event day by hand \u2014 for walk-ins and
+     moved customers whose orders/bookings say nothing useful. Shared, so
+     every device sees the move. */
+  setVenue(invId, val) {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    const inv = (DB.invoices || []).find(i => i.id === invId);
+    if (!inv) return;
+    if (!val) delete inv.venueOverride;
+    else { const p2 = val.split('||'); inv.venueOverride = { venue: p2[0], date: p2[1] || '' }; }
+    inv.updatedAt = nowIso();
+    Store.save(); Invoices._push(); App.route();
+    UI.toast(val ? 'Moved under ' + val.split('||')[0] + '.' : 'Back to working the venue out automatically.');
+  },
   markPaidOn(invId) {
     if (!Invoices.unlocked() && !Invoices.unlock()) return;
     const inv = (DB.invoices || []).find(i => i.id === invId);
@@ -4747,7 +4764,7 @@ const Production = {
         (Production.isDress(l.title) ? dressLines : accessories).push(l);
       }
       if (!dressLines.length) continue;
-      const sv = saleVenueOf(inv.customerId, inv.issueDate || inv.createdAt);
+      const sv = saleVenueOf(inv);
       out.push({ inv, name: (c && c.name) || inv.contact.name, daughter: (c && c.daughterName) || '',
         phone: inv.contact.phone || (c && c.phone) || '', email: inv.contact.email || (c && c.email) || '',
         dressLines, accessories, event: sv.event, eventDate: sv.date,
@@ -5081,88 +5098,136 @@ Pages.production = () => {
       </div>`).join('') || '<div class="card muted">No dresses sold yet \u2014 each saved invoice adds its dress lines here.</div>'}`}`;
 };
 
-/* ---- Invoices page: every invoice ever created, grouped by venue, with
-   paid / not-paid at a glance, one-tap mark-as-paid (dated), production
-   tags, and 30-day payment reminders. ---- */
+/* ---- Invoices page: every invoice ever created, one drop-down per
+   venue with its event days, paid / deposit / sent counts at a glance,
+   one-tap mark-as-paid (dated), production tags and 30-day payment
+   reminders. ---- */
 let invPaidFilter = ''; // '' all \u00b7 'paid' \u00b7 'unpaid'
+let invVenueFilter = ''; // '' = all venues
+const invOpenVenues = new Set(); // which venue drop-downs are open right now
 Pages.invoices = () => {
   if (!Invoices.unlocked()) return `
     <h1>Invoices</h1>
     <div class="card" style="max-width:520px"><p class="small" style="margin-top:0">The invoice book needs the invoicing passcode.</p>
       <button class="primary" onclick="if(Invoices.unlock())App.route()">\ud83d\udd13 Enter passcode</button></div>`;
   const empties = (DB.invoices || []).filter(i => Invoices.isEmpty(i));
-  const rows = (DB.invoices || []).filter(i => !Invoices.isEmpty(i)).map(inv => {
+  const all = (DB.invoices || []).filter(i => !Invoices.isEmpty(i)).map(inv => {
     const c = Domain.customer(inv.customerId);
     const t = Invoices.totals(inv);
     const paid = Invoices.isPaid(inv);
-    const sv = saleVenueOf(inv.customerId, inv.issueDate || inv.createdAt);
+    const sv = saleVenueOf(inv);
     const venue = (String(sv.event).split(/\s+\u2014\s+/)[1] || sv.event || '').trim();
     const days = Invoices.daysSinceSent(inv);
+    // The dress she went for \u2014 and if no line looks like a dress (odd
+    // titles, accessory-only invoices), show whatever IS on the invoice
+    // rather than a dash.
+    const titled = (inv.lines || []).filter(l => l.title);
+    const dl = titled.filter(l => Production.isDress(l.title));
     return { inv, c, t, paid, days,
       venue: venue || 'No event on file',
-      eventDate: sv.date,
+      eventDate: sv.date || '',
       overdue: !paid && days >= 30,
-      dresses: [...new Set((inv.lines || []).filter(l => l.title && Production.isDress(l.title))
-        .map(l => dressBaseName(l.title).replace(/ Communion Dress$/i, '')))].join(' + ') };
-  }).filter(r => !invPaidFilter || (invPaidFilter === 'paid') === r.paid);
-  const all = (DB.invoices || []).filter(i => !Invoices.isEmpty(i));
-  const paidN = all.filter(i => Invoices.isPaid(i)).length;
-  const owedCents = all.filter(i => !Invoices.isPaid(i))
-    .reduce((s2, i) => s2 + Math.max(0, Invoices.totals(i).remainderCents), 0);
+      sent: !!inv.sentAt,
+      dresses: [...new Set((dl.length ? dl : titled).map(l => dressBaseName(l.title).replace(/ Communion Dress$/i, '')))].join(' + ') };
+  });
+  const paidN = all.filter(r => r.paid).length;
+  const owedCents = all.filter(r => !r.paid).reduce((s2, r) => s2 + Math.max(0, r.t.remainderCents), 0);
+  // Money actually taken: full total for paid-up sales, the deposit so far
+  // for the rest.
+  const madeCents = all.reduce((s2, r) => s2 + (r.paid ? Math.max(r.t.paidCents, r.t.linesTotal) : Math.max(0, r.t.paidCents)), 0);
+  const venues = [...new Set(all.map(r => r.venue))].sort();
+  const rows = all.filter(r => (!invPaidFilter || (invPaidFilter === 'paid') === r.paid)
+    && (!invVenueFilter || r.venue === invVenueFilter));
+  // Event-day options for the "move this sale" picker.
+  const dayOpts = [];
+  for (const g of venueGroups()) for (const d of g.dates) dayOpts.push({ venue: g.venue, date: d });
+  const picker = r => `<select class="mini" style="max-width:170px" onchange="Invoices.setVenue('${r.inv.id}', this.value)"
+      title="Which event does this sale belong to? Picking one moves the invoice under that venue on every device.">
+      <option value="">\ud83d\udccd ${r.inv.venueOverride ? 'work out automatically' : esc(r.venue)}</option>
+      ${dayOpts.map(o => `<option value="${esc(o.venue)}||${o.date}" ${r.inv.venueOverride && r.inv.venueOverride.venue === o.venue && r.inv.venueOverride.date === o.date ? 'selected' : ''}>${esc(o.venue)} \u2014 ${fmtWd(o.date)}</option>`).join('')}
+    </select>`;
+  const table = sr => `<div class="tablewrap" style="margin-top:6px"><table>
+    <thead><tr><th>Invoice</th><th>Customer</th><th>Dress</th><th class="num">Total</th><th>Status</th><th>Production</th><th style="min-width:230px">Mark paid / remind</th></tr></thead>
+    <tbody>${sr.map(r => `<tr${r.overdue ? ' style="background:var(--red-bg)"' : ''}>
+      <td class="small"><a class="plain" style="cursor:pointer" onclick="Invoices.previewFor('${r.inv.customerId}')"><b>${esc(r.inv.code + '-' + r.inv.seq)}</b></a>
+        <br><span class="muted">${r.inv.sentAt ? '\u2709 sent ' + fmtDate(String(r.inv.sentAt).slice(0, 10)) : 'created ' + fmtDate(String(r.inv.createdAt || '').slice(0, 10))}</span></td>
+      <td><a class="plain" href="#/customer/${r.inv.customerId}"><b>${esc((r.c && r.c.name) || r.inv.contact.name)}</b></a>${r.c && r.c.daughterName ? `<br><span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}</td>
+      <td class="small"><b>${esc(r.dresses || '\u2014')}</b>${r.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
+      <td class="num">${eurPlain(r.t.linesTotal)}</td>
+      <td>${r.paid
+        ? `<span class="badge b-green">\u2713 PAID</span><br><span class="small muted">${r.inv.paidDate ? fmtDate(r.inv.paidDate) : ''}${r.inv.paidMethod || r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.paidMethod || r.inv.depositMethod) : ''}</span>`
+        : r.t.paidCents > 0
+          ? `<span class="badge b-amber">DEP ${eurPlain(r.t.paidCents)}</span><br><span class="small muted">owes ${eurPlain(Math.max(0, r.t.remainderCents))}${r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.depositMethod) : ''}</span>`
+          : '<span class="badge b-red">NOT PAID</span>'}
+        ${r.overdue ? `<br><span class="badge b-red" title="${r.days} days since the invoice \u2014 time for a reminder">\u23f0 ${r.days} days</span>` : ''}</td>
+      <td><button class="small${r.inv.inProduction ? ' primary' : ''}" onclick="Invoices.toggleProduction('${r.inv.id}')">${r.inv.inProduction ? '\ud83d\udce6 In production' : '\ud83d\udce6 Not sent yet'}</button></td>
+      <td>${r.paid
+        ? `<button class="small" onclick="Invoices.unmarkPaid('${r.inv.id}')">\u21a9 Unmark paid</button>`
+        : `<div class="flex" style="gap:6px; flex-wrap:wrap; align-items:center">
+            <input type="date" id="pd-${r.inv.id}" class="mini" value="${todayStr()}" style="width:135px">
+            <select id="pm-${r.inv.id}" class="mini" style="width:92px">
+              <option value="">how?</option><option>Cash</option><option>SumUp</option><option>Shopify</option></select>
+            <button class="small primary" onclick="Invoices.markPaidOn('${r.inv.id}')">\u2713 Paid</button>
+            ${r.overdue ? `<button class="small danger" onclick="Invoices.reminderModal('${r.inv.id}')">\u23f0 Send reminder</button>` : ''}
+          </div>`}
+        <div style="margin-top:5px">${picker(r)}</div></td>
+    </tr>`).join('')}</tbody></table></div>`;
   const byVenue = new Map();
   for (const r of rows) {
     if (!byVenue.has(r.venue)) byVenue.set(r.venue, []);
     byVenue.get(r.venue).push(r);
   }
+  const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
   const cards = [...byVenue.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([venue, vr]) => {
-    vr.sort((a, b) => (a.paid !== b.paid) ? (a.paid ? 1 : -1) : ((a.inv.createdAt || '') < (b.inv.createdAt || '') ? -1 : 1));
-    const unpaid = vr.filter(x => !x.paid).length;
-    return `<div class="card" style="margin-bottom:14px">
-      <div class="flex" style="align-items:center; flex-wrap:wrap">
+    const st = { paid: 0, dep: 0, none: 0, sent: 0 };
+    for (const r of vr) { if (r.paid) st.paid++; else if (r.t.paidCents > 0) st.dep++; else st.none++; if (r.sent) st.sent++; }
+    const dates = [...new Set(vr.map(r => r.eventDate).filter(Boolean))].sort();
+    const venc = encodeURIComponent(venue);
+    const open = invOpenVenues.has(venc) || invVenueFilter === venue || byVenue.size === 1;
+    const secs = new Map();
+    for (const r of vr) { const k = r.eventDate || ''; if (!secs.has(k)) secs.set(k, []); secs.get(k).push(r); }
+    const sections = [...secs.entries()].sort((a, b) => (a[0] || '9999').localeCompare(b[0] || '9999')).map(([d, sr]) => {
+      sr.sort((a, b) => (a.paid !== b.paid) ? (a.paid ? 1 : -1) : ((a.inv.createdAt || '') < (b.inv.createdAt || '') ? -1 : 1));
+      const head = secs.size > 1 || d
+        ? `<div class="small" style="font-weight:700; margin:12px 0 0">\ud83d\udcc5 ${d ? dayName(d) + ' \u00b7 ' + fmtDate(d) : 'No date on file'} <span class="muted" style="font-weight:400">\u00b7 ${sr.length} invoice${sr.length === 1 ? '' : 's'}</span></div>`
+        : '';
+      return head + table(sr);
+    }).join('');
+    return `<details class="card" style="margin-bottom:14px" ${open ? 'open' : ''}
+      ontoggle="if (this.open) invOpenVenues.add('${venc}'); else invOpenVenues.delete('${venc}')">
+      <summary style="cursor:pointer">
         <b style="font-size:1.05rem">\ud83d\udccd ${esc(venue)}</b>
+        ${dates.length ? `<span class="small muted">${dates.map(fmtWd).join(' + ')}</span>` : ''}
         <span class="badge b-grey">${vr.length} invoice${vr.length === 1 ? '' : 's'}</span>
-        ${unpaid ? `<span class="badge b-amber">${unpaid} not paid</span>` : '<span class="badge b-green">\u2713 all paid</span>'}
-      </div>
-      <div class="tablewrap" style="margin-top:8px"><table>
-        <thead><tr><th>Invoice</th><th>Customer</th><th>Dress</th><th class="num">Total</th><th>Status</th><th>Production</th><th style="min-width:230px">Mark paid / remind</th></tr></thead>
-        <tbody>${vr.map(r => `<tr${r.overdue ? ' style="background:var(--red-bg)"' : ''}>
-          <td class="small"><a class="plain" style="cursor:pointer" onclick="Invoices.previewFor('${r.inv.customerId}')"><b>${esc(r.inv.code + '-' + r.inv.seq)}</b></a>
-            <br><span class="muted">${r.inv.sentAt ? '\u2709 sent ' + fmtDate(String(r.inv.sentAt).slice(0, 10)) : 'created ' + fmtDate(String(r.inv.createdAt || '').slice(0, 10))}</span></td>
-          <td><a class="plain" href="#/customer/${r.inv.customerId}"><b>${esc((r.c && r.c.name) || r.inv.contact.name)}</b></a>${r.c && r.c.daughterName ? `<br><span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}</td>
-          <td class="small"><b>${esc(r.dresses || '\u2014')}</b>${r.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
-          <td class="num">${eurPlain(r.t.linesTotal)}</td>
-          <td>${r.paid
-            ? `<span class="badge b-green">\u2713 PAID</span><br><span class="small muted">${r.inv.paidDate ? fmtDate(r.inv.paidDate) : ''}${r.inv.paidMethod || r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.paidMethod || r.inv.depositMethod) : ''}</span>`
-            : r.t.paidCents > 0
-              ? `<span class="badge b-amber">DEP ${eurPlain(r.t.paidCents)}</span><br><span class="small muted">owes ${eurPlain(Math.max(0, r.t.remainderCents))}${r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.depositMethod) : ''}</span>`
-              : '<span class="badge b-red">NOT PAID</span>'}
-            ${r.overdue ? `<br><span class="badge b-red" title="${r.days} days since the invoice \u2014 time for a reminder">\u23f0 ${r.days} days</span>` : ''}</td>
-          <td><button class="small${r.inv.inProduction ? ' primary' : ''}" onclick="Invoices.toggleProduction('${r.inv.id}')">${r.inv.inProduction ? '\ud83d\udce6 In production' : '\ud83d\udce6 Not sent yet'}</button></td>
-          <td>${r.paid
-            ? `<button class="small" onclick="Invoices.unmarkPaid('${r.inv.id}')">\u21a9 Unmark paid</button>`
-            : `<div class="flex" style="gap:6px; flex-wrap:wrap; align-items:center">
-                <input type="date" id="pd-${r.inv.id}" class="mini" value="${todayStr()}" style="width:135px">
-                <select id="pm-${r.inv.id}" class="mini" style="width:92px">
-                  <option value="">how?</option><option>Cash</option><option>SumUp</option><option>Shopify</option></select>
-                <button class="small primary" onclick="Invoices.markPaidOn('${r.inv.id}')">\u2713 Paid</button>
-                ${r.overdue ? `<button class="small danger" onclick="Invoices.reminderModal('${r.inv.id}')">\u23f0 Send reminder</button>` : ''}
-              </div>`}</td>
-        </tr>`).join('')}</tbody></table></div>
-    </div>`;
+        ${st.paid ? `<span class="badge b-green">${st.paid} paid</span>` : ''}
+        ${st.dep ? `<span class="badge b-amber">${st.dep} deposit paid</span>` : ''}
+        ${st.none ? `<span class="badge b-red">${st.none} nothing yet</span>` : ''}
+        <span class="badge b-blue">\u2709 ${st.sent} sent</span>
+        ${!st.dep && !st.none && vr.length ? '<span class="badge b-green">\u2713 all paid</span>' : ''}
+      </summary>
+      ${sections}
+    </details>`;
   }).join('');
   return `
     <h1>Invoices <span class="muted" style="font-size:1rem; font-weight:400">${all.length}</span></h1>
-    <p class="sub">Every invoice, grouped by venue \u2014 who's paid, how, what's gone into production. Not-paid rows float to the top; \u23f0 marks 30+ days without payment.</p>
+    <p class="sub">One drop-down per venue \u2014 tap it open for the invoices, split by event day. Not-paid rows float to the top; \u23f0 marks 30+ days without payment.</p>
     <div class="statrow">
       <div class="stat"><div class="l">Invoices</div><div class="v">${all.length}</div></div>
+      <div class="stat good"><div class="l">Taken so far</div><div class="v">${eurPlain(madeCents)}</div></div>
       <div class="stat good"><div class="l">Paid in full</div><div class="v">${paidN}</div></div>
       <div class="stat"><div class="l">Not paid yet</div><div class="v">${all.length - paidN}</div></div>
       <div class="stat"><div class="l">Still owed</div><div class="v">${eurPlain(owedCents)}</div></div>
     </div>
-    <div class="chips" style="margin-bottom:10px">
-      <button class="chip ${invPaidFilter === '' ? 'on' : ''}" onclick="invPaidFilter = ''; App.route()">All</button>
-      <button class="chip ${invPaidFilter === 'unpaid' ? 'on' : ''}" onclick="invPaidFilter = 'unpaid'; App.route()">\u26a0 Not paid (${all.length - paidN})</button>
-      <button class="chip ${invPaidFilter === 'paid' ? 'on' : ''}" onclick="invPaidFilter = 'paid'; App.route()">\u2713 Paid (${paidN})</button>
+    <div class="flex" style="align-items:center; flex-wrap:wrap; margin-bottom:10px">
+      <div class="chips" style="margin:0">
+        <button class="chip ${invPaidFilter === '' ? 'on' : ''}" onclick="invPaidFilter = ''; App.route()">All</button>
+        <button class="chip ${invPaidFilter === 'unpaid' ? 'on' : ''}" onclick="invPaidFilter = 'unpaid'; App.route()">\u26a0 Not paid (${all.length - paidN})</button>
+        <button class="chip ${invPaidFilter === 'paid' ? 'on' : ''}" onclick="invPaidFilter = 'paid'; App.route()">\u2713 Paid (${paidN})</button>
+      </div>
+      <select class="bigselect" onchange="invVenueFilter = this.value; App.route()" title="Show one venue only">
+        <option value="">All venues</option>
+        ${venues.map(v2 => `<option ${invVenueFilter === v2 ? 'selected' : ''}>${esc(v2)}</option>`).join('')}
+      </select>
     </div>
     ${cards || (all.length ? '<div class="card muted">Nothing under this filter.</div>'
       : '<div class="card muted">No invoices yet \u2014 every invoice you create appears here the moment it\u2019s saved.</div>')}
