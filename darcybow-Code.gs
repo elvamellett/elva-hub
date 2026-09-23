@@ -25,8 +25,32 @@
  * booking answers along — no separate Appointly connection needed.
  */
 
+/* The dashboard page is served from Google Drive when a file named like
+ * DARCYBOW-VERSION-58.html sits there: updates are a drag-and-drop into
+ * drive.google.com — no more pasting a 300KB file into this editor (big
+ * pastes were getting corrupted mid-file on the way in). The HIGHEST
+ * version number wins, so just drop the new file in; old ones can stay.
+ * If Drive isn't authorised (or holds no such file), the copy pasted into
+ * index.html serves as before. */
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index')
+  var best = null, bestN = -1;
+  try {
+    var files = DriveApp.searchFiles("title contains 'DARCYBOW-VERSION-'");
+    while (files.hasNext()) {
+      var f = files.next();
+      if (f.isTrashed()) continue;
+      var m = String(f.getName()).match(/^DARCYBOW-VERSION-(\d+)\.html$/i);
+      if (m && parseInt(m[1], 10) > bestN) { bestN = parseInt(m[1], 10); best = f; }
+    }
+  } catch (eDrive) { /* Drive not authorised yet — the pasted copy serves */ }
+  var out;
+  try {
+    out = best ? HtmlService.createHtmlOutput(best.getBlob().getDataAsString('UTF-8'))
+               : HtmlService.createHtmlOutputFromFile('index');
+  } catch (eRead) {
+    out = HtmlService.createHtmlOutputFromFile('index');
+  }
+  return out
     .setTitle('Darcybow — Customers & Events')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
