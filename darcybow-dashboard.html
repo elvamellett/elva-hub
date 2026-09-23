@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 68)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 69)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5901 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5935 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 68</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 69</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2631,6 +2631,7 @@ Pages.customerDetail = (id) => {
   const canEditNotes = Invoices.unlocked();
   const dupPairs = Dupes.candidatesFor(c);
   setTimeout(() => Emails.load(id), 60); // fill the email module once the page is on screen
+  setTimeout(() => Invoices.mountPage1(id), 80); // draw the invoice's first page
   return `
     <p><a class="plain" style="cursor:pointer" onclick="App.back('#/customers')">\u2190 ${esc(App.backLabel('Customers'))}</a></p>
     <h1>${esc(c.name)}</h1>
@@ -2708,6 +2709,20 @@ Pages.customerDetail = (id) => {
               <ul>${(qa.a || '\u2014').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')
               : '<div class="small muted">Event-day slot \u2014 no booking questions.</div>'}
           </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet \u2014 they appear here once the customer books through the site.</p>'}
+        ${(() => {
+          const inv = Invoices.invFor(c.id);
+          if (!inv || Invoices.isEmpty(inv)) return '';
+          if (!Invoices.unlocked()) return `<div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
+            <button class="small primary" onclick="if(Invoices.unlock())App.route()">\ud83d\udd13 Show the invoice here (passcode)</button></div>`;
+          return `<div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
+            <div class="flex" style="align-items:center; flex-wrap:wrap">
+              <b>\ud83e\uddfe The invoice</b><span class="small muted">page 1 \u2014 dress, size &amp; payment</span>
+              <span style="flex:1"></span>
+              <button class="small" onclick="Invoices.previewFor('${c.id}')">\ud83d\udda8 Full preview / print</button>
+            </div>
+            <div id="invpg1" style="margin-top:8px; overflow:hidden; border:1px solid var(--line); border-radius:8px"></div>
+          </div>`;
+        })()}
         ${AppointlyService.isLive() || DB.importInfo ? '' : '<div class="seam" style="margin-bottom:0">\ud83d\udcc5 Appointly \u2014 sample data. Bring in the real booking answers on the <a class="plain" href="#/import">Connect data</a> page.</div>'}
       </div>
       <div>
@@ -4142,6 +4157,25 @@ const Invoices = {
     Store.save(); Invoices._push();
     App.go('#/customer/' + custId);
     UI.toast('Invoice deleted \u2014 dress register updated.');
+  },
+  /* The ACTUAL invoice (page 1 only \u2014 dress, size, payment; the T&Cs
+     page stays off screen), scaled to fit its card on the customer page. */
+  mountPage1(custId) {
+    const host = document.getElementById('invpg1');
+    const inv = Invoices.invFor(custId);
+    if (!host || !inv) return;
+    const doc = Invoices.docHtml(inv, false).replace('</body>',
+      '<style>.pg { margin: 0 !important; box-shadow: none !important; } .pg + .pg { display: none !important; } body { background: #fff !important; }</style></body>');
+    const W = 794, H = 1123; // an A4 page at screen resolution
+    const w = host.clientWidth || 520;
+    const sc = w / W;
+    host.style.height = Math.ceil(H * sc) + 'px';
+    const f = document.createElement('iframe');
+    f.setAttribute('scrolling', 'no');
+    f.style.cssText = 'width:' + W + 'px; height:' + H + 'px; border:0; transform: scale(' + sc + '); transform-origin: top left; pointer-events: none; display: block;';
+    f.srcdoc = doc;
+    host.innerHTML = '';
+    host.appendChild(f);
   },
   markPaid(custId, flag) {
     const inv = Invoices.invFor(custId);
