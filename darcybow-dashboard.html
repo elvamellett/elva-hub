@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 69)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 70)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5935 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5945 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 69</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 70</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2273,7 +2273,7 @@ Pages.venueDetail = (venueName) => {
             <span class="small muted">one dress per school</span>
           </div>
           ${multi.map(w => `<div style="border-left:4px solid var(--red); padding:5px 10px; margin-top:8px; background:var(--red-bg); border-radius:6px">
-            <b>${esc(w.name)}</b> <span class="badge b-red">${w.girls.length} girls</span>${noneBadge(w)}
+            <b>${esc(w.name)}</b> <span class="badge b-red">${w.girls.length} girls</span>${(w.sameBlock || []).map(sb => ` <span class="badge b-red">\u26a0 SAME ${sb.hour}:00 SLOT \u2014 in together!</span>`).join('')}${noneBadge(w)}
             <div class="small" style="margin-top:1px">${girlsLine(w)}</div>
             ${takenLine(w)}
           </div>`).join('')}
@@ -2422,6 +2422,15 @@ function schoolWatch(venue, day) {
   }
   const out = [...map.values()].map(g => {
     g.girls.sort((x, y) => (x.time || '99') < (y.time || '99') ? -1 : 1);
+    // Two girls from the SAME school in the SAME appointment block: both
+    // families are in at once \u2014 the riskiest overlap of all.
+    const byHour = {};
+    for (const x of g.girls) {
+      const h = x.time ? String(x.time).slice(0, 2) : '';
+      if (h) (byHour[h] = byHour[h] || []).push(x);
+    }
+    g.sameBlock = Object.entries(byHour).filter(e2 => e2[1].length > 1)
+      .map(e2 => ({ hour: e2[0], girls: e2[1] }));
     return Object.assign(g, { taken: g.key === '(none)' ? [] : takenForSchoolKey(g.key) });
   });
   // Danger first: schools sending several girls, then schools with dresses
@@ -5736,6 +5745,7 @@ const Actions = {
       ${multi.length ? `<h2>\u26a0 2 OR MORE GIRLS TODAY</h2>
         ${multi.map(w => `<div class="sch hot">
           <div class="nm">${esc(w.name)} <span class="cnt">\u2014 ${w.girls.length} girls</span></div>
+          ${(w.sameBlock || []).map(sb => `<div style="color:#b3261e; font-weight:800">\u26a0 SAME ${sb.hour}:00 SLOT: ${sb.girls.map(x => esc(x.kid || x.c.name)).join(' + ')} \u2014 in at the same time!</div>`).join('')}
           <div class="g">${girls(w)}</div>
           ${takenTable(w)}
         </div>`).join('')}` : ''}
