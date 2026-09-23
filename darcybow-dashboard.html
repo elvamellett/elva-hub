@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 62)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 63)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5658 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5687 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 62</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 63</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1374,7 +1374,7 @@ const App = {
       ['schools', '\ud83c\udfeb', 'Schools', () => Schools.groups().length],
       ['production', '\ud83e\uddf5', 'Production', () => (typeof Production !== 'undefined' ? Production.entries().length : 0)],
       ['invoices', '\ud83e\uddfe', 'Invoices', () => (typeof Invoices !== 'undefined'
-        ? (DB.invoices || []).filter(i => !Invoices.isPaid(i)).length : 0)],
+        ? (DB.invoices || []).filter(i => !Invoices.isPaid(i) && !Invoices.isEmpty(i)).length : 0)],
       ['import', '\u21ea', 'Connect data'],
     ];
     document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
@@ -1528,7 +1528,7 @@ Pages.customers = () => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.invFor(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
+            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.bought(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
             <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
@@ -2016,7 +2016,7 @@ Pages.venues = () => {
         <div class="vtile" onclick="App.go('#/venue/${encodeURIComponent(v.venue).replace(/'/g, '%27')}')">
           <div class="vtile-date">${v.nextDate ? fmtWd(v.nextDate) + (v.dates.filter(d => d >= todayStr()).length > 1 ? ' \u00b7 +' + (v.dates.filter(d => d >= todayStr()).length - 1) + ' more date' + (v.dates.filter(d => d >= todayStr()).length > 2 ? 's' : '') : '') : 'No upcoming date'}</div>
           <div class="vtile-name">${esc(v.venue)}</div>
-          <div class="vtile-sub">${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} \u00b7 <b>${v.orders.filter(o => Invoices.invFor(o.customerId)).length} bought</b> \u00b7 ${v.occasions.map(oc => UI.eventBadge(oc + ' \u2014 ').split('<br>')[0]).join(' ')}</div>
+          <div class="vtile-sub">${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} \u00b7 <b>${v.orders.filter(o => Invoices.bought(o.customerId)).length} bought</b> \u00b7 ${v.occasions.map(oc => UI.eventBadge(oc + ' \u2014 ').split('<br>')[0]).join(' ')}</div>
         </div>`).join('')}
     </div>`;
 };
@@ -2052,6 +2052,23 @@ function slotBoard(venue, day) {
   return { perHour, hours, capacity, booked: appts.length,
     free: hours.reduce((n, x) => n + x.free, 0) };
 }
+/* Where a sale belongs: the venue of the customer's booking NEAREST the
+   invoice date. A customer can move venue after her Shopify order was
+   placed (Elaine: order said Castlemartyr, she was seen and bought at
+   Cashel Palace) \u2014 the booking says where she actually was. Falls back
+   to the latest order when there are no bookings. */
+function saleVenueOf(customerId, refDate) {
+  const appts = DB.appointments.filter(a => a.customerId === customerId && a.eventHotel && a.appointmentAt);
+  const ref = new Date(String(refDate || todayStr()).slice(0, 10) + 'T00:00').getTime();
+  let best = null, bestD = Infinity;
+  for (const a of appts) {
+    const d = Math.abs(new Date(a.appointmentAt + 'T00:00').getTime() - ref);
+    if (d < bestD) { bestD = d; best = a; }
+  }
+  if (best) return { event: best.eventHotel, date: best.appointmentAt };
+  const latest = Domain.ordersOf(customerId).slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+  return { event: latest ? latest.eventHotel : '', date: latest ? (latest.eventDate || '') : '' };
+}
 Pages.venueDetail = (venueName) => {
   const v = venueGroups().find(x => x.venue === venueName);
   if (!v) return `<p><a class="plain" href="#/venues">\u2190 Venues</a></p><h1>Venue not found</h1>`;
@@ -2079,7 +2096,7 @@ Pages.venueDetail = (venueName) => {
   // Look a customer up by name (or daughter / school) within this venue,
   // and filter to who has / hasn't bought.
   const vq = venueCustQuery.trim().toLowerCase();
-  const boughtCust = new Set(allRowsFull.filter(r => Invoices.invFor(r.c.id)).map(r => r.c.id));
+  const boughtCust = new Set(allRowsFull.filter(r => Invoices.bought(r.c.id)).map(r => r.c.id));
   const allCust = new Set(allRowsFull.map(r => r.c.id));
   const allRows = allRowsFull.filter(r =>
     (!vq || (r.c.name + ' ' + (r.c.daughterName || '') + ' ' + (r.school || '')).toLowerCase().includes(vq))
@@ -2093,7 +2110,7 @@ Pages.venueDetail = (venueName) => {
   const key = r => r.upcoming ? r.upcoming.appointmentAt + 'T' + (r.upcoming.time || '00:00') : (r.last ? r.last.appointmentAt + 'T' + (r.last.time || '00:00') : '');
   const row = (r, timeHtml, appt) => {
     const kid = (appt && apptDaughter(appt)) || r.c.daughterName;
-    const inv = Invoices.invFor(r.c.id);
+    const inv = Invoices.bought(r.c.id);
     return `
     <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
       <div class="vtime">${timeHtml}</div>
@@ -2185,7 +2202,7 @@ Pages.venueDetail = (venueName) => {
             <div class="vtime"><span class="badge b-amber">No slot</span></div>
             <div style="flex:1"><span class="cname">${esc(r.c.name)}</span>${r.c.daughterName ? ` <span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}
               <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}</span></div>
-            <div>${Invoices.invFor(r.c.id)
+            <div>${Invoices.bought(r.c.id)
               ? `<button class="small" onclick="event.stopPropagation(); Invoices.open('${r.c.id}')">\ud83e\uddfe See invoice</button>`
               : `<span class="badge b-amber">Hasn\u2019t bought</span>`}</div>
             <div>${UI.eventBadge(r.o.eventHotel).split('<br>')[0]}</div>
@@ -4028,6 +4045,17 @@ const Invoices = {
     const t = Invoices.totals(inv);
     return !!(inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0));
   },
+  /* An invoice with no line items and nothing owed is an empty draft
+     (opened and saved by accident) \u2014 it stays off the Invoices page and
+     never counts as "bought". */
+  isEmpty(inv) {
+    return Invoices.totals(inv).linesTotal === 0 && !(inv.lines || []).some(l => l.title);
+  },
+  // The invoice that counts as a real purchase, or null.
+  bought(custId) {
+    const inv = Invoices.invFor(custId);
+    return inv && !Invoices.isEmpty(inv) ? inv : null;
+  },
   daysSinceSent(inv) {
     const base = inv.sentAt || inv.createdAt;
     if (!base) return 0;
@@ -4600,11 +4628,10 @@ const Production = {
         (Production.isDress(l.title) ? dressLines : accessories).push(l);
       }
       if (!dressLines.length) continue;
-      const orders = Domain.ordersOf(inv.customerId);
-      const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+      const sv = saleVenueOf(inv.customerId, inv.issueDate || inv.createdAt);
       out.push({ inv, name: (c && c.name) || inv.contact.name, daughter: (c && c.daughterName) || '',
         phone: inv.contact.phone || (c && c.phone) || '', email: inv.contact.email || (c && c.email) || '',
-        dressLines, accessories, event: latest ? latest.eventHotel : '', eventDate: latest ? (latest.eventDate || '') : '',
+        dressLines, accessories, event: sv.event, eventDate: sv.date,
         school: inv.school || (c ? Schools.of(c.id) : '') || '',
         totalCents: t.linesTotal,
         paid: (inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'FULL'
@@ -4868,7 +4895,7 @@ Pages.production = () => {
           const sb = slotBoard(v2.venue, d);
           const dayOrders = v2.orders.filter(o => o.eventDate === d);
           rows.push({ venue: v2.venue, d, sb, n: dayOrders.length,
-            bought: dayOrders.filter(o => Invoices.invFor(o.customerId)).length });
+            bought: dayOrders.filter(o => Invoices.bought(o.customerId)).length });
         }
       }
       rows.sort((a, b) => a.d.localeCompare(b.d));
@@ -4944,21 +4971,22 @@ Pages.invoices = () => {
     <h1>Invoices</h1>
     <div class="card" style="max-width:520px"><p class="small" style="margin-top:0">The invoice book needs the invoicing passcode.</p>
       <button class="primary" onclick="if(Invoices.unlock())App.route()">\ud83d\udd13 Enter passcode</button></div>`;
-  const rows = (DB.invoices || []).map(inv => {
+  const empties = (DB.invoices || []).filter(i => Invoices.isEmpty(i));
+  const rows = (DB.invoices || []).filter(i => !Invoices.isEmpty(i)).map(inv => {
     const c = Domain.customer(inv.customerId);
     const t = Invoices.totals(inv);
     const paid = Invoices.isPaid(inv);
-    const latest = Domain.ordersOf(inv.customerId).slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
-    const venue = latest ? (String(latest.eventHotel).split(/\s+\u2014\s+/)[1] || latest.eventHotel || '').trim() : '';
+    const sv = saleVenueOf(inv.customerId, inv.issueDate || inv.createdAt);
+    const venue = (String(sv.event).split(/\s+\u2014\s+/)[1] || sv.event || '').trim();
     const days = Invoices.daysSinceSent(inv);
     return { inv, c, t, paid, days,
       venue: venue || 'No event on file',
-      eventDate: latest ? (latest.eventDate || '') : '',
+      eventDate: sv.date,
       overdue: !paid && days >= 30,
       dresses: [...new Set((inv.lines || []).filter(l => l.title && Production.isDress(l.title))
         .map(l => dressBaseName(l.title).replace(/ Communion Dress$/i, '')))].join(' + ') };
   }).filter(r => !invPaidFilter || (invPaidFilter === 'paid') === r.paid);
-  const all = (DB.invoices || []);
+  const all = (DB.invoices || []).filter(i => !Invoices.isEmpty(i));
   const paidN = all.filter(i => Invoices.isPaid(i)).length;
   const owedCents = all.filter(i => !Invoices.isPaid(i))
     .reduce((s2, i) => s2 + Math.max(0, Invoices.totals(i).remainderCents), 0);
@@ -5018,7 +5046,8 @@ Pages.invoices = () => {
       <button class="chip ${invPaidFilter === 'paid' ? 'on' : ''}" onclick="invPaidFilter = 'paid'; App.route()">\u2713 Paid (${paidN})</button>
     </div>
     ${cards || (all.length ? '<div class="card muted">Nothing under this filter.</div>'
-      : '<div class="card muted">No invoices yet \u2014 every invoice you create appears here the moment it\u2019s saved.</div>')}`;
+      : '<div class="card muted">No invoices yet \u2014 every invoice you create appears here the moment it\u2019s saved.</div>')}
+    ${empties.length ? `<p class="small muted">${empties.length} empty draft${empties.length === 1 ? '' : 's'} hidden (no lines, nothing owed): ${empties.map(i => `<a class="plain" href="#/customer/${i.customerId}">${esc((Domain.customer(i.customerId) || i.contact).name)}</a>`).join(' \u00b7 ')} \u2014 open the customer to finish or delete them.</p>` : ''}`;
 };
 
 /* ---- Invoice builder page ---- */
