@@ -273,9 +273,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 59)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 60)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5327 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5649 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -286,7 +286,7 @@ setTimeout(function () {
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 59</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 60</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1373,6 +1373,8 @@ const App = {
       ['venues', '\ud83d\udccd', 'Venues'],
       ['schools', '\ud83c\udfeb', 'Schools', () => Schools.groups().length],
       ['production', '\ud83e\uddf5', 'Production', () => (typeof Production !== 'undefined' ? Production.entries().length : 0)],
+      ['invoices', '\ud83e\uddfe', 'Invoices', () => (typeof Invoices !== 'undefined'
+        ? (DB.invoices || []).filter(i => !Invoices.isPaid(i)).length : 0)],
       ['import', '\u21ea', 'Connect data'],
     ];
     document.getElementById('nav').innerHTML = nav.map(([key, icon, label, cnt]) =>
@@ -1381,7 +1383,7 @@ const App = {
     const pages = {
       dashboard: Pages.dashboard, customers: Pages.customers, customer: () => Pages.customerDetail(arg),
       venues: Pages.venues, venue: () => Pages.venueDetail(decodeURIComponent(arg)),
-      schools: Pages.schools, production: Pages.production, import: Pages.importPage, invoice: () => Pages.invoice(arg),
+      schools: Pages.schools, production: Pages.production, invoices: Pages.invoices, import: Pages.importPage, invoice: () => Pages.invoice(arg),
     };
     main.innerHTML = (pages[page] || Pages.dashboard)();
     main.scrollTop = 0;
@@ -2274,7 +2276,7 @@ function takenForSchoolKey(key) {
         const kk = String(i.title).trim().toLowerCase() + '|' + c.name.toLowerCase();
         if (seenT.has(kk)) continue;
         seenT.add(kk);
-        out.push({ dress: i.title, who: c.name, ref: o.reference || 'order', year: '', fromOrder: true });
+        out.push({ dress: dressBaseName(i.title), who: c.name, ref: o.reference || 'order', year: '', fromOrder: true });
       }
     }
   }
@@ -2314,6 +2316,17 @@ let schoolQuery = '';
    an invoice is created (saved) and disappears if the invoice is deleted or
    cancelled. Each communion year is its own book \u2014 the same dress at the
    same school in a different year is never a clash. ---- */
+/* "Romi Communion Dress + Underskirt 3 inc" is the same DRESS as "Romi
+   Communion Dress" \u2014 the underskirt is an accessory. Everything that
+   groups or clash-checks dresses works on the base name; the "+ ..." part
+   surfaces as an extras tag instead. */
+function dressBaseName(title) {
+  return String(title || '').split(/\s*\+\s*/)[0].replace(/\s+inc\.?$/i, '').trim();
+}
+function dressAddons(title) {
+  return String(title || '').split(/\s*\+\s*/).slice(1)
+    .map(x => x.replace(/\s+inc\.?$/i, '').trim()).filter(Boolean);
+}
 const DressRegister = {
   // Only dress lines count \u2014 two girls buying the same hair comb is fine.
   isDress(title) {
@@ -2323,7 +2336,7 @@ const DressRegister = {
   },
   invoiceNo: inv => inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq,
   dressesOf: inv => [...new Set((inv.lines || []).map(l => String(l.title || '').trim())
-    .filter(t => t && DressRegister.isDress(t)))],
+    .filter(t => t && DressRegister.isDress(t)).map(dressBaseName))],
   entries() {
     const out = [];
     for (const inv of DB.invoices || []) {
@@ -2431,7 +2444,7 @@ Pages.schools = () => {
       // real sale), else the dress on her Shopify order.
       for (const m of g.members) {
         const inv = Invoices.invFor(m.c.id);
-        const invDress = inv ? (inv.lines || []).filter(l => l.title && Production.isDress(l.title)).map(l => l.title) : [];
+        const invDress = inv ? (inv.lines || []).filter(l => l.title && Production.isDress(l.title)).map(l => dressBaseName(l.title)) : [];
         m.gotDress = invDress.length ? invDress.join(' + ') : (m.dress ? m.dress.title : '');
         m.ordered = !!invDress.length;
       }
@@ -3998,8 +4011,79 @@ const Invoices = {
     const inv = Invoices.invFor(custId);
     if (!inv) return;
     inv.paidInFull = !!flag; inv.updatedAt = nowIso();
+    if (flag && !inv.paidDate) inv.paidDate = todayStr();
+    if (!flag) inv.paidDate = '';
     Store.save(); Invoices._push(); App.route();
     UI.toast(flag ? 'Marked paid in full.' : 'Marked as not fully paid.');
+  },
+  isPaid(inv) {
+    const t = Invoices.totals(inv);
+    return !!(inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0));
+  },
+  daysSinceSent(inv) {
+    const base = inv.sentAt || inv.createdAt;
+    if (!base) return 0;
+    return Math.floor((Date.now() - new Date(base).getTime()) / 86400000);
+  },
+  /* One tap on the Invoices page: paid today (or the date typed next to the
+     button), with how they paid. */
+  markPaidOn(invId) {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    const inv = (DB.invoices || []).find(i => i.id === invId);
+    if (!inv) return;
+    const d = document.getElementById('pd-' + invId);
+    const m = document.getElementById('pm-' + invId);
+    inv.paidInFull = true;
+    inv.paidDate = (d && d.value) || todayStr();
+    if (m && m.value) inv.paidMethod = m.value;
+    inv.updatedAt = nowIso();
+    Store.save(); Invoices._push(); App.route();
+    UI.toast(inv.contact.name + ' marked paid \u2014 ' + fmtDate(inv.paidDate) + '.');
+  },
+  unmarkPaid(invId) {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    const inv = (DB.invoices || []).find(i => i.id === invId);
+    if (!inv) return;
+    inv.paidInFull = false; inv.paidDate = ''; inv.updatedAt = nowIso();
+    Store.save(); Invoices._push(); App.route();
+    UI.toast('Marked as not fully paid.');
+  },
+  toggleProduction(invId) {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    const inv = (DB.invoices || []).find(i => i.id === invId);
+    if (!inv) return;
+    inv.inProduction = !inv.inProduction; inv.updatedAt = nowIso();
+    Store.save(); Invoices._push(); App.route();
+    UI.toast(inv.inProduction ? 'Tagged \ud83d\udce6 gone into production.' : 'Production tag removed.');
+  },
+  /* Reminder email for an unpaid invoice \u2014 same send machinery as the
+     invoice email, with a gentle-nudge subject and body. */
+  reminderModal(invId) {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    const inv = (DB.invoices || []).find(i => i.id === invId);
+    if (!inv) return;
+    if (!inv.contact.email) { UI.err(new Error('No email on the invoice \u2014 add one in \u201cBill to\u201d first.')); return; }
+    InvDraft = JSON.parse(JSON.stringify(inv)); // sendEmail finds the saved invoice through this
+    const vars = Invoices.emailVars(inv);
+    const days = Invoices.daysSinceSent(inv);
+    const subject = 'Friendly reminder \u2014 invoice ' + vars.invoice_number;
+    const body = 'Hi ' + vars.first_name + ',\n\nJust a friendly reminder about invoice ' + vars.invoice_number
+      + (inv.sentAt ? ' sent ' + fmtDate(String(inv.sentAt).slice(0, 10)) : '')
+      + '.\n\nTotal: ' + vars.total + '\nStill to pay: ' + vars.remainder
+      + '\n\nThe invoice is attached again for handiness. If you have already paid, please ignore this \u2014 and thank you!\n\nWarm regards,\nDarcybow';
+    UI.modal(`
+      <h3>\u23f0 Payment reminder \u2014 ${esc(vars.invoice_number)}</h3>
+      <p class="small muted" style="margin-top:0">${days} day${days === 1 ? '' : 's'} since the invoice ${inv.sentAt ? 'was emailed' : 'was created'}.</p>
+      <div id="em-health" class="note info">Checking the email connection\u2026</div>
+      <label class="f">To</label><input id="em-to" style="width:100%" value="${esc(inv.contact.email)}">
+      <label class="f">Subject</label><input id="em-subject" style="width:100%" value="${esc(subject)}">
+      <label class="f">Message</label><textarea id="em-body" rows="9" style="width:100%">${esc(body)}</textarea>
+      <div class="modalfoot">
+        <button onclick="UI.closeModal()">Cancel</button>
+        <button onclick="Invoices.sendEmail(true)">\ud83d\udce7 Send test to me</button>
+        <button class="primary" onclick="Invoices.sendEmail(false)">\u2709 Send reminder</button>
+      </div>`, true);
+    Invoices._checkHealth();
   },
   _push() {
     if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
@@ -4272,7 +4356,8 @@ const Staff = {
   _last: '',
   payload() {
     return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
-      custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [] });
+      custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [],
+      checklist: DB.prodChecklist || [] });
   },
   maybePush() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
@@ -4304,6 +4389,13 @@ const Staff = {
     const oSig = o => String(o.at) + '|' + String(o.invoiceNo);
     const seenO = new Set((DB.overrideLog || []).map(oSig));
     for (const o of sj.overrideLog || []) if (!seenO.has(oSig(o))) DB.overrideLog.push(o);
+    // Checklist: item level, newest tick/edit wins (removals are tombstones).
+    const cById = new Map((sj.checklist || []).map(i => [i.id, i]));
+    for (const i of DB.prodChecklist || []) {
+      const r = cById.get(i.id);
+      if (!r || String(i.at || '') > String(r.at || '')) cById.set(i.id, i);
+    }
+    if (cById.size) DB.prodChecklist = [...cById.values()];
     // Self-heal: this device holds corrections the central copy lacks.
     if (Staff.payload() !== json) { Staff._last = ''; Staff.maybePush(); }
   },
@@ -4520,8 +4612,9 @@ const Production = {
       for (const l of e.dressLines) {
         const hay = (l.title + ' ' + l.colour + ' ' + l.size + ' ' + e.name + ' ' + e.daughter + ' ' + e.event + ' ' + e.school).toLowerCase();
         if (q && !hay.includes(q)) continue;
-        if (!map.has(l.title)) map.set(l.title, []);
-        map.get(l.title).push({ e, l });
+        const base = dressBaseName(l.title);
+        if (!map.has(base)) map.set(base, []);
+        map.get(base).push({ e, l });
       }
     }
     const sizeKey = s => { const n = parseFloat(String(s).replace(/[^\d.]/g, '')); return isNaN(n) ? 999 : n; };
@@ -4540,6 +4633,69 @@ const Production = {
     Store.save(); Invoices._push();
   },
   accessoriesText: e => e.accessories.map(a => a.title + (a.qty > 1 ? ' \u00d7' + a.qty : '')).join(', '),
+  /* Have they picked their shoes, veil, hair piece yet? Worked out from the
+     invoice's non-dress lines, shown as tick badges so gaps stand out. */
+  extraCats: [['shoes', /shoe/i], ['veil', /veil/i], ['hair', /hair|bow(?!s)|clip|headband|halo|tiara/i],
+    ['underskirt', /underskirt|petticoat/i], ['bag', /\bbag/i], ['socks', /sock|tight/i],
+    ['cardigan', /cardigan|bolero|cape|jacket/i]],
+  extrasHtml(e, l) {
+    const found = {}, other = [];
+    const items = e.accessories.map(a => ({ title: a.title, label: a.title + (a.qty > 1 ? ' \u00d7' + a.qty : '') }))
+      .concat(l ? dressAddons(l.title).map(t => ({ title: t, label: t })) : []);
+    for (const a of items) {
+      const cat = Production.extraCats.find(x => x[1].test(a.title));
+      if (cat) (found[cat[0]] = found[cat[0]] || []).push(a.label); else other.push(a.label);
+    }
+    const core = [['shoes', 'Shoes'], ['veil', 'Veil'], ['hair', 'Hair piece']];
+    const bits = [];
+    for (const [k, label] of core)
+      bits.push(found[k] ? `<span class="badge b-green" title="${esc(found[k].join(', '))}">\u2713 ${label}</span>`
+        : `<span class="badge b-grey" style="opacity:.5">${label}?</span>`);
+    for (const [k, names] of Object.entries(found))
+      if (!core.some(c2 => c2[0] === k)) bits.push(`<span class="badge b-green">\u2713 ${esc(names.join(', '))}</span>`);
+    for (const t of other) bits.push(`<span class="badge b-blue">${esc(t)}</span>`);
+    return bits.join(' ');
+  },
+  /* The event kit checklist from the client's production workbook \u2014
+     tick as you pack, untick all before the next event. Shared with every
+     staff device through central sharing. */
+  KIT: ['Rails x 3/4', 'Hangers Gold', 'Clip Hanger for veil', 'Mirrors X 6', 'Screens X 6',
+    'Large Bags for Display', 'Small Bags - Party Bags', 'Tissue paper', 'DB X CP Stickers',
+    'Sweets', 'Bubbles', 'Colouring Pencils', 'Notebook', 'Coffee Machine', 'Pods', 'Milk',
+    'Sugar', 'Biscuits', 'Shoes', 'Bags', 'Veils', 'Socks', 'Tights', 'Cardigans/Boleros',
+    'Underskirts 1, 2, 3'],
+  checklistItems() {
+    if (!Array.isArray(DB.prodChecklist) || !DB.prodChecklist.length) {
+      DB.prodChecklist = Production.KIT.map((text, i) => ({ id: 'k' + i, text, done: false, at: '' }));
+      Store.save();
+    }
+    return DB.prodChecklist.filter(i => !i.gone);
+  },
+  checkItem(id, done) {
+    const i = (DB.prodChecklist || []).find(x => x.id === id);
+    if (!i) return;
+    i.done = !!done; i.at = nowIso();
+    Store.save(); App.route();
+  },
+  addCheckItem() {
+    const el = document.getElementById('ck-new');
+    const t = (el && el.value || '').trim();
+    if (!t) return;
+    DB.prodChecklist.push({ id: uid(), text: t, done: false, at: nowIso() });
+    Store.save(); App.route();
+  },
+  removeCheckItem(id) {
+    const i = (DB.prodChecklist || []).find(x => x.id === id);
+    if (!i) return;
+    i.gone = true; i.at = nowIso();
+    Store.save(); App.route();
+  },
+  resetChecklist() {
+    if (!confirm('Untick everything, ready to pack for the next event?')) return;
+    for (const i of DB.prodChecklist || []) if (i.done) { i.done = false; i.at = nowIso(); }
+    Store.save(); App.route();
+    UI.toast('Checklist unticked \u2014 ready for the next event.');
+  },
   /* The client's own production sheet has one list per event day (the tab
      that goes to the dressmaker): total, payment, name, child, school,
      dress, colour, size. Same thing here, straight from the invoices. */
@@ -4585,7 +4741,7 @@ const Production = {
         <td class="num">${eurPlain(r.e.totalCents)}</td><td>${esc(r.e.payType || '\u2014')}</td>
         <td${r.e.paid === 'NOT PAID' ? ' class="np"' : ''}>${esc(r.e.paid)}</td>
         <td><b>${esc(r.e.name)}</b></td><td>${esc(r.e.daughter || '')}</td><td>${esc(r.e.school || '')}</td>
-        <td><b>${esc(r.l.title.replace(/ Communion Dress$/i, ''))}</b></td><td>${esc(r.l.colour || '')}</td><td>${esc(r.l.size || '')}${r.l.qty > 1 ? ' \u00d7' + r.l.qty : ''}</td>
+        <td><b>${esc(dressBaseName(r.l.title).replace(/ Communion Dress$/i, ''))}</b></td><td>${esc(r.l.colour || '')}</td><td>${esc(r.l.size || '')}${r.l.qty > 1 ? ' \u00d7' + r.l.qty : ''}</td>
       </tr>`).join('')}</tbody></table>
     </body></html>`;
     Actions._sheetModal('Production \u2014 ' + esc(title),
@@ -4634,11 +4790,14 @@ Pages.production = () => {
     </div>
     <p class="sub">Every dress sold (one row per invoice line) \u2014 the live production sheet.${canEdit ? '' : ' Notes are locked (invoicing passcode).'}</p>
     <div class="chips" style="margin-bottom:8px">
-      <button class="chip ${prodView === 'dress' ? 'on' : ''}" onclick="prodView = 'dress'; App.route()">\ud83d\udc57 By dress (size runs)</button>
+      <button class="chip ${prodView === 'dress' ? 'on' : ''}" onclick="prodView = 'dress'; App.route()">\ud83d\udc57 By dress</button>
       <button class="chip ${prodView === 'event' ? 'on' : ''}" onclick="prodView = 'event'; App.route()">\ud83d\udccd By event day</button>
+      <button class="chip ${prodView === 'school' ? 'on' : ''}" onclick="prodView = 'school'; App.route()">\ud83c\udfeb By school</button>
+      <button class="chip ${prodView === 'bookings' ? 'on' : ''}" onclick="prodView = 'bookings'; App.route()">\ud83d\udcca Bookings breakdown</button>
+      <button class="chip ${prodView === 'checklist' ? 'on' : ''}" onclick="prodView = 'checklist'; App.route()">\u2705 Checklist</button>
     </div>
-    <input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search dress, size, customer, school, event\u2026"
-      value="${esc(prodQuery)}" oninput="prodQuery = this.value; App.route()">
+    ${prodView === 'bookings' || prodView === 'checklist' ? '' : `<input id="pagesearch" class="searchbar" style="max-width:460px" placeholder="Search dress, size, customer, school, event\u2026"
+      value="${esc(prodQuery)}" oninput="prodQuery = this.value; App.route()">`}
     ${prodView === 'event' ? Production.byEvent(prodQuery).map(g => `
       <div class="card" style="margin-bottom:14px">
         <div class="flex" style="align-items:center; flex-wrap:wrap">
@@ -4649,7 +4808,7 @@ Pages.production = () => {
           <button class="small" onclick="Production.printEvent('${g.key.replace(/'/g, '%27')}')">\ud83d\udda8 Print this event's list</button>
         </div>
         <div class="tablewrap" style="margin-top:10px"><table>
-          <thead><tr><th class="num">Total</th><th>Type</th><th>Paid</th><th>Customer</th><th>Child</th><th>School</th><th>Dress</th><th>Colour</th><th>Size</th></tr></thead>
+          <thead><tr><th class="num">Total</th><th>Type</th><th>Paid</th><th>Customer</th><th>Child</th><th>School</th><th>Dress</th><th>Colour</th><th>Size</th><th>Extras</th></tr></thead>
           <tbody>${g.rows.map(r => `<tr>
             <td class="num">${eurPlain(r.e.totalCents)}</td>
             <td class="small">${esc(r.e.payType || '\u2014')}</td>
@@ -4657,12 +4816,90 @@ Pages.production = () => {
             <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a></td>
             <td class="small">${esc(r.e.daughter || '\u2014')}</td>
             <td class="small">${esc(r.e.school || '\u2014')}</td>
-            <td><b>${esc(r.l.title.replace(/ Communion Dress$/i, ''))}</b>${r.e.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
+            <td><b>${esc(dressBaseName(r.l.title).replace(/ Communion Dress$/i, ''))}</b>${r.e.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
             <td>${esc(r.l.colour || '\u2014')}</td>
             <td><b>${esc(r.l.size || '\u2014')}</b>${r.l.qty > 1 ? ' \u00d7' + r.l.qty : ''}</td>
+            <td class="small">${Production.extrasHtml(r.e, r.l)}</td>
           </tr>`).join('')}</tbody></table></div>
       </div>`).join('') || '<div class="card muted">No dresses sold yet \u2014 each saved invoice adds its dress lines here.</div>' : ''}
-    ${prodView === 'event' ? '' : `
+    ${prodView === 'school' ? (() => {
+      const bySch = new Map();
+      for (const r of Production.groups(prodQuery).flatMap(g => g.rows)) {
+        const k = r.e.school || '\u26a0 No school on the invoice';
+        if (!bySch.has(k)) bySch.set(k, []);
+        bySch.get(k).push(r);
+      }
+      return [...bySch.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([sch, rows]) => {
+        const dupCount = {};
+        for (const r of rows) { const k2 = dressBaseName(r.l.title).toLowerCase() + '|' + String(r.e.inv.commYear || ''); dupCount[k2] = (dupCount[k2] || 0) + 1; }
+        const clash = Object.values(dupCount).some(n => n > 1);
+        return `<div class="card" style="margin-bottom:12px${clash ? '; border-color:#e8a1a1' : ''}">
+          <div class="flex" style="align-items:center; flex-wrap:wrap">
+            <b>\ud83c\udfeb ${esc(sch)}</b>
+            <span class="badge b-grey">${rows.length} dress${rows.length === 1 ? '' : 'es'}</span>
+            ${clash ? '<span class="badge b-red">\u26a0 same dress twice!</span>' : '<span class="badge b-green">\u2713 no overlap</span>'}
+          </div>
+          <div class="tablewrap" style="margin-top:8px"><table>
+            <thead><tr><th>Dress</th><th>Year</th><th>Customer</th><th>Child</th><th>Colour</th><th>Size</th><th>Venue</th></tr></thead>
+            <tbody>${rows.map(r => { const dup = dupCount[dressBaseName(r.l.title).toLowerCase() + '|' + String(r.e.inv.commYear || '')] > 1; return `<tr${dup ? ' style="background:var(--red-bg)"' : ''}>
+              <td><b>${esc(dressBaseName(r.l.title).replace(/ Communion Dress$/i, ''))}</b>${dup ? ' <span class="badge b-red">\u26a0</span>' : ''}${r.e.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
+              <td>${esc(String(r.e.inv.commYear || '\u2014'))}</td>
+              <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a></td>
+              <td class="small">${esc(r.e.daughter || '\u2014')}</td>
+              <td>${esc(r.l.colour || '\u2014')}</td>
+              <td><b>${esc(r.l.size || '\u2014')}</b></td>
+              <td class="small">${esc(String(r.e.event).split(/\s+\u2014\s+/)[1] || r.e.event || '\u2014')}${r.e.eventDate ? ' \u00b7 ' + fmtDate(r.e.eventDate) : ''}</td>
+            </tr>`; }).join('')}</tbody></table></div>
+        </div>`;
+      }).join('') || '<div class="card muted">No dresses sold yet.</div>';
+    })() : ''}
+    ${prodView === 'bookings' ? (() => {
+      const rows = [];
+      for (const v2 of venueGroups()) {
+        for (const d of v2.dates) {
+          const sb = slotBoard(v2.venue, d);
+          const dayOrders = v2.orders.filter(o => o.eventDate === d);
+          rows.push({ venue: v2.venue, d, sb, n: dayOrders.length,
+            bought: dayOrders.filter(o => Invoices.invFor(o.customerId)).length });
+        }
+      }
+      rows.sort((a, b) => a.d.localeCompare(b.d));
+      return rows.length ? `<div class="card"><div class="tablewrap"><table>
+        <thead><tr><th>Date</th><th>Venue</th><th class="num">Staff</th><th class="num">Slots</th><th class="num">Booked</th><th class="num">Free</th><th class="num">Bought</th></tr></thead>
+        <tbody>${rows.map(r => `<tr class="click" onclick="App.go('#/venue/${encodeURIComponent(r.venue).replace(/'/g, '%27')}')">
+          <td><b>${fmtWd(r.d)}</b></td><td>${esc(r.venue)}</td>
+          <td class="num">${r.sb.perHour}</td><td class="num">${r.sb.capacity}</td>
+          <td class="num"><b>${r.sb.booked}</b></td>
+          <td class="num">${r.sb.free ? '<b style="color:var(--green)">' + r.sb.free + '</b>' : '<span class="badge b-red">FULL</span>'}</td>
+          <td class="num">${r.bought} of ${r.n}</td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted" style="margin:8px 0 0">Staff and hours are read from Appointly's bookings for each day; \u201cBought\u201d counts that day's customers with an invoice. Tap a row for the day planner.</p></div>`
+        : '<div class="card muted">No event days on the calendar yet.</div>';
+    })() : ''}
+    ${prodView === 'checklist' ? (() => {
+      const items = Production.checklistItems();
+      const done = items.filter(i => i.done).length;
+      return `<div class="card" style="max-width:640px">
+        <div class="flex" style="align-items:center; flex-wrap:wrap">
+          <b>\u2705 Event kit checklist</b>
+          <span class="badge ${items.length && done === items.length ? 'b-green' : 'b-grey'}">${done} of ${items.length} packed</span>
+          <span style="flex:1"></span>
+          <button class="small" onclick="Production.resetChecklist()">\u21ba Untick all</button>
+        </div>
+        <div style="margin-top:6px">
+        ${items.map(i => `<label class="flex" style="align-items:center; gap:10px; padding:8px 2px; border-top:1px solid var(--line); cursor:pointer">
+          <input type="checkbox" ${i.done ? 'checked' : ''} onchange="Production.checkItem('${i.id}', this.checked)" style="width:20px; height:20px; accent-color:var(--brand)">
+          <span style="flex:1${i.done ? '; text-decoration:line-through; opacity:.5' : ''}">${esc(i.text)}</span>
+          <a class="plain small muted" style="cursor:pointer" title="Remove from the checklist" onclick="event.preventDefault(); Production.removeCheckItem('${i.id}')">\u2715</a>
+        </label>`).join('')}
+        </div>
+        <div class="flex" style="margin-top:10px">
+          <input id="ck-new" placeholder="Add to the checklist\u2026" style="flex:1" onkeydown="if(event.key==='Enter')Production.addCheckItem()">
+          <button class="small primary" onclick="Production.addCheckItem()">+ Add</button>
+        </div>
+        <p class="small muted" style="margin:8px 0 0">Ticks are shared with every staff device. \u2715 removes an item; \u201cUntick all\u201d resets it for the next event.</p>
+      </div>`;
+    })() : ''}
+    ${prodView !== 'dress' ? '' : `
     ${groups.map(g => `
       <div class="card" style="margin-bottom:14px">
         <div class="flex" style="align-items:center; flex-wrap:wrap">
@@ -4672,22 +4909,108 @@ Pages.production = () => {
           ${g.tally.map(([size, n]) => `<span class="badge b-brand">${esc(size)} \u00d7 ${n}</span>`).join(' ')}
         </div>
         <div class="tablewrap" style="margin-top:10px"><table>
-          <thead><tr><th>Size</th><th>Colour</th><th class="num">Qty</th><th>Customer</th><th>School</th><th class="num">Total</th><th>Paid</th><th>Accessories</th><th style="min-width:180px">Notes</th></tr></thead>
+          <thead><tr><th>Size</th><th>Colour</th><th class="num">Qty</th><th>Customer</th><th>School</th><th class="num">Total</th><th>Paid</th><th>Extras \u2014 shoes \u00b7 veil \u00b7 hair</th><th style="min-width:180px">Notes</th></tr></thead>
           <tbody>${g.rows.map(r => `<tr>
             <td><b>${esc(r.l.size || '\u2014')}</b></td>
             <td>${esc(r.l.colour || '\u2014')}</td>
             <td class="num">${r.l.qty || 1}</td>
             <td><a class="plain" href="#/customer/${r.e.inv.customerId}"><b>${esc(r.e.name)}</b></a>${r.e.inv.clashOverride ? ' <span class="badge b-red" title="Dress clash overridden \u2014 ' + esc(r.e.inv.clashOverride.reason || '') + '">Overridden</span>' : ''}${r.e.daughter ? `<br><span class="small muted">for ${esc(r.e.daughter)}</span>` : ''}
-              <br><span class="small muted">${UI.eventBadge(r.e.event).split('<br>')[0]}</span></td>
+              <br><span class="small muted">\ud83d\udccd ${esc(String(r.e.event).split(/\s+\u2014\s+/)[1] || r.e.event || '\u2014')}${r.e.eventDate ? ' \u00b7 ' + fmtDate(r.e.eventDate) : ''}</span></td>
             <td class="small">${esc(r.e.school || '\u2014')}</td>
             <td class="num">${eurPlain(r.e.totalCents)}</td>
             <td class="small"${r.e.paid === 'NOT PAID' ? ' style="color:var(--red); font-weight:700"' : ''}>${esc(r.e.paid)}${r.e.payType ? '<br><span class="muted">' + esc(r.e.payType) + '</span>' : ''}</td>
-            <td class="small">${esc(Production.accessoriesText(r.e)) || '<span class="muted">\u2014</span>'}</td>
+            <td class="small">${Production.extrasHtml(r.e, r.l)}</td>
             <td>${canEdit
               ? `<input class="mini" style="width:100%" value="${esc(r.e.inv.productionNotes || '')}" placeholder="Add a note\u2026" onchange="Production.setNote('${r.e.inv.id}', this.value)">`
               : `<span class="small">${esc(r.e.inv.productionNotes || '\u2014')}</span>`}</td>
           </tr>`).join('')}</tbody></table></div>
       </div>`).join('') || '<div class="card muted">No dresses sold yet \u2014 each saved invoice adds its dress lines here.</div>'}`}`;
+};
+
+/* ---- Invoices page: every invoice ever created, grouped by venue, with
+   paid / not-paid at a glance, one-tap mark-as-paid (dated), production
+   tags, and 30-day payment reminders. ---- */
+let invPaidFilter = ''; // '' all \u00b7 'paid' \u00b7 'unpaid'
+Pages.invoices = () => {
+  if (!Invoices.unlocked()) return `
+    <h1>Invoices</h1>
+    <div class="card" style="max-width:520px"><p class="small" style="margin-top:0">The invoice book needs the invoicing passcode.</p>
+      <button class="primary" onclick="if(Invoices.unlock())App.route()">\ud83d\udd13 Enter passcode</button></div>`;
+  const rows = (DB.invoices || []).map(inv => {
+    const c = Domain.customer(inv.customerId);
+    const t = Invoices.totals(inv);
+    const paid = Invoices.isPaid(inv);
+    const latest = Domain.ordersOf(inv.customerId).slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
+    const venue = latest ? (String(latest.eventHotel).split(/\s+\u2014\s+/)[1] || latest.eventHotel || '').trim() : '';
+    const days = Invoices.daysSinceSent(inv);
+    return { inv, c, t, paid, days,
+      venue: venue || 'No event on file',
+      eventDate: latest ? (latest.eventDate || '') : '',
+      overdue: !paid && days >= 30,
+      dresses: [...new Set((inv.lines || []).filter(l => l.title && Production.isDress(l.title))
+        .map(l => dressBaseName(l.title).replace(/ Communion Dress$/i, '')))].join(' + ') };
+  }).filter(r => !invPaidFilter || (invPaidFilter === 'paid') === r.paid);
+  const all = (DB.invoices || []);
+  const paidN = all.filter(i => Invoices.isPaid(i)).length;
+  const owedCents = all.filter(i => !Invoices.isPaid(i))
+    .reduce((s2, i) => s2 + Math.max(0, Invoices.totals(i).remainderCents), 0);
+  const byVenue = new Map();
+  for (const r of rows) {
+    if (!byVenue.has(r.venue)) byVenue.set(r.venue, []);
+    byVenue.get(r.venue).push(r);
+  }
+  const cards = [...byVenue.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([venue, vr]) => {
+    vr.sort((a, b) => (a.paid !== b.paid) ? (a.paid ? 1 : -1) : ((a.inv.createdAt || '') < (b.inv.createdAt || '') ? -1 : 1));
+    const unpaid = vr.filter(x => !x.paid).length;
+    return `<div class="card" style="margin-bottom:14px">
+      <div class="flex" style="align-items:center; flex-wrap:wrap">
+        <b style="font-size:1.05rem">\ud83d\udccd ${esc(venue)}</b>
+        <span class="badge b-grey">${vr.length} invoice${vr.length === 1 ? '' : 's'}</span>
+        ${unpaid ? `<span class="badge b-amber">${unpaid} not paid</span>` : '<span class="badge b-green">\u2713 all paid</span>'}
+      </div>
+      <div class="tablewrap" style="margin-top:8px"><table>
+        <thead><tr><th>Invoice</th><th>Customer</th><th>Dress</th><th class="num">Total</th><th>Status</th><th>Production</th><th style="min-width:230px">Mark paid / remind</th></tr></thead>
+        <tbody>${vr.map(r => `<tr${r.overdue ? ' style="background:var(--red-bg)"' : ''}>
+          <td class="small"><a class="plain" style="cursor:pointer" onclick="Invoices.previewFor('${r.inv.customerId}')"><b>${esc(r.inv.code + '-' + r.inv.seq)}</b></a>
+            <br><span class="muted">${r.inv.sentAt ? '\u2709 sent ' + fmtDate(String(r.inv.sentAt).slice(0, 10)) : 'created ' + fmtDate(String(r.inv.createdAt || '').slice(0, 10))}</span></td>
+          <td><a class="plain" href="#/customer/${r.inv.customerId}"><b>${esc((r.c && r.c.name) || r.inv.contact.name)}</b></a>${r.c && r.c.daughterName ? `<br><span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}</td>
+          <td class="small"><b>${esc(r.dresses || '\u2014')}</b>${r.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
+          <td class="num">${eurPlain(r.t.linesTotal)}</td>
+          <td>${r.paid
+            ? `<span class="badge b-green">\u2713 PAID</span><br><span class="small muted">${r.inv.paidDate ? fmtDate(r.inv.paidDate) : ''}${r.inv.paidMethod || r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.paidMethod || r.inv.depositMethod) : ''}</span>`
+            : r.t.paidCents > 0
+              ? `<span class="badge b-amber">DEP ${eurPlain(r.t.paidCents)}</span><br><span class="small muted">owes ${eurPlain(Math.max(0, r.t.remainderCents))}${r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.depositMethod) : ''}</span>`
+              : '<span class="badge b-red">NOT PAID</span>'}
+            ${r.overdue ? `<br><span class="badge b-red" title="${r.days} days since the invoice \u2014 time for a reminder">\u23f0 ${r.days} days</span>` : ''}</td>
+          <td><button class="small${r.inv.inProduction ? ' primary' : ''}" onclick="Invoices.toggleProduction('${r.inv.id}')">${r.inv.inProduction ? '\ud83d\udce6 In production' : '\ud83d\udce6 Not sent yet'}</button></td>
+          <td>${r.paid
+            ? `<button class="small" onclick="Invoices.unmarkPaid('${r.inv.id}')">\u21a9 Unmark paid</button>`
+            : `<div class="flex" style="gap:6px; flex-wrap:wrap; align-items:center">
+                <input type="date" id="pd-${r.inv.id}" class="mini" value="${todayStr()}" style="width:135px">
+                <select id="pm-${r.inv.id}" class="mini" style="width:92px">
+                  <option value="">how?</option><option>Cash</option><option>SumUp</option><option>Shopify</option></select>
+                <button class="small primary" onclick="Invoices.markPaidOn('${r.inv.id}')">\u2713 Paid</button>
+                ${r.overdue ? `<button class="small danger" onclick="Invoices.reminderModal('${r.inv.id}')">\u23f0 Send reminder</button>` : ''}
+              </div>`}</td>
+        </tr>`).join('')}</tbody></table></div>
+    </div>`;
+  }).join('');
+  return `
+    <h1>Invoices <span class="muted" style="font-size:1rem; font-weight:400">${all.length}</span></h1>
+    <p class="sub">Every invoice, grouped by venue \u2014 who's paid, how, what's gone into production. Not-paid rows float to the top; \u23f0 marks 30+ days without payment.</p>
+    <div class="statrow">
+      <div class="stat"><div class="l">Invoices</div><div class="v">${all.length}</div></div>
+      <div class="stat good"><div class="l">Paid in full</div><div class="v">${paidN}</div></div>
+      <div class="stat"><div class="l">Not paid yet</div><div class="v">${all.length - paidN}</div></div>
+      <div class="stat"><div class="l">Still owed</div><div class="v">${eurPlain(owedCents)}</div></div>
+    </div>
+    <div class="chips" style="margin-bottom:10px">
+      <button class="chip ${invPaidFilter === '' ? 'on' : ''}" onclick="invPaidFilter = ''; App.route()">All</button>
+      <button class="chip ${invPaidFilter === 'unpaid' ? 'on' : ''}" onclick="invPaidFilter = 'unpaid'; App.route()">\u26a0 Not paid (${all.length - paidN})</button>
+      <button class="chip ${invPaidFilter === 'paid' ? 'on' : ''}" onclick="invPaidFilter = 'paid'; App.route()">\u2713 Paid (${paidN})</button>
+    </div>
+    ${cards || (all.length ? '<div class="card muted">Nothing under this filter.</div>'
+      : '<div class="card muted">No invoices yet \u2014 every invoice you create appears here the moment it\u2019s saved.</div>')}`;
 };
 
 /* ---- Invoice builder page ---- */
