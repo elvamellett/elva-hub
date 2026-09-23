@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 77)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 78)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6004 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6056 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 77</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 78</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3706,6 +3706,14 @@ const LiveSync = {
         }
       } catch (e) { /* non-fatal \u2014 manual import still available */ }
     }
+    // Contact corrections made on Shopify (or here) flow through to the
+    // invoices: wrong email or address fixed at the source updates every
+    // invoice that still mirrors the customer record, so a re-send goes to
+    // the right place. Deliberately different bill-to blocks stay put.
+    const contactFixed = Invoices.refreshContacts();
+    if (contactFixed) {
+      setTimeout(() => UI.toast(contactFixed + ' invoice' + (contactFixed === 1 ? '' : 's') + ' updated with the new contact details from Shopify.', 8000), 1500);
+    }
     recordApptChanges(prevAppts);
     // If the customer page on screen lost its id in the rebuild, find the
     // same person by email/phone and stay on her page.
@@ -4078,14 +4086,38 @@ const Invoices = {
     Invoices.recalc();
     Invoices.clashWarn();
   },
+  /* Pull the current customer record's contact details onto every invoice
+     that still mirrors it (deliberately different bill-to blocks stay).
+     Called after every sync AND after edits made on the customer page, so
+     a fixed email/address reaches the invoice straight away. */
+  refreshContacts() {
+    let n = 0;
+    for (const inv of DB.invoices || []) {
+      if (inv.cancelled || inv.contactManual) continue;
+      const c = Domain.customer(inv.customerId);
+      if (!c) continue;
+      const fresh = Invoices._contactFor(c);
+      if (inv.contact.name !== fresh.name || inv.contact.address !== fresh.address
+        || inv.contact.phone !== fresh.phone || inv.contact.email !== fresh.email) {
+        inv.contact = fresh; inv.updatedAt = nowIso(); n++;
+        if (typeof InvDraft !== 'undefined' && InvDraft && InvDraft.id === inv.id) InvDraft = null; // builder re-reads
+      }
+    }
+    if (n) { Store.save(); Invoices._push(); }
+    return n;
+  },
+  // The bill-to block as the customer record says it should read right now.
+  _contactFor(c) {
+    return { name: c.name || '', address: String(c.address || '').split(',').map(s => s.trim()).filter(Boolean).join('\n'),
+      phone: c.phone || '', email: c.email || '' };
+  },
   blank(custId) {
     const c = Domain.customer(custId);
     const { code } = Invoices.codeFor(custId);
     const dresses = Domain.ordersOf(custId).flatMap(o => Domain.itemsOf(o.id)).filter(i => i.category === 'dress');
     return {
       id: uid(), customerId: custId,
-      contact: { name: c.name || '', address: String(c.address || '').split(',').map(s => s.trim()).filter(Boolean).join('\n'),
-        phone: c.phone || '', email: c.email || '' },
+      contact: Invoices._contactFor(c),
       code, seq: Invoices.nextSeq(code), issueDate: todayStr(),
       lines: dresses.length ? dresses.map(d => ({ title: d.title, colour: d.colour || '', size: d.size || '',
         qty: d.quantity || 1, priceCents: d.retailPriceCents || 0 }))
@@ -4189,6 +4221,15 @@ const Invoices = {
       inv.clashOverride = null; // the clash is gone \u2014 the tag goes with it
     }
     inv.updatedAt = nowIso();
+    // If the bill-to matches the customer record, it FOLLOWS the record:
+    // fix an email or address on Shopify and the next sync updates this
+    // invoice too. Typing something different here pins it on purpose.
+    const cc = Domain.customer(inv.customerId);
+    if (cc) {
+      const fresh = Invoices._contactFor(cc);
+      inv.contactManual = !(inv.contact.name === fresh.name && inv.contact.address === fresh.address
+        && inv.contact.phone === fresh.phone && inv.contact.email === fresh.email);
+    }
     const st = Invoices.settings();
     if (inv._venueKey && inv.code) { st.eventCodes[inv._venueKey] = inv.code; st.updatedAt = nowIso(); }
     if (!DB.invoices) DB.invoices = [];
@@ -5596,7 +5637,9 @@ const Actions = {
     DB.custEdits[key] = Object.assign({}, prev, { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone),
       name: v('ec-name'), daughterName: v('ec-daughter'), newPhone: v('ec-phone'), at: nowIso() });
     c.name = v('ec-name'); c.daughterName = v('ec-daughter'); if (v('ec-phone')) c.phone = v('ec-phone');
-    Store.save(); UI.closeModal(); App.route();
+    Store.save();
+    if (typeof Invoices !== 'undefined') Invoices.refreshContacts(); // her invoice follows the new details
+    UI.closeModal(); App.route();
     UI.toast('Details updated \u2014 the change sticks through syncs.');
   },
   toggleCancelled(custId) {
@@ -5658,7 +5701,9 @@ const Actions = {
     }
     DB.addrEdits[key] = { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone), text: t.trim(), at: nowIso() };
     c.address = t.trim(); c.addressManual = true; c.addressCheck = null;
-    Store.save(); App.route();
+    Store.save();
+    if (typeof Invoices !== 'undefined') Invoices.refreshContacts(); // her invoice follows the new address
+    App.route();
     UI.toast(`${c.name}'s delivery address updated \u2014 this sticks through every sync.`);
   },
   /* Retime a booking by hand \u2014 sticks through syncs via DB.timeEdits. */
@@ -5994,8 +6039,15 @@ const Gate = {
     App.back();
   });
   App.route();
-  // Served as the Apps Script web app \u2192 refresh from Shopify on every open.
-  if (LiveSync.available()) LiveSync.sync();
+  // Served as the Apps Script web app \u2192 refresh from Shopify on every open,
+  // then every 10 minutes while the dashboard sits open and visible, so
+  // corrections made on Shopify flow in without anyone pressing anything.
+  if (LiveSync.available()) {
+    LiveSync.sync();
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && !LiveSync.syncing) LiveSync.sync();
+    }, 10 * 60 * 1000);
+  }
   window.__bootDone = true; // boot watchdog: made it to the end
 })();
 </script>
