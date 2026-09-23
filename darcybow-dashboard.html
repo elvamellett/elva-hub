@@ -283,9 +283,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 74)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 75)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5979 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>5982 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -297,7 +297,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 74</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 75</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1481,7 +1481,7 @@ Pages.dashboard = () => {
           <td><b>${esc(x.name)}</b>${x.daughterName ? `<br><span class="muted small">for ${esc(x.daughterName)}</span>` : ''}</td>
           <td>${fmtDate(String(x.waitlist.at).slice(0, 10))}</td>
           <td class="small">${esc(x.waitlist.note || '\u2014')}</td>
-          <td class="small">${esc(x.phone || '\u2014')}</td></tr>`).join('')}</tbody></table></div>`;
+          <td class="small">${telLink(x.phone)}</td></tr>`).join('')}</tbody></table></div>`;
     })()}
     <div class="cols2">
       <div>
@@ -1578,7 +1578,7 @@ Pages.customers = () => {
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
             <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.bought(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
-            <td class="small">${esc(c.phone)}<br><span class="muted">${esc(c.email)}</span></td>
+            <td class="small">${c.phone ? telLink(c.phone) : ''}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
             <td class="small">${upcoming ? `<b>${fmtDate(upcoming.appointmentAt)}</b>${upcoming.time ? ' \u00b7 <span class="vclock" style="font-size:.9rem">' + esc(upcoming.time) + '</span>' : ''}` : '<span class="muted">\u2014</span>'}</td>
@@ -2709,7 +2709,7 @@ Pages.customerDetail = (id) => {
       <div class="card">
         <h2 style="margin-top:0">Details</h2>
         <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '\u2014')}</span></div>
-        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${esc(c.phone || '\u2014')}</span></div>
+        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${telLink(c.phone)}</span></div>
         <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '\u2014')}${c.addressManual ? ' <span class="badge b-amber" title="Typed by staff \u2014 syncs can\u2019t overwrite it">\u270e typed by staff</span>' : ''}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''} <button class="small" onclick="Actions.editAddress('${c.id}')">\u270e Edit</button></span></div>
         ${c.addressCheck ? `<div class="note" style="margin-bottom:0">\ud83d\udccd <b>Address check:</b> this customer's saved Shopify profile says \u201c${esc(c.addressCheck.was)}\u201d, but their latest order ${esc(c.addressCheck.ref)} was placed with the delivery address above \u2014 the dashboard now uses the order address. If the profile one is actually correct, fix it on the customer in Shopify and re-sync.</div>` : ''}
         ${dupPairs.length ? `<div class="note" style="margin-bottom:0">\ud83d\udc65 <b>Possible duplicate record${dupPairs.length === 1 ? '' : 's'}:</b> ${dupPairs.map(d =>
@@ -3825,6 +3825,9 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
+// Tap-to-call: phone numbers render as tel: links, so on a phone one tap
+// rings the customer straight from the dashboard.
+const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
 // House standards \u2014 always offered in the dropdowns alongside whatever the
 // website lists for the chosen dress.
 const DEFAULT_COLOURS = ['Off-White', 'Warm Ivory', 'White', 'Antique Cream'];
