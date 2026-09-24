@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 79)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 80)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6086 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6208 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 79</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 80</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2688,6 +2688,7 @@ Pages.customerDetail = (id) => {
   const dupPairs = Dupes.candidatesFor(c);
   setTimeout(() => Emails.load(id), 60); // fill the email module once the page is on screen
   setTimeout(() => Invoices.mountPage1(id), 80); // draw the invoice's first page
+  setTimeout(() => Photos.loadFor(id), 120); // fetch this customer's Drive photos
   return `
     <p><a class="plain" style="cursor:pointer" onclick="App.back('#/customers')">\u2190 ${esc(App.backLabel('Customers'))}</a></p>
     <h1>${esc(c.name)}</h1>
@@ -2788,9 +2789,11 @@ Pages.customerDetail = (id) => {
           <div class="flex" style="flex-wrap:wrap; gap:8px">
             ${Photos.list(c).map(ph => `
               <div style="position:relative">
-                <img src="${ph.data}" alt="sheet" style="width:110px; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--line); cursor:zoom-in"
-                  onclick="Photos.view('${c.id}','${ph.id}')">
-                <div class="small muted" style="text-align:center">${fmtDate(ph.at.slice(0, 10))}</div>
+                ${ph.data
+                  ? `<img src="${ph.data}" alt="sheet" style="width:110px; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--line); cursor:zoom-in"
+                      onclick="Photos.view('${c.id}','${ph.id}')">`
+                  : `<div style="width:110px; height:140px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:8px; color:var(--muted); font-size:1.4rem" onclick="Photos.view('${c.id}','${ph.id}')">\u23f3</div>`}
+                <div class="small muted" style="text-align:center">${ph.at ? fmtDate(String(ph.at).slice(0, 10)) : ''}</div>
               </div>`).join('')}
             <label style="width:110px; height:140px; border:2px dashed var(--line); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:.8rem; text-align:center">
               \ud83d\udcf7<br>\uff0b Add photo
@@ -3632,6 +3635,8 @@ const LiveSync = {
     // The website's product catalogue (fetched server-side from the public
     // storefront) \u2014 powers the dress/colour/size dropdowns on invoices.
     if (Array.isArray(p.products) && p.products.length) DB.catalogue = LiveSync._mapCatalogue(p.products);
+    if (Array.isArray(p.photosIdx)) DB.photoIdx = p.photosIdx; // Drive photo index
+    setTimeout(() => { try { Photos.migrate(); } catch (e) { /* next sync retries */ } }, 900);
     for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
       if (Array.isArray(DB[k])) DB[k] = [];
     DB.importInfo = { at: nowIso(), live: true, counts: { customers: kept.length, orders: orders.length, bookings: appointments.length } };
@@ -4737,7 +4742,82 @@ const Staff = {
    to zoom and pan. ---- */
 const Photos = {
   key: c => (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone)) || c.id,
-  list(c) { return (DB.custPhotos && DB.custPhotos[Photos.key(c)]) || []; },
+  _cache: {}, // photo file name -> dataURL, fetched once per session
+  // Photos live in the darcybow-photos folder on Drive when the live link
+  // is connected: no browser storage limit, and every device sees them.
+  remote: () => typeof LiveSync !== 'undefined' && LiveSync.available() && !!Gate.token(),
+  _remoteFor(c) {
+    const prefix = encodeURIComponent(Photos.key(c)) + '__';
+    return (DB.photoIdx || []).filter(x => String(x.name).indexOf(prefix) === 0)
+      .map(x => ({ id: x.name, at: x.at || '', name: x.name, remote: true, data: Photos._cache[x.name] || '' }));
+  },
+  list(c) {
+    const local = ((DB.custPhotos && DB.custPhotos[Photos.key(c)]) || []).map(x => Object.assign({ remote: false }, x));
+    return local.concat(Photos._remoteFor(c)).sort((a, b) => (String(a.at) < String(b.at) ? -1 : 1));
+  },
+  // Fetch this customer's Drive photos that aren't in the session cache yet.
+  loadFor(custId) {
+    if (!Photos.remote()) return;
+    const c = Domain.customer(custId);
+    if (!c) return;
+    for (const ph of Photos._remoteFor(c)) {
+      if (ph.data || Photos._cache['\u23f3' + ph.name]) continue;
+      Photos._cache['\u23f3' + ph.name] = true; // one fetch per photo
+      google.script.run
+        .withSuccessHandler(res => {
+          try {
+            const r = JSON.parse(res);
+            if (!r.ok) return;
+            Photos._cache[ph.name] = 'data:image/jpeg;base64,' + r.b64;
+            if (String(location.hash).indexOf('/customer/' + custId) >= 0) App.route();
+          } catch (e) { /* leave the placeholder */ }
+        })
+        .withFailureHandler(() => { delete Photos._cache['\u23f3' + ph.name]; })
+        .getPhoto(Gate.token(), ph.name);
+    }
+  },
+  /* Existing photos saved inside browsers before Drive storage arrived are
+     moved into Drive on the next sync, freeing the browser's space. */
+  _migrating: false,
+  migrate() {
+    if (!Photos.remote() || Photos._migrating) return;
+    const m = DB.custPhotos || {};
+    const todo = [];
+    for (const k of Object.keys(m)) for (const ph of m[k] || []) todo.push({ k, ph });
+    if (!todo.length) return;
+    Photos._migrating = true;
+    let moved = 0;
+    const next = () => {
+      const it = todo.shift();
+      if (!it) {
+        Photos._migrating = false;
+        if (moved) {
+          Store.save(); App.route();
+          UI.toast(moved + ' sheet photo' + (moved === 1 ? '' : 's') + ' moved into Drive \u2014 browser space freed for every device.', 8000);
+        }
+        return;
+      }
+      const name = encodeURIComponent(it.k) + '__' + it.ph.id + '.jpg';
+      google.script.run
+        .withSuccessHandler(res => {
+          try {
+            const r = JSON.parse(res);
+            if (!r.error) {
+              DB.custPhotos[it.k] = (DB.custPhotos[it.k] || []).filter(x => x.id !== it.ph.id);
+              if (!DB.custPhotos[it.k].length) delete DB.custPhotos[it.k];
+              DB.photoIdx = DB.photoIdx || [];
+              DB.photoIdx.push({ name, at: it.ph.at || nowIso() });
+              Photos._cache[name] = it.ph.data;
+              moved++;
+            }
+          } catch (e) { /* keep it local, try again next sync */ }
+          next();
+        })
+        .withFailureHandler(() => next())
+        .savePhoto(Gate.token(), JSON.stringify({ name, b64: String(it.ph.data).split(',')[1] || '' }));
+    };
+    next();
+  },
   add(custId, input) {
     const c = Domain.customer(custId);
     if (!c || !input.files || !input.files[0]) return;
@@ -4748,7 +4828,36 @@ const Photos = {
     const url = URL.createObjectURL(f);
     const img = new Image();
     img.onload = () => {
-      // Phone photos are 3-5MB \u2014 far too big for the browser store.
+      // Connected to the live link: the photo goes to Drive \u2014 no browser
+      // storage limit, and every phone and laptop sees it.
+      if (Photos.remote()) {
+        const MAXR = 1600;
+        const scR = Math.min(1, MAXR / Math.max(img.width, img.height));
+        const cvR = document.createElement('canvas');
+        cvR.width = Math.max(1, Math.round(img.width * scR));
+        cvR.height = Math.max(1, Math.round(img.height * scR));
+        cvR.getContext('2d').drawImage(img, 0, 0, cvR.width, cvR.height);
+        const dataR = cvR.toDataURL('image/jpeg', 0.72);
+        URL.revokeObjectURL(url);
+        const name = encodeURIComponent(Photos.key(c)) + '__' + uid() + '.jpg';
+        UI.toast('Saving the photo to Drive\u2026');
+        google.script.run
+          .withSuccessHandler(res => {
+            try {
+              const r = JSON.parse(res);
+              if (r.error) { UI.err(new Error(r.error)); return; }
+              DB.photoIdx = DB.photoIdx || [];
+              DB.photoIdx.push({ name, at: nowIso() });
+              Photos._cache[name] = dataR;
+              Store.save(); App.route();
+              UI.toast('Photo saved to Drive \u2014 every device sees it on ' + c.name + '\u2019s page.');
+            } catch (e) { UI.err(e); }
+          })
+          .withFailureHandler(e => UI.err(e))
+          .savePhoto(Gate.token(), JSON.stringify({ name, b64: dataR.split(',')[1] }));
+        return;
+      }
+      // Offline / not connected: keep the old in-browser store as fallback.
       // Downscale + JPEG, and if the store is nearly full, retry smaller
       // and smaller before giving up \u2014 a readable sheet beats no sheet.
       DB.custPhotos = DB.custPhotos || {};
@@ -4784,6 +4893,17 @@ const Photos = {
     const c = Domain.customer(custId);
     if (!c) return;
     if (!confirm('Delete this sheet photo? This cannot be undone.')) return;
+    if (String(photoId).slice(-4) === '.jpg') { // lives in Drive
+      google.script.run
+        .withSuccessHandler(() => {
+          DB.photoIdx = (DB.photoIdx || []).filter(x => x.name !== photoId);
+          delete Photos._cache[photoId];
+          Store.save(); App.route();
+        })
+        .withFailureHandler(e => UI.err(e))
+        .deletePhoto(Gate.token(), photoId);
+      return;
+    }
     const k = Photos.key(c);
     DB.custPhotos[k] = (DB.custPhotos[k] || []).filter(x => x.id !== photoId);
     Store.save(); App.route();
@@ -4794,6 +4914,7 @@ const Photos = {
     const c = Domain.customer(custId);
     const ph = c && Photos.list(c).find(x => x.id === photoId);
     if (!ph) return;
+    if (!ph.data) { UI.toast('Still fetching this photo from Drive \u2014 one moment\u2026'); Photos.loadFor(custId); return; }
     Photos._z = { s: 1, x: 0, y: 0, dragging: false, px: 0, py: 0 };
     UI.modal(`
       <h3 style="margin-bottom:4px">\ud83d\udcf7 ${esc(c.name)} \u2014 staff sheet (${fmtDateTime(ph.at)})</h3>
@@ -6027,6 +6148,7 @@ const Gate = {
 (function boot() {
   Store.load();
   DB.schoolAliases = DB.schoolAliases || {};
+  DB.photoIdx = DB.photoIdx || [];
   DB.schoolNotSame = DB.schoolNotSame || [];
   DB.invoices = DB.invoices || [];
   DB.custNotes = DB.custNotes || {};

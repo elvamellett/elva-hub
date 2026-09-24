@@ -168,6 +168,20 @@ function syncShopify(siteTok) {
       // Drive not authorised yet — sync still works, each device on its own
       central.reason = String((eDrive && eDrive.message) || eDrive);
     }
+    // Which sheet photos exist (names + dates only — the bytes are fetched
+    // one by one when a customer's page opens).
+    var photosIdx = [];
+    try {
+      var pFold = DriveApp.getFoldersByName(PHOTOS_FOLDER_);
+      if (pFold.hasNext()) {
+        var pFiles = pFold.next().getFiles();
+        while (pFiles.hasNext()) {
+          var pf = pFiles.next();
+          if (pf.isTrashed()) continue;
+          photosIdx.push({ name: pf.getName(), at: pf.getDateCreated().toISOString() });
+        }
+      }
+    } catch (ePhotos) { /* photos are best-effort */ }
     return JSON.stringify({
       customers: fetchAll_(base, token, 'customers', ''),
       orders: fetchAll_(base, token, 'orders', '&status=any'),
@@ -178,6 +192,7 @@ function syncShopify(siteTok) {
       invoicesJson: invoicesJson,
       notesJson: notesJson,
       staffJson: staffJson,
+      photosIdx: photosIdx,
       central: central,
       scopeWarning: scopeWarning,
       syncedAt: new Date().toISOString(),
@@ -233,6 +248,52 @@ function saveBookingsCsv(siteTok, text) {
     var files = DriveApp.getFilesByName(BOOKINGS_FILE_);
     if (files.hasNext()) files.next().setContent(text);
     else DriveApp.createFile(BOOKINGS_FILE_, text, 'text/csv');
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+var PHOTOS_FOLDER_ = 'darcybow-photos';
+
+/** The Drive folder holding the staff sheet photos (created on first use). */
+function photosFolder_() {
+  var it = DriveApp.getFoldersByName(PHOTOS_FOLDER_);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(PHOTOS_FOLDER_);
+}
+
+/** Stores one sheet photo (JPEG) in the photos folder.
+ * json: { name: '<customer-key>__<id>.jpg', b64: '<base64 jpeg bytes>' } */
+function savePhoto(siteTok, json) {
+  gate_(siteTok);
+  try {
+    var p = JSON.parse(json);
+    if (!p.name || !p.b64) return JSON.stringify({ error: 'Missing photo data.' });
+    photosFolder_().createFile(Utilities.newBlob(Utilities.base64Decode(p.b64), 'image/jpeg', String(p.name)));
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+/** Returns one sheet photo's bytes (base64) by file name. */
+function getPhoto(siteTok, name) {
+  gate_(siteTok);
+  try {
+    var it = photosFolder_().getFilesByName(String(name));
+    if (!it.hasNext()) return JSON.stringify({ error: 'Photo not found.' });
+    return JSON.stringify({ ok: true, b64: Utilities.base64Encode(it.next().getBlob().getBytes()) });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+/** Trashes one sheet photo by file name. */
+function deletePhoto(siteTok, name) {
+  gate_(siteTok);
+  try {
+    var it = photosFolder_().getFilesByName(String(name));
+    while (it.hasNext()) it.next().setTrashed(true);
     return JSON.stringify({ ok: true });
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });
