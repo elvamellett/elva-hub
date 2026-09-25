@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 82)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 83)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6239 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6609 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 82</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 83</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3909,7 +3909,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 82'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 83'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4361,6 +4361,71 @@ const Invoices = {
   },
   /* One tap on the Invoices page: paid today (or the date typed next to the
      button), with how they paid. */
+  toggleVenueFilter(i) {
+    const v = (Invoices._venues || [])[i] || '';
+    invVenueFilter = invVenueFilter === v ? '' : v;
+    App.route();
+  },
+  /* Tap "Taken so far": which venue the money came from. */
+  takenModal() {
+    if (!Invoices.unlocked()) return;
+    const map = new Map();
+    for (const inv of (DB.invoices || [])) {
+      if (Invoices.isEmpty(inv)) continue;
+      const t = Invoices.totals(inv);
+      const made = Invoices.isPaid(inv) ? Math.max(t.paidCents, t.linesTotal) : Math.max(0, t.paidCents);
+      if (!made) continue;
+      const sv = saleVenueOf(inv);
+      const venue = (String(sv.event).split(/\s+\u2014\s+/)[1] || sv.event || '').trim() || 'No event on file';
+      const m = map.get(venue) || { venue, cents: 0, n: 0 };
+      m.cents += made; m.n++;
+      map.set(venue, m);
+    }
+    const list = [...map.values()].sort((a, b) => b.cents - a.cents);
+    const total = list.reduce((s2, x) => s2 + x.cents, 0);
+    UI.modal(`
+      <h3>\ud83d\udcb6 Where the money came from</h3>
+      <p class="small muted" style="margin-top:0">Full totals for paid-up sales, plus the deposits taken on the rest.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Venue</th><th class="num">Taken</th><th class="num">From</th></tr></thead>
+        <tbody>${list.map(x => `<tr><td><b>${esc(x.venue)}</b></td><td class="num"><b>${eurPlain(x.cents)}</b></td><td class="num small">${x.n} invoice${x.n === 1 ? '' : 's'}</td></tr>`).join('')}
+        <tr style="border-top:2px solid var(--line)"><td><b>Total</b></td><td class="num"><b>${eurPlain(total)}</b></td><td></td></tr></tbody>
+      </table></div>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Close</button></div>`);
+  },
+  /* Tap "Still owed": every person with money outstanding, and which
+     venue/event their sale came from. Rows open the customer. */
+  owedModal() {
+    if (!Invoices.unlocked()) return;
+    const rows = [];
+    for (const inv of (DB.invoices || [])) {
+      if (Invoices.isEmpty(inv) || Invoices.isPaid(inv)) continue;
+      const t = Invoices.totals(inv);
+      const owed = Math.max(0, t.remainderCents);
+      if (!owed) continue;
+      const sv = saleVenueOf(inv);
+      const c = Domain.customer(inv.customerId);
+      rows.push({ custId: inv.customerId, name: (c && c.name) || inv.contact.name, owed,
+        venue: (String(sv.event).split(/\s+\u2014\s+/)[1] || sv.event || '').trim() || 'No event on file',
+        date: sv.date || '', days: Invoices.daysSinceSent(inv), dep: t.paidCents > 0 });
+    }
+    rows.sort((a, b) => b.owed - a.owed);
+    const total = rows.reduce((s2, x) => s2 + x.owed, 0);
+    UI.modal(`
+      <h3>\u23f3 Who still owes \u2014 ${eurPlain(total)}</h3>
+      <p class="small muted" style="margin-top:0">Biggest amounts first \u00b7 tap a row for her page \u00b7 red day-counts are 30+ days.</p>
+      <div class="tablewrap" style="max-height:60vh; overflow:auto"><table>
+        <thead><tr><th>Customer</th><th>Venue / event</th><th class="num">Owes</th><th class="num">Days</th></tr></thead>
+        <tbody>${rows.map(x => `<tr class="click" onclick="UI.closeModal(); App.go('#/customer/${x.custId}')">
+          <td><b>${esc(x.name)}</b>${x.dep ? ' <span class="badge b-amber">deposit paid</span>' : ''}</td>
+          <td class="small">${esc(x.venue)}${x.date ? '<br><span class="muted">' + fmtWd(x.date) + '</span>' : ''}</td>
+          <td class="num"><b>${eurPlain(x.owed)}</b></td>
+          <td class="num"${x.days >= 30 ? ' style="color:var(--red); font-weight:700"' : ''}>${x.days}</td>
+        </tr>`).join('')}</tbody></table></div>
+      <div class="modalfoot">
+        <button class="primary" onclick="UI.closeModal(); invPaidFilter = 'unpaid'; App.go('#/invoices'); App.route()">Open the not-paid view</button>
+        <button onclick="UI.closeModal()">Close</button></div>`, true);
+  },
   /* Puts a sale under a chosen event day by hand \u2014 for walk-ins and
      moved customers whose orders/bookings say nothing useful. Shared, so
      every device sees the move. */
@@ -5263,6 +5328,308 @@ const Production = {
   },
 };
 
+
+/* =========================== Excel sheet import ===========================
+   Reads the shop's own production workbook (.xlsx straight from Excel, or
+   a CSV saved from any of its tabs), finds every section headed
+   TOTAL / TYPE / PAID / DEPOSIT / NAME / CHILD / SCHOOL / DRESS STYLE /
+   COLOUR / SIZE / UNDERSKIRT, and turns each sale row into a real invoice
+   on the matching customer. The invoice then drives everything else on its
+   own: Production, the invoice book, School watch and the venue pages. */
+const Importer = {
+  rows: [], _custs: [], _fileName: '',
+  pick() { const el = document.getElementById('imp-file'); if (el) el.click(); },
+  async fileChosen(input) {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    input.value = '';
+    try { await Importer.handleFile(f); } catch (e) { UI.err(e); }
+  },
+  async handleFile(file) {
+    Importer._fileName = file.name || 'sheet';
+    const sheets = /\.csv$/i.test(file.name || '')
+      ? [Importer.rawCsv(await file.text())]
+      : await Importer.readXlsx(await file.arrayBuffer());
+    Importer.rows = Importer.harvest(sheets);
+    if (!Importer.rows.length) {
+      UI.modal(`<h3>Nothing to import</h3>
+        <p>No sale rows were found in <b>${esc(Importer._fileName)}</b>. The importer looks for the
+        production sheet's own headings \u2014 a row with <b>NAME</b> and <b>DRESS STYLE</b> \u2014 and
+        takes the rows under it that have a total, deposit or paid mark.</p>
+        <div class="modalfoot"><button onclick="UI.closeModal()">Close</button></div>`);
+      return;
+    }
+    Importer.preview();
+  },
+  /* ---- .xlsx reading (no libraries: unzip + parse the sheet XML) ---- */
+  async unzip(buf) {
+    const u8 = new Uint8Array(buf), dv = new DataView(buf), len = buf.byteLength;
+    let eocd = -1;
+    for (let i = len - 22; i >= 0 && i >= len - 22 - 65557; i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('That file is not an Excel .xlsx workbook.');
+    const count = dv.getUint16(eocd + 10, true);
+    let off = dv.getUint32(eocd + 16, true);
+    const files = {};
+    for (let n = 0; n < count; n++) {
+      if (dv.getUint32(off, true) !== 0x02014b50) break;
+      const method = dv.getUint16(off + 10, true);
+      const csize = dv.getUint32(off + 20, true);
+      const nlen = dv.getUint16(off + 28, true), elen = dv.getUint16(off + 30, true), clen = dv.getUint16(off + 32, true);
+      const lho = dv.getUint32(off + 42, true);
+      const name = new TextDecoder().decode(u8.subarray(off + 46, off + 46 + nlen));
+      const dstart = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+      files[name] = { method, comp: u8.subarray(dstart, dstart + csize) };
+      off += 46 + nlen + elen + clen;
+    }
+    const out = {};
+    for (const name of Object.keys(files)) {
+      const f = files[name];
+      if (f.method === 0) out[name] = f.comp;
+      else {
+        const stream = new Blob([f.comp]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        out[name] = new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+    }
+    return out;
+  },
+  async readXlsx(buf) {
+    const files = await Importer.unzip(buf);
+    const dec = new TextDecoder();
+    const sst = [];
+    if (files['xl/sharedStrings.xml']) {
+      const doc = new DOMParser().parseFromString(dec.decode(files['xl/sharedStrings.xml']), 'text/xml');
+      for (const si of doc.getElementsByTagName('si')) {
+        let s2 = '';
+        for (const t of si.getElementsByTagName('t')) s2 += t.textContent;
+        sst.push(s2);
+      }
+    }
+    const names = Object.keys(files).filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n))
+      .sort((a, b) => parseInt(a.replace(/\D/g, ''), 10) - parseInt(b.replace(/\D/g, ''), 10));
+    if (!names.length) throw new Error('No worksheets found inside ' + Importer._fileName + '.');
+    return names.map(n => Importer.sheetRows(dec.decode(files[n]), sst));
+  },
+  sheetRows(xml, sst) {
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const out = [];
+    for (const row of doc.getElementsByTagName('row')) {
+      const cells = [];
+      for (const c of row.getElementsByTagName('c')) {
+        const ref = (c.getAttribute('r') || '').replace(/[0-9]/g, '');
+        let col = 0;
+        for (let i = 0; i < ref.length; i++) col = col * 26 + (ref.charCodeAt(i) - 64);
+        col = ref ? col - 1 : cells.length;
+        const t = c.getAttribute('t');
+        let val = '';
+        if (t === 'inlineStr') { const is2 = c.getElementsByTagName('t')[0]; val = is2 ? is2.textContent : ''; }
+        else { const v = c.getElementsByTagName('v')[0]; if (v) val = t === 's' ? (sst[parseInt(v.textContent, 10)] || '') : v.textContent; }
+        cells[col] = val;
+      }
+      out.push(cells);
+    }
+    return out;
+  },
+  rawCsv(text) {
+    text = String(text || '').replace(/^\ufeff/, '');
+    const rows = []; let row = [], cell = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQ) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+        else cell += ch;
+      } else if (ch === '"') inQ = true;
+      else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); cell = ''; rows.push(row); row = [];
+      } else cell += ch;
+    }
+    row.push(cell); rows.push(row);
+    return rows;
+  },
+  /* ---- Turning raw rows into sale rows ---- */
+  harvest(sheets) {
+    const norm = s2 => String(s2 == null ? '' : s2).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const venues = venueGroups().map(v => v.venue);
+    const sigWords = v => norm(v).split(' ').filter(w => w.length >= 5);
+    const out = [], seen = new Set();
+    for (const rows of sheets) {
+      let map = null, venueHint = '';
+      for (const cells of rows) {
+        const texts = (cells || []).map(norm);
+        if (texts.indexOf('name') > -1 && (texts.indexOf('dress style') > -1 || texts.indexOf('dress') > -1)) {
+          map = {};
+          texts.forEach((t, i) => {
+            if (t === 'total') map.total = i; else if (t === 'type') map.type = i;
+            else if (t === 'paid') map.paid = i; else if (t === 'deposit') map.deposit = i;
+            else if (t === 'name') map.name = i; else if (t === 'child') map.child = i;
+            else if (t === 'school') map.school = i; else if (t === 'dress style' || t === 'dress') map.dress = i;
+            else if (t === 'colour' || t === 'color') map.colour = i;
+            else if (t === 'size') map.size = i; else if (t === 'underskirt') map.underskirt = i;
+          });
+          continue;
+        }
+        const filled = (cells || []).filter(x => String(x == null ? '' : x).trim() !== '');
+        if (filled.length && filled.length <= 3) {
+          // A short section-title row ("Cashel Palace 19th & 20th Sept")
+          // tells us which event the sales under it belong to.
+          const h = norm(filled.join(' '));
+          const hits = venues.filter(v => sigWords(v).some(w => h.indexOf(w) > -1));
+          if (hits.length === 1) venueHint = hits[0];
+        }
+        if (!map || !filled.length) continue;
+        const cellV = k => map[k] == null ? '' : String(cells[map[k]] == null ? '' : cells[map[k]]).trim();
+        const name = cellV('name'), dress = cellV('dress');
+        if (!name || !dress) continue;
+        const num = s2 => { const n = parseFloat(String(s2).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; };
+        const total = num(cellV('total')), deposit = num(cellV('deposit'));
+        const paidRaw = cellV('paid').toUpperCase();
+        if (!(total > 0 || deposit > 0 || paidRaw)) continue; // school-tracking rows, not sales
+        const r = { name, child: cellV('child'), school: cellV('school'), dress,
+          colour: cellV('colour'), size: cellV('size').replace(/\.0$/, ''),
+          underskirt: cellV('underskirt'), total, deposit, paidRaw,
+          method: Importer.methodName(cellV('type')), venue: venueHint, custId: null };
+        // The same sale often sits on two tabs (DRESSES + the per-event tab)
+        // - only the first copy counts, even when one tab spells the name a
+        // little differently. Twins are safe: the child's name is in the key.
+        const c = Importer.matchCustomer(name);
+        const key = (c ? 'id ' + c.id : norm(name)) + '|' + norm(r.child) + '|' + norm(dressBaseName(dress));
+        if (seen.has(key)) { r.status = 'dup'; out.push(r); continue; }
+        seen.add(key);
+        if (c) {
+          r.custId = c.id;
+          // "Francesca" on the sheet and "Francesca Communion Dress" on an
+          // invoice are the same dress - compare with the kind words gone.
+          const stripKind = s3 => s3.replace(/\b(communion|dress|gown)\b/g, ' ').replace(/ +/g, ' ').trim();
+          const base = stripKind(norm(dressBaseName(dress)));
+          const have = (DB.invoices || []).some(i => i.customerId === c.id &&
+            DressRegister.dressesOf(i).some(d => stripKind(norm(d)) === base));
+          r.status = have ? 'have' : 'ready';
+        } else r.status = 'pick';
+        out.push(r);
+      }
+    }
+    return out;
+  },
+  matchCustomer(name) {
+    const norm = s2 => String(s2 || '').toLowerCase().replace(/[^a-z]+/g, '');
+    const n = norm(name);
+    if (!n) return null;
+    const cs = DB.customers || [];
+    const exact = cs.filter(c => norm(c.name) === n);
+    if (exact.length === 1) return exact[0];
+    if (exact.length) return null; // two records share the name - she picks by hand
+    const near = cs.filter(c => { const m = norm(c.name); return m.length > 4 && Importer.dist(m, n) <= 2; });
+    return near.length === 1 ? near[0] : null; // catches "Jo Shanon" for Jo Shannon
+  },
+  dist(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 3;
+    const prev = [];
+    for (let j = 0; j <= b.length; j++) prev[j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      let diag = prev[0]; prev[0] = i; let best = prev[0];
+      for (let j = 1; j <= b.length; j++) {
+        const cur = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
+        diag = prev[j]; prev[j] = cur; if (cur < best) best = cur;
+      }
+      if (best > 2) return 3;
+    }
+    return prev[b.length];
+  },
+  methodName(t) {
+    const u = String(t || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (!u) return '';
+    if (u === 'SUMUP') return 'SumUp';
+    if (u === 'CASH') return 'Cash';
+    if (u === 'PL' || u === 'PLINK' || u === 'PAYMENTLINK') return 'Payment link';
+    if (u.indexOf('REV') === 0) return 'Revolut';
+    if (u.indexOf('BANK') === 0 || u === 'BT') return 'Bank transfer';
+    if (u === 'CARD') return 'Card';
+    return String(t).trim();
+  },
+  /* ---- The check-before-it-happens window ---- */
+  statusCell(r, i) {
+    if (r.status === 'ready') return '<span class="badge b-green">New invoice</span>';
+    if (r.status === 'have') return '<span class="badge b-grey">Already invoiced</span> ' +
+      '<a href="#" class="plain" onclick="Importer.force(' + i + '); return false" title="A second dress for the same family is sometimes real \u2014 twins in the same style.">create anyway</a>';
+    if (r.status === 'dup') return '<span class="badge b-grey">Same row twice in the file \u2014 skipped</span>';
+    return '<span class="badge b-amber">No matching customer</span><br><select class="mini" style="max-width:180px" onchange="Importer.pickCust(' + i + ', this.value)">' +
+      '<option value="">Skip this row</option>' +
+      Importer._custs.map((c, j) => '<option value="' + j + '">' + esc(c.name) + (c.daughterName ? ' (' + esc(c.daughterName) + ')' : '') + '</option>').join('') +
+      '</select>';
+  },
+  force(i) {
+    Importer.rows[i].status = 'ready';
+    const el = document.getElementById('imp-st-' + i);
+    if (el) el.innerHTML = Importer.statusCell(Importer.rows[i], i);
+  },
+  pickCust(i, v) {
+    Importer.rows[i].custId = v === '' ? null : Importer._custs[parseInt(v, 10)].id;
+  },
+  preview() {
+    const rows = Importer.rows;
+    Importer._custs = (DB.customers || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    const counts = { ready: 0, have: 0, dup: 0, pick: 0 };
+    rows.forEach(r => counts[r.status] = (counts[r.status] || 0) + 1);
+    UI.modal(`
+      <h3>\ud83d\udcc4 Import ${esc(Importer._fileName)}</h3>
+      <p class="sub">${rows.length} sale row${rows.length === 1 ? '' : 's'} found:
+        <b>${counts.ready}</b> ready to become invoices, <b>${counts.have}</b> already invoiced,
+        <b>${counts.dup}</b> repeated in the file, <b>${counts.pick}</b> need a customer picked below.
+        Nothing is created until you press the button.</p>
+      <div style="max-height:55vh; overflow:auto; border:1px solid var(--line); border-radius:8px">
+        <table class="tbl" style="margin:0"><thead><tr>
+          <th>Customer</th><th>Dress</th><th>School</th><th>Total</th><th>Paid</th><th>What happens</th></tr></thead>
+        <tbody>
+        ${rows.map((r, i) => `<tr>
+          <td><b>${esc(r.name)}</b>${r.child ? '<br><span class="muted">for ' + esc(r.child) + '</span>' : ''}</td>
+          <td>${esc(r.dress)}${r.colour ? ' \u00b7 ' + esc(r.colour) : ''}${r.size ? ' \u00b7 size ' + esc(r.size) : ''}${r.underskirt ? ' \u00b7 + underskirt' : ''}
+            ${r.venue ? '<br><span class="muted">\ud83d\udccd ' + esc(r.venue) + '</span>' : ''}</td>
+          <td>${esc(r.school)}</td>
+          <td>${r.total ? eurPlain(Math.round(r.total * 100)) : '\u2014'}</td>
+          <td>${r.paidRaw === 'FULL' ? 'FULL' + (r.method ? ' \u00b7 ' + esc(r.method) : '')
+            : r.deposit ? 'DEP ' + eurPlain(Math.round(r.deposit * 100)) + (r.method ? ' \u00b7 ' + esc(r.method) : '') : '\u2014'}</td>
+          <td id="imp-st-${i}">${Importer.statusCell(r, i)}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div class="modalfoot">
+        <button class="primary" onclick="Importer.apply()">Create the invoices</button>
+        <button onclick="UI.closeModal()">Cancel</button>
+      </div>`, true);
+  },
+  apply() {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    let made = 0;
+    for (const r of Importer.rows) {
+      if (!(r.status === 'ready' || (r.status === 'pick' && r.custId))) continue;
+      const inv = Invoices.blank(r.custId);
+      inv._venueKey = Invoices.codeFor(r.custId).venueKey;
+      let title = dressBaseName(r.dress) + ' Communion Dress';
+      if (r.underskirt) title += ' + Underskirt' + (/^(y|yes|1|inc|true)$/i.test(r.underskirt) ? '' : ' ' + r.underskirt);
+      inv.lines = [{ title, colour: r.colour, size: r.size, qty: 1, priceCents: Math.round(r.total * 100) }];
+      if (!inv.school && r.school) {
+        const sq = Schools.squash(r.school);
+        inv.school = Schools.list().find(x => sq.indexOf(Schools.squash(x)) === 0) || r.school;
+      }
+      if (r.paidRaw === 'FULL') { inv.paidInFull = true; inv.depositCents = Math.round(r.total * 100); inv.depositMethod = r.method || ''; }
+      else if (r.deposit > 0) { inv.depositCents = Math.round(r.deposit * 100); inv.depositMethod = r.method || ''; }
+      // The sheet's section header names the event - used only when the
+      // customer's own bookings and orders say nothing (so live booking
+      // data always wins over a possibly stale spreadsheet).
+      if (r.venue && !saleVenueOf(inv).event) inv.venueOverride = { venue: r.venue, date: '' };
+      inv.note = 'Imported from ' + Importer._fileName;
+      DB.invoices = DB.invoices || [];
+      DB.invoices.push(inv);
+      made++;
+    }
+    Store.save(); Invoices._push(); UI.closeModal(); App.route();
+    UI.toast(made + ' invoice' + (made === 1 ? '' : 's') + ' created from ' + Importer._fileName +
+      ' \u2014 Production, Invoices, School watch and the venue pages all follow on their own.', 6000);
+  },
+};
+
 let prodQuery = '';
 let prodView = 'dress'; // 'dress' = size runs for the maker | 'event' = one list per event day
 Pages.production = () => {
@@ -5272,8 +5639,12 @@ Pages.production = () => {
   return `
     <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:4px">
       <h1 style="margin:0">Production <span class="muted" style="font-size:1rem; font-weight:400">${total}</span></h1>
-      <button class="primary" onclick="Production.exportXlsx()">\u2b07 Download Excel</button>
+      <span style="display:inline-flex; gap:8px">
+        <button onclick="Importer.pick()" title="Read the production workbook made in Excel and create the invoices from it">\u2b06 Import Excel sheet</button>
+        <button class="primary" onclick="Production.exportXlsx()">\u2b07 Download Excel</button>
+      </span>
     </div>
+    <input type="file" id="imp-file" accept=".xlsx,.csv" style="display:none" onchange="Importer.fileChosen(this)">
     <p class="sub">Every dress sold (one row per invoice line) \u2014 the live production sheet.${canEdit ? '' : ' Notes are locked (invoicing passcode).'}</p>
     <div class="chips" style="margin-bottom:8px">
       <button class="chip ${prodView === 'dress' ? 'on' : ''}" onclick="prodView = 'dress'; App.route()">\ud83d\udc57 By dress</button>
@@ -5527,11 +5898,11 @@ Pages.invoices = () => {
     <h1>Invoices <span class="muted" style="font-size:1rem; font-weight:400">${all.length}</span></h1>
     <p class="sub">One drop-down per venue \u2014 tap it open for the invoices, split by event day. Not-paid rows float to the top; \u23f0 marks 30+ days without payment.</p>
     <div class="statrow">
-      <div class="stat"><div class="l">Invoices</div><div class="v">${all.length}</div></div>
-      <div class="stat good"><div class="l">Taken so far</div><div class="v">${eurPlain(madeCents)}</div></div>
-      <div class="stat good"><div class="l">Paid in full</div><div class="v">${paidN}</div></div>
-      <div class="stat"><div class="l">Not paid yet</div><div class="v">${all.length - paidN}</div></div>
-      <div class="stat"><div class="l">Still owed</div><div class="v">${eurPlain(owedCents)}</div></div>
+      <div class="stat" style="cursor:pointer" title="Show every invoice" onclick="invPaidFilter = ''; invVenueFilter = ''; App.route()"><div class="l">Invoices</div><div class="v">${all.length}</div></div>
+      <div class="stat good" style="cursor:pointer" title="Tap: where the money came from, venue by venue" onclick="Invoices.takenModal()"><div class="l">Taken so far \u25b8</div><div class="v">${eurPlain(madeCents)}</div></div>
+      <div class="stat good" style="cursor:pointer" title="Show only the paid-in-full invoices" onclick="invPaidFilter = 'paid'; App.route()"><div class="l">Paid in full</div><div class="v">${paidN}</div></div>
+      <div class="stat" style="cursor:pointer" title="Show only the invoices not yet paid" onclick="invPaidFilter = 'unpaid'; App.route()"><div class="l">Not paid yet</div><div class="v">${all.length - paidN}</div></div>
+      <div class="stat" style="cursor:pointer" title="Tap: who still owes, and from which venue" onclick="Invoices.owedModal()"><div class="l">Still owed \u25b8</div><div class="v">${eurPlain(owedCents)}</div></div>
     </div>
     <div class="flex" style="align-items:center; flex-wrap:wrap; margin-bottom:10px">
       <div class="chips" style="margin:0">
@@ -5539,10 +5910,9 @@ Pages.invoices = () => {
         <button class="chip ${invPaidFilter === 'unpaid' ? 'on' : ''}" onclick="invPaidFilter = 'unpaid'; App.route()">\u26a0 Not paid (${all.length - paidN})</button>
         <button class="chip ${invPaidFilter === 'paid' ? 'on' : ''}" onclick="invPaidFilter = 'paid'; App.route()">\u2713 Paid (${paidN})</button>
       </div>
-      <select class="bigselect" onchange="invVenueFilter = this.value; App.route()" title="Show one venue only">
-        <option value="">All venues</option>
-        ${venues.map(v2 => `<option ${invVenueFilter === v2 ? 'selected' : ''}>${esc(v2)}</option>`).join('')}
-      </select>
+    </div>
+    <div class="chips" style="margin-bottom:10px">
+      ${(Invoices._venues = venues) && venues.map((v2, i) => `<button class="chip ${invVenueFilter === v2 ? 'on' : ''}" onclick="Invoices.toggleVenueFilter(${i})">\ud83d\udccd ${esc(v2)}</button>`).join('')}
     </div>
     ${cards || (all.length ? '<div class="card muted">Nothing under this filter.</div>'
       : '<div class="card muted">No invoices yet \u2014 every invoice you create appears here the moment it\u2019s saved.</div>')}
