@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 81)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 82)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6223 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6239 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 81</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 82</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2443,6 +2443,18 @@ function takenForSchoolKey(key) {
   }
   return out.sort((a, b) => a.dress.localeCompare(b.dress));
 }
+function takenForCustomer(custId) {
+  const c = Domain.customer(custId);
+  if (!c) return [];
+  const raw = Schools.of(custId);
+  if (!raw) return [];
+  const inv = Invoices.invFor(custId);
+  const mine = new Set(((inv && inv.lines) || []).filter(l => l.title)
+    .map(l => dressBaseName(l.title).toLowerCase()));
+  return takenForSchoolKey(schoolKeyOf(raw)).filter(t =>
+    String(t.who).trim().toLowerCase() !== String(c.name).trim().toLowerCase()
+    && !mine.has(dressBaseName(t.dress).toLowerCase()));
+}
 function schoolWatch(venue, day) {
   const group = venueGroups().find(x => x.venue === venue);
   if (!group) return [];
@@ -3897,7 +3909,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 81'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 82'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5685,6 +5697,7 @@ const Actions = {
         </div>
         <div class="cust"${r.clash ? ' style="color:#b3261e"' : ''}>${esc(r.c.name)}${(r.kid || r.c.daughterName) ? ' <span class="m" style="font-weight:400">\u2014 for ' + esc(r.kid || r.c.daughterName) + '</span>' : ''}</div>
         ${r.clash ? `<div style="border:2.5px solid #b3261e; color:#b3261e; border-radius:8px; padding:6px 10px; margin:6px 0; font-weight:700">\u26a0 DRESS CLASH${r.clash.overridden ? ' \u2014 OVERRIDDEN: \u201c' + esc(r.clash.reason) + '\u201d' : ''} \u2014 ${esc(r.clash.text)}</div>` : ''}
+        ${r.taken && r.taken.length ? `<div style="border:2.5px solid #b3261e; background:#fdecec; color:#b3261e; border-radius:8px; padding:6px 10px; margin:6px 0; font-weight:800">\ud83d\udeab CANNOT TRY ON \u2014 already taken for her school: ${r.taken.map(t => esc(dressBaseName(t.dress).replace(/ Communion Dress$/i, '')) + ' (' + esc(t.who) + (t.year ? ' \u00b7 ' + esc(t.year) : '') + ')').join(' \u00b7 ')}</div>` : ''}
         <div class="grid">
           <div><b>Phone:</b> ${esc(r.c.phone || '\u2014')}</div>
           <div><b>Email:</b> ${esc(r.c.email || '\u2014')}</div>
@@ -5729,6 +5742,7 @@ const Actions = {
     return {
       c, qa,
       clash: DressRegister.flagFor(c.id),
+      taken: takenForCustomer(c.id),
       items: o ? Domain.itemsOf(o.id) : [],
       orderRef: o ? o.reference : '',
       headline: o && o.eventHotel ? esc(o.eventHotel) + (o.eventDate ? ' \u00b7 <b>' + esc(fmtDate(o.eventDate)) + '</b>' : '') : 'No event on file',
@@ -5943,6 +5957,7 @@ const Actions = {
       rows.push({
         c, qa, kid: apptDaughter(slot) || '', items: Domain.itemsOf(o.id), orderRef: o.reference,
         clash: DressRegister.flagFor(c.id),
+        taken: takenForCustomer(c.id),
         headline: esc(venue) + ' \u00b7 <b>' + esc(dayLabel) + '</b> \u00b7 ' + esc((parts[0] || '').trim()),
         slotMain: slot && slot.time ? slot.time : '\u2014',
         slotSub: blk ? 'Block ' + blk : 'No slot booked',
@@ -6050,7 +6065,8 @@ const Actions = {
       const qaFallback = DB.appointments.filter(x => x.customerId === c.id && x.questions.some(z => z.a))
         .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1)[0];
       const qa = (a && a.questions && a.questions.some(z => z.a)) ? a : qaFallback;
-      rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim(), clash: DressRegister.flagFor(c.id) });
+      rows.push({ c, o, a, dress, qa, occasion: (parts[0] || '').trim(), clash: DressRegister.flagFor(c.id),
+        taken: takenForCustomer(c.id) });
     }
     const dedupedRS = dedupeDayRows(rows);
     rows.length = 0; Array.prototype.push.apply(rows, dedupedRS);
@@ -6094,13 +6110,13 @@ const Actions = {
         <tbody>${b.rows.map(r => `<tr${r.clash ? ' style="background:#fdecec; color:#b3261e"' : ''}>
           <td class="t">${esc(r.a.time)}${r.clash ? '<div style="font-size:10px; font-weight:800">\u26a0 CLASH' + (r.clash.overridden ? ' (o/r)' : '') + '</div>' : ''}</td>
           <td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
-          <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' \u00b7 ' + esc(r.dress.size) + '</span><br>' : ''}<span class="m">${esc(r.occasion)}</span></td>
+          <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' \u00b7 ' + esc(r.dress.size) + '</span><br>' : ''}<span class="m">${esc(r.occasion)}</span>${r.taken && r.taken.length ? '<div style="color:#b3261e; font-weight:800; font-size:11px">\ud83d\udeab TAKEN FOR SCHOOL: ' + r.taken.map(t => esc(dressBaseName(t.dress).replace(/ Communion Dress$/i, ''))).join(', ') + '</div>' : ''}</td>
           <td>${answers(r)}</td>
         </tr>`).join('')}</tbody></table>`).join('') +
         (unslotted.length ? `<h2>No slot time yet</h2><table>${head}
         <tbody>${unslotted.map(r => `<tr${r.clash ? ' style="background:#fdecec; color:#b3261e"' : ''}>
           <td class="t blank">____</td><td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
-          <td>${r.dress ? esc(r.dress.title) : '\u2014'}</td>
+          <td>${r.dress ? esc(r.dress.title) : '\u2014'}${r.taken && r.taken.length ? '<div style="color:#b3261e; font-weight:800; font-size:11px">\ud83d\udeab TAKEN FOR SCHOOL: ' + r.taken.map(t => esc(dressBaseName(t.dress).replace(/ Communion Dress$/i, ''))).join(', ') + '</div>' : ''}</td>
           <td>${answers(r)}</td>
         </tr>`).join('')}</tbody></table>` : '');
       })()}
