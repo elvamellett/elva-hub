@@ -168,6 +168,18 @@ function syncShopify(siteTok) {
       // Drive not authorised yet — sync still works, each device on its own
       central.reason = String((eDrive && eDrive.message) || eDrive);
     }
+    // The newest DARCYBOW-VERSION-n.html sitting in Drive — the page
+    // compares it to its own stamp and refreshes itself when it's stale.
+    var latestVersion = 0;
+    try {
+      var vFiles = DriveApp.searchFiles("title contains 'DARCYBOW-VERSION-'");
+      while (vFiles.hasNext()) {
+        var vf = vFiles.next();
+        if (vf.isTrashed()) continue;
+        var vm = String(vf.getName()).match(/^DARCYBOW-VERSION-(\d+)\.html$/i);
+        if (vm && parseInt(vm[1], 10) > latestVersion) latestVersion = parseInt(vm[1], 10);
+      }
+    } catch (eVer) { /* best-effort */ }
     // Which sheet photos exist (names + dates only — the bytes are fetched
     // one by one when a customer's page opens).
     var photosIdx = [];
@@ -193,6 +205,7 @@ function syncShopify(siteTok) {
       notesJson: notesJson,
       staffJson: staffJson,
       photosIdx: photosIdx,
+      latestVersion: latestVersion,
       central: central,
       scopeWarning: scopeWarning,
       syncedAt: new Date().toISOString(),
