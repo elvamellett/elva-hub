@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 83)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 84)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6609 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6613 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 83</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 84</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3909,7 +3909,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 83'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 84'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5474,10 +5474,14 @@ const Importer = {
         const filled = (cells || []).filter(x => String(x == null ? '' : x).trim() !== '');
         if (filled.length && filled.length <= 3) {
           // A short section-title row ("Cashel Palace 19th & 20th Sept")
-          // tells us which event the sales under it belong to.
+          // tells us which event the sales under it belong to. A title we
+          // DON'T recognise (the workbook's short codes - KV1, MER1, WEST)
+          // must CLEAR the hint, never keep the previous event's - only
+          // Saturday/Sunday markers inside a section leave it alone.
           const h = norm(filled.join(' '));
           const hits = venues.filter(v => sigWords(v).some(w => h.indexOf(w) > -1));
           if (hits.length === 1) venueHint = hits[0];
+          else if (!/^(sat(urday)?|sun(day)?)$/.test(h)) venueHint = '';
         }
         if (!map || !filled.length) continue;
         const cellV = k => map[k] == null ? '' : String(cells[map[k]] == null ? '' : cells[map[k]]).trim();
