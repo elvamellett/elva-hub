@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 87)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 88)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6777 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6788 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 87</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 88</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3941,7 +3941,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 87'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 88'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5428,9 +5428,18 @@ const Production = {
    COLOUR / SIZE / UNDERSKIRT, and turns each sale row into a real invoice
    on the matching customer. The invoice then drives everything else on its
    own: Production, the invoice book, School watch and the venue pages. */
+/* The production workbook Edelle sent on 29 Sept 2026 (SCHOOLS,
+   DRESSES and Donal tabs), baked in so one tap runs the import
+   with no file-picking. Same pipeline as choosing the file. */
+const BUNDLED_SHEET = { label: '', name: '', sheets: [] };
 const Importer = {
   rows: [], _custs: [], _fileName: '',
   pick() { const el = document.getElementById('imp-file'); if (el) el.click(); },
+  loadBundled() {
+    Importer._fileName = BUNDLED_SHEET.name;
+    Importer.rows = Importer.harvest(BUNDLED_SHEET.sheets);
+    Importer.preview();
+  },
   async fileChosen(input) {
     const f = input.files && input.files[0];
     if (!f) return;
@@ -5807,7 +5816,8 @@ Pages.production = () => {
   return `
     <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:4px">
       <h1 style="margin:0">Production <span class="muted" style="font-size:1rem; font-weight:400">${total}</span></h1>
-      <span style="display:inline-flex; gap:8px">
+      <span style="display:inline-flex; gap:8px; flex-wrap:wrap">
+        <button onclick="Importer.loadBundled()" title="The workbook sent on 29 Sept is built into this version \u2014 one tap, no file-picking. Check the preview, then create.">\u26a1 Load ${esc(BUNDLED_SHEET.label)}</button>
         <button onclick="Importer.pick()" title="Read the production workbook made in Excel and create the invoices from it">\u2b06 Import Excel sheet</button>
         <button class="primary" onclick="Production.exportXlsx()">\u2b07 Download Excel</button>
       </span>
