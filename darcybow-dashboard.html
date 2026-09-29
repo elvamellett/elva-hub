@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 90)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 91)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6821 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6835 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 90</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 91</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3946,7 +3946,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 90'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 91'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4222,13 +4222,9 @@ const Invoices = {
       note: '', sterling: { gbpCents: 0, rate: 0 },
       // One dress per school per communion year: prefill both from the
       // booking answers where they match, staff confirm on the invoice.
-      school: (() => {
-        const raw = Schools.of(custId);
-        if (!raw) return '';
-        const n = Schools.norm(raw);
-        const key = Schools.aliases()[n] ? Schools.norm(Schools.aliases()[n]) : n;
-        return Schools.list().find(x => Schools.norm(x) === key) || '';
-      })(),
+      // Pulled straight from her booking answer - snapped onto the
+      // pick-list spelling where it matches, her own words where it doesn't.
+      school: Invoices.schoolFromSheet(custId),
       commYear: (() => {
         for (const a of DB.appointments) {
           if (a.customerId !== custId) continue;
@@ -4294,8 +4290,14 @@ const Invoices = {
     // the override box is ticked and a reason given; every override is
     // logged with who, when and why.
     if (inv._schoolUnlisted) {
-      UI.err(new Error('\u201c' + inv.school + '\u201d isn\u2019t on the school pick-list \u2014 pick a school from the list, or add it on the Schools page first.'));
-      return null;
+      // A school the pick-list hasn't met yet (usually word-for-word from
+      // the booking answer): add it rather than block the save. The
+      // Schools page's merge suggestions tidy any double spellings later.
+      Schools.list().push(inv.school);
+      if (typeof LiveSync !== 'undefined' && LiveSync.available()) {
+        try { google.script.run.saveSchools(Gate.token(), JSON.stringify({ aliases: Schools.aliases(), notSame: Schools.notSameList(), list: Schools.list(), edits: DB.schoolEdits || {} })); } catch (e2) { /* non-fatal */ }
+      }
+      UI.toast('\u201c' + inv.school + '\u201d added to the school pick-list \u2014 the one-dress-per-school watch now covers it.');
     }
     delete inv._schoolUnlisted;
     const clashes = DressRegister.forInvoice(inv);
@@ -4411,7 +4413,13 @@ const Invoices = {
     const n = Schools.norm(raw);
     const alias = Schools.aliases()[n];
     const key = alias ? Schools.norm(alias) : n;
-    return Schools.list().find(x => Schools.norm(x) === key) || alias || raw;
+    const exact = Schools.list().find(x => Schools.norm(x) === key);
+    if (exact) return exact;
+    // "Tankerstown NS, Bansha" in the booking answer IS the pick-list's
+    // "Tankerstown NS" - the answer just carries the townland too.
+    const sq = Schools.squash(raw);
+    const prefix = Schools.list().find(x => sq.indexOf(Schools.squash(x)) === 0);
+    return prefix || alias || raw;
   },
   commYearFromSheet(custId) {
     for (const a of DB.appointments) {
@@ -5814,7 +5822,9 @@ const Importer = {
       let title = dressBaseName(r.dress) + ' Communion Dress';
       if (r.underskirt) title += ' + Underskirt' + (/^(y|yes|1|inc|true)$/i.test(r.underskirt) ? '' : ' ' + r.underskirt);
       inv.lines = [{ title, colour: r.colour, size: r.size, qty: 1, priceCents: Math.round(r.total * 100) }];
-      if (!inv.school && r.school) {
+      if (r.school) {
+        // The sheet's own school cell beats the booking-answer prefill -
+        // it's what was confirmed at the fitting.
         const sq = Schools.squash(r.school);
         inv.school = Schools.list().find(x => sq.indexOf(Schools.squash(x)) === 0) || r.school;
       }
@@ -6142,6 +6152,10 @@ Pages.invoice = (custId) => {
   const existing = Invoices.invFor(custId);
   if (!InvDraft || InvDraft.customerId !== custId || (existing && InvDraft.id !== existing.id)) {
     InvDraft = existing ? JSON.parse(JSON.stringify(existing)) : Invoices.blank(custId);
+    if (!InvDraft.school) {
+      const s2 = Invoices.schoolFromSheet(custId);
+      if (s2) InvDraft.school = s2; // her booking answer, filled in for her
+    }
   }
   const inv = InvDraft;
   if (!inv.commYear) inv.commYear = String(new Date().getFullYear() + 1); // older drafts pick up the default too
