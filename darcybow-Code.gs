@@ -135,18 +135,30 @@ function syncShopify(siteTok) {
     // LAST 60 DAYS of orders — older orders (and the delivery addresses on
     // them) silently never arrive. Detect that and tell the dashboard.
     var scopeWarning = '';
-    try {
+    var probeScopes_ = function (tok) {
       var scResp = UrlFetchApp.fetch('https://' + store + '/admin/oauth/access_scopes.json',
-        { headers: { 'X-Shopify-Access-Token': token }, muteHttpExceptions: true });
-      if (scResp.getResponseCode() === 200) {
-        var handles = (JSON.parse(scResp.getContentText()).access_scopes || [])
-          .map(function (s) { return s.handle; });
-        if (handles.indexOf('read_all_orders') === -1) {
-          scopeWarning = 'Shopify is only showing this dashboard the last 60 days of orders — ' +
-            'older orders and their delivery addresses are invisible. Fix (one tick): Shopify admin → ' +
-            'Settings → Apps and sales channels → Develop apps → open the dashboard’s app → ' +
-            'Configuration → Admin API integration → Edit → tick read_all_orders → Save, then sync again.';
+        { headers: { 'X-Shopify-Access-Token': tok }, muteHttpExceptions: true });
+      if (scResp.getResponseCode() !== 200) return null;
+      return (JSON.parse(scResp.getContentText()).access_scopes || [])
+        .map(function (s) { return s.handle; });
+    };
+    try {
+      var handles = probeScopes_(token);
+      if (handles && handles.indexOf('read_all_orders') === -1) {
+        // The token may be a CACHED one minted before the app's permissions
+        // were upgraded (tokens live ~6h in the cache). Mint a fresh token
+        // and check again before deciding the permission is really missing.
+        var usingOwnToken = !!(props.getProperty('SHOPIFY_TOKEN') || '').trim();
+        if (!usingOwnToken) {
+          token = getAccessToken_(store, true);
+          handles = probeScopes_(token) || handles;
         }
+      }
+      if (handles && handles.indexOf('read_all_orders') === -1) {
+        scopeWarning = 'Shopify is only showing this dashboard the last 60 days of orders — the app’s ' +
+          'permissions are currently just: ' + handles.join(', ') + '. The dashboard app needs ' +
+          'read_all_orders granted AND approved on the store (Dev Dashboard → the app → release a version ' +
+          'whose access scopes include read_all_orders → Install app → approve), then sync again.';
       }
     } catch (eScopes) { /* scope probe is best-effort */ }
     var base = 'https://' + store + '/admin/api/2024-10/';
@@ -537,7 +549,7 @@ function saveSchools(siteTok, json) {
  *    via OAuth client credentials (Dev Dashboard apps). Tokens are cached
  *    until shortly before they expire.
  */
-function getAccessToken_(store) {
+function getAccessToken_(store, fresh) {
   var props = PropertiesService.getScriptProperties();
   var token = (props.getProperty('SHOPIFY_TOKEN') || '').trim();
   if (token) return token;
@@ -547,7 +559,8 @@ function getAccessToken_(store) {
     throw new Error('Not configured yet — in ⚙ Project Settings → Script properties add either SHOPIFY_TOKEN, or SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET (from the app\'s Settings → Credentials in the Shopify Dev Dashboard).');
   }
   var cache = CacheService.getScriptCache();
-  var cached = cache.get('shopify_cc_token');
+  if (fresh) cache.remove('shopify_cc_token'); // permissions may have JUST changed
+  var cached = fresh ? null : cache.get('shopify_cc_token');
   if (cached) return cached;
   var resp = UrlFetchApp.fetch('https://' + store + '/admin/oauth/access_token', {
     method: 'post',
