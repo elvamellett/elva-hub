@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 86)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 87)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6761 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6777 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 86</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 87</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1605,7 +1605,7 @@ function venueGroups() {
   const apptsBy = new Map(); // customerId|venue \u2192 sorted appointments
   for (const a of DB.appointments) {
     if (!a.eventHotel || custCancelled(a.customerId)) continue;
-    if (String(a.appointmentAt || '') && a.appointmentAt < SEASON_START) continue; // last season
+    if (String(a.appointmentAt || '') && (a.appointmentAt < SEASON_START || a.appointmentAt > SEASON_END)) continue; // other seasons
 
     const k = a.customerId + '|' + venOf(a.eventHotel);
     if (!apptsBy.has(k)) apptsBy.set(k, []);
@@ -1623,8 +1623,9 @@ function venueGroups() {
   const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
   for (const o of DB.orders) {
     if (!o.eventHotel || custCancelled(o.customerId)) continue;
-    // Last season's event days (e.g. October 2025) stay out of the venues.
-    if (o.eventDate && o.eventDate < SEASON_START) continue;
+    // Other seasons' event days (e.g. October 2025, or anything past May
+    // 2027) stay out of the venues.
+    if (o.eventDate && (o.eventDate < SEASON_START || o.eventDate > SEASON_END)) continue;
     if (!o.eventDate && String(o.createdAt || '').slice(0, 10) < SEASON_START) continue;
     const venue = venOf(o.eventHotel);
     const k = o.customerId + '|' + venue;
@@ -1775,15 +1776,30 @@ function applyCustEdits() {
 // customers, appointments, schools and bookings whose only activity is
 // older (last season's January\u2013May 2026 fittings included).
 const SEASON_START = '2026-09-01';
+// The season's event days run Sept 2026 to roughly Feb 2027, selling the
+// 2027 communions (which run to May) - anything dated past this is junk
+// or next season and stays off the dashboard.
+const SEASON_END = '2027-05-31';
 function seasonCustIds() {
-  const act = new Map(); // customerId -> newest activity date seen
-  const bump = (id, d) => { if (d && (!act.has(id) || d > act.get(id))) act.set(id, d); };
-  for (const c of DB.customers) bump(c.id, String(c.createdAt || '').slice(0, 10));
-  for (const o of DB.orders) { bump(o.customerId, String(o.createdAt || '').slice(0, 10)); bump(o.customerId, String(o.eventDate || '')); }
-  for (const a of DB.appointments) bump(a.customerId, String(a.appointmentAt || ''));
-  for (const i of DB.invoices || []) bump(i.customerId, '9999'); // invoiced = this season by definition
+  // A customer belongs on the dashboard only through THIS season's
+  // activity: an order or a booking on a 2026/27 event day, an order
+  // placed during the season, an invoice in this season's book, or being
+  // put on the wait list / added by hand. A bare customer record -
+  // newsletter signups, shoppers with no event, old seasons - is not
+  // enough on its own.
+  const within = d => d >= SEASON_START && d <= SEASON_END;
   const out = new Set();
-  for (const [id, d] of act) if (d >= SEASON_START) out.add(id);
+  for (const o of DB.orders) {
+    const ed = String(o.eventDate || '');
+    const cd = String(o.createdAt || '').slice(0, 10);
+    if ((ed && within(ed)) || (!ed && within(cd))) out.add(o.customerId);
+  }
+  for (const a of DB.appointments) {
+    const d = String(a.appointmentAt || '');
+    if (d && within(d)) out.add(a.customerId);
+  }
+  for (const i of DB.invoices || []) out.add(i.customerId); // invoiced = this season by definition
+  for (const c of DB.customers) if (c.manual || c.waitlist || c.cancelled) out.add(c.id);
   return out;
 }
 /* ---- Booking-change watch: every sync REBUILDS the appointment list
@@ -3925,7 +3941,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 86'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 87'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
