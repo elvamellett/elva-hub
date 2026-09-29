@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 84)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 85)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6613 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6746 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 84</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 85</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1403,6 +1403,7 @@ const App = {
   },
   route() {
     Domain.refreshAll();
+    if (typeof Invoices !== 'undefined' && Invoices.relink) { try { Invoices.relink(); } catch (e) { /* non-fatal */ } }
     const hash = location.hash || '#/dashboard';
     if (App._cur && App._cur !== hash) {
       if (App._popping) App._popping = false;
@@ -3909,7 +3910,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 84'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 85'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4361,6 +4362,66 @@ const Invoices = {
   },
   /* One tap on the Invoices page: paid today (or the date typed next to the
      button), with how they paid. */
+  /* ---- Self-healing: stale links + missing schools ----
+     Invoices whose customer link went stale (customer ids changed across
+     an old sync) find their customer again by the bill-to details. And an
+     invoice saved without a school or Communion year pulls them from the
+     customer's own booking answers - so the by-school production view and
+     the one-dress-per-school checks always have something to go on. Runs
+     on every page change; only writes (and shares) when something healed. */
+  schoolFromSheet(custId) {
+    const raw = Schools.of(custId);
+    if (!raw) return '';
+    const n = Schools.norm(raw);
+    const alias = Schools.aliases()[n];
+    const key = alias ? Schools.norm(alias) : n;
+    return Schools.list().find(x => Schools.norm(x) === key) || alias || raw;
+  },
+  commYearFromSheet(custId) {
+    for (const a of DB.appointments) {
+      if (a.customerId !== custId) continue;
+      for (const qa of (a.questions || [])) {
+        if (/communion/i.test(qa.q) && qa.a) { const m = String(qa.a).match(/20\d{2}/); if (m) return m[0]; }
+      }
+    }
+    return String(new Date().getFullYear() + 1); // this season sells NEXT year's communions
+  },
+  relink() {
+    const invs = DB.invoices || [];
+    if (!invs.length) return 0;
+    const ids = new Set((DB.customers || []).map(c => c.id));
+    const nameKey = s2 => String(s2 || '').toLowerCase().replace(/[^a-z]+/g, '');
+    let n = 0, byEmail = null, byPhone = null, byName = null;
+    for (const inv of invs) {
+      if (!ids.has(inv.customerId)) {
+        if (!byEmail) {
+          byEmail = new Map(); byPhone = new Map(); byName = new Map();
+          for (const c of DB.customers || []) {
+            const e = String(c.email || '').toLowerCase();
+            if (e && !byEmail.has(e)) byEmail.set(e, c);
+            const p = ImportService._digits(c.phone || '');
+            if (p && p.length >= 7 && !byPhone.has(p)) byPhone.set(p, c);
+            const nm = nameKey(c.name);
+            if (nm) byName.set(nm, byName.has(nm) ? null : c); // null = two share the name
+          }
+        }
+        const ct = inv.contact || {};
+        const p2 = ImportService._digits(ct.phone || '');
+        const c = byEmail.get(String(ct.email || '').toLowerCase())
+          || (p2.length >= 7 ? byPhone.get(p2) : null) || byName.get(nameKey(ct.name)) || null;
+        if (c) { inv.customerId = c.id; inv.updatedAt = nowIso(); n++; }
+      }
+      if (ids.has(inv.customerId) && !Invoices.isEmpty(inv)) {
+        if (!inv.school) {
+          const s2 = Invoices.schoolFromSheet(inv.customerId);
+          if (s2) { inv.school = s2; inv.updatedAt = nowIso(); n++; }
+        }
+        if (!inv.commYear) { inv.commYear = Invoices.commYearFromSheet(inv.customerId); inv.updatedAt = nowIso(); n++; }
+      }
+    }
+    if (n) { Store.save(); Invoices._push(); }
+    return n;
+  },
   toggleVenueFilter(i) {
     const v = (Invoices._venues || [])[i] || '';
     invVenueFilter = invVenueFilter === v ? '' : v;
@@ -5454,8 +5515,14 @@ const Importer = {
     const norm = s2 => String(s2 == null ? '' : s2).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
     const venues = venueGroups().map(v => v.venue);
     const sigWords = v => norm(v).split(' ').filter(w => w.length >= 5);
-    const out = [], seen = new Set();
-    for (const rows of sheets) {
+    // The richest copy of each sale first: the per-event tabs at the BACK of
+    // the workbook carry the venue, DRESSES carries the child's name - the
+    // SCHOOLS tab at the front is the thinnest. So read back to front.
+    const ordered = sheets.slice().reverse();
+    const out = [];
+    const seenKids = new Map(); // customer|dress -> child names already taken
+    const seenSchoolFix = new Set();
+    for (const rows of ordered) {
       let map = null, venueHint = '';
       for (const cells of rows) {
         const texts = (cells || []).map(norm);
@@ -5475,9 +5542,10 @@ const Importer = {
         if (filled.length && filled.length <= 3) {
           // A short section-title row ("Cashel Palace 19th & 20th Sept")
           // tells us which event the sales under it belong to. A title we
-          // DON'T recognise (the workbook's short codes - KV1, MER1, WEST)
-          // must CLEAR the hint, never keep the previous event's - only
-          // Saturday/Sunday markers inside a section leave it alone.
+          // DON'T recognise (the workbook's short codes - KV1, MER1, WEST -
+          // or channel names like SHOPIFY / Studio) must CLEAR the hint,
+          // never keep the previous event's - only Saturday/Sunday markers
+          // inside a section leave it alone.
           const h = norm(filled.join(' '));
           const hits = venues.filter(v => sigWords(v).some(w => h.indexOf(w) > -1));
           if (hits.length === 1) venueHint = hits[0];
@@ -5485,37 +5553,72 @@ const Importer = {
         }
         if (!map || !filled.length) continue;
         const cellV = k => map[k] == null ? '' : String(cells[map[k]] == null ? '' : cells[map[k]]).trim();
-        const name = cellV('name'), dress = cellV('dress');
-        if (!name || !dress) continue;
-        const num = s2 => { const n = parseFloat(String(s2).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; };
+        const name = cellV('name');
+        if (!name || name === '?') continue;
+        // First number in the cell only: a note like "100 + 100" is 100,
+        // not 100100.
+        const num = s2 => { const m2 = String(s2 == null ? '' : s2).match(/\d+(?:\.\d+)?/); return m2 ? parseFloat(m2[0]) : 0; };
         const total = num(cellV('total')), deposit = num(cellV('deposit'));
         const paidRaw = cellV('paid').toUpperCase();
-        if (!(total > 0 || deposit > 0 || paidRaw)) continue; // school-tracking rows, not sales
+        const dress = cellV('dress');
+        const c = Importer.matchCustomer(name);
+        if (!(total > 0 || deposit > 0 || (paidRaw && paidRaw.indexOf('NOT PAID') !== 0))) {
+          // No money on the row - not a sale. But the school-tracking rows
+          // still teach us the school: keep the ones that fill a gap on a
+          // customer we know who has no school on file yet.
+          const sch = cellV('school');
+          if (c && sch && !Schools.of(c.id) && !seenSchoolFix.has(c.id)) {
+            seenSchoolFix.add(c.id);
+            out.push({ name, child: cellV('child'), school: sch, dress: dress || '', colour: '', size: '',
+              underskirt: '', total: 0, deposit: 0, paidRaw: '', method: '', venue: '',
+              custId: c.id, status: 'school' });
+          }
+          continue;
+        }
+        if (!dress) continue;
         const r = { name, child: cellV('child'), school: cellV('school'), dress,
           colour: cellV('colour'), size: cellV('size').replace(/\.0$/, ''),
           underskirt: cellV('underskirt'), total, deposit, paidRaw,
           method: Importer.methodName(cellV('type')), venue: venueHint, custId: null };
-        // The same sale often sits on two tabs (DRESSES + the per-event tab)
-        // - only the first copy counts, even when one tab spells the name a
-        // little differently. Twins are safe: the child's name is in the key.
-        const c = Importer.matchCustomer(name);
-        const key = (c ? 'id ' + c.id : norm(name)) + '|' + norm(r.child) + '|' + norm(dressBaseName(dress));
-        if (seen.has(key)) { r.status = 'dup'; out.push(r); continue; }
-        seen.add(key);
+        // The same sale often sits on THREE tabs (SCHOOLS + DRESSES + the
+        // per-event tab), sometimes without the child's name and sometimes
+        // with the name spelt a little differently - only the first (richest)
+        // copy counts. Twins are safe: two DIFFERENT child names both stay.
+        const dKey = (c ? 'id ' + c.id : norm(name)) + '|' + norm(dressBaseName(dress));
+        const kid = norm(r.child);
+        const kids = seenKids.get(dKey);
+        if (kids && (!kid || kids.has(kid) || kids.has(''))) { r.status = 'dup'; out.push(r); continue; }
+        if (kids) kids.add(kid); else seenKids.set(dKey, new Set([kid]));
         if (c) {
           r.custId = c.id;
-          // "Francesca" on the sheet and "Francesca Communion Dress" on an
-          // invoice are the same dress - compare with the kind words gone.
-          const stripKind = s3 => s3.replace(/\b(communion|dress|gown)\b/g, ' ').replace(/ +/g, ' ').trim();
-          const base = stripKind(norm(dressBaseName(dress)));
-          const have = (DB.invoices || []).some(i => i.customerId === c.id &&
-            DressRegister.dressesOf(i).some(d => stripKind(norm(d)) === base));
-          r.status = have ? 'have' : 'ready';
+          const hit = Importer.invoiceFor(c.id, dress);
+          if (!hit) r.status = 'ready';
+          else if (r.paidRaw === 'FULL' && !Invoices.isPaid(hit)) { r.status = 'update'; r.invId = hit.id; }
+          else if (r.paidRaw !== 'FULL' && r.deposit > 0 && Invoices.totals(hit).paidCents <= 0) { r.status = 'update'; r.invId = hit.id; }
+          else r.status = 'have';
         } else r.status = 'pick';
         out.push(r);
       }
     }
     return out;
+  },
+  /* The invoice already holding this dress for this customer - tolerant of
+     small slips ("Juilette" on the sheet, Juliette on the invoice). */
+  invoiceFor(custId, dress) {
+    const norm = s2 => String(s2 || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const stripKind = s2 => s2.replace(/\b(communion|dress|gown)\b/g, ' ').replace(/ +/g, ' ').trim();
+    const base = stripKind(norm(dressBaseName(dress)));
+    if (!base) return null;
+    for (const i of (DB.invoices || [])) {
+      if (i.customerId !== custId || i.cancelled) continue;
+      for (const d of DressRegister.dressesOf(i)) {
+        const b2 = stripKind(norm(d));
+        if (b2 === base) return i;
+        if (base.length >= 5 && b2.length >= 5 && Importer.dist(b2, base) <= 2) return i;
+        if (base.length === 4 && b2.length >= 3 && Importer.dist(b2, base) <= 1) return i;
+      }
+    }
+    return null;
   },
   matchCustomer(name) {
     const norm = s2 => String(s2 || '').toLowerCase().replace(/[^a-z]+/g, '');
@@ -5545,17 +5648,23 @@ const Importer = {
   methodName(t) {
     const u = String(t || '').toUpperCase().replace(/[^A-Z]/g, '');
     if (!u) return '';
-    if (u === 'SUMUP') return 'SumUp';
-    if (u === 'CASH') return 'Cash';
-    if (u === 'PL' || u === 'PLINK' || u === 'PAYMENTLINK') return 'Payment link';
+    const cash = u.indexOf('CASH') > -1, sumup = u.indexOf('SUMUP') > -1;
+    if (cash && sumup) return 'Cash + SumUp';
+    if (sumup) return 'SumUp';
+    if (cash) return 'Cash';
+    if (u.indexOf('PL') === 0 || u.indexOf('PAYMENTLINK') === 0) return 'Payment link'; // P/L, P/L QR CODE, P/L sent...
     if (u.indexOf('REV') === 0) return 'Revolut';
     if (u.indexOf('BANK') === 0 || u === 'BT') return 'Bank transfer';
     if (u === 'CARD') return 'Card';
+    if (u === 'TOPAY' || u === 'NOTPAID') return '';
     return String(t).trim();
   },
   /* ---- The check-before-it-happens window ---- */
   statusCell(r, i) {
     if (r.status === 'ready') return '<span class="badge b-green">New invoice</span>';
+    if (r.status === 'update') return '<span class="badge b-blue">Update payment</span>' +
+      (r.paidRaw === 'FULL' ? ' <span class="small muted">mark paid in full</span>' : ' <span class="small muted">add the deposit</span>');
+    if (r.status === 'school') return '<span class="badge b-teal">Add school only</span>';
     if (r.status === 'have') return '<span class="badge b-grey">Already invoiced</span> ' +
       '<a href="#" class="plain" onclick="Importer.force(' + i + '); return false" title="A second dress for the same family is sometimes real \u2014 twins in the same style.">create anyway</a>';
     if (r.status === 'dup') return '<span class="badge b-grey">Same row twice in the file \u2014 skipped</span>';
@@ -5575,14 +5684,16 @@ const Importer = {
   preview() {
     const rows = Importer.rows;
     Importer._custs = (DB.customers || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    const counts = { ready: 0, have: 0, dup: 0, pick: 0 };
+    const counts = { ready: 0, update: 0, school: 0, have: 0, dup: 0, pick: 0 };
     rows.forEach(r => counts[r.status] = (counts[r.status] || 0) + 1);
     UI.modal(`
       <h3>\ud83d\udcc4 Import ${esc(Importer._fileName)}</h3>
-      <p class="sub">${rows.length} sale row${rows.length === 1 ? '' : 's'} found:
-        <b>${counts.ready}</b> ready to become invoices, <b>${counts.have}</b> already invoiced,
-        <b>${counts.dup}</b> repeated in the file, <b>${counts.pick}</b> need a customer picked below.
-        Nothing is created until you press the button.</p>
+      <p class="sub">${rows.length} row${rows.length === 1 ? '' : 's'} found:
+        <b>${counts.ready}</b> new invoice${counts.ready === 1 ? '' : 's'} to create,
+        <b>${counts.update}</b> payment update${counts.update === 1 ? '' : 's'} on invoices already here,
+        <b>${counts.school}</b> school${counts.school === 1 ? '' : 's'} to add,
+        <b>${counts.have}</b> already done (skipped), <b>${counts.dup}</b> repeated in the file,
+        <b>${counts.pick}</b> need a customer picked below. Nothing changes until you press the button.</p>
       <div style="max-height:55vh; overflow:auto; border:1px solid var(--line); border-radius:8px">
         <table class="tbl" style="margin:0"><thead><tr>
           <th>Customer</th><th>Dress</th><th>School</th><th>Total</th><th>Paid</th><th>What happens</th></tr></thead>
@@ -5605,8 +5716,26 @@ const Importer = {
   },
   apply() {
     if (!Invoices.unlocked() && !Invoices.unlock()) return;
-    let made = 0;
+    let made = 0, updated = 0, schooled = 0;
     for (const r of Importer.rows) {
+      if (r.status === 'update') {
+        const inv = (DB.invoices || []).find(i => i.id === r.invId);
+        if (!inv) continue;
+        if (r.paidRaw === 'FULL') {
+          inv.paidInFull = true;
+          inv.paidDate = inv.paidDate || todayStr();
+          if (r.method) inv.paidMethod = inv.paidMethod || r.method;
+        } else {
+          inv.depositCents = Math.round(r.deposit * 100);
+          if (r.method) inv.depositMethod = inv.depositMethod || r.method;
+        }
+        inv.updatedAt = nowIso(); updated++;
+        continue;
+      }
+      if (r.status === 'school') {
+        Schools.setFor(r.custId, r.school); schooled++;
+        continue;
+      }
       if (!(r.status === 'ready' || (r.status === 'pick' && r.custId))) continue;
       const inv = Invoices.blank(r.custId);
       inv._venueKey = Invoices.codeFor(r.custId).venueKey;
@@ -5629,7 +5758,11 @@ const Importer = {
       made++;
     }
     Store.save(); Invoices._push(); UI.closeModal(); App.route();
-    UI.toast(made + ' invoice' + (made === 1 ? '' : 's') + ' created from ' + Importer._fileName +
+    const bits = [];
+    if (made) bits.push(made + ' invoice' + (made === 1 ? '' : 's') + ' created');
+    if (updated) bits.push(updated + ' payment' + (updated === 1 ? '' : 's') + ' updated');
+    if (schooled) bits.push(schooled + ' school' + (schooled === 1 ? '' : 's') + ' added');
+    UI.toast((bits.join(', ') || 'Nothing to change') + ' from ' + Importer._fileName +
       ' \u2014 Production, Invoices, School watch and the venue pages all follow on their own.', 6000);
   },
 };
