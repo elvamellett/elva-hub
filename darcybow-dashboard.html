@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 92)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 93)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6926 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7020 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 92</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 93</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3356,6 +3356,91 @@ const Backup = {
    app (see Code.gs), gains a server that calls the Shopify Admin API
    with the token kept in Script properties. The page detects that
    environment and pulls live data through google.script.run. ---- */
+/* ====================== Hosted mode (GitHub Pages) ======================
+   When this page is NOT served by Google Apps Script, the Google bridge
+   (google.script.run) does not exist. Hosted on a plain website, the app
+   talks to the SAME Apps Script backend over HTTPS instead - Shopify,
+   shared files, photos and email all keep working exactly as before.
+   The server link is remembered per device; opening the site once as
+   .../?server=THE-GOOGLE-LINK stores it automatically. */
+var DARCY_HOSTED = false;
+(function () {
+  if (typeof google !== 'undefined' && google.script && google.script.run) return; // served by Apps Script
+  var url = '';
+  try {
+    var qm = (location.search || '').match(/[?&]server=([^&]+)/);
+    if (qm) {
+      url = decodeURIComponent(qm[1]);
+      try { localStorage.setItem('darcybow-server', url); } catch (e) { /* private mode */ }
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* fine */ }
+    }
+    if (!url) url = localStorage.getItem('darcybow-server') || '';
+  } catch (e) { /* private mode */ }
+  if (!/^https:/.test(url) || url.indexOf('script.google') === -1) return; // not connected yet
+  DARCY_HOSTED = true;
+  var mkRunner = function () {
+    var ok = function () {};
+    var fail = function (e) { try { UI.err(e); } catch (e2) { /* too early */ } };
+    var runner = {};
+    var proxy = new Proxy(runner, {
+      get: function (t, prop) {
+        if (prop in t) return t[prop];
+        if (typeof prop !== 'string') return undefined;
+        return function () {
+          var args = Array.prototype.slice.call(arguments);
+          fetch(url, { method: 'POST', body: JSON.stringify({ fn: prop, args: args }) })
+            .then(function (r) { return r.text(); })
+            .then(function (tx) {
+              var j = null;
+              try { j = JSON.parse(tx); } catch (e3) { /* fall through */ }
+              if (!j) throw new Error('The server link replied strangely - is it the web-app link ending in /exec?');
+              if (j.err) throw new Error(j.err);
+              ok(j.result);
+            })
+            .catch(function (e4) { fail(e4); });
+        };
+      },
+    });
+    runner.withSuccessHandler = function (f) { ok = f || ok; return proxy; };
+    runner.withFailureHandler = function (f) { fail = f || fail; return proxy; };
+    return proxy;
+  };
+  window.google = { script: {} };
+  Object.defineProperty(window.google.script, 'run', { get: mkRunner, configurable: true });
+})();
+function saveServerLink() {
+  var el = document.getElementById('srv-url');
+  var u = el ? String(el.value).trim() : '';
+  if (!/^https:/.test(u) || u.indexOf('script.google') === -1) {
+    UI.err(new Error('That does not look like the Google web-app link - it starts with https, contains script.google.com and ends in /exec.'));
+    return;
+  }
+  try { localStorage.setItem('darcybow-server', u); } catch (e) { /* private mode */ }
+  location.reload();
+}
+function showUpdateBar(v) {
+  if (document.getElementById('verbar')) return;
+  const vb = document.createElement('div');
+  vb.id = 'verbar';
+  vb.style.cssText = 'position:fixed; top:0; left:0; right:0; z-index:99998; background:#1b7f4b; color:#fff; padding:10px 16px; font:14px/1.4 -apple-system,"Segoe UI",Arial,sans-serif; text-align:center; cursor:pointer';
+  vb.innerHTML = '\u2728 <b>Version ' + v + ' is ready</b> \u2014 tap here to update (takes two seconds, nothing is lost).';
+  vb.onclick = () => location.reload();
+  document.body.appendChild(vb);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) location.reload(); });
+}
+// Hosted on a website: the site itself says when a newer build is up.
+function hostedVersionWatch() {
+  if (location.protocol.indexOf('http') !== 0) return; // file:// previews and tests
+  if (!DARCY_HOSTED && typeof google !== 'undefined') return; // Apps Script serves - Drive handles updates
+  const check = () => {
+    fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(j => { if (j && parseInt(j.version, 10) > APP_VERSION) showUpdateBar(parseInt(j.version, 10)); })
+      .catch(() => { /* offline or not hosted */ });
+  };
+  setTimeout(check, 4000);
+  setInterval(check, 10 * 60 * 1000);
+}
 const LiveSync = {
   syncing: false,
   _diag: null,
@@ -3710,17 +3795,7 @@ const LiveSync = {
     // A newer dashboard file is in Drive: this open tab is stale. Refresh
     // quietly the moment the tab is in the background; while it's being
     // looked at, offer a one-tap update bar instead of yanking the page.
-    if (p.latestVersion && p.latestVersion > APP_VERSION) {
-      if (!document.getElementById('verbar')) {
-        const vb = document.createElement('div');
-        vb.id = 'verbar';
-        vb.style.cssText = 'position:fixed; top:0; left:0; right:0; z-index:99998; background:#1b7f4b; color:#fff; padding:10px 16px; font:14px/1.4 -apple-system,"Segoe UI",Arial,sans-serif; text-align:center; cursor:pointer';
-        vb.innerHTML = '\u2728 <b>Version ' + p.latestVersion + ' is ready</b> \u2014 tap here to update (takes two seconds, nothing is lost).';
-        vb.onclick = () => location.reload();
-        document.body.appendChild(vb);
-        document.addEventListener('visibilitychange', () => { if (document.hidden) location.reload(); });
-      }
-    }
+    if (p.latestVersion && p.latestVersion > APP_VERSION) showUpdateBar(p.latestVersion);
     setTimeout(() => { try { Photos.migrate(); } catch (e) { /* next sync retries */ } }, 900);
     for (const k of ['payments', 'instalments', 'allocations', 'adjustments', 'reminderTasks', 'customerReminders', 'contactLog', 'outbox'])
       if (Array.isArray(DB[k])) DB[k] = [];
@@ -3844,6 +3919,22 @@ const LiveSync = {
 };
 
 Pages.importPage = () => {
+  if (typeof google === 'undefined' && location.protocol.indexOf('http') === 0) {
+    let stored = '';
+    try { stored = localStorage.getItem('darcybow-server') || ''; } catch (e) { /* private mode */ }
+    if (!stored) return `
+      <h1>Connect this website to the dashboard server</h1>
+      <div class="card" style="max-width:640px">
+        <p>This copy of the dashboard runs on its own website. It just needs the address of the
+        Google server that holds the data \u2014 that is the <b>old dashboard link</b> (it contains
+        <b>script.google.com</b> and ends in <b>/exec</b>). Paste it once and this device is set for good.</p>
+        <input id="srv-url" style="width:100%" placeholder="script.google.com/macros/s/\u2026/exec (the full link)">
+        <div style="margin-top:10px"><button class="primary" onclick="saveServerLink()">Connect</button></div>
+        <p class="small muted" style="margin-top:10px">Tip: the site can also be opened once as
+        <b>\u2026/?server=PASTE-THE-LINK</b> \u2014 it stores itself and tidies the address bar.</p>
+      </div>`;
+  }
+
   const st = ImportService.state;
   const slot = (kind, title, help) => `
     <div class="card" style="margin-bottom:12px">
@@ -3968,7 +4059,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 92'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 93'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5476,6 +5567,9 @@ const Production = {
 /* The production workbook Edelle sent on 29 Sept 2026 (SCHOOLS,
    DRESSES and Donal tabs), baked in so one tap runs the import
    with no file-picking. Same pipeline as choosing the file. */
+/* The baked-in workbook was removed in v93: this file now lives in a
+   public place (GitHub), and customer names do not belong there. The
+   Import Excel sheet button reads the workbook directly instead. */
 const BUNDLED_SHEET = { label: '', name: '', sheets: [] };
 const Importer = {
   rows: [], _custs: [], _fileName: '',
@@ -5951,7 +6045,7 @@ Pages.production = () => {
     <div class="flex" style="justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:4px">
       <h1 style="margin:0">Production <span class="muted" style="font-size:1rem; font-weight:400">${total}</span></h1>
       <span style="display:inline-flex; gap:8px; flex-wrap:wrap">
-        <button onclick="Importer.loadBundled()" title="The workbook sent on 29 Sept is built into this version \u2014 one tap, no file-picking. Check the preview, then create.">\u26a1 Load ${esc(BUNDLED_SHEET.label)}</button>
+        ${BUNDLED_SHEET.sheets.length ? `<button onclick="Importer.loadBundled()" title="One tap, no file-picking. Check the preview, then create.">\u26a1 Load ${esc(BUNDLED_SHEET.label)}</button>` : ''}
         <button onclick="Importer.pick()" title="Read the production workbook made in Excel and create the invoices from it">\u2b06 Import Excel sheet</button>
         <button class="primary" onclick="Production.exportXlsx()">\u2b07 Download Excel</button>
       </span>
@@ -6908,6 +7002,7 @@ const Gate = {
     App.back();
   });
   App.route();
+  try { hostedVersionWatch(); } catch (e) { /* non-fatal */ }
   // Served as the Apps Script web app \u2192 refresh from Shopify on every open,
   // then every 10 minutes while the dashboard sits open and visible, so
   // corrections made on Shopify flow in without anyone pressing anything.

@@ -32,6 +32,28 @@
  * version number wins, so just drop the new file in; old ones can stay.
  * If Drive isn't authorised (or holds no such file), the copy pasted into
  * index.html serves as before. */
+/**
+ * HTTP bridge for the hosted dashboard (GitHub Pages or any website).
+ * The page POSTs {fn, args:[...]} and gets {result} or {err} back.
+ * Every bridged function still checks the site token itself, exactly as
+ * it does for google.script.run - this opens no new access.
+ */
+var HTTP_FNS_ = ['checkSitePassword', 'syncShopify', 'saveStaff', 'saveNotes', 'saveInvoices',
+  'saveSchools', 'saveBookingsCsv', 'fetchCustomerEmails', 'emailHealth', 'testEmailSetup',
+  'sendInvoiceEmail', 'exportProductionXlsx', 'savePhoto', 'getPhoto', 'deletePhoto'];
+function doPost(e) {
+  var out;
+  try {
+    var req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    var fn = String(req.fn || '');
+    if (HTTP_FNS_.indexOf(fn) === -1) throw new Error('Unknown function: ' + fn);
+    out = { result: globalThis[fn].apply(null, req.args || []) };
+  } catch (err) {
+    out = { err: String((err && err.message) || err) };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+
 function doGet() {
   var best = null, bestN = -1;
   try {
