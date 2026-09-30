@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 91)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 92)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6835 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>6926 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 91</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 92</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3674,6 +3674,28 @@ const LiveSync = {
     }
     const skipped = customers.length - kept.length;
     DB.customers = kept; DB.orders = orders; DB.orderItems = orderItems; DB.appointments = appointments;
+    // Walk-ins created by hand (usually from a production-sheet import)
+    // exist nowhere in Shopify or Appointly - put them back after every
+    // rebuild, unless Shopify has since learned about them (same email,
+    // phone or name), in which case the real record takes over and the
+    // invoice re-links to it by itself.
+    if ((DB.manualCusts || []).length) {
+      const nk = s2 => String(s2 || '').toLowerCase().replace(/[^a-z]+/g, '');
+      const haveKeys = new Set();
+      for (const c of DB.customers) {
+        if (c.email) haveKeys.add('e' + String(c.email).toLowerCase());
+        const ph2 = ImportService._digits(c.phone || '');
+        if (ph2.length >= 7) haveKeys.add('p' + ph2);
+        haveKeys.add('n' + nk(c.name));
+      }
+      for (const mc of DB.manualCusts) {
+        const ph2 = ImportService._digits(mc.phone || '');
+        if ((mc.email && haveKeys.has('e' + String(mc.email).toLowerCase()))
+          || (ph2.length >= 7 && haveKeys.has('p' + ph2))
+          || haveKeys.has('n' + nk(mc.name))) continue;
+        DB.customers.push(mc);
+      }
+    }
     DB.centralStatus = p.central ? !!p.central.ok : DB.centralStatus;
     if (p.staffJson) Staff.merge(p.staffJson);
     else if (p.central && p.central.ok) { Staff._last = ''; Staff.maybePush(); } // central alive but empty \u2014 seed it
@@ -3946,7 +3968,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 91'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 92'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4874,7 +4896,8 @@ const Staff = {
   payload() {
     return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
       custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [],
-      checklist: DB.prodChecklist || [], apptChanges: DB.apptChanges || {} });
+      checklist: DB.prodChecklist || [], apptChanges: DB.apptChanges || {},
+      manualCusts: DB.manualCusts || [] });
   },
   maybePush() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
@@ -4913,6 +4936,15 @@ const Staff = {
       if (!r || String(i.at || '') > String(r.at || '')) cById.set(i.id, i);
     }
     if (cById.size) DB.prodChecklist = [...cById.values()];
+    // Walk-in customers created by hand: union by id, so one made on any
+    // device exists on every device.
+    const mById = new Map((sj.manualCusts || []).map(c => [c.id, c]));
+    for (const c of DB.manualCusts || []) if (!mById.has(c.id)) mById.set(c.id, c);
+    if (mById.size) {
+      DB.manualCusts = [...mById.values()];
+      const here = new Set((DB.customers || []).map(c => c.id));
+      for (const c of DB.manualCusts) if (!here.has(c.id)) DB.customers.push(c);
+    }
     // Booking-change notes: union per customer, a dismissal anywhere sticks.
     const acR = sj.apptChanges || {};
     DB.apptChanges = DB.apptChanges || {};
@@ -5622,7 +5654,7 @@ const Importer = {
         const total = num(cellV('total')), deposit = num(cellV('deposit'));
         const paidRaw = cellV('paid').toUpperCase();
         const dress = cellV('dress');
-        const c = unknown ? null : Importer.matchCustomer(name);
+        const c = unknown ? null : Importer.matchCustomer(name, child);
         if (!(total > 0 || deposit > 0 || (paidRaw && paidRaw.indexOf('NOT PAID') !== 0))) {
           const sch = cellV('school');
           // A "?" girl with a dress or school on her row: flag her for a
@@ -5690,16 +5722,62 @@ const Importer = {
     }
     return null;
   },
-  matchCustomer(name) {
+  matchCustomer(name, child) {
     const norm = s2 => String(s2 || '').toLowerCase().replace(/[^a-z]+/g, '');
-    const n = norm(name);
-    if (!n) return null;
     const cs = DB.customers || [];
-    const exact = cs.filter(c => norm(c.name) === n);
-    if (exact.length === 1) return exact[0];
-    if (exact.length) return null; // two records share the name - she picks by hand
-    const near = cs.filter(c => { const m = norm(c.name); return m.length > 4 && Importer.dist(m, n) <= 2; });
-    return near.length === 1 ? near[0] : null; // catches "Jo Shanon" for Jo Shannon
+    const kid = norm(child);
+    // Several records can carry the same (or nearly the same) name - a
+    // Shopify record + a booking stub is the usual pair. The child's name
+    // singles one out; failing that, the one with real activity (an order
+    // or a booking) is her; a genuine tie still asks.
+    const pickFrom = list => {
+      if (list.length === 1) return list[0];
+      if (!list.length) return null;
+      if (kid) {
+        const byKid = list.filter(c => norm(c.daughterName) === kid);
+        if (byKid.length === 1) return byKid[0];
+      }
+      const active = list.filter(c => (DB.orders || []).some(o => o.customerId === c.id)
+        || (DB.appointments || []).some(a => a.customerId === c.id));
+      if (active.length === 1) return active[0];
+      return null;
+    };
+    const tryOne = n => {
+      if (!n) return null;
+      const exact = cs.filter(c => norm(c.name) === n);
+      const gotE = pickFrom(exact);
+      if (gotE) return gotE;
+      if (exact.length) return null;
+      // catches "Jo Shanon" for Jo Shannon - with the same tie-breaking
+      const near = cs.filter(c => { const m = norm(c.name); return m.length > 4 && Importer.dist(m, n) <= 2; });
+      return pickFrom(near);
+    };
+    const hit = tryOne(norm(name));
+    if (hit) return hit;
+    // "Fiona Hartigan/O Connell": the record usually sits under ONE half of
+    // a double name - try the first half, then first name + each other half.
+    const parts = String(name || '').split('/').map(s2 => s2.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      const first = parts[0].split(/\s+/)[0] || '';
+      const found = [];
+      for (let i = 0; i < parts.length; i++) {
+        const cand = i === 0 ? parts[0] : first + ' ' + parts[i];
+        const h = tryOne(norm(cand));
+        if (h && found.indexOf(h) === -1) found.push(h);
+      }
+      if (found.length === 1) return found[0];
+    }
+    // The sheet under mam's name, the booking under the other parent's:
+    // the child's name plus the family surname still finds the record.
+    if (kid) {
+      const sur = norm(String(name || '').trim().split(/\s+/).slice(-1)[0] || '');
+      if (sur.length >= 3) {
+        const fam = cs.filter(c => norm(c.daughterName) === kid
+          && norm(String(c.name || '').trim().split(/\s+/).slice(-1)[0] || '') === sur);
+        if (fam.length === 1) return fam[0];
+      }
+    }
+    return null;
   },
   dist(a, b) {
     if (Math.abs(a.length - b.length) > 2) return 3;
@@ -5740,6 +5818,7 @@ const Importer = {
     if (r.status === 'dup') return '<span class="badge b-grey">Same row twice in the file \u2014 skipped</span>';
     const picker = '<br><select class="mini" style="max-width:180px" onchange="Importer.pickCust(' + i + ', this.value)">' +
       '<option value="">Skip this row</option>' +
+      '<option value="__new">+ New customer from this row</option>' +
       Importer._custs.map((c, j) => '<option value="' + j + '">' + esc(c.name) + (c.daughterName ? ' (' + esc(c.daughterName) + ')' : '') + '</option>').join('') +
       '</select>';
     if (r.status === 'mystery') return '<span class="badge b-amber">\u201c?\u201d on the sheet \u2014 who is she?</span>' +
@@ -5753,7 +5832,9 @@ const Importer = {
     if (el) el.innerHTML = Importer.statusCell(Importer.rows[i], i);
   },
   pickCust(i, v) {
-    Importer.rows[i].custId = v === '' ? null : Importer._custs[parseInt(v, 10)].id;
+    const r = Importer.rows[i];
+    r.createNew = v === '__new';
+    r.custId = (v === '' || v === '__new') ? null : Importer._custs[parseInt(v, 10)].id;
   },
   preview() {
     const rows = Importer.rows;
@@ -5811,6 +5892,16 @@ const Importer = {
         Schools.setFor(r.custId, r.school); schooled++;
         continue;
       }
+      if (r.createNew && !r.custId && (r.status === 'pick' || r.status === 'mystery')) {
+        const mc = { id: 'm' + uid(),
+          name: r.name === '?' ? ('Unknown' + (r.school ? ' - ' + r.school : ' customer')) : r.name,
+          daughterName: r.child || '', email: '', phone: r.phoneHint || '', address: '',
+          notes: 'Added by hand from ' + Importer._fileName, createdAt: nowIso(), manual: true };
+        DB.manualCusts = DB.manualCusts || [];
+        DB.manualCusts.push(mc);
+        DB.customers.push(mc);
+        r.custId = mc.id;
+      }
       if (r.status === 'mystery' && r.custId && !r.dress) {
         // Identified, but her row only carries the school - record that.
         if (r.school) { Schools.setFor(r.custId, r.school); schooled++; }
@@ -5840,7 +5931,7 @@ const Importer = {
       DB.invoices.push(inv);
       made++;
     }
-    Store.save(); Invoices._push(); UI.closeModal(); App.route();
+    Store.save(); Invoices._push(); Staff.maybePush(); UI.closeModal(); App.route();
     const bits = [];
     if (made) bits.push(made + ' invoice' + (made === 1 ? '' : 's') + ' created');
     if (updated) bits.push(updated + ' payment' + (updated === 1 ? '' : 's') + ' updated');
