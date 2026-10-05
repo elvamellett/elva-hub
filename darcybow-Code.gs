@@ -229,8 +229,14 @@ function syncShopify(siteTok) {
       }
     } catch (ePhotos) { /* photos are best-effort */ }
     return JSON.stringify({
-      customers: fetchAll_(base, token, 'customers', ''),
-      orders: fetchAll_(base, token, 'orders', '&status=any'),
+      customers: fetchAll_(base, token, 'customers',
+        '&fields=id,first_name,last_name,email,phone,created_at,note,default_address'),
+      // With read_all_orders granted the shop's WHOLE history is visible -
+      // but the dashboard only needs this season's orders (bookings opened
+      // spring 2026). Bounding the fetch and trimming to the fields the
+      // dashboard reads keeps the sync small enough for phones.
+      orders: fetchAll_(base, token, 'orders', '&status=any&created_at_min=2026-02-01T00:00:00Z' +
+        '&fields=id,name,email,customer,created_at,cancelled_at,note,note_attributes,line_items,shipping_address,billing_address'),
       products: fetchCatalogue_(store),
       store: store,
       bookingsCsv: bookingsCsv,
