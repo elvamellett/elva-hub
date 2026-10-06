@@ -116,6 +116,94 @@ textarea{resize:vertical;min-height:70px}
 .dragghost{position:fixed;z-index:9999;pointer-events:none;background:#FFFDF7;border:1px solid #9CC9FF;box-shadow:0 8px 24px rgba(0,0,0,.25);border-radius:8px;padding:6px 10px;font-size:12px;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 [data-drop].over{outline:2px solid #9CC9FF;outline-offset:-2px;background:rgba(156,201,255,.3)!important}
 
+/* Apple-style calendar */
+body.pg-calendar .wrap{max-width:none}
+body.calfull .side,body.calfull .topbar{display:none}
+body.calfull .wrap{padding:8px 8px 40px}
+.calapp{--line:rgba(27,27,27,.1);--red:#E5484D;background:#FFFDF7;border:1px solid rgba(27,27,27,.18);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;color:#1B1B1B}
+.calapp.week,.calapp.day{height:calc(100vh - 36px)}
+body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
+.caltb{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:#F4F0E4;flex-wrap:wrap}
+.caltb .spacer{flex:1}
+.calh{font-family:Georgia,serif;font-size:24px;color:#372F28;white-space:nowrap}.calh b{font-weight:700}
+.calsubt{font-family:Arial,sans-serif;font-size:13px;color:#857B6C;margin-left:10px}
+.calib{width:32px;height:32px;border-radius:8px;font-size:15px;color:#372F28;display:inline-flex;align-items:center;justify-content:center}
+.calib:hover{background:rgba(27,27,27,.07)}.calib.plus{font-size:18px}
+.calseg{display:inline-flex;background:rgba(27,27,27,.07);border-radius:9px;padding:2px}
+.calseg button{padding:5px 14px;border-radius:7px;font-size:12px;font-weight:700;color:#372F28}
+.calseg button.on{background:#FFFDF7;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.calnav{display:inline-flex;border:1px solid rgba(27,27,27,.15);border-radius:9px;overflow:hidden}
+.calnav button{padding:5px 10px;font-size:12px;font-weight:700;color:#372F28}.calnav button:hover{background:rgba(27,27,27,.07)}
+.calnav button+button{border-left:1px solid rgba(27,27,27,.12)}
+.calbody{display:flex;flex:1;min-height:0}
+.calmain{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.calside{width:210px;flex:none;border-right:1px solid var(--line);padding:12px 10px;overflow:auto;background:#FAF7EE}
+.calside h4{font-size:11px;color:#857B6C;font-weight:700;margin:14px 6px 4px;letter-spacing:.3px}
+.calrow{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px}
+.calrow:hover{background:rgba(27,27,27,.05)}.calrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb{width:15px;height:15px;border-radius:4px;border:2px solid var(--c);flex:none;font-size:10px;line-height:11px;text-align:center;color:#fff;font-weight:700}
+.cb.on{background:var(--c)}
+.mini .minih{display:flex;align-items:center;gap:4px;font-size:13px;padding:0 4px 6px}.mini .minih .spacer{flex:1}
+.mini .minih button{width:22px;height:22px;border-radius:6px;color:#372F28}.mini .minih button:hover{background:rgba(27,27,27,.07)}
+.minig{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;row-gap:1px}
+.minig span{color:#857B6C;font-size:10px;padding:2px 0}
+.minig button{height:24px;border-radius:50%;font-size:11px;color:#1B1B1B;position:relative;aspect-ratio:1;margin:0 auto;width:24px}
+.minig button.out{color:#B5AC9C}.minig button:hover{background:rgba(27,27,27,.07)}
+.minig button.sel{background:rgba(156,201,255,.45)}
+.minig button.today{background:var(--red);color:#fff;font-weight:700}
+.minig button.has:not(.today)::after{content:'';position:absolute;bottom:1px;left:50%;width:3px;height:3px;margin-left:-1.5px;border-radius:50%;background:#857B6C}
+/* month */
+.mhead{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.mhead div{font-size:12px;color:#857B6C;text-align:right;padding:6px 8px}
+.mgrid2{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex:1}
+.mc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px 4px 6px;min-width:0;cursor:default}
+.mc:nth-child(7n){border-right:none}.mc.we{background:#FAF7EE}.mc.out .num{color:#B5AC9C}.mc.out .mev{opacity:.55}
+.mcd{display:flex;justify-content:flex-end;margin-bottom:2px;cursor:pointer}
+.mcd .num{font-size:13px;padding:1px 6px;border-radius:999px;min-width:24px;text-align:center;color:#372F28}
+.mc.today .num{background:var(--red);color:#fff;font-weight:700}
+.mev{display:flex;align-items:center;gap:4px;font-size:11px;line-height:1.3;padding:1px 4px;border-radius:4px;margin-bottom:1px;cursor:pointer;min-width:0}
+.mev:hover{background:rgba(27,27,27,.06)}
+.mev .mt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mev .mtime{color:#857B6C;font-size:10px;flex:none}
+.mev.fill{background:#E6E0CF;background:color-mix(in srgb,var(--c) 26%,#FFFDF7);border-left:3px solid var(--c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;font-weight:600}
+.mev.done{opacity:.5;text-decoration:line-through}
+/* week/day time grid */
+.tg{display:flex;flex-direction:column;flex:1;min-height:0}
+.tghead,.tgallrow,.tgbody{display:grid;grid-template-columns:56px repeat(var(--n),minmax(0,1fr))}
+.tghead{border-bottom:1px solid var(--line)}
+.tgdh{padding:6px 8px;display:flex;align-items:center;gap:6px;justify-content:center;cursor:pointer;font-size:13px;color:#372F28}
+.tgdh .wd{color:#857B6C}.tgdh .num{font-size:18px;padding:0 6px;border-radius:999px;min-width:30px;text-align:center}
+.tgdh.today .num{background:var(--red);color:#fff;font-weight:700}.tgdh.today .wd{color:var(--red);font-weight:700}
+.tgallrow{border-bottom:2px solid var(--line);max-height:120px;overflow:auto}
+.tggut.lbl{font-size:10px;color:#857B6C;text-align:right;padding:5px 6px}
+.tgad{border-left:1px solid var(--line);padding:3px 2px;min-height:26px;min-width:0}
+.tgscroll{flex:1;overflow-y:auto;min-height:0}
+.tgbody{position:relative}
+.tggut{position:relative}
+.tggh{height:46px;position:relative}
+.tggh{font-size:10px;color:#857B6C;text-align:right;padding-right:8px;transform:translateY(-7px)}
+.tgnowl{position:absolute;right:4px;transform:translateY(-50%);font-size:10px;font-weight:700;color:var(--red);background:#FFFDF7}
+.tgcol{position:relative;border-left:1px solid var(--line)}
+.tgcol.today{background:rgba(229,72,77,.03)}
+.tgslot{height:46px;border-top:1px solid var(--line);cursor:pointer}
+.tgslot:hover{background:rgba(156,201,255,.12)}
+.tgev{position:absolute;overflow:hidden;border-radius:5px;padding:2px 6px;font-size:11px;line-height:1.25;cursor:pointer;z-index:2;
+  background:#E6E0CF;background:color-mix(in srgb,var(--c) 24%,#FFFDF7);border-left:3px solid var(--c);color:#1B1B1B;display:flex;flex-direction:column}
+.tgev:hover{z-index:4;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.tgev b{font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.tgev span{color:#5c544a;font-size:10px}
+.tgev.short{flex-direction:row;gap:6px;align-items:center;white-space:nowrap}
+.tgev.short b{flex:0 1 auto;min-width:0}.tgev.short span{flex:0 100 auto;min-width:0;overflow:hidden}
+.tgev.done{opacity:.5}.tgev.done b{text-decoration:line-through}
+.tgnow{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:3;pointer-events:none}
+.tgnow::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--red)}
+@media(max-width:820px){
+  .calside{display:none}.calh{font-size:19px}.caltb{padding:8px}
+  .calapp.week .tg{overflow-x:auto}.calapp.week .tghead,.calapp.week .tgallrow,.calapp.week .tgscroll{min-width:760px}
+  .calapp.week,.calapp.day{height:calc(100vh - 90px)}
+  .mgrid2{grid-template-rows:none!important;grid-auto-rows:minmax(70px,auto)}.mev{font-size:9px}.mev .mtime{display:none}
+}
+
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -311,6 +399,7 @@ const DEF=()=>({
   notes:[],            // {id,title,date,body}
   quick:'',
   gcal:false,
+  calHide:{},         // calendar layers hidden in the Calendar sidebar: {task,class,assess,invoice,gcal}
   acal:{on:false,cals:[],def:''},   // Apple Calendar via the Worker: cals [{url,name,col,on,readOnly}], def = calendar for new events
   claude:{url:'',token:'',model:'claude-sonnet-4-6'},
   chat:[],             // [{role,content}] last 40
@@ -487,7 +576,7 @@ function handleDrop(data,zone){
 // ── MODAL ──
 function openModal(html){$('modal').innerHTML=html;$('mbg').classList.add('on');const f=$('modal').querySelector('input,textarea');if(f)setTimeout(()=>f.focus(),50);}
 function closeModal(){$('mbg').classList.remove('on');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('mbg').classList.contains('on'))closeModal();else if(document.body.classList.contains('calfull'))calFull(false);}});
 function catSel(v){return`<select id="m-cat">${S.cats.map(c=>`<option value="${c.id}" ${c.id===v?'selected':''}>${esc(c.label)}</option>`).join('')}</select>`;}
 function openTask(id,defaults){
   const t=id?task(id):Object.assign({name:'',cat:'life',p:0,due:'',day:'',time:'',note:''},defaults||{});
@@ -510,12 +599,13 @@ function saveTask(id){
 
 // ── NAV ──
 const TITLES={home:'Home',timetable:'Timetable',calendar:'Calendar',assignments:'Assignments',tasks:'Tasks',claude:'Claude',goals:'Goals',wellness:'Wellness',suede:'Suede Studio',notes:'Notes',done:'Done',settings:'Settings'};
-function nav(p,d,v){page=p;if(d)cur=d;if(v)calView=v;document.body.classList.remove('nav-open');document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));render();window.scrollTo(0,0);}
+function nav(p,d,v){if(p!=='calendar')document.body.classList.remove('calfull');document.body.classList.toggle('pg-calendar',p==='calendar');if(v&&v!==calView)calScroll=null;page=p;if(d)cur=d;if(v)calView=v;document.body.classList.remove('nav-open');document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));render();window.scrollTo(0,0);}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>nav(b.dataset.p));
 function openDay(k){nav('calendar',fromKey(k),'day');}
 function shift(unit,n){const d=new Date(cur);if(unit==='m')d.setMonth(d.getMonth()+n,1);else if(unit==='q')d.setMonth(d.getMonth()+3*n,1);else d.setDate(d.getDate()+n);cur=d;render();acalEnsure();}
 function render(){$('hdrDate').textContent=fmtD(new Date(),{weekday:'short',day:'numeric',month:'short'});$('hubName').textContent=S.hubName;$('topTitle').textContent=TITLES[page]||'';
   const f={home:rHome,timetable:rTimetable,calendar:rCalendar,assignments:rAssignments,tasks:rTasks,claude:rClaude,goals:rGoals,wellness:rWellness,suede:rSuede,notes:rNotes,done:rDone,settings:rSettings}[page];if(f)$('p-'+page).innerHTML=f();
+  if(page==='calendar')calAfter();
   // restore focus-free inputs' scroll etc. nothing else
 }
 function navBar(unit,label,extra){const n=unit==='w'?7:1,u=unit==='w'?'d':unit;return`<div class="title"><button class="pill" onclick="shift('${u}',-${n})">‹</button><h1>${label}</h1><button class="pill" onclick="shift('${u}',${n})">›</button><button class="pill" onclick="cur=new Date();render()">Today</button><span class="spacer"></span>${extra||''}</div>`;}
@@ -533,14 +623,9 @@ function rMonth(){
   const goalCol=(a,label)=>`<div class="inner"><h3>${label}</h3>${g[a].map(x=>`<div class="row ${x.done?'done':''}"><span class="tick ${x.done?'on':''}" onclick="toggleGoal('${m}','${a}','${x.id}')">${x.done?'✓':''}</span><span class="nm">${esc(x.t)}</span><button class="ib" onclick="delGoal('${m}','${a}','${x.id}')">×</button></div>`).join('')}<input placeholder="Add a goal" onkeydown="if(event.key==='Enter'){addGoal('${m}','${a}',this.value)}"></div>`;
   const mon=cur.toLocaleDateString('en-IE',{month:'long',year:'numeric'});
   const openT=S.tasks.filter(t=>!t.done&&!t.day).length;
-  return navBar('m',mon,calSeg()+`<span class="sub">${openT} unplanned</span>`)+`
-  <div class="grid g31">
-    <div class="card"><h2>Calendar<small>tap a day to plan it · drop tasks on a day</small></h2>
-      <div class="mgrid">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="dh">${x}</div>`).join('')}${cells}</div></div>
-    <div class="grid" style="align-content:start">
-      ${priHtml('W:'+dk(monday(new Date())),'This week\u2019s priorities')}
-      <div class="card"><h2>Deadlines<small>next 30 days</small></h2>${deadlineList(30)}</div>
-    </div>
+  return`<div class="grid g2" style="margin-top:14px">
+    ${priHtml('W:'+dk(monday(new Date())),'This week\u2019s priorities')}
+    <div class="card"><h2>Deadlines<small>next 30 days</small></h2>${deadlineList(30)}</div>
   </div>
   <div class="grid g3" style="margin-top:14px">
     <div class="card"><h2>Goals this month</h2><div class="grid" style="gap:8px">${goalCol('life','Personal')}${goalCol('suede','Suede Studio')}${goalCol('money','Money')}</div></div>
@@ -561,18 +646,11 @@ function deadlineList(n){
 
 // ── WEEK ──
 function rWeek(){
-  const mon=monday(cur),tk=todayKey(),wk='W:'+dk(mon);
+  const mon=monday(cur),wk='W:'+dk(mon);
   const days=Array.from({length:7},(_,i)=>addDays(mon,i));
-  const label=`${fmtD(mon,{day:'numeric',month:'short'})} – ${fmtD(days[6],{day:'numeric',month:'short'})}`;
-  const cols=days.map(d=>{const k=dk(d),ev=getEvents(k);return`<div class="wday ${k===tk?'today':''}" data-drop="day:${k}"><div class="dh" onclick="openDay('${k}')"><span>${fmtD(d,{weekday:'short'})} ${d.getDate()}</span><small>${ev.length?ev.length:''}</small></div>${ev.map(e=>evHtml(e,'wev')).join('')}<button class="link" style="margin-top:4px" onclick="openTask(null,{day:'${k}',due:'${k}'})">+ add</button>${S.acal.on?`<button class="link" style="margin-top:2px" onclick="openAcal(null,{day:'${k}'})">+ Apple event</button>`:''}</div>`;}).join('');
-  const classes=S.modules.reduce((n,m)=>n+m.sessions.length,0);
-  return navBar('w',label,calSeg()+`<span class="sub">${inTerm(dk(mon))?classes+' classes this week':'outside term'}</span>`)+`
-  <div class="grid g31">
-    <div class="card"><h2>Week<small>drop tasks on a day · tap a day to open it</small></h2><div class="wgrid">${cols}</div></div>
-    <div class="grid" style="align-content:start">
-      ${priHtml(wk,'Priorities this week')}
-      <div class="card"><h2>College this week</h2>${collegeWeekList(days)}</div>
-    </div>
+  return`<div class="grid g2" style="margin-top:14px">
+    ${priHtml(wk,'Priorities this week')}
+    <div class="card"><h2>College this week</h2>${collegeWeekList(days)}</div>
   </div>`;
 }
 function bankRows(list){return list.length?list.map(t=>`<div class="row handle ${t.done?'done':''}" data-drag="task:${t.id}"><span class="tick ${t.done?'on':''}" onclick="toggleTask('${t.id}')">${t.done?'✓':''}</span><span class="nm" onclick="openTask('${t.id}')">${esc(t.name)}</span>${t.p?`<span class="pb p${t.p}">P${t.p}</span>`:''}<span class="dot" style="background:${cat(t.cat).col}" title="${esc(cat(t.cat).label)}"></span>${dueChip(t.due)}</div>`).join(''):'<div class="empty">Nothing here</div>';}
@@ -584,24 +662,12 @@ function collegeWeekList(days){
 
 // ── DAY ──
 function rDay(){
-  const k=dk(cur),ev=getEvents(k),m=mk(cur),hs=habits(m);
-  const timed=ev.filter(e=>e.time),allday=ev.filter(e=>!e.time);
-  let h0=7,h1=22;timed.forEach(e=>{const h=+e.time.slice(0,2);if(h<h0)h0=h;if(h+1>h1)h1=Math.min(h+1,23);});
-  let tl='';for(let h=h0;h<=h1;h++){const hh=pad(h);const here=timed.filter(e=>+e.time.slice(0,2)===h);tl+=`<div class="h">${hh}:00</div><div class="slot" data-drop="hour:${k}:${hh}" onclick="if(event.target===this)openTask(null,{day:'${k}',due:'${k}',time:'${hh}:00'})">${here.map(e=>evHtml(e,'tev')).join('')}</div>`;}
-  const today=k===todayKey();
-  return navBar('d',fmtD(cur,{weekday:'long',day:'numeric',month:'long'}),calSeg())+`
-  <div class="grid g13">
-    <div class="grid" style="align-content:start">
-      ${routineHtml(k,'morning','Morning routine')}
-      ${priHtml(k,'Top 3 today',k)}
-      ${hs.length?`<div class="card"><h2>Habits</h2>${hs.map(h=>{const on=(S.habitMarks[k]||[]).includes(h.id);return`<div class="row ${on?'done':''}"><span class="tick ${on?'on':''}" onclick="toggleHabit('${k}','${h.id}')">${on?'✓':''}</span><span class="nm">${esc(h.name)}</span></div>`;}).join('')}</div>`:''}
-      ${routineHtml(k,'night','Night routine')}
-    </div>
-    <div class="grid" style="align-content:start">
-      <div class="card"><h2>Timeline<small>tap an hour to add · drop a task on an hour</small>${S.acal.on?`<span class="r"><button class="link" onclick="openAcal(null,{day:'${k}'})">Apple event →</button></span>`:''}</h2>
-        <div class="inner" data-drop="untime:${k}" style="margin-bottom:8px"><div class="muted" style="margin-bottom:4px">All day</div>${allday.length?allday.map(e=>evHtml(e,'tev')).join(''):'<div class="muted">Drop a task here to plan it for today without a time</div>'}</div>
-        <div class="tl">${tl}</div></div>
-    </div>
+  const k=dk(cur),m=mk(cur),hs=habits(m);
+  return`<div class="grid" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    ${routineHtml(k,'morning','Morning routine')}
+    ${priHtml(k,'Top 3 today',k)}
+    ${hs.length?`<div class="card"><h2>Habits</h2>${hs.map(h=>{const on=(S.habitMarks[k]||[]).includes(h.id);return`<div class="row ${on?'done':''}"><span class="tick ${on?'on':''}" onclick="toggleHabit('${k}','${h.id}')">${on?'✓':''}</span><span class="nm">${esc(h.name)}</span></div>`;}).join('')}</div>`:''}
+    ${routineHtml(k,'night','Night routine')}
   </div>`;
 }
 
@@ -652,6 +718,106 @@ function rTasks(){
 function quickToTasks(){const lines=S.quick.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean);if(!lines.length)return;lines.forEach(l=>addTask({name:l}));S.quick='';save();render();toast(`${lines.length} task${lines.length>1?'s':''} added`);}
 
 
+// ── CALENDAR (Apple Calendar–style: sidebar + month grid / time grid) ──
+const CAL_H=46;                       // px per hour in week/day
+let calScroll=null,calSide=true;
+const LAYERS=[['task','Tasks','#6F7359'],['class','Classes','#2C3E5C'],['assess','Deadlines','#B23A2E'],['invoice','Invoices','#C9A63F'],['gcal','Google Calendar','#857B6C']];
+const mins=t=>t?(+t.slice(0,2))*60+(+t.slice(3,5)):0;
+const hm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
+function calEvents(k){const hide=S.calHide||{};return getEvents(k).filter(e=>!hide[e.type]);}
+function evClick(e){return e.type==='task'?`openTask('${e.id}')`:e.type==='acal'?`openAcal('${e.id}')`:e.type==='class'?`nav('timetable')`:e.type==='assess'?`openAssess('${e.mod.id}','${e.id}')`:e.type==='invoice'?`nav('suede')`:'';}
+function evDrag(e){return e.type==='task'?`data-drag="task:${e.id}"`:'';}
+function calTitle(){
+  if(calView==='day')return`<b>${cur.getDate()} ${fmtD(cur,{month:'long'})}</b> ${cur.getFullYear()}<span class="calsubt">${fmtD(cur,{weekday:'long'})}</span>`;
+  const a=calView==='week'?monday(cur):cur,b=calView==='week'?addDays(a,6):cur;
+  if(calView==='week'&&a.getMonth()!==b.getMonth())return`<b>${fmtD(a,{month:'short'})} – ${fmtD(b,{month:'short'})}</b> ${b.getFullYear()}`;
+  return`<b>${fmtD(a,{month:'long'})}</b> ${a.getFullYear()}`;
+}
+function calStep(n){calScroll=null;const d=new Date(cur);if(calView==='month')d.setMonth(d.getMonth()+n,1);else d.setDate(d.getDate()+n*(calView==='week'?7:1));cur=d;render();acalEnsure();}
+function calSetView(v){calView=v;render();}
+function calFull(on){document.body.classList.toggle('calfull',on===undefined?!document.body.classList.contains('calfull'):on);render();}
+function calNew(k,t){if(S.acal&&S.acal.on)openAcal(null,{day:k,time:t||'09:00'});else openTask(null,{day:k,due:k,time:t||''});}
+function calSlot(ev,k,h){if(ev.target!==ev.currentTarget)return;const m=ev.offsetY<CAL_H/2?'00':'30';calNew(k,pad(h)+':'+m);}
+function toggleLayer(t){S.calHide=S.calHide||{};S.calHide[t]=!S.calHide[t];save();render();}
+function toggleAcalCal(i){S.acal.cals[i].on=!S.acal.cals[i].on;save();render();acalSync(true);}
+
+function calShell(){
+  const full=document.body.classList.contains('calfull');
+  const body=calView==='month'?calMonthGrid():calTimeGrid(calView==='week'?Array.from({length:7},(_,i)=>addDays(monday(cur),i)):[new Date(cur)]);
+  return`<div class="calapp ${calView} ${calSide?'':'noside'}">
+    <div class="caltb">
+      <button class="calib" title="Show or hide calendars" onclick="calSide=!calSide;render()">☰</button>
+      <div class="calh">${calTitle()}</div>
+      <span class="spacer"></span>
+      ${S.acal&&S.acal.on?`<button class="calib" title="Sync Apple Calendar" onclick="acalSync()">↻</button>`:''}
+      <button class="calib plus" title="New event" onclick="calNew('${dk(calView==='month'?new Date():cur)}')">＋</button>
+      <span class="calseg">${['day','week','month'].map(v=>`<button class="${calView===v?'on':''}" onclick="calSetView('${v}')">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</span>
+      <span class="calnav"><button onclick="calStep(-1)">‹</button><button onclick="cur=new Date();calScroll=null;render();acalEnsure()">Today</button><button onclick="calStep(1)">›</button></span>
+      <button class="calib" title="${full?'Exit full screen':'Full screen'}" onclick="calFull()">${full?'⤡':'⤢'}</button>
+    </div>
+    <div class="calbody">${calSide?calSidebar():''}<div class="calmain">${body}</div></div>
+  </div>`;
+}
+function calSidebar(){
+  const first=new Date(cur.getFullYear(),cur.getMonth(),1),start=monday(first),tk=todayKey(),sel=dk(cur);
+  const wk=calView==='week'?Array.from({length:7},(_,i)=>dk(addDays(monday(cur),i))):[];
+  let mini='';for(let i=0;i<42;i++){const d=addDays(start,i),k=dk(d);if(i===35&&d.getMonth()!==cur.getMonth())break;
+    mini+=`<button class="${d.getMonth()!==cur.getMonth()?'out':''} ${k===tk?'today':''} ${(calView==='day'&&k===sel)||wk.includes(k)?'sel':''} ${calEvents(k).length?'has':''}" onclick="cur=fromKey('${k}');render();acalEnsure()">${d.getDate()}</button>`;}
+  const hide=S.calHide||{};
+  const row=(on,col,label,click,meta)=>`<div class="calrow" onclick="${click}"><span class="cb ${on?'on':''}" style="--c:${col}">${on?'✓':''}</span><span class="nm">${esc(label)}</span>${meta?`<span class="meta">${meta}</span>`:''}</div>`;
+  return`<aside class="calside">
+    <div class="mini"><div class="minih"><b>${fmtD(cur,{month:'long'})}</b> ${cur.getFullYear()}<span class="spacer"></span><button onclick="cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);render();acalEnsure()">‹</button><button onclick="cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);render();acalEnsure()">›</button></div>
+      <div class="minig">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}${mini}</div></div>
+    ${S.acal&&S.acal.on?`<h4>iCloud</h4>${S.acal.cals.map((c,i)=>row(c.on,c.col,c.name,`toggleAcalCal(${i})`)).join('')}`:`<h4>iCloud</h4><div class="muted" style="padding:2px 6px 6px">Not connected · <span class="link" onclick="nav('settings')">Settings</span></div>`}
+    <h4>Elva Hub</h4>${LAYERS.filter(l=>l[0]!=='gcal'||S.gcal).map(l=>row(!hide[l[0]],l[2],l[1],`toggleLayer('${l[0]}')`)).join('')}
+    ${S.acal&&S.acal.on&&acalSync.at?`<div class="muted" style="margin-top:10px;padding:0 6px">Synced ${new Date(acalSync.at).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'})}</div>`:''}
+  </aside>`;
+}
+function calMonthGrid(){
+  const first=new Date(cur.getFullYear(),cur.getMonth(),1),last=new Date(cur.getFullYear(),cur.getMonth()+1,0),start=monday(first),tk=todayKey();
+  const weeks=Math.ceil((Math.round((last-start)/864e5)+1)/7);
+  let cells='';
+  for(let i=0;i<weeks*7;i++){const d=addDays(start,i),k=dk(d),ev=calEvents(k);
+    const all=ev.filter(e=>!e.time),timed=ev.filter(e=>e.time);
+    cells+=`<div class="mc ${d.getMonth()!==cur.getMonth()?'out':''} ${k===tk?'today':''} ${d.getDay()%6===0?'we':''}" data-drop="day:${k}" onclick="if(event.target===this||event.target.closest('.mcd'))openDay('${k}')" ondblclick="if(event.target===this)calNew('${k}')">
+      <div class="mcd"><span class="num">${d.getDate()===1?fmtD(d,{month:'short'})+' ':''}${d.getDate()}</span></div>
+      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} style="--c:${e.col}" onclick="event.stopPropagation();${evClick(e)}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}
+      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} onclick="event.stopPropagation();${evClick(e)}" title="${esc(e.time+' '+e.title)}"><span class="dot" style="background:${e.col}"></span><span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span></div>`).join('')}
+    </div>`;}
+  return`<div class="mhead">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div>${x}</div>`).join('')}</div><div class="mgrid2" style="grid-template-rows:repeat(${weeks},minmax(118px,auto))">${cells}</div>`;
+}
+// lay out overlapping timed events side by side
+function layoutDay(list){
+  const ev=list.map(e=>{const s=mins(e.time);let en=e.end&&e.end!==''?mins(e.end):s+60;if(e.end==='24:00'||(e.end&&en<=s&&e.type==='acal'))en=24*60;if(en<=s)en=s+30;return{e,s,en:Math.min(en,24*60)};}).sort((a,b)=>a.s-b.s||b.en-a.en);
+  let cluster=[],cols=[],end=-1;
+  const close=()=>{cluster.forEach(x=>x.n=cols.length);cluster=[];cols=[];};
+  for(const x of ev){if(x.s>=end&&cluster.length)close();let c=cols.findIndex(t=>t<=x.s);if(c<0){c=cols.length;cols.push(0);}cols[c]=x.en;x.c=c;cluster.push(x);end=Math.max(end,x.en);}
+  close();return ev;
+}
+function calTimeGrid(days){
+  const tk=todayKey(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
+  const heads=days.map(d=>{const k=dk(d);return`<div class="tgdh ${k===tk?'today':''}" onclick="openDay('${k}')"><span class="wd">${fmtD(d,{weekday:'short'})}</span><span class="num">${d.getDate()}</span></div>`;}).join('');
+  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} style="--c:${e.col}" onclick="${evClick(e)}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}</div>`;}).join('');
+  const cols=days.map(d=>{const k=dk(d);
+    const slots=Array.from({length:24},(_,h)=>`<div class="tgslot" data-drop="hour:${k}:${pad(h)}" onclick="calSlot(event,'${k}',${h})"></div>`).join('');
+    const evs=layoutDay(calEvents(k).filter(e=>e.time)).map(x=>{const e=x.e,h=Math.max((x.en-x.s)*CAL_H/60-2,17),short=h<44;
+      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" onclick="${evClick(e)}" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${esc(e.title)}</b>${short?` <span>${e.time}</span>`:`<span>${e.time}${e.end?' – '+e.end:''}</span>${e.room&&h>50?`<span>${esc(e.room)}</span>`:''}`}</div>`;}).join('');
+    return`<div class="tgcol ${k===tk?'today':''}">${slots}${evs}${k===tk?`<div class="tgnow" style="top:${nowM*CAL_H/60}px"></div>`:''}</div>`;}).join('');
+  const hasNow=days.some(d=>dk(d)===tk);
+  const gut=Array.from({length:24},(_,h)=>`<div class="tggh">${h&&!(hasNow&&Math.abs(nowM-h*60)<16)?pad(h)+':00':''}</div>`).join('');
+  return`<div class="tg" style="--n:${days.length}">
+    <div class="tghead"><div class="tggut"></div>${heads}</div>
+    <div class="tgallrow"><div class="tggut lbl">all-day</div>${allday}</div>
+    <div class="tgscroll" id="tgScroll" onscroll="calScroll=this.scrollTop"><div class="tgbody" style="height:${24*CAL_H}px"><div class="tggut">${gut}${hasNow?`<div class="tgnowl" style="top:${nowM*CAL_H/60}px">${hm(nowM)}</div>`:''}</div>${cols}</div></div>
+  </div>`;
+}
+function calAfter(){
+  const s=$('tgScroll');if(!s)return;
+  if(calScroll===null){const tops=[...s.querySelectorAll('.tgev')].map(x=>parseFloat(x.style.top)).filter(t=>t>=5*CAL_H);calScroll=Math.max(0,Math.min(...tops,7*CAL_H)-CAL_H/2);}
+  s.scrollTop=calScroll;
+}
+setInterval(()=>{if(page==='calendar'&&calView!=='month'&&!document.hidden&&!drag&&!$('mbg').classList.contains('on'))render();},60e3); // keep the now-line moving
+
 // ── TASK BANK (shared card under every calendar view) ──
 let bankFilter='all';
 function bankCard(){
@@ -665,7 +831,7 @@ function bankCard(){
     <div class="muted" style="margin-top:6px">Drop a task back here to unplan it.</div></div>`;
 }
 function calSeg(){return`<span class="seg">${['month','week','day'].map(v=>`<button class="${calView===v?'on':''}" onclick="calView='${v}';render()">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</span> `;}
-function rCalendar(){return (calView==='month'?rMonth():calView==='week'?rWeek():rDay())+bankCard();}
+function rCalendar(){return calShell()+(calView==='month'?rMonth():calView==='week'?rWeek():rDay())+bankCard();}
 
 // ── HOME ──
 function rHome(){
@@ -1055,8 +1221,8 @@ async function acalSync(quiet){
 function acalEnsure(){if(S.acal.on&&acalRange.from&&(dk(cur)<dk(addDays(fromKey(acalRange.from),14))||dk(cur)>dk(addDays(fromKey(acalRange.to),-31))))acalSync(true);}
 function acalOn(k){
   const linked=new Set(S.tasks.filter(t=>t.acal).map(t=>t.acal.href));
-  return acalEvents.filter(e=>(e.allDay?(e.day<=k&&k<=e.endDay):e.day===k)&&!linked.has(e.href)&&(acalCal(e.cal)||{on:true}).on!==false)
-    .map(e=>({...e,col:(acalCal(e.cal)||{}).col||'#857B6C'}));
+  return acalEvents.filter(e=>e.day<=k&&k<=e.endDay&&!(!e.allDay&&k===e.endDay&&k!==e.day&&e.endTime==='00:00')&&!linked.has(e.href)&&(acalCal(e.cal)||{on:true}).on!==false)
+    .map(e=>{const o={...e,col:(acalCal(e.cal)||{}).col||'#857B6C'};if(!e.allDay&&e.day!==e.endDay){if(k!==e.day)o.time='00:00';if(k!==e.endDay)o.endTime='24:00';}return o;});
 }
 function acalCalSel(v){const w=S.acal.cals.filter(c=>!c.readOnly);return`<select id="ae-cal">${w.map(c=>`<option value="${esc(c.url)}" ${c.url===v?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`;}
 function openAcal(id,d){
@@ -1071,6 +1237,7 @@ function openAcal(id,d){
   <div class="fr"><div class="f"><label>Day</label><input type="date" id="ae-day" value="${e.day}" ${locked?'disabled':''}></div><div class="f"><label>All day</label><select id="ae-all" ${locked?'disabled':''} onchange="$('ae-times').style.display=this.value==='1'?'none':'flex'"><option value="0" ${e.allDay?'':'selected'}>No</option><option value="1" ${e.allDay?'selected':''}>Yes</option></select></div></div>
   <div class="fr" id="ae-times" style="${e.allDay?'display:none':''}"><div class="f"><label>Start</label><input type="time" id="ae-start" value="${e.time}" ${locked?'disabled':''}></div><div class="f"><label>End</label><input type="time" id="ae-end" value="${e.endTime}" ${locked?'disabled':''}></div></div>
   <div class="fr">${id?'':`<div class="f"><label>Calendar</label>${acalCalSel(e.cal)}</div>`}<div class="f"><label>Location</label><input id="ae-loc" value="${esc(e.location)}" ${locked?'disabled':''}></div></div>
+  ${id?'':`<div class="muted" style="margin-top:2px"><span class="link" onclick="closeModal();openTask(null,{day:$('ae-day').value||'${e.day}',due:'${e.day}',time:''})">Make it a Hub task instead</span></div>`}
   <div class="mact">${id&&!locked?`<button class="btn danger sm" onclick="acalDelete('${id}')">Delete</button>`:''}<button class="btn ghost" onclick="closeModal()">${locked?'Close':'Cancel'}</button>${locked?'':`<button class="btn sky" onclick="acalSaveForm('${id||''}')">Save</button>`}</div>`);
 }
 function acalSaveForm(id){
