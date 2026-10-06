@@ -226,6 +226,8 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
 .calmain.slide-l{animation:calSlideL .22s ease-out}.calmain.slide-r{animation:calSlideR .22s ease-out}
 @keyframes calSlideL{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
 @keyframes calSlideR{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
+.ttick{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;border:1.5px solid var(--c,#857B6C);border-radius:3px;margin-right:4px;font-size:9px;line-height:1;vertical-align:-1px;cursor:pointer;background:#FFFDF7;flex:none;color:#fff}
+.ttick.on{background:var(--c,#857B6C)}
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -503,6 +505,7 @@ async function load(){
   try{const c=localStorage.getItem('elva_gcal_events');if(c)gcalEvents=JSON.parse(c);}catch(e){}
   if(!S.acal)S.acal={on:false,cals:[],def:''};
   if(!S.calAppleOnly){S.calHide={task:true,class:true,assess:true,invoice:true,gcal:true};S.calAppleOnly=true;save();}
+  if(!S.calTasksOn){S.calHide=Object.assign({},S.calHide,{task:false});S.calTasksOn=true;save();}
   try{const c=JSON.parse(localStorage.getItem('elva_acal_events')||'null');if(c){acalEvents=c.ev;acalRange=c.range;}}catch(e){}
 }
 
@@ -759,6 +762,7 @@ const mins=t=>t?(+t.slice(0,2))*60+(+t.slice(3,5)):0;
 const hm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
 function calEvents(k){const hide=S.calHide||{};return getEvents(k).filter(e=>!hide[e.type]);}
 function evClick(e){return e.type==='task'?`openTask('${e.id}')`:e.type==='acal'?`openAcal('${e.id}')`:e.type==='class'?`nav('timetable')`:e.type==='assess'?`openAssess('${e.mod.id}','${e.id}')`:e.type==='invoice'?`nav('suede')`:'';}
+function tTick(e){return e.type==='task'?`<span class="ttick ${e.done?'on':''}" style="--c:${e.col}" onclick="event.stopPropagation();toggleTask('${e.id}')">${e.done?'✓':''}</span>`:'';}
 function evDrag(e){return e.type==='task'?`data-drag="task:${e.id}"`:'';}
 function calTitle(){
   if(calView==='day')return`<b>${cur.getDate()} ${fmtD(cur,{month:'long'})}</b> ${cur.getFullYear()}<span class="calsubt">${fmtD(cur,{weekday:'long'})}</span>`;
@@ -815,8 +819,8 @@ function calMonthGrid(){
     const all=ev.filter(e=>!e.time),timed=ev.filter(e=>e.time);
     cells+=`<div class="mc ${d.getMonth()!==cur.getMonth()?'out':''} ${k===tk?'today':''} ${d.getDay()%6===0?'we':''}" data-drop="day:${k}" onclick="if(event.target===this||event.target.closest('.mcd'))openDay('${k}')" ondblclick="if(event.target===this)calNew('${k}')">
       <div class="mcd"><span class="num">${d.getDate()===1?fmtD(d,{month:'short'})+' ':''}${d.getDate()}</span></div>
-      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}
-      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} title="${esc(e.time+' '+e.title)}"><span class="dot" style="background:${e.col}"></span><span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span></div>`).join('')}
+      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${tTick(e)}${esc(e.title)}</div>`).join('')}
+      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} title="${esc(e.time+' '+e.title)}">${e.type==='task'?tTick(e):`<span class="dot" style="background:${e.col}"></span>`}<span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span></div>`).join('')}
     </div>`;}
   return`<div class="mhead">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div>${x}</div>`).join('')}</div><div class="mgrid2" style="grid-template-rows:repeat(${weeks},minmax(118px,auto))">${cells}</div>`;
 }
@@ -831,12 +835,12 @@ function layoutDay(list){
 function calTimeGrid(days){
   const tk=todayKey(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
   const heads=days.map(d=>{const k=dk(d);return`<div class="tgdh ${k===tk?'today':''}" onclick="openDay('${k}')"><span class="wd">${fmtD(d,{weekday:'short'})}</span><span class="num">${d.getDate()}</span></div>`;}).join('');
-  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}</div>`;}).join('');
+  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${tTick(e)}${esc(e.title)}</div>`).join('')}</div>`;}).join('');
   const cols=days.map(d=>{const k=dk(d);
     const slots=Array.from({length:24},(_,h)=>`<div class="tgslot" data-drop="hour:${k}:${pad(h)}" onclick="calSlot(event,'${k}',${h})"></div>`).join('');
     const evs=layoutDay(calEvents(k).filter(e=>e.time)).map(x=>{const e=x.e,h=Math.max((x.en-x.s)*CAL_H/60-2,17),short=h<44,key=e.type+':'+e.id,sel=calSel===key,ed=calEditable(e)&&!(e.type==='acal'&&e.ref.day!==e.ref.endDay);
       const tm=`<span class="tm">${e.time}${e.end?' – '+e.end:''}</span>`;
-      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${sel?'sel':''} ${ed?'ed':''}" ${calAttrs(e,k,'grid',x)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${esc(e.title)}</b>${short?(sel?'':` <span>${e.time}</span>`):tm+(e.room&&h>50?`<span>${esc(e.room)}</span>`:'')}${ed?'<i class="rz rz-top"></i><i class="rz rz-bot"></i>':''}${sel?`<span class="evact"><button title="Edit" onclick="event.stopPropagation();calOpen('${key}','${k}')">✎</button>${ed||e.type==='task'?`<button title="Delete" onclick="event.stopPropagation();calDelete('${key}')">🗑</button>`:''}</span>`:''}</div>`;}).join('');
+      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${sel?'sel':''} ${ed?'ed':''}" ${calAttrs(e,k,'grid',x)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${tTick(e)}${esc(e.title)}</b>${short?(sel?'':` <span>${e.time}</span>`):tm+(e.room&&h>50?`<span>${esc(e.room)}</span>`:'')}${ed?'<i class="rz rz-top"></i><i class="rz rz-bot"></i>':''}${sel?`<span class="evact"><button title="Edit" onclick="event.stopPropagation();calOpen('${key}','${k}')">✎</button>${ed||e.type==='task'?`<button title="Delete" onclick="event.stopPropagation();calDelete('${key}')">🗑</button>`:''}</span>`:''}</div>`;}).join('');
     return`<div class="tgcol ${k===tk?'today':''}" data-k="${k}">${slots}${evs}${k===tk?`<div class="tgnow" style="top:${nowM*CAL_H/60}px"></div>`:''}</div>`;}).join('');
   const hasNow=days.some(d=>dk(d)===tk);
   const gut=Array.from({length:24},(_,h)=>`<div class="tggh">${h&&!(hasNow&&Math.abs(nowM-h*60)<16)?pad(h)+':00':''}</div>`).join('');
@@ -885,7 +889,7 @@ async function calCommit(key,day,s,en){
   catch(err){Object.assign(a,old);render();toast(err.message);}
 }
 document.addEventListener('pointerdown',ev=>{
-  const el=ev.target.closest('[data-cal]');if(!el||ev.button>0||ev.target.closest('button'))return;
+  const el=ev.target.closest('[data-cal]');if(!el||ev.button>0||ev.target.closest('button,.ttick'))return;
   const key=el.dataset.cal,kind=el.dataset.kind,ed=el.dataset.ed==='1';
   const mode=ev.target.classList.contains('rz-top')?'top':ev.target.classList.contains('rz-bot')?'bot':'move';
   // touch: only a selected event can be dragged, so the grid still scrolls with a finger
