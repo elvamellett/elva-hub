@@ -208,6 +208,8 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
 .tgev,.mev{user-select:none;-webkit-user-select:none}
 .tgev.ed{cursor:grab}.mev.ed{cursor:grab}
 .tgev.sel{z-index:6;box-shadow:0 0 0 2px var(--c),0 4px 14px rgba(0,0,0,.2);touch-action:none}
+.tgev.lifted{transform:scale(1.03);transition:transform .12s}
+.tgev,.mev.ed{-webkit-touch-callout:none}
 .tgev.dragging{z-index:8;opacity:.9;cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.28)}
 .tgev .rz{position:absolute;left:0;right:0;height:7px;cursor:ns-resize;z-index:2}
 .tgev .rz-top{top:0}.tgev .rz-bot{bottom:0}
@@ -870,11 +872,13 @@ document.addEventListener('pointerdown',ev=>{
   const mode=ev.target.classList.contains('rz-top')?'top':ev.target.classList.contains('rz-bot')?'bot':'move';
   // touch: only a selected event can be dragged, so the grid still scrolls with a finger
   const canDrag=ed&&(ev.pointerType==='mouse'||calSel===key);
-  calDrag={el,key,kind,mode,canDrag,x:ev.clientX,y:ev.clientY,id:ev.pointerId,active:false,k:el.dataset.k,s:+el.dataset.s,en:+el.dataset.en};
-  if(canDrag){ev.preventDefault();try{el.setPointerCapture(ev.pointerId);}catch(e){}}
+  const d=calDrag={el,key,kind,mode,canDrag,x:ev.clientX,y:ev.clientY,id:ev.pointerId,active:false,k:el.dataset.k,s:+el.dataset.s,en:+el.dataset.en};
+  if(canDrag){if(ev.pointerType==='mouse')ev.preventDefault();try{el.setPointerCapture(ev.pointerId);}catch(e){}}
+  else if(ed)d.lp=setTimeout(()=>{if(calDrag!==d)return;d.canDrag=d.held=true;calSel=key;el.classList.add('sel','lifted');try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}},380); // press and hold, like iPhone
 });
 document.addEventListener('pointermove',ev=>{
-  const d=calDrag;if(!d||ev.pointerId!==d.id||!d.canDrag)return;
+  const d=calDrag;if(!d||ev.pointerId!==d.id)return;
+  if(!d.canDrag){if(d.lp&&Math.hypot(ev.clientX-d.x,ev.clientY-d.y)>8){clearTimeout(d.lp);d.lp=null;}return;}
   if(!d.active){if(Math.hypot(ev.clientX-d.x,ev.clientY-d.y)<5)return;d.active=true;calSel=d.key;d.el.classList.add('dragging','sel');
     if(d.kind!=='grid'){const g=document.createElement('div');g.className='dragghost';g.textContent=d.el.textContent.trim().slice(0,40);document.body.appendChild(g);d.ghost=g;d.el.style.opacity='.4';}}
   ev.preventDefault();
@@ -896,7 +900,8 @@ document.addEventListener('pointermove',ev=>{
   }
 },{passive:false});
 document.addEventListener('pointerup',ev=>{
-  const d=calDrag;if(!d||ev.pointerId!==d.id)return;calDrag=null;
+  const d=calDrag;if(!d||ev.pointerId!==d.id)return;calDrag=null;clearTimeout(d.lp);
+  if(!d.active&&d.held){render();return;}   // held without moving: just selected
   if(!d.active){ // a tap: grid events select first, open on the second tap; chips open straight away
     if(d.kind==='grid'){if(calSel===d.key)calOpen(d.key,d.k);else{calSel=d.key;render();}}
     else calOpen(d.key,d.k);
@@ -907,7 +912,8 @@ document.addEventListener('pointerup',ev=>{
   if(d.kind==='grid'){if(d.ns===undefined||(d.ns===d.s&&d.nen===d.en&&d.nk===d.k))return render();calCommit(d.key,d.nk,d.ns,d.nen);}
   else{if(!d.nk||d.nk===d.k)return render();calCommit(d.key,d.nk);}
 });
-document.addEventListener('pointercancel',()=>{if(calDrag){if(calDrag.ghost)calDrag.ghost.remove();calDrag=null;render();}});
+document.addEventListener('touchmove',ev=>{if(calDrag&&calDrag.canDrag)ev.preventDefault();},{passive:false});
+document.addEventListener('pointercancel',()=>{if(calDrag){clearTimeout(calDrag.lp);if(calDrag.ghost)calDrag.ghost.remove();calDrag=null;render();}});
 document.addEventListener('keydown',ev=>{
   if(page!=='calendar'||!calSel||$('mbg').classList.contains('on')||/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))return;
   if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();calDelete(calSel);}
