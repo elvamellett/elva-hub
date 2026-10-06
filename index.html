@@ -311,12 +311,14 @@ const DEF=()=>({
   notes:[],            // {id,title,date,body}
   quick:'',
   gcal:false,
+  acal:{on:false,cals:[],def:''},   // Apple Calendar via the Worker: cals [{url,name,col,on,readOnly}], def = calendar for new events
   claude:{url:'',token:'',model:'claude-sonnet-4-6'},
   chat:[],             // [{role,content}] last 40
   brief:{},            // 'YYYY-MM-DD' -> text
 });
 let S=DEF();
 let gcalEvents=[];
+let acalEvents=[],acalRange={from:'',to:''},acalBusy=false;
 let cur=new Date();      // date being viewed
 let page='home';
 let calView='month';
@@ -379,6 +381,8 @@ async function load(){
     S.modsSeeded=true;save();
   }
   try{const c=localStorage.getItem('elva_gcal_events');if(c)gcalEvents=JSON.parse(c);}catch(e){}
+  if(!S.acal)S.acal={on:false,cals:[],def:''};
+  try{const c=JSON.parse(localStorage.getItem('elva_acal_events')||'null');if(c){acalEvents=c.ev;acalRange=c.range;}}catch(e){}
 }
 
 // ── EVENTS: one source of truth ──
@@ -390,12 +394,13 @@ function getEvents(k){
   S.modules.forEach(m=>m.assessments.filter(a=>a.due===k).forEach(a=>out.push({id:a.id,type:'assess',title:`${a.title} due`,sub:m.code,time:'',col:m.col,done:a.done,ref:a,mod:m})));
   S.suede.invoices.filter(i=>i.due===k&&!i.paid).forEach(i=>out.push({id:i.id,type:'invoice',title:`Invoice: ${i.client}`,time:'',col:'#C9A63F',ref:i}));
   gcalEvents.forEach(e=>{const s=e.start.slice(0,10);if(s===k)out.push({id:e.id,type:'gcal',title:e.title,time:e.allDay?'':e.start.slice(11,16),col:'#857B6C'});});
+  if(S.acal.on)acalOn(k).forEach(e=>out.push({id:e.id,type:'acal',title:e.title,time:e.allDay?'':e.time,end:e.allDay?'':e.endTime,col:e.col,room:e.location,ref:e}));
   return out.sort((a,b)=>(a.time||'00:00')<(b.time||'00:00')?-1:1).sort((a,b)=>(!a.time&&b.time)?-1:(a.time&&!b.time)?1:0);
 }
 function evHtml(e,cls){
   const tick=e.type==='task'?`<span class="tick ${e.done?'on':''}" onclick="event.stopPropagation();toggleTask('${e.id}')">${e.done?'✓':''}</span>`:e.type==='assess'?`<span class="tick ${e.done?'on':''}" onclick="event.stopPropagation();toggleAssess('${e.mod.id}','${e.id}')">${e.done?'✓':''}</span>`:'';
   const drag=e.type==='task'?`data-drag="task:${e.id}" class="${cls} handle ${e.done?'done':''}"`:`class="${cls} ${e.done?'done':''}"`;
-  const click=e.type==='task'?`onclick="openTask('${e.id}')"`:e.type==='class'?`onclick="nav('timetable')"`:e.type==='assess'?`onclick="openAssess('${e.mod.id}','${e.id}')"`:'';
+  const click=e.type==='task'?`onclick="openTask('${e.id}')"`:e.type==='acal'?`onclick="event.stopPropagation();openAcal('${e.id}')"`:e.type==='class'?`onclick="nav('timetable')"`:e.type==='assess'?`onclick="openAssess('${e.mod.id}','${e.id}')"`:'';
   return`<div ${drag} style="border-left-color:${e.col}" ${click}>${tick}${e.time?`<span class="t">${e.time}${e.end?'–'+e.end:''}</span>`:''}<span class="nm">${esc(e.title)}${e.room?` <span class="muted">${esc(e.room)}</span>`:''}</span>${e.p?`<span class="pb p${e.p}">P${e.p}</span>`:''}</div>`;
 }
 
@@ -493,6 +498,7 @@ function openTask(id,defaults){
   <div class="fr"><div class="f"><label>Due</label><input type="date" id="m-due" value="${t.due}"></div><div class="f"><label>Planned day</label><input type="date" id="m-day" value="${t.day}"></div></div>
   <div class="f"><label>Time (optional)</label><input type="time" id="m-time" value="${t.time}"></div>
   <div class="f"><label>Note</label><textarea id="m-note">${esc(t.note)}</textarea></div>
+  ${id&&S.acal.on?`<div class="muted" style="margin-top:4px">${t.acal?'In Apple Calendar · <span class="link" onclick="taskToAcal(\''+id+'\')">update it</span>':'<span class="link" onclick="taskToAcal(\''+id+'\')">Send to Apple Calendar</span> (uses the planned day and time)'}</div>`:''}
   <div class="mact">${id?`<button class="btn danger sm" onclick="deleteTask('${id}')">Delete</button>`:''}<button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn sky" onclick="saveTask('${id||''}')">Save</button></div>`);
 }
 function saveTask(id){
@@ -507,7 +513,7 @@ const TITLES={home:'Home',timetable:'Timetable',calendar:'Calendar',assignments:
 function nav(p,d,v){page=p;if(d)cur=d;if(v)calView=v;document.body.classList.remove('nav-open');document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));render();window.scrollTo(0,0);}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>nav(b.dataset.p));
 function openDay(k){nav('calendar',fromKey(k),'day');}
-function shift(unit,n){const d=new Date(cur);if(unit==='m')d.setMonth(d.getMonth()+n,1);else if(unit==='q')d.setMonth(d.getMonth()+3*n,1);else d.setDate(d.getDate()+n);cur=d;render();}
+function shift(unit,n){const d=new Date(cur);if(unit==='m')d.setMonth(d.getMonth()+n,1);else if(unit==='q')d.setMonth(d.getMonth()+3*n,1);else d.setDate(d.getDate()+n);cur=d;render();acalEnsure();}
 function render(){$('hdrDate').textContent=fmtD(new Date(),{weekday:'short',day:'numeric',month:'short'});$('hubName').textContent=S.hubName;$('topTitle').textContent=TITLES[page]||'';
   const f={home:rHome,timetable:rTimetable,calendar:rCalendar,assignments:rAssignments,tasks:rTasks,claude:rClaude,goals:rGoals,wellness:rWellness,suede:rSuede,notes:rNotes,done:rDone,settings:rSettings}[page];if(f)$('p-'+page).innerHTML=f();
   // restore focus-free inputs' scroll etc. nothing else
@@ -558,7 +564,7 @@ function rWeek(){
   const mon=monday(cur),tk=todayKey(),wk='W:'+dk(mon);
   const days=Array.from({length:7},(_,i)=>addDays(mon,i));
   const label=`${fmtD(mon,{day:'numeric',month:'short'})} – ${fmtD(days[6],{day:'numeric',month:'short'})}`;
-  const cols=days.map(d=>{const k=dk(d),ev=getEvents(k);return`<div class="wday ${k===tk?'today':''}" data-drop="day:${k}"><div class="dh" onclick="openDay('${k}')"><span>${fmtD(d,{weekday:'short'})} ${d.getDate()}</span><small>${ev.length?ev.length:''}</small></div>${ev.map(e=>evHtml(e,'wev')).join('')}<button class="link" style="margin-top:4px" onclick="openTask(null,{day:'${k}',due:'${k}'})">+ add</button></div>`;}).join('');
+  const cols=days.map(d=>{const k=dk(d),ev=getEvents(k);return`<div class="wday ${k===tk?'today':''}" data-drop="day:${k}"><div class="dh" onclick="openDay('${k}')"><span>${fmtD(d,{weekday:'short'})} ${d.getDate()}</span><small>${ev.length?ev.length:''}</small></div>${ev.map(e=>evHtml(e,'wev')).join('')}<button class="link" style="margin-top:4px" onclick="openTask(null,{day:'${k}',due:'${k}'})">+ add</button>${S.acal.on?`<button class="link" style="margin-top:2px" onclick="openAcal(null,{day:'${k}'})">+ Apple event</button>`:''}</div>`;}).join('');
   const classes=S.modules.reduce((n,m)=>n+m.sessions.length,0);
   return navBar('w',label,calSeg()+`<span class="sub">${inTerm(dk(mon))?classes+' classes this week':'outside term'}</span>`)+`
   <div class="grid g31">
@@ -592,7 +598,7 @@ function rDay(){
       ${routineHtml(k,'night','Night routine')}
     </div>
     <div class="grid" style="align-content:start">
-      <div class="card"><h2>Timeline<small>tap an hour to add · drop a task on an hour</small></h2>
+      <div class="card"><h2>Timeline<small>tap an hour to add · drop a task on an hour</small>${S.acal.on?`<span class="r"><button class="link" onclick="openAcal(null,{day:'${k}'})">Apple event →</button></span>`:''}</h2>
         <div class="inner" data-drop="untime:${k}" style="margin-bottom:8px"><div class="muted" style="margin-bottom:4px">All day</div>${allday.length?allday.map(e=>evHtml(e,'tev')).join(''):'<div class="muted">Drop a task here to plan it for today without a time</div>'}</div>
         <div class="tl">${tl}</div></div>
     </div>
@@ -688,8 +694,8 @@ function rHome(){
   ${briefCard(k)}
   <div class="onegoal"><span class="star ${goal.done?'on':''}" onclick="S.oneGoal={k:'${k}',t:${JSON.stringify(goal.t)},done:${!goal.done}};save();render()">★</span><div style="flex:1"><div class="eyebrow" style="margin:0">TODAY'S ONE GOAL</div><input value="${esc(goal.t)}" placeholder="The one thing that makes today a win" oninput="S.oneGoal={k:'${k}',t:this.value,done:${goal.done}};save()" style="${goal.done?'text-decoration:line-through;opacity:.6':''}"></div></div>
   <div class="grid g31">
-    <div class="card"><h2>The day's schedule<span class="r"><button class="link" onclick="openTask(null,{day:'${k}',due:'${k}'})">Add an event →</button></span></h2>
-      <div data-drop="untime:${k}" style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;min-height:34px">${allday.length?allday.map(e=>`<div class="wev ${e.done?'done':''} ${e.type==='task'?'handle':''}" style="border-left-color:${e.col};margin:0;flex:none" ${e.type==='task'?`data-drag="task:${e.id}" onclick="openTask('${e.id}')"`:e.type==='assess'?`onclick="openAssess('${e.mod.id}','${e.id}')"`:''}><span class="nm">${esc(e.title)}</span><span class="t">${e.type==='task'?esc(cat(e.ref.cat).label):e.type==='assess'?'Deadline':e.type==='invoice'?'Invoice':e.type}</span></div>`).join(''):'<span class="muted">Nothing all-day. Drop a task here.</span>'}</div>
+    <div class="card"><h2>The day's schedule<span class="r">${S.acal.on?`<button class="link" onclick="openAcal(null,{day:'${k}'})">Apple event →</button> `:''}<button class="link" onclick="openTask(null,{day:'${k}',due:'${k}'})">Add an event →</button></span></h2>
+      <div data-drop="untime:${k}" style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;min-height:34px">${allday.length?allday.map(e=>`<div class="wev ${e.done?'done':''} ${e.type==='task'?'handle':''}" style="border-left-color:${e.col};margin:0;flex:none" ${e.type==='task'?`data-drag="task:${e.id}" onclick="openTask('${e.id}')"`:e.type==='assess'?`onclick="openAssess('${e.mod.id}','${e.id}')"`:e.type==='acal'?`onclick="openAcal('${e.id}')"`:''}><span class="nm">${esc(e.title)}</span><span class="t">${e.type==='task'?esc(cat(e.ref.cat).label):e.type==='assess'?'Deadline':e.type==='invoice'?'Invoice':e.type==='acal'?'Apple':e.type}</span></div>`).join(''):'<span class="muted">Nothing all-day. Drop a task here.</span>'}</div>
       <div class="tl">${tl}</div></div>
     <div class="grid" style="align-content:start">
       <div class="card"><h2>Today<small>tick as you go</small></h2>
@@ -850,6 +856,7 @@ function rSettings(){
     <div class="card"><h2>Google Calendar<small>read-only</small></h2><div class="muted" style="margin-bottom:8px">Pulls the next 60 days from ${GCAL_CALENDAR_ID} onto every calendar view.</div>
       <div class="mact" style="margin:0"><button class="btn ${S.gcal?'ghost':'sky'}" onclick="S.gcal=!S.gcal;save();if(S.gcal)gcalSync();else{gcalEvents=[];localStorage.removeItem('elva_gcal_events');render()}">${S.gcal?'Disconnect':'Connect'}</button>${S.gcal?'<button class="btn ghost" onclick="gcalSync()">Sync now</button>':''}</div>
       <div class="muted" style="margin-top:8px">${gcalEvents.length} events loaded</div></div>
+    ${acalSettings()}
     <div class="card"><h2>Claude<small>${S.claude.url?'connected':'not set up'}</small></h2>
       <div class="muted" style="margin-bottom:8px">Runs through your Cloudflare Worker so the API key never sits in this page.</div>
       <div class="f"><label>Worker URL</label><input value="${esc(S.claude.url)}" placeholder="https://elva-claude.elvamellett05.workers.dev" onchange="S.claude.url=this.value.trim().replace(/\/$/,'');save();render()"></div>
@@ -915,6 +922,7 @@ Available actions (omit fields you don't need):
 - add_client {name, stage, value, note}  — stage: Enquiry, Discovery, Proposal, Active, Delivered, Retainer
 - set_client_stage {name, stage}
 - add_invoice {client, amount, due}
+- add_event {title, day:"YYYY-MM-DD", time:"HH:MM", end:"HH:MM", calendar, location}   — puts a real event in her Apple Calendar; omit time for all-day; calendar = name, else her default
 
 Rules: only act on what she asked for or clearly agreed to. When planning her day, use move_task with day and time to put real tasks into free hours around her classes, and set_priority for the top 3. Keep the text part of the reply to what she needs to know; the Hub shows her what changed. Do not describe the block itself.
 
@@ -945,6 +953,7 @@ function applyActions(text){
     case 'add_client':{const st=STAGES.includes(a.stage)?a.stage:'Enquiry';S.suede.clients.push({id:uid(),name:a.name,stage:st,value:a.value||'',note:a.note||''});done.push('Added client: '+a.name+' ('+st+')');break;}
     case 'set_client_stage':{const c=findClient(a.name);if(!c){done.push('No client matching "'+a.name+'"');break;}if(!STAGES.includes(a.stage)){done.push('Unknown stage "'+a.stage+'"');break;}c.stage=a.stage;done.push(c.name+' → '+a.stage);break;}
     case 'add_invoice':{S.suede.invoices.push({id:uid(),client:a.client,amount:a.amount||'',due:a.due||'',paid:false});done.push('Added invoice: '+a.client+' €'+a.amount);break;}
+    case 'add_event':{if(!S.acal.on){done.push('Apple Calendar is not connected (Settings)');break;}if(!a.title||!a.day){done.push('Event needs a title and day');break;}const c=S.acal.cals.find(x=>x.name.toLowerCase()===(a.calendar||'').toLowerCase());acalSave(null,{title:a.title,day:a.day,time:a.time||'',endTime:a.end||'',allDay:!a.time,cal:c?c.url:'',location:a.location||''}).catch(e=>toast(e.message));done.push('Adding to Apple Calendar: '+a.title+' '+a.day+(a.time?' '+a.time:''));break;}
     default:done.push('Unknown action: '+a.do);
   }}catch(e){done.push('Failed: '+(a.do||'?'));}}
   if(list.length)save();
@@ -1008,6 +1017,105 @@ async function gcalSync(){
   }catch(e){toast('Sync error');}
 }
 
+// ── APPLE CALENDAR (two-way, through the Worker's /cal routes) ──
+function acalBase(){try{return new URL(S.claude.url).origin;}catch(e){return'';}}
+async function acalApi(path,body){
+  const base=acalBase();if(!base)throw new Error('Set the Worker URL in Settings → Claude first');
+  const r=await fetch(base+'/cal/'+path,{method:'POST',headers:{'Content-Type':'application/json','x-hub-token':S.claude.token},body:JSON.stringify(body||{})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||('Worker returned '+r.status));
+  return d;
+}
+const acalCal=url=>S.acal.cals.find(c=>c.url===url);
+async function acalConnect(){
+  try{toast('Connecting…');const list=await acalApi('calendars');
+    S.acal.cals=list.map(c=>{const old=acalCal(c.url);return{...c,on:old?old.on:true};});
+    if(!acalCal(S.acal.def)||acalCal(S.acal.def).readOnly)S.acal.def=(S.acal.cals.find(c=>!c.readOnly)||{}).url||'';
+    S.acal.on=true;save();await acalSync();
+  }catch(e){toast(e.message);render();}
+}
+function acalDisconnect(){S.acal.on=false;acalEvents=[];acalRange={from:'',to:''};try{localStorage.removeItem('elva_acal_events');}catch(e){}save();render();}
+async function acalSync(quiet){
+  if(!S.acal.on||acalBusy)return;acalBusy=true;
+  const t=new Date(),lo=cur<t?cur:t,hi=cur>t?cur:t;
+  const range={from:dk(addDays(lo,-60)),to:dk(addDays(hi,180))};
+  try{
+    const ev=await acalApi('events',{...range,cals:S.acal.cals.filter(c=>c.on).map(c=>c.url)});
+    acalEvents=ev.map((e,i)=>{const o={id:'a'+i,title:e.title,location:e.location||'',allDay:e.allDay,recurring:!!e.recurring,href:e.href,cal:e.cal};
+      if(e.allDay){o.day=e.start;o.endDay=dk(addDays(fromKey(e.end),-1));o.time=o.endTime='';}
+      else{const s=new Date(e.start),en=new Date(e.end);o.day=dk(s);o.time=pad(s.getHours())+':'+pad(s.getMinutes());o.endDay=dk(en);o.endTime=pad(en.getHours())+':'+pad(en.getMinutes());}
+      return o;});
+    acalRange=range;acalSync.at=Date.now();
+    try{localStorage.setItem('elva_acal_events',JSON.stringify({ev:acalEvents,range}));}catch(e){}
+    const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.closest('.page')))render();
+    if(!quiet)toast(`Apple Calendar: ${acalEvents.length} events`);
+  }catch(e){if(!quiet)toast(e.message);else console.warn('Apple Calendar sync',e);}
+  acalBusy=false;
+}
+function acalEnsure(){if(S.acal.on&&acalRange.from&&(dk(cur)<dk(addDays(fromKey(acalRange.from),14))||dk(cur)>dk(addDays(fromKey(acalRange.to),-31))))acalSync(true);}
+function acalOn(k){
+  const linked=new Set(S.tasks.filter(t=>t.acal).map(t=>t.acal.href));
+  return acalEvents.filter(e=>(e.allDay?(e.day<=k&&k<=e.endDay):e.day===k)&&!linked.has(e.href)&&(acalCal(e.cal)||{on:true}).on!==false)
+    .map(e=>({...e,col:(acalCal(e.cal)||{}).col||'#857B6C'}));
+}
+function acalCalSel(v){const w=S.acal.cals.filter(c=>!c.readOnly);return`<select id="ae-cal">${w.map(c=>`<option value="${esc(c.url)}" ${c.url===v?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`;}
+function openAcal(id,d){
+  const e=id?acalEvents.find(x=>x.id===id):Object.assign({title:'',day:todayKey(),endDay:'',time:'',endTime:'',allDay:false,location:'',cal:S.acal.def},d||{});
+  if(!e)return;
+  if(!id&&!e.time&&!d?.allDay){e.time=d&&d.time||'09:00';}
+  if(!id&&e.time&&!e.endTime){const h=Math.min(+e.time.slice(0,2)+1,23);e.endTime=pad(h)+e.time.slice(2);}
+  const c=acalCal(e.cal)||{},locked=id&&(e.recurring||c.readOnly);
+  openModal(`<h2>${id?'Apple Calendar event':'New Apple Calendar event'}${id?`<small style="margin-left:8px"><span class="dot" style="display:inline-block;background:${c.col||'#857B6C'}"></span> ${esc(c.name||'')}</small>`:''}</h2>
+  ${locked?`<div class="muted" style="margin-bottom:8px">${e.recurring?'Repeating event':'Read-only calendar'} — change it in the Apple Calendar app.</div>`:''}
+  <div class="f"><label>Title</label><input id="ae-title" value="${esc(e.title)}" ${locked?'disabled':''} onkeydown="if(event.key==='Enter')acalSaveForm('${id||''}')"></div>
+  <div class="fr"><div class="f"><label>Day</label><input type="date" id="ae-day" value="${e.day}" ${locked?'disabled':''}></div><div class="f"><label>All day</label><select id="ae-all" ${locked?'disabled':''} onchange="$('ae-times').style.display=this.value==='1'?'none':'flex'"><option value="0" ${e.allDay?'':'selected'}>No</option><option value="1" ${e.allDay?'selected':''}>Yes</option></select></div></div>
+  <div class="fr" id="ae-times" style="${e.allDay?'display:none':''}"><div class="f"><label>Start</label><input type="time" id="ae-start" value="${e.time}" ${locked?'disabled':''}></div><div class="f"><label>End</label><input type="time" id="ae-end" value="${e.endTime}" ${locked?'disabled':''}></div></div>
+  <div class="fr">${id?'':`<div class="f"><label>Calendar</label>${acalCalSel(e.cal)}</div>`}<div class="f"><label>Location</label><input id="ae-loc" value="${esc(e.location)}" ${locked?'disabled':''}></div></div>
+  <div class="mact">${id&&!locked?`<button class="btn danger sm" onclick="acalDelete('${id}')">Delete</button>`:''}<button class="btn ghost" onclick="closeModal()">${locked?'Close':'Cancel'}</button>${locked?'':`<button class="btn sky" onclick="acalSaveForm('${id||''}')">Save</button>`}</div>`);
+}
+function acalSaveForm(id){
+  const all=$('ae-all').value==='1',o={title:$('ae-title').value.trim(),day:$('ae-day').value,allDay:all,time:all?'':$('ae-start').value,endTime:all?'':$('ae-end').value,location:$('ae-loc').value.trim(),cal:$('ae-cal')?$('ae-cal').value:''};
+  if(!o.title){toast('Give it a title');return;}if(!o.day){toast('Pick a day');return;}if(!all&&!o.time){toast('Pick a start time');return;}
+  closeModal();acalSave(id,o).catch(e=>toast(e.message));
+}
+// o: {title, day, time, endTime, allDay, location, cal}. Returns {href}.
+async function acalSave(id,o){
+  const old=id?acalEvents.find(x=>x.id===id):null;
+  let start,end;
+  if(o.allDay||!o.time){start=o.day;const span=old&&old.allDay?Math.round((fromKey(old.endDay)-fromKey(old.day))/864e5):0;end=dk(addDays(fromKey(o.day),span+1));}
+  else{const s=new Date(`${o.day}T${o.time}`);let e=o.endTime?new Date(`${o.day}T${o.endTime}`):new Date(s.getTime()+36e5);if(e<=s)e=new Date(s.getTime()+36e5);start=s.toISOString();end=e.toISOString();}
+  const body={title:o.title,start,end,allDay:!!(o.allDay||!o.time),location:o.location||''};
+  const r=old?await acalApi('update',{href:old.href,...body}):await acalApi('create',{cal:o.cal||S.acal.def,...body});
+  toast(old?'Updated in Apple Calendar':'Added to Apple Calendar');
+  acalSync(true);
+  return r;
+}
+async function acalDelete(id){
+  const e=acalEvents.find(x=>x.id===id);if(!e||!confirm(`Delete "${e.title}" from Apple Calendar?`))return;
+  closeModal();
+  try{await acalApi('delete',{href:e.href});acalEvents=acalEvents.filter(x=>x.id!==id);render();toast('Deleted from Apple Calendar');acalSync(true);}catch(err){toast(err.message);}
+}
+async function taskToAcal(id){
+  const t=task(id);if(!t)return;if(!t.day){toast('Give the task a planned day first');return;}
+  const o={title:t.name,day:t.day,time:t.time||'',allDay:!t.time,location:''};
+  try{
+    let r;
+    if(t.acal){r=await acalApi('update',{href:t.acal.href,title:o.title,...acalTimes(o)});toast('Updated in Apple Calendar');}
+    else{r=await acalApi('create',{cal:S.acal.def,title:o.title,...acalTimes(o)});toast('Sent to Apple Calendar');}
+    t.acal={href:r.href};save();closeModal();render();acalSync(true);
+  }catch(e){toast(e.message);}
+}
+function acalTimes(o){if(o.allDay)return{allDay:true,start:o.day,end:dk(addDays(fromKey(o.day),1))};const s=new Date(`${o.day}T${o.time}`);return{allDay:false,start:s.toISOString(),end:new Date(s.getTime()+36e5).toISOString()};}
+function acalSettings(){
+  const ok=S.acal.on;
+  return`<div class="card"><h2>Apple Calendar<small>${ok?'connected · two-way':'not connected'}</small></h2>
+    <div class="muted" style="margin-bottom:8px">Your iCloud calendars, through the same Cloudflare Worker as Claude. Events show on every calendar view; add, move and delete them from the Hub.</div>
+    ${ok?`<h3>Show these calendars</h3>${S.acal.cals.map((c,i)=>`<div class="row"><span class="tick ${c.on?'on':''}" onclick="S.acal.cals[${i}].on=!S.acal.cals[${i}].on;save();acalSync(true);render()">${c.on?'✓':''}</span><span class="dot" style="background:${c.col}"></span><span class="nm">${esc(c.name)}</span>${c.readOnly?'<span class="meta">read-only</span>':''}</div>`).join('')||'<div class="empty">No calendars found</div>'}
+      <div class="f" style="margin-top:8px"><label>New events go to</label><select onchange="S.acal.def=this.value;save()">${S.acal.cals.filter(c=>!c.readOnly).map(c=>`<option value="${esc(c.url)}" ${c.url===S.acal.def?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>`:''}
+    <div class="mact" style="margin:0"><button class="btn ${ok?'ghost':'sky'}" onclick="${ok?'acalDisconnect()':'acalConnect()'}">${ok?'Disconnect':'Connect'}</button>${ok?'<button class="btn ghost" onclick="acalConnect()">Refresh calendars</button><button class="btn ghost" onclick="acalSync()">Sync now</button>':''}</div>
+    ${ok?`<div class="muted" style="margin-top:8px">${acalEvents.length} events loaded${acalSync.at?' · synced '+new Date(acalSync.at).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'}):''}</div>`:`<div class="muted" style="margin-top:8px">Needs <code>ICLOUD_USER</code> and <code>ICLOUD_APP_PASSWORD</code> on the Worker, and the Worker URL + token filled in under Claude.</div>`}</div>`;
+}
+
 // ── LOCK + INIT ──
 function unlock(){if($('lockIn').value===PASSWORD){sessionStorage.setItem('elva_unlocked','1');$('lock').style.display='none';}else{$('lockErr').style.display='block';}}
 (async function init(){
@@ -1015,6 +1123,7 @@ function unlock(){if($('lockIn').value===PASSWORD){sessionStorage.setItem('elva_
   await load();
   nav('home');
   if(S.gcal)gcalSync();
+  if(S.acal.on){acalSync(true);setInterval(()=>acalSync(true),10*60e3);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-(acalSync.at||0)>3*60e3)acalSync(true);});}
 })();
 </script>
 </body>
