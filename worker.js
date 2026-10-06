@@ -5,6 +5,8 @@
 //   HUB_TOKEN            any password you choose; paste the same one into Hub → Settings → Claude
 //   ICLOUD_USER          your Apple ID email
 //   ICLOUD_APP_PASSWORD  an app-specific password from account.apple.com → Sign-In and Security
+//   VAPID_PRIVATE        the push-notification private key (see Hub → Settings → Notifications)
+// Cron Trigger (Worker → Settings → Triggers):  */15 * * * *   — sends the scheduled notifications
 // Optional plain variable:
 //   TZ                   fallback time zone for events with an unknown zone (default Europe/Dublin)
 //
@@ -20,6 +22,9 @@
 const ALLOWED = ['https://elvamellett.github.io', 'http://localhost', 'null'];
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runSchedule(event.scheduledTime, env));
+  },
   async fetch(req, env) {
     const origin = req.headers.get('Origin') || '';
     const cors = {
@@ -32,7 +37,7 @@ export default {
     if (req.method !== 'POST') return new Response('POST only', { status: 405, headers: cors });
 
     const path = new URL(req.url).pathname;
-    const isCal = path.startsWith('/cal/');
+    const isCal = path.startsWith('/cal/') || path.startsWith('/push/');
     // Calendar routes always need the token; Claude keeps its old behaviour (token only if set).
     if ((isCal || env.HUB_TOKEN) && (!env.HUB_TOKEN || req.headers.get('x-hub-token') !== env.HUB_TOKEN))
       return json({ error: env.HUB_TOKEN ? 'Wrong Hub token' : 'Set HUB_TOKEN on the Worker first' }, 401);
@@ -40,6 +45,12 @@ export default {
     let body;
     try { body = await req.json(); } catch { return json({ error: 'Bad JSON' }, 400); }
 
+    if (path === '/push/test') {
+      try { const st = await sendPush(body.sub, { title: 'Elva Hub', body: body.text || 'Notifications are working ✓', tag: 'test' }, env); return json({ status: st }, st < 300 ? 200 : 502); }
+      catch (e) { return json({ error: e.message }, 400); }
+    }
+    if (path === '/push/run') return json(await runSchedule(Date.now(), env));
+    if (path === '/push/daily') { const S = await sbGet('ggc'); return json(await makeDaily(S || {}, body.day || localNow(Date.now(), env.TZ || 'Europe/Dublin').day, env)); }
     if (isCal) {
       if (!env.ICLOUD_USER || !env.ICLOUD_APP_PASSWORD) return json({ error: 'Add ICLOUD_USER and ICLOUD_APP_PASSWORD to the Worker' }, 500);
       try {
@@ -71,6 +82,145 @@ export default {
     return new Response(text, { status: r.status, headers: { ...cors, 'content-type': 'application/json' } });
   },
 };
+
+// ── PUSH NOTIFICATIONS (Web Push, sent on the Worker's cron) ──
+const VAPID_PUBLIC = 'BA3I3zS_ivIoXU38AcEpr7SkIu-FIuFKr2ubYe_OV5w55Z_hXv9qmG0LQ7eHr-ySMRBRrHE_PKue14IOEc_Pvz0';
+const HUB_URL = 'https://elvamellett.github.io/elva-hub/hub/';
+const SB_URL = 'https://kktedaihlunwigehyshw.supabase.co';
+const SB_KEY = 'sb_publishable_TPewUUg5OxxUmiqy7pTHpA_M19GL1vn';
+const PUSH_HOSTS = [/(^|\.)push\.apple\.com$/, /^fcm\.googleapis\.com$/, /(^|\.)push\.services\.mozilla\.com$/, /(^|\.)notify\.windows\.com$/];
+const AFFIRMATIONS = [
+  'I am capable of handling whatever today brings.', 'I do the important thing first, and the rest follows.',
+  'My effort today builds the life I want.', 'I am calm, focused and in control of my time.',
+  'I am allowed to rest and still be ambitious.', 'Small steps today are real progress.',
+  'I trust myself to figure it out.', 'I am building something I am proud of.',
+];
+
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const cat = (...a) => { const o = new Uint8Array(a.reduce((n, x) => n + x.length, 0)); let i = 0; for (const x of a) { o.set(x, i); i += x.length; } return o; };
+const enc = s => new TextEncoder().encode(s);
+
+async function hkdf(salt, ikm, info, bits) {
+  const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, bits));
+}
+async function vapidJwt(aud, env) {
+  const pub = unb64u(VAPID_PUBLIC);
+  const key = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', d: env.VAPID_PRIVATE, x: b64u(pub.slice(1, 33)), y: b64u(pub.slice(33, 65)), ext: true }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const head = b64u(enc(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const body = b64u(enc(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: HUB_URL })));
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, enc(head + '.' + body));
+  return head + '.' + body + '.' + b64u(sig);
+}
+// RFC 8291 (aes128gcm) payload encryption
+async function encryptPayload(sub, text) {
+  const ua = unb64u(sub.keys.p256dh), auth = unb64u(sub.keys.auth);
+  const eph = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', eph.publicKey));
+  const uaKey = await crypto.subtle.importKey('raw', ua, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, eph.privateKey, 256));
+  const ikm = await hkdf(auth, shared, cat(enc('WebPush: info\0'), ua, asPub), 256);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, enc('Content-Encoding: aes128gcm\0'), 128);
+  const nonce = await hkdf(salt, ikm, enc('Content-Encoding: nonce\0'), 96);
+  const aes = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aes, cat(enc(text), new Uint8Array([2]))));
+  const rs = new Uint8Array([0, 0, 16, 0]);
+  return cat(salt, rs, new Uint8Array([asPub.length]), asPub, ct);
+}
+async function sendPush(sub, msg, env) {
+  const url = new URL(sub.endpoint);
+  if (url.protocol !== 'https:' || !PUSH_HOSTS.some(r => r.test(url.hostname))) throw new Error('Not a push service endpoint');
+  if (!env.VAPID_PRIVATE) throw new Error('Add VAPID_PRIVATE to the Worker');
+  const body = await encryptPayload(sub, JSON.stringify({ url: HUB_URL, ...msg }));
+  const r = await fetch(sub.endpoint, {
+    method: 'POST',
+    headers: { 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '3600', Urgency: 'normal',
+      Authorization: `vapid t=${await vapidJwt(url.origin, env)}, k=${VAPID_PUBLIC}` },
+    body,
+  });
+  return r.status;
+}
+async function pushAll(S, msg, env) {
+  const subs = (S.notify && S.notify.subs) || [];
+  return Promise.all(subs.map(s => sendPush(s, msg, env).catch(e => 'error: ' + e.message)));
+}
+
+// ── Supabase (same row the Hub uses) ──
+async function sbGet(id) {
+  const r = await fetch(`${SB_URL}/rest/v1/hub_state?id=eq.${id}&select=state`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
+  const rows = r.ok ? await r.json() : [];
+  return rows[0] ? rows[0].state : null;
+}
+async function sbPut(id, state) {
+  await fetch(`${SB_URL}/rest/v1/hub_state`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ id, state, updated_at: new Date().toISOString() }) });
+}
+
+// Local wall-clock in the Hub's time zone
+function localNow(ts, tz) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(ts)).map(x => [x.type, x.value]));
+  return { day: `${p.year}-${p.month}-${p.day}`, min: (+p.hour % 24) * 60 + +p.minute };
+}
+const toMin = t => t ? +t.slice(0, 2) * 60 + +t.slice(3, 5) : -1;
+const monthKey = d => d.slice(0, 7);
+
+// Goal of the day + affirmation, from Claude (falls back to a fixed list)
+async function makeDaily(S, day, env) {
+  const m = monthKey(day), g = (S.goals || {})[m] || {}, q = `${day.slice(0, 4)}-Q${Math.floor((+day.slice(5, 7) - 1) / 3) + 1}`;
+  const tasks = (S.tasks || []).filter(t => !t.done && (t.day === day || t.due === day)).map(t => t.name + (t.time ? ' at ' + t.time : ''));
+  const ctx = [`Today is ${day}.`, `Month goals — personal: ${(g.life || []).filter(x => !x.done).map(x => x.t).join('; ') || 'none'}; Suede Studio: ${(g.suede || []).filter(x => !x.done).map(x => x.t).join('; ') || 'none'}; money: ${(g.money || []).filter(x => !x.done).map(x => x.t).join('; ') || 'none'}.`,
+    `3-month goals: ${(((S.q || {})[q] || {}).goals || []).map(x => x.t).join('; ') || 'none'}.`, `Planned today: ${tasks.join('; ') || 'nothing planned'}.`].join('\n');
+  const fallback = { goal: tasks[0] || '', why: '', affirmation: AFFIRMATIONS[(+day.slice(8, 10)) % AFFIRMATIONS.length], by: 'list' };
+  if (!env.ANTHROPIC_KEY) return fallback;
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: (S.claude && S.claude.model) || 'claude-sonnet-5-5', max_tokens: 300, system: DAILY_PROMPT, messages: [{ role: 'user', content: ctx }] }) });
+    const d = await r.json();
+    const text = (d.content || []).map(c => c.text || '').join('');
+    const j = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+    return { goal: String(j.goal || ''), why: String(j.why || ''), affirmation: String(j.affirmation || fallback.affirmation), by: 'claude' };
+  } catch { return fallback; }
+}
+const DAILY_PROMPT = `You write Elva's morning nudge. Elva is 20, studies Economics at UCD, works full time at ODL and runs The Suede Studio. From her goals and today's plan, pick ONE realistic goal for today that moves a bigger goal forward (under 12 words, starts with a verb), one short reason (under 15 words), and a warm, grounded first-person affirmation (under 18 words, no clichés, no emojis). Reply with JSON only: {"goal":"","why":"","affirmation":""}`;
+
+async function runSchedule(ts, env) {
+  const S = await sbGet('ggc');
+  if (!S || !S.notify || !S.notify.on || !(S.notify.subs || []).length) return { skipped: true };
+  const n = S.notify, tz = env.TZ || 'Europe/Dublin', now = localNow(ts, tz);
+  const t0 = Math.floor(now.min / 15) * 15, inWin = m => m >= t0 && m < t0 + 15;
+  const sent = [];
+  const push = async msg => { sent.push(msg.title); await pushAll(S, msg, env); };
+  if (n.morningOn !== false && inWin(toMin(n.morning || '08:00'))) {
+    const all = (await sbGet('ggc-daily')) || {};
+    let d = all[now.day] || (S.daily || {})[now.day];
+    if (!d) { d = await makeDaily(S, now.day, env); all[now.day] = d; Object.keys(all).sort().slice(0, -30).forEach(k => delete all[k]); await sbPut('ggc-daily', all); }
+    await push({ title: 'Good morning, Elva', body: `${d.affirmation}${d.goal ? '\nGoal today: ' + d.goal : ''}`, tag: 'morning' });
+  }
+  const today = (S.tasks || []).filter(t => !t.done && t.day === now.day);
+  if (n.middayOn !== false && inWin(toMin(n.midday || '13:00'))) {
+    const top = ((S.pri || {})[now.day] || []).map(id => (S.tasks || []).find(t => t.id === id)).filter(Boolean);
+    const done = top.filter(t => t.done).length;
+    await push({ title: 'Midday check-in', body: top.length ? `Top 3: ${done}/${top.length} done. Next: ${(top.find(t => !t.done) || {}).name || 'all done — nice'}` : `${today.length} task${today.length === 1 ? '' : 's'} left today. What's the one thing for this afternoon?`, tag: 'midday' });
+  }
+  if (n.eveningOn !== false && inWin(toMin(n.evening || '21:00'))) {
+    const tm = new Date(Date.parse(now.day + 'T12:00:00Z') + 864e5).toISOString().slice(0, 10);
+    const tmr = (S.tasks || []).filter(t => !t.done && t.day === tm).length;
+    await push({ title: 'Plan tomorrow', body: `${tmr ? tmr + ' task' + (tmr === 1 ? '' : 's') + ' planned for tomorrow.' : 'Nothing planned for tomorrow yet.'} Set your top 3 before bed.`, tag: 'evening' });
+  }
+  const before = +(n.before || 15);
+  if (n.tasksOn !== false) for (const t of today.filter(t => t.time && inWin(toMin(t.time) - before)))
+    await push({ title: `${t.time} · ${t.name}`, body: `Starts in ${before} minutes`, tag: 'task-' + t.id });
+  if (n.appleOn && S.acal && S.acal.on && env.ICLOUD_USER) {
+    try {
+      const cals = (S.acal.cals || []).filter(c => c.on !== false).map(c => c.url);
+      const evs = await new ICloud(env).events({ from: now.day, to: new Date(Date.parse(now.day + 'T00:00:00Z') + 2 * 864e5).toISOString().slice(0, 10), cals });
+      for (const e of evs.filter(e => !e.allDay)) { const l = localNow(Date.parse(e.start), tz); if (l.day === now.day && inWin(l.min - before)) await push({ title: `${String(Math.floor(l.min / 60)).padStart(2, '0')}:${String(l.min % 60).padStart(2, '0')} · ${e.title}`, body: `Starts in ${before} minutes${e.location ? ' · ' + e.location : ''}`, tag: 'ev-' + e.uid + e.start }); }
+    } catch (e) { sent.push('apple error: ' + e.message); }
+  }
+  return { sent, window: `${now.day} ${Math.floor(t0 / 60)}:${String(t0 % 60).padStart(2, '0')}` };
+}
 
 // ── iCloud CalDAV ──
 let HOME_CACHE = null; // {user, url} — survives between requests on a warm isolate
@@ -409,4 +559,4 @@ function expandIcs(text, fromD, toD, fallbackTz) {
   return out;
 }
 
-export { expandIcs, parseIcs, buildIcs, responses, tag, decodeXml, ICloud };
+export { encryptPayload, vapidJwt, runSchedule, makeDaily, expandIcs, parseIcs, buildIcs, responses, tag, decodeXml, ICloud };
