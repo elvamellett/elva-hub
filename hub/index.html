@@ -484,6 +484,7 @@ async function load(){
   }
   try{const c=localStorage.getItem('elva_gcal_events');if(c)gcalEvents=JSON.parse(c);}catch(e){}
   if(!S.acal)S.acal={on:false,cals:[],def:''};
+  if(!S.calAppleOnly){S.calHide={task:true,class:true,assess:true,invoice:true,gcal:true};S.calAppleOnly=true;save();}
   try{const c=JSON.parse(localStorage.getItem('elva_acal_events')||'null');if(c){acalEvents=c.ev;acalRange=c.range;}}catch(e){}
 }
 
@@ -576,7 +577,8 @@ function zoneAt(x,y){if(drag&&drag.ghost)drag.ghost.style.display='none';const e
 function handleDrop(data,zone){
   const [kind,id]=data.split(':');const z=zone.split(':');
   if(kind==='task'){
-    if(z[0]==='day')moveTask(id,z[1]);
+    if(['day','hour','untime'].includes(z[0])&&page==='calendar'&&(S.calHide||{}).task&&S.acal.on){moveTask(id,z[1],z[0]==='hour'?z[2]+':00':z[0]==='untime'?'':undefined);taskToAcal(id);}
+    else if(z[0]==='day')moveTask(id,z[1]);
     else if(z[0]==='hour')moveTask(id,z[1],z[2]+':00');
     else if(z[0]==='pri')setPriTask(z.slice(1,-1).join(':'),+z[z.length-1],id);
     else if(z[0]==='bank')moveTask(id,'','');
@@ -939,7 +941,7 @@ function rHome(){
   S.tasks.filter(t=>!t.done&&t.due&&wkeys.includes(t.due)).forEach(t=>due.push({k:t.due,t:t.name,sub:cat(t.cat).label,col:cat(t.cat).col,open:`openTask('${t.id}')`}));
   due.sort((a,b)=>a.k<b.k?-1:1);
   const goal=S.oneGoal&&S.oneGoal.k===k?S.oneGoal:{k,t:'',done:false};
-  const timed=ev.filter(e=>e.time),allday=ev.filter(e=>!e.time);
+  const sched=calEvents(k),timed=sched.filter(e=>e.time),allday=sched.filter(e=>!e.time);
   let h0=8,h1=20;timed.forEach(e=>{const h=+e.time.slice(0,2);if(h<h0)h0=h;if(h+1>h1)h1=Math.min(h+1,23);});
   let tl='';for(let h=h0;h<=h1;h++){const hh=pad(h);const here=timed.filter(e=>+e.time.slice(0,2)===h);tl+=`<div class="h">${hh}:00</div><div class="slot" data-drop="hour:${k}:${hh}" onclick="if(event.target===this)openTask(null,{day:'${k}',due:'${k}',time:'${hh}:00'})">${here.map(e=>evHtml(e,'tev')).join('')}</div>`;}
   const todos=S.tasks.filter(t=>!t.done&&(t.day===k||t.due===k));
@@ -1315,7 +1317,7 @@ async function acalSync(quiet){
 }
 function acalEnsure(){if(S.acal.on&&acalRange.from&&(dk(cur)<dk(addDays(fromKey(acalRange.from),14))||dk(cur)>dk(addDays(fromKey(acalRange.to),-31))))acalSync(true);}
 function acalOn(k){
-  const linked=new Set(S.tasks.filter(t=>t.acal).map(t=>t.acal.href));
+  const linked=new Set((S.calHide||{}).task?[]:S.tasks.filter(t=>t.acal).map(t=>t.acal.href));
   return acalEvents.filter(e=>e.day<=k&&k<=e.endDay&&!(!e.allDay&&k===e.endDay&&k!==e.day&&e.endTime==='00:00')&&!linked.has(e.href)&&(acalCal(e.cal)||{on:true}).on!==false)
     .map(e=>{const o={...e,col:(acalCal(e.cal)||{}).col||'#857B6C'};if(!e.allDay&&e.day!==e.endDay){if(k!==e.day)o.time='00:00';if(k!==e.endDay)o.endTime='24:00';}return o;});
 }
