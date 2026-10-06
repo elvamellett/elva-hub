@@ -242,6 +242,20 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
 .daily .sugt{font-family:Georgia,serif;font-size:17px;color:#1B1B1B}
 .daily>.muted,.daily>.eyebrow{grid-column:1/-1}
 @media(max-width:820px){.daily{grid-template-columns:1fr}}
+.calside.tasks{width:280px}
+.caltabs{display:flex;background:rgba(27,27,27,.07);border-radius:9px;padding:2px;margin-bottom:10px}
+.caltabs button{flex:1;padding:5px 0;border-radius:7px;font-size:12px;font-weight:700;color:#372F28}
+.caltabs button.on{background:#FFFDF7;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.bank2{min-height:70%;border-radius:8px}
+.bank2>input{margin-bottom:8px}
+.bkchips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.bkhint{font-size:11px;margin:2px 2px 4px}
+.bank2 h4{display:flex;align-items:center;gap:4px}
+.bkrow{display:flex;align-items:center;gap:6px;background:#FFFDF7;border:1px solid rgba(27,27,27,.1);border-left:3px solid var(--c);border-radius:7px;padding:6px 8px;margin-bottom:4px;font-size:12px}
+.bkrow:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.bkrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.bkrow .ttick{width:13px;height:13px}
+.calside.tasks [data-drop="bank"].over{outline:2px dashed #9CC9FF}
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -603,19 +617,21 @@ document.addEventListener('pointerup',e=>{
   if(!d.active)return;   // a tap: let the click handler open the editor
   d.ghost.remove();d.el.style.opacity='';
   const z=zoneAt(e.clientX,e.clientY);document.querySelectorAll('[data-drop].over').forEach(x=>x.classList.remove('over'));
-  if(z)handleDrop(d.data,z.dataset.drop);
+  if(z){let zone=z.dataset.drop;if(zone.startsWith('hour:')){const r=z.getBoundingClientRect();zone+=':'+pad(Math.min(45,Math.floor((e.clientY-r.top)/r.height*4)*15));}handleDrop(d.data,zone);}
   suppressClick=true;setTimeout(()=>suppressClick=false,300);
 });
 document.addEventListener('pointercancel',()=>{if(drag&&drag.ghost){drag.ghost.remove();drag.el.style.opacity='';}drag=null;});
 let suppressClick=false;
 document.addEventListener('click',e=>{if(suppressClick){e.stopPropagation();e.preventDefault();}},true);
-function zoneAt(x,y){if(drag&&drag.ghost)drag.ghost.style.display='none';const el=document.elementFromPoint(x,y);if(drag&&drag.ghost)drag.ghost.style.display='';return el?el.closest('[data-drop]'):null;}
+function zoneAt(x,y){if(drag&&drag.ghost)drag.ghost.style.display='none';const el=document.elementFromPoint(x,y);if(drag&&drag.ghost)drag.ghost.style.display='';if(!el)return null;
+  const col=el.closest('.tgcol');if(col){const sl=col.querySelectorAll('.tgslot'),i=Math.floor((y-col.getBoundingClientRect().top)/CAL_H);return sl[Math.max(0,Math.min(23,i))]||null;} // over an event: use the hour underneath
+  return el.closest('[data-drop]');}
 function handleDrop(data,zone){
   const [kind,id]=data.split(':');const z=zone.split(':');
   if(kind==='task'){
-    if(['day','hour','untime'].includes(z[0])&&page==='calendar'&&(S.calHide||{}).task&&S.acal.on){moveTask(id,z[1],z[0]==='hour'?z[2]+':00':z[0]==='untime'?'':undefined);taskToAcal(id);}
+    if(['day','hour','untime'].includes(z[0])&&page==='calendar'&&(S.calHide||{}).task&&S.acal.on){moveTask(id,z[1],z[0]==='hour'?z[2]+':'+(z[3]||'00'):z[0]==='untime'?'':undefined);taskToAcal(id);}
     else if(z[0]==='day')moveTask(id,z[1]);
-    else if(z[0]==='hour')moveTask(id,z[1],z[2]+':00');
+    else if(z[0]==='hour')moveTask(id,z[1],z[2]+':'+(z[3]||'00'));
     else if(z[0]==='pri')setPriTask(z.slice(1,-1).join(':'),+z[z.length-1],id);
     else if(z[0]==='bank')moveTask(id,'','');
     else if(z[0]==='untime')moveTask(id,z[1],'');
@@ -811,6 +827,20 @@ function calShell(){
     <div class="calbody">${calSide?calSidebar():''}<div class="calmain ${calAnim}">${body}</div></div>
   </div>`;
 }
+let calTab='tasks';
+function calTaskBank(){
+  const tk=todayKey(),open=S.tasks.filter(t=>!t.done&&(bankFilter==='all'||t.cat===bankFilter));
+  const late=open.filter(t=>t.day&&t.day<tk).sort((a,b)=>a.day<b.day?-1:1),un=open.filter(t=>!t.day);
+  const row=t=>`<div class="bkrow handle" data-drag="task:${t.id}" style="--c:${cat(t.cat).col}"><span class="ttick" style="--c:${cat(t.cat).col}" onclick="event.stopPropagation();toggleTask('${t.id}')"></span><span class="nm" onclick="openTask('${t.id}')">${esc(t.name)}</span>${t.p?`<span class="pb p${t.p}">P${t.p}</span>`:''}${t.day?`<span class="meta">${fmtD(fromKey(t.day),{day:'numeric',month:'short'})}</span>`:dueChip(t.due)}</div>`;
+  const groups=S.cats.filter(c=>bankFilter==='all'||c.id===bankFilter).map(c=>({c,list:un.filter(t=>t.cat===c.id).sort((a,b)=>(a.p||9)-(b.p||9)||((a.due||'9')<(b.due||'9')?-1:1))})).filter(g=>g.list.length);
+  return`<div class="bank2" data-drop="bank">
+    <input placeholder="+ Add a task" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTask({name:this.value,cat:bankFilter==='all'?'life':bankFilter});render()}">
+    <div class="bkchips"><span class="chip ${bankFilter==='all'?'on':''}" onclick="bankFilter='all';render()">All</span>${S.cats.map(c=>`<span class="chip ${bankFilter===c.id?'on':''}" onclick="bankFilter='${c.id}';render()"><span class="dot" style="background:${c.col}"></span>${esc(c.label)}</span>`).join('')}</div>
+    <div class="muted bkhint">Drag a task onto the calendar to plan it. Drag it back here to unplan.</div>
+    ${late.length?`<h4>Rolled over</h4>${late.map(row).join('')}`:''}
+    ${groups.map(g=>`<h4><span class="dot" style="background:${g.c.col};display:inline-block"></span> ${esc(g.c.label)} <span class="muted">${g.list.length}</span></h4>${g.list.map(row).join('')}`).join('')||(late.length?'':'<div class="empty">Every task is planned ✓</div>')}
+  </div>`;
+}
 function calSidebar(){
   const first=new Date(cur.getFullYear(),cur.getMonth(),1),start=monday(first),tk=todayKey(),sel=dk(cur);
   const wk=calView==='week'?Array.from({length:7},(_,i)=>dk(addDays(monday(cur),i))):[];
@@ -818,7 +848,9 @@ function calSidebar(){
     mini+=`<button class="${d.getMonth()!==cur.getMonth()?'out':''} ${k===tk?'today':''} ${(calView==='day'&&k===sel)||wk.includes(k)?'sel':''} ${calEvents(k).length?'has':''}" onclick="cur=fromKey('${k}');render();acalEnsure()">${d.getDate()}</button>`;}
   const hide=S.calHide||{};
   const row=(on,col,label,click,meta)=>`<div class="calrow" onclick="${click}"><span class="cb ${on?'on':''}" style="--c:${col}">${on?'✓':''}</span><span class="nm">${esc(label)}</span>${meta?`<span class="meta">${meta}</span>`:''}</div>`;
-  return`<aside class="calside">
+  const tabs=`<div class="caltabs"><button class="${calTab==='tasks'?'on':''}" onclick="calTab='tasks';render()">Tasks</button><button class="${calTab==='cals'?'on':''}" onclick="calTab='cals';render()">Calendars</button></div>`;
+  if(calTab==='tasks')return`<aside class="calside tasks">${tabs}${calTaskBank()}</aside>`;
+  return`<aside class="calside">${tabs}
     <div class="mini"><div class="minih"><b>${fmtD(cur,{month:'long'})}</b> ${cur.getFullYear()}<span class="spacer"></span><button onclick="cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);render();acalEnsure()">‹</button><button onclick="cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);render();acalEnsure()">›</button></div>
       <div class="minig">${['M','T','W','T','F','S','S'].map(x=>`<span>${x}</span>`).join('')}${mini}</div></div>
     ${S.acal&&S.acal.on?`<h4>iCloud</h4>${S.acal.cals.map((c,i)=>row(c.on,c.col,c.name,`toggleAcalCal(${i})`)).join('')}`:`<h4>iCloud</h4><div class="muted" style="padding:2px 6px 6px">Not connected · <span class="link" onclick="nav('settings')">Settings</span></div>`}
@@ -946,6 +978,7 @@ document.addEventListener('pointerup',ev=>{
   }
   suppressClick=true;setTimeout(()=>suppressClick=false,300);
   if(d.ghost){d.ghost.remove();d.el.style.opacity='';document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));}
+  if(d.key.startsWith('task:')){const z=document.elementFromPoint(ev.clientX,ev.clientY);if(z&&z.closest('[data-drop="bank"]')){moveTask(d.key.slice(5),'','');toast('Back in the task bank');return;}}
   if(d.kind==='grid'){if(d.ns===undefined||(d.ns===d.s&&d.nen===d.en&&d.nk===d.k))return render();calCommit(d.key,d.nk,d.ns,d.nen);}
   else{if(!d.nk||d.nk===d.k)return render();calCommit(d.key,d.nk);}
 });
@@ -1064,7 +1097,7 @@ function bankCard(){
     <div class="muted" style="margin-top:6px">Drop a task back here to unplan it.</div></div>`;
 }
 function calSeg(){return`<span class="seg">${['month','week','day'].map(v=>`<button class="${calView===v?'on':''}" onclick="calView='${v}';render()">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</span> `;}
-function rCalendar(){return calShell()+(calView==='month'?rMonth():calView==='week'?rWeek():rDay())+bankCard();}
+function rCalendar(){return calShell()+(calView==='month'?rMonth():calView==='week'?rWeek():rDay());}
 
 // ── HOME ──
 function rHome(){
