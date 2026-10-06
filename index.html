@@ -204,6 +204,19 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
   .mgrid2{grid-template-rows:none!important;grid-auto-rows:minmax(70px,auto)}.mev{font-size:9px}.mev .mtime{display:none}
 }
 
+
+.tgev,.mev{user-select:none;-webkit-user-select:none}
+.tgev.ed{cursor:grab}.mev.ed{cursor:grab}
+.tgev.sel{z-index:6;box-shadow:0 0 0 2px var(--c),0 4px 14px rgba(0,0,0,.2);touch-action:none}
+.tgev.dragging{z-index:8;opacity:.9;cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.tgev .rz{position:absolute;left:0;right:0;height:7px;cursor:ns-resize;z-index:2}
+.tgev .rz-top{top:0}.tgev .rz-bot{bottom:0}
+.tgev.sel .rz::after{content:'';position:absolute;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:#FFFDF7;border:2px solid var(--c)}
+.tgev.sel .rz-top::after{top:-5px}.tgev.sel .rz-bot::after{bottom:-5px}
+.evact{position:absolute;top:9px;right:2px;display:flex;gap:2px;z-index:3}
+.evact button{width:22px;height:22px;border-radius:6px;background:#FFFDF7;box-shadow:0 1px 3px rgba(0,0,0,.2);font-size:11px;line-height:22px;padding:0}
+.evact button:hover{background:#fff}
+.mc.over,.tgad.over{background:rgba(156,201,255,.3)!important}
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -478,7 +491,7 @@ async function load(){
 function getEvents(k){
   const d=fromKey(k),wd=d.getDay()===0?7:d.getDay();
   const out=[];
-  S.tasks.filter(t=>t.day===k).forEach(t=>out.push({id:t.id,type:'task',title:t.name,time:t.time||'',col:cat(t.cat).col,done:t.done,p:t.p,ref:t}));
+  S.tasks.filter(t=>t.day===k).forEach(t=>out.push({id:t.id,type:'task',title:t.name,time:t.time||'',end:t.time&&t.end?t.end:'',col:cat(t.cat).col,done:t.done,p:t.p,ref:t}));
   if(inTerm(k))S.modules.forEach(m=>m.sessions.filter(s=>s.day===wd).forEach(s=>out.push({id:m.id+s.start,type:'class',title:m.name,time:s.start,end:s.end,col:m.col,room:s.room,ref:m})));
   S.modules.forEach(m=>m.assessments.filter(a=>a.due===k).forEach(a=>out.push({id:a.id,type:'assess',title:`${a.title} due`,sub:m.code,time:'',col:m.col,done:a.done,ref:a,mod:m})));
   S.suede.invoices.filter(i=>i.due===k&&!i.paid).forEach(i=>out.push({id:i.id,type:'invoice',title:`Invoice: ${i.client}`,time:'',col:'#C9A63F',ref:i}));
@@ -497,7 +510,7 @@ function evHtml(e,cls){
 function addTask(o){const t={id:uid(),name:o.name.trim(),cat:o.cat||'life',p:o.p||0,due:o.due||'',day:o.day||'',time:o.time||'',note:o.note||'',done:false,doneAt:'',created:new Date().toISOString()};S.tasks.push(t);save();return t;}
 function toggleTask(id){const t=task(id);if(!t)return;t.done=!t.done;t.doneAt=t.done?new Date().toISOString():'';save();render();}
 function deleteTask(id){const t=task(id);if(!t)return;if(!confirm(`Delete "${t.name}"?`))return;S.tasks=S.tasks.filter(x=>x.id!==id);Object.keys(S.pri).forEach(k=>S.pri[k]=S.pri[k].map(x=>x===id?null:x));save();closeModal();render();toast('Deleted');}
-function moveTask(id,day,time){const t=task(id);if(!t)return;t.day=day||'';if(time!==undefined)t.time=time;if(day&&!t.due)t.due=day;save();render();}
+function moveTask(id,day,time){const t=task(id);if(!t)return;t.day=day||'';if(time!==undefined){if(time&&t.end&&t.time){const d=mins(t.end)-mins(t.time);t.end=d>0?hm(Math.min(mins(time)+d,1439)):'';}else if(!time)t.end='';t.time=time;}if(day&&!t.due)t.due=day;save();render();}
 
 // ── PRIORITIES ──
 function pri(k){if(!S.pri[k])S.pri[k]=[null,null,null];return S.pri[k];}
@@ -737,7 +750,7 @@ function calStep(n){calScroll=null;const d=new Date(cur);if(calView==='month')d.
 function calSetView(v){calView=v;render();}
 function calFull(on){document.body.classList.toggle('calfull',on===undefined?!document.body.classList.contains('calfull'):on);render();}
 function calNew(k,t){if(S.acal&&S.acal.on)openAcal(null,{day:k,time:t||'09:00'});else openTask(null,{day:k,due:k,time:t||''});}
-function calSlot(ev,k,h){if(ev.target!==ev.currentTarget)return;const m=ev.offsetY<CAL_H/2?'00':'30';calNew(k,pad(h)+':'+m);}
+function calSlot(ev,k,h){if(ev.target!==ev.currentTarget)return;if(calSel){calSel=null;render();return;}const m=ev.offsetY<CAL_H/2?'00':'30';calNew(k,pad(h)+':'+m);}
 function toggleLayer(t){S.calHide=S.calHide||{};S.calHide[t]=!S.calHide[t];save();render();}
 function toggleAcalCal(i){S.acal.cals[i].on=!S.acal.cals[i].on;save();render();acalSync(true);}
 
@@ -781,8 +794,8 @@ function calMonthGrid(){
     const all=ev.filter(e=>!e.time),timed=ev.filter(e=>e.time);
     cells+=`<div class="mc ${d.getMonth()!==cur.getMonth()?'out':''} ${k===tk?'today':''} ${d.getDay()%6===0?'we':''}" data-drop="day:${k}" onclick="if(event.target===this||event.target.closest('.mcd'))openDay('${k}')" ondblclick="if(event.target===this)calNew('${k}')">
       <div class="mcd"><span class="num">${d.getDate()===1?fmtD(d,{month:'short'})+' ':''}${d.getDate()}</span></div>
-      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} style="--c:${e.col}" onclick="event.stopPropagation();${evClick(e)}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}
-      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} onclick="event.stopPropagation();${evClick(e)}" title="${esc(e.time+' '+e.title)}"><span class="dot" style="background:${e.col}"></span><span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span></div>`).join('')}
+      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}
+      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} title="${esc(e.time+' '+e.title)}"><span class="dot" style="background:${e.col}"></span><span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span></div>`).join('')}
     </div>`;}
   return`<div class="mhead">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div>${x}</div>`).join('')}</div><div class="mgrid2" style="grid-template-rows:repeat(${weeks},minmax(118px,auto))">${cells}</div>`;
 }
@@ -797,12 +810,13 @@ function layoutDay(list){
 function calTimeGrid(days){
   const tk=todayKey(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
   const heads=days.map(d=>{const k=dk(d);return`<div class="tgdh ${k===tk?'today':''}" onclick="openDay('${k}')"><span class="wd">${fmtD(d,{weekday:'short'})}</span><span class="num">${d.getDate()}</span></div>`;}).join('');
-  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} style="--c:${e.col}" onclick="${evClick(e)}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}</div>`;}).join('');
+  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${esc(e.title)}</div>`).join('')}</div>`;}).join('');
   const cols=days.map(d=>{const k=dk(d);
     const slots=Array.from({length:24},(_,h)=>`<div class="tgslot" data-drop="hour:${k}:${pad(h)}" onclick="calSlot(event,'${k}',${h})"></div>`).join('');
-    const evs=layoutDay(calEvents(k).filter(e=>e.time)).map(x=>{const e=x.e,h=Math.max((x.en-x.s)*CAL_H/60-2,17),short=h<44;
-      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${e.type==='task'?'handle':''}" ${evDrag(e)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" onclick="${evClick(e)}" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${esc(e.title)}</b>${short?` <span>${e.time}</span>`:`<span>${e.time}${e.end?' – '+e.end:''}</span>${e.room&&h>50?`<span>${esc(e.room)}</span>`:''}`}</div>`;}).join('');
-    return`<div class="tgcol ${k===tk?'today':''}">${slots}${evs}${k===tk?`<div class="tgnow" style="top:${nowM*CAL_H/60}px"></div>`:''}</div>`;}).join('');
+    const evs=layoutDay(calEvents(k).filter(e=>e.time)).map(x=>{const e=x.e,h=Math.max((x.en-x.s)*CAL_H/60-2,17),short=h<44,key=e.type+':'+e.id,sel=calSel===key,ed=calEditable(e)&&!(e.type==='acal'&&e.ref.day!==e.ref.endDay);
+      const tm=`<span class="tm">${e.time}${e.end?' – '+e.end:''}</span>`;
+      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${sel?'sel':''} ${ed?'ed':''}" ${calAttrs(e,k,'grid',x)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${esc(e.title)}</b>${short?(sel?'':` <span>${e.time}</span>`):tm+(e.room&&h>50?`<span>${esc(e.room)}</span>`:'')}${ed?'<i class="rz rz-top"></i><i class="rz rz-bot"></i>':''}${sel?`<span class="evact"><button title="Edit" onclick="event.stopPropagation();calOpen('${key}','${k}')">✎</button>${ed||e.type==='task'?`<button title="Delete" onclick="event.stopPropagation();calDelete('${key}')">🗑</button>`:''}</span>`:''}</div>`;}).join('');
+    return`<div class="tgcol ${k===tk?'today':''}" data-k="${k}">${slots}${evs}${k===tk?`<div class="tgnow" style="top:${nowM*CAL_H/60}px"></div>`:''}</div>`;}).join('');
   const hasNow=days.some(d=>dk(d)===tk);
   const gut=Array.from({length:24},(_,h)=>`<div class="tggh">${h&&!(hasNow&&Math.abs(nowM-h*60)<16)?pad(h)+':00':''}</div>`).join('');
   return`<div class="tg" style="--n:${days.length}">
@@ -816,7 +830,88 @@ function calAfter(){
   if(calScroll===null){const tops=[...s.querySelectorAll('.tgev')].map(x=>parseFloat(x.style.top)).filter(t=>t>=5*CAL_H);calScroll=Math.max(0,Math.min(...tops,7*CAL_H)-CAL_H/2);}
   s.scrollTop=calScroll;
 }
-setInterval(()=>{if(page==='calendar'&&calView!=='month'&&!document.hidden&&!drag&&!$('mbg').classList.contains('on'))render();},60e3); // keep the now-line moving
+setInterval(()=>{if(page==='calendar'&&calView!=='month'&&!document.hidden&&!drag&&!calDrag&&!$('mbg').classList.contains('on'))render();},60e3); // keep the now-line moving
+
+// ── CALENDAR EDITING: select, drag to move, pull edges to resize, delete ──
+let calSel=null,calDrag=null;          // calSel = 'type:id'
+function calEditable(e){if(e.type==='task')return true;if(e.type!=='acal')return false;const c=acalCal(e.cal)||{};return!e.recurring&&!c.readOnly;}
+function calAttrs(e,k,kind,x){
+  const ed=calEditable(e),grid=kind==='grid'&&ed&&!(e.type==='acal'&&e.ref.day!==e.ref.endDay);
+  return`data-cal="${e.type}:${e.id}" data-k="${k}" data-kind="${kind}" data-ed="${kind==='grid'?(grid?1:0):(ed?1:0)}"${x?` data-s="${x.s}" data-en="${x.en}"`:''}`;
+}
+function calFind(key){const [type,id]=key.split(':');if(type==='task'){const t=task(id);return t&&{type,id,t};}if(type==='acal'){const a=acalEvents.find(x=>x.id===id);return a&&{type,id,a};}return{type,id};}
+function calOpen(key,k){const [type,id]=key.split(':');const e=calEvents(k).find(x=>x.type===type&&String(x.id)===id);if(e){const f=evClick(e);if(f)new Function(f)();}}
+function calDelete(key){
+  const f=calFind(key);if(!f)return;calSel=null;
+  if(f.type==='task')deleteTask(f.id);
+  else if(f.type==='acal'){if(f.a.recurring){toast('Repeating event — delete it in Apple Calendar');return;}acalDelete(f.id);}
+}
+// Save a new time and/or day. s/en in minutes (en may be 1440 = midnight); omit for a date-only move.
+async function calCommit(key,day,s,en){
+  const f=calFind(key);if(!f)return render();
+  if(f.type==='task'){const t=f.t;t.day=day;if(!t.due)t.due=day;if(s!==undefined){t.time=hm(s);t.end=en>=1440?'23:59':hm(en);}save();render();return;}
+  if(f.type!=='acal')return render();
+  const a=f.a,old={...a};
+  let start,end;
+  if(s!==undefined){a.day=day;a.time=hm(s);a.endDay=en>=1440?dk(addDays(fromKey(day),1)):day;a.endTime=hm(en%1440);
+    start=new Date(`${day}T${a.time}`).toISOString();end=new Date(`${a.endDay}T${a.endTime}`).toISOString();if(en>=1440)a.endDay=day,a.endTime='24:00';}
+  else{const diff=Math.round((fromKey(day)-fromKey(a.day))/864e5);if(!diff)return render();a.day=day;a.endDay=dk(addDays(fromKey(old.endDay),diff));
+    if(a.allDay){start=a.day;end=dk(addDays(fromKey(a.endDay),1));}
+    else{start=new Date(`${a.day}T${a.time}`).toISOString();end=new Date(`${a.endDay}T${a.endTime==='24:00'?'23:59':a.endTime}`).toISOString();}}
+  render();
+  try{await acalApi('update',{href:a.href,start,end,allDay:a.allDay});toast('Saved to Apple Calendar');}
+  catch(err){Object.assign(a,old);render();toast(err.message);}
+}
+document.addEventListener('pointerdown',ev=>{
+  const el=ev.target.closest('[data-cal]');if(!el||ev.button>0||ev.target.closest('button'))return;
+  const key=el.dataset.cal,kind=el.dataset.kind,ed=el.dataset.ed==='1';
+  const mode=ev.target.classList.contains('rz-top')?'top':ev.target.classList.contains('rz-bot')?'bot':'move';
+  // touch: only a selected event can be dragged, so the grid still scrolls with a finger
+  const canDrag=ed&&(ev.pointerType==='mouse'||calSel===key);
+  calDrag={el,key,kind,mode,canDrag,x:ev.clientX,y:ev.clientY,id:ev.pointerId,active:false,k:el.dataset.k,s:+el.dataset.s,en:+el.dataset.en};
+  if(canDrag){ev.preventDefault();try{el.setPointerCapture(ev.pointerId);}catch(e){}}
+});
+document.addEventListener('pointermove',ev=>{
+  const d=calDrag;if(!d||ev.pointerId!==d.id||!d.canDrag)return;
+  if(!d.active){if(Math.hypot(ev.clientX-d.x,ev.clientY-d.y)<5)return;d.active=true;calSel=d.key;d.el.classList.add('dragging','sel');
+    if(d.kind!=='grid'){const g=document.createElement('div');g.className='dragghost';g.textContent=d.el.textContent.trim().slice(0,40);document.body.appendChild(g);d.ghost=g;d.el.style.opacity='.4';}}
+  ev.preventDefault();
+  if(d.kind==='grid'){
+    const dm=Math.round((ev.clientY-d.y)/CAL_H*60/15)*15,dur=d.en-d.s;
+    let s=d.s,en=d.en,k=d.k;
+    if(d.mode==='move'){s=Math.max(0,Math.min(1440-dur,d.s+dm));en=s+dur;
+      const col=[...document.querySelectorAll('.tgcol')].find(c=>{const r=c.getBoundingClientRect();return ev.clientX>=r.left&&ev.clientX<r.right;});
+      if(col){k=col.dataset.k;if(d.el.parentNode!==col)col.appendChild(d.el);}}
+    else if(d.mode==='top')s=Math.max(0,Math.min(d.en-15,d.s+dm));
+    else en=Math.min(1440,Math.max(d.s+15,d.en+dm));
+    Object.assign(d,{ns:s,nen:en,nk:k});
+    Object.assign(d.el.style,{top:(s*CAL_H/60+1)+'px',height:Math.max((en-s)*CAL_H/60-2,17)+'px',left:'2px',width:'calc(100% - 4px)'});
+    const tm=d.el.querySelector('.tm');if(tm)tm.textContent=hm(s)+' – '+(en>=1440?'24:00':hm(en));
+  }else{
+    d.ghost.style.left=(ev.clientX+10)+'px';d.ghost.style.top=(ev.clientY+10)+'px';
+    document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));
+    const z=document.elementFromPoint(ev.clientX,ev.clientY);const c=z&&z.closest('.mc,.tgad');if(c){c.classList.add('over');d.nk=(c.dataset.drop||'').split(':')[1];}else d.nk=null;
+  }
+},{passive:false});
+document.addEventListener('pointerup',ev=>{
+  const d=calDrag;if(!d||ev.pointerId!==d.id)return;calDrag=null;
+  if(!d.active){ // a tap: grid events select first, open on the second tap; chips open straight away
+    if(d.kind==='grid'){if(calSel===d.key)calOpen(d.key,d.k);else{calSel=d.key;render();}}
+    else calOpen(d.key,d.k);
+    return;
+  }
+  suppressClick=true;setTimeout(()=>suppressClick=false,300);
+  if(d.ghost){d.ghost.remove();d.el.style.opacity='';document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));}
+  if(d.kind==='grid'){if(d.ns===undefined||(d.ns===d.s&&d.nen===d.en&&d.nk===d.k))return render();calCommit(d.key,d.nk,d.ns,d.nen);}
+  else{if(!d.nk||d.nk===d.k)return render();calCommit(d.key,d.nk);}
+});
+document.addEventListener('pointercancel',()=>{if(calDrag){if(calDrag.ghost)calDrag.ghost.remove();calDrag=null;render();}});
+document.addEventListener('keydown',ev=>{
+  if(page!=='calendar'||!calSel||$('mbg').classList.contains('on')||/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))return;
+  if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();calDelete(calSel);}
+  else if(ev.key==='Escape'){ev.stopImmediatePropagation();calSel=null;render();}
+  else if(ev.key==='Enter'){const el=document.querySelector(`[data-cal="${calSel}"]`);if(el)calOpen(calSel,el.dataset.k);}
+},true);
 
 // ── TASK BANK (shared card under every calendar view) ──
 let bankFilter='all';
@@ -1213,7 +1308,7 @@ async function acalSync(quiet){
       return o;});
     acalRange=range;acalSync.at=Date.now();
     try{localStorage.setItem('elva_acal_events',JSON.stringify({ev:acalEvents,range}));}catch(e){}
-    const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.closest('.page')))render();
+    const a=document.activeElement;if(!calDrag&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.closest('.page')))render();
     if(!quiet)toast(`Apple Calendar: ${acalEvents.length} events`);
   }catch(e){if(!quiet)toast(e.message);else console.warn('Apple Calendar sync',e);}
   acalBusy=false;
