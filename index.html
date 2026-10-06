@@ -433,14 +433,15 @@ let ttView='week';
 let ttDay=1;
 
 const STAGES=['Enquiry','Discovery','Proposal','Active','Delivered','Retainer'];
-const SEED_MODULES=[
-  {code:'ECON30100',name:'Health Economics',col:'#2C3E5C',sessions:[{day:3,start:'12:00',end:'12:50',room:''},{day:4,start:'10:00',end:'10:50',room:''}]},
+const SEED_MODULES=[   // UCD Autumn 2026 timetable (updated 6 Oct)
   {code:'ECON30180',name:'Industrial Economics',col:'#4F7A4A',sessions:[{day:1,start:'10:00',end:'10:50',room:''},{day:3,start:'10:00',end:'10:50',room:''},{day:3,start:'13:00',end:'13:50',room:''}]},
-  {code:'ECON30270',name:'Behavioural Economics',col:'#8A5A9E',sessions:[{day:3,start:'16:00',end:'17:50',room:'Newman Th.-P-ART'}]},
-  {code:'ECON20040',name:'Statistics for Economists',col:'#C8742B',sessions:[{day:1,start:'15:00',end:'15:50',room:''},{day:3,start:'11:00',end:'11:50',room:''},{day:4,start:'14:00',end:'14:50',room:''}]},
-  {code:'DEV20130',name:'Sustainable Development Goals',col:'#6F7359',sessions:[{day:3,start:'14:00',end:'15:50',room:'Science East E1.17'}]},
-  {code:'IS30510',name:'Deep Tech',col:'#B23A2E',sessions:[{day:5,start:'13:00',end:'14:50',room:"O'Connor L0.17"}]},
+  {code:'IS30020',name:'Web Publishing',col:'#3A7CA5',sessions:[{day:2,start:'11:00',end:'12:50',room:'Newman Building NTh-1-ART'}]},
+  {code:'ECON20040',name:'Statistics for Economists',col:'#C8742B',sessions:[{day:1,start:'15:00',end:'15:50',room:''},{day:3,start:'11:00',end:'11:50',room:''},{day:4,start:'14:00',end:'14:50',room:'Newman Building Th.-Q-ART'}]},
+  {code:'ECON30100',name:'Health Economics',col:'#2C3E5C',sessions:[{day:3,start:'12:00',end:'12:50',room:''},{day:4,start:'10:00',end:'10:50',room:''}]},
+  {code:'ECON30270',name:'Behavioural Economics',col:'#8A5A9E',sessions:[{day:3,start:'16:00',end:'17:50',room:'Newman Building Th.-P-ART'}]},
+  {code:'IS30510',name:'Deep Tech',col:'#B23A2E',sessions:[{day:5,start:'13:00',end:'14:50',room:"O'Connor Centre for Learning L0.17-LEA"}]},
 ];
+const TT_VER='2026-autumn-oct6';
 
 // ── UTILS ──
 const $=id=>document.getElementById(id);
@@ -486,6 +487,14 @@ async function load(){
   if(!S.modsSeeded&&S.modules.length===0){
     S.modules=SEED_MODULES.map(m=>({id:uid(),code:m.code,name:m.name,col:m.col,sessions:m.sessions.map(s=>({...s})),assessments:[]}));
     S.modsSeeded=true;save();
+  }
+  // one-time: bring modules in line with the latest timetable, keeping ids, colours and assessments
+  if(S.ttVer!==TT_VER){
+    SEED_MODULES.forEach(sm=>{const m=S.modules.find(x=>x.code===sm.code);
+      if(m){m.sessions=sm.sessions.map(x=>({...x}));if(!m.name)m.name=sm.name;}
+      else S.modules.push({id:uid(),code:sm.code,name:sm.name,col:sm.col,sessions:sm.sessions.map(x=>({...x})),assessments:[]});});
+    S.modules=S.modules.filter(m=>SEED_MODULES.some(sm=>sm.code===m.code)||(m.assessments||[]).length).map(m=>SEED_MODULES.some(sm=>sm.code===m.code)?m:{...m,sessions:[]});
+    S.ttVer=TT_VER;save();
   }
   try{const c=localStorage.getItem('elva_gcal_events');if(c)gcalEvents=JSON.parse(c);}catch(e){}
   if(!S.acal)S.acal={on:false,cals:[],def:''};
