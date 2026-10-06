@@ -222,6 +222,10 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
 .calapp.homeday{height:640px;border-radius:10px;margin-top:4px}
 .homeday .tghead{display:none}
 @media(max-width:820px){.calapp.homeday{height:520px}}
+.calapp{overscroll-behavior-x:none}
+.calmain.slide-l{animation:calSlideL .22s ease-out}.calmain.slide-r{animation:calSlideR .22s ease-out}
+@keyframes calSlideL{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes calSlideR{from{transform:translateX(-40px);opacity:.3}to{transform:none;opacity:1}}
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -762,7 +766,8 @@ function calTitle(){
   if(calView==='week'&&a.getMonth()!==b.getMonth())return`<b>${fmtD(a,{month:'short'})} – ${fmtD(b,{month:'short'})}</b> ${b.getFullYear()}`;
   return`<b>${fmtD(a,{month:'long'})}</b> ${a.getFullYear()}`;
 }
-function calStep(n){calScroll=null;const d=new Date(cur);if(calView==='month')d.setMonth(d.getMonth()+n,1);else d.setDate(d.getDate()+n*(calView==='week'?7:1));cur=d;render();acalEnsure();}
+let calAnim='';
+function calStep(n){calScroll=null;calAnim=n>0?'slide-l':'slide-r';const d=new Date(cur);if(calView==='month')d.setMonth(d.getMonth()+n,1);else d.setDate(d.getDate()+n*(calView==='week'?7:1));cur=d;render();acalEnsure();}
 function calSetView(v){calView=v;render();}
 function calFull(on){document.body.classList.toggle('calfull',on===undefined?!document.body.classList.contains('calfull'):on);render();}
 function calNew(k,t){if(S.acal&&S.acal.on)openAcal(null,{day:k,time:t||'09:00'});else openTask(null,{day:k,due:k,time:t||''});}
@@ -784,7 +789,7 @@ function calShell(){
       <span class="calnav"><button onclick="calStep(-1)">‹</button><button onclick="cur=new Date();calScroll=null;render();acalEnsure()">Today</button><button onclick="calStep(1)">›</button></span>
       <button class="calib" title="${full?'Exit full screen':'Full screen'}" onclick="calFull()">${full?'⤡':'⤢'}</button>
     </div>
-    <div class="calbody">${calSide?calSidebar():''}<div class="calmain">${body}</div></div>
+    <div class="calbody">${calSide?calSidebar():''}<div class="calmain ${calAnim}">${body}</div></div>
   </div>`;
 }
 function calSidebar(){
@@ -838,11 +843,12 @@ function calTimeGrid(days){
   return`<div class="tg" style="--n:${days.length}">
     <div class="tghead"><div class="tggut"></div>${heads}</div>
     <div class="tgallrow"><div class="tggut lbl">all-day</div>${allday}</div>
-    <div class="tgscroll" id="tgScroll" onscroll="calScroll=this.scrollTop"><div class="tgbody" style="height:${24*CAL_H}px"><div class="tggut">${gut}${hasNow?`<div class="tgnowl" style="top:${nowM*CAL_H/60}px">${hm(nowM)}</div>`:''}</div>${cols}</div></div>
+    <div class="tgscroll" onscroll="if(this.closest('#p-calendar'))calScroll=this.scrollTop"><div class="tgbody" style="height:${24*CAL_H}px"><div class="tggut">${gut}${hasNow?`<div class="tgnowl" style="top:${nowM*CAL_H/60}px">${hm(nowM)}</div>`:''}</div>${cols}</div></div>
   </div>`;
 }
 function calAfter(){
-  const s=$('tgScroll');if(!s)return;
+  calAnim='';
+  const s=document.querySelector('#p-'+page+' .tgscroll');if(!s)return;
   if(calScroll===null){const tops=[...s.querySelectorAll('.tgev')].map(x=>parseFloat(x.style.top)).filter(t=>t>=5*CAL_H);calScroll=Math.max(0,Math.min(...tops,7*CAL_H)-CAL_H/2);}
   s.scrollTop=calScroll;
 }
@@ -932,6 +938,25 @@ document.addEventListener('keydown',ev=>{
   else if(ev.key==='Escape'){ev.stopImmediatePropagation();calSel=null;render();}
   else if(ev.key==='Enter'){const el=document.querySelector(`[data-cal="${calSel}"]`);if(el)calOpen(calSel,el.dataset.k);}
 },true);
+
+
+// ── SWIPE: two-finger trackpad swipe (or sideways scroll) and touch swipe change day/week/month ──
+let swipeAcc=0,swipeLock=false,swipeT=null;
+document.addEventListener('wheel',ev=>{
+  if(page!=='calendar'||!ev.target.closest('.calapp')||calDrag)return;
+  if(Math.abs(ev.deltaX)<=Math.abs(ev.deltaY))return;          // vertical scroll: leave it alone
+  ev.preventDefault();                                           // stops the browser's swipe-to-go-back
+  clearTimeout(swipeT);swipeT=setTimeout(()=>{swipeAcc=0;swipeLock=false;},220); // gesture over after a short pause
+  if(swipeLock)return;
+  swipeAcc+=ev.deltaX;
+  if(Math.abs(swipeAcc)>70){calStep(swipeAcc>0?1:-1);swipeLock=true;swipeAcc=0;}
+},{passive:false});
+let tSwipe=null;
+document.addEventListener('touchstart',ev=>{const c=ev.target.closest('.calapp');tSwipe=c&&ev.touches.length===1&&calView!=='week'?{x:ev.touches[0].clientX,y:ev.touches[0].clientY}:null;},{passive:true});
+document.addEventListener('touchend',ev=>{
+  if(!tSwipe||calDrag||suppressClick||page!=='calendar')return;const t=ev.changedTouches[0],dx=t.clientX-tSwipe.x,dy=t.clientY-tSwipe.y;tSwipe=null;
+  if(Math.abs(dx)>60&&Math.abs(dx)>2*Math.abs(dy))calStep(dx<0?1:-1);
+},{passive:true});
 
 // ── TASK BANK (shared card under every calendar view) ──
 let bankFilter='all';
