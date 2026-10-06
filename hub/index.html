@@ -936,7 +936,7 @@ document.addEventListener('keydown',ev=>{
   if((page!=='calendar'&&page!=='home')||!calSel||$('mbg').classList.contains('on')||/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))return;
   if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();calDelete(calSel);}
   else if(ev.key==='Escape'){ev.stopImmediatePropagation();calSel=null;render();}
-  else if(ev.key==='Enter'){const el=document.querySelector(`[data-cal="${calSel}"]`);if(el)calOpen(calSel,el.dataset.k);}
+  else if(ev.key==='Enter'){const el=document.querySelector(`#p-${page} [data-cal="${calSel}"]`);if(el)calOpen(calSel,el.dataset.k);}
 },true);
 
 
