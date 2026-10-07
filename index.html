@@ -266,6 +266,10 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
 .subadd{margin-top:4px;background:transparent;border:1px dashed rgba(27,27,27,.18);font-size:12px;padding:6px 8px}
 .subnew{margin-top:2px;font-size:12px}
 .bksub{font-size:11px;font-weight:700;color:#857B6C;margin:6px 2px 3px;text-transform:uppercase;letter-spacing:.4px}
+.mev .unplan{display:none;margin-left:auto;flex:none;width:18px;height:16px;border-radius:4px;background:#FFFDF7;font-size:11px;line-height:16px;padding:0;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.mev:hover .unplan{display:inline-block}
+.mev.fill{position:relative}.mev.fill .unplan{position:absolute;right:2px;top:1px}
+@media(hover:none){.mev .unplan{display:inline-block}}
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -667,7 +671,7 @@ function openTask(id,defaults){
   <div class="f"><label>Time (optional)</label><input type="time" id="m-time" value="${t.time}"></div>
   <div class="f"><label>Note</label><textarea id="m-note">${esc(t.note)}</textarea></div>
   ${id&&S.acal.on?`<div class="muted" style="margin-top:4px">${t.acal?'In Apple Calendar · <span class="link" onclick="taskToAcal(\''+id+'\')">update it</span>':'<span class="link" onclick="taskToAcal(\''+id+'\')">Send to Apple Calendar</span> (uses the planned day and time)'}</div>`:''}
-  <div class="mact">${id?`<button class="btn danger sm" onclick="deleteTask('${id}')">Delete</button>`:''}<button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn sky" onclick="saveTask('${id||''}')">Save</button></div>`);
+  <div class="mact">${id?`<button class="btn danger sm" onclick="deleteTask('${id}')">Delete</button>`:''}${id&&t.day?`<button class="btn ghost sm" onclick="unplanTask('${id}')">↩ Back to task bank</button>`:''}<button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn sky" onclick="saveTask('${id||''}')">Save</button></div>`);
 }
 function saveTask(id){
   const o={name:$('m-name').value,cat:$('m-cat').value,grp:$('m-grp')?$('m-grp').value:'',p:+$('m-p').value,due:$('m-due').value,day:$('m-day').value,time:$('m-time').value,note:$('m-note').value};
@@ -841,6 +845,8 @@ const mins=t=>t?(+t.slice(0,2))*60+(+t.slice(3,5)):0;
 const hm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
 function calEvents(k){const hide=S.calHide||{};return getEvents(k).filter(e=>!hide[e.type]);}
 function evClick(e){return e.type==='task'?`openTask('${e.id}')`:e.type==='acal'?`openAcal('${e.id}')`:e.type==='class'?`nav('timetable')`:e.type==='assess'?`openAssess('${e.mod.id}','${e.id}')`:e.type==='invoice'?`nav('suede')`:'';}
+function unplanTask(id){const t=task(id);if(!t)return;calSel=null;t.day='';t.time='';t.end='';save();closeModal();render();toast('Back in the task bank');}
+function unplanBtn(e){return e.type==='task'?`<button class="unplan" title="Back to task bank" onclick="event.stopPropagation();unplanTask('${e.id}')">↩</button>`:'';}
 function tTick(e){return e.type==='task'?`<span class="ttick ${e.done?'on':''}" style="--c:${e.col}" onclick="event.stopPropagation();toggleTask('${e.id}')">${e.done?'✓':''}</span>`:'';}
 function evDrag(e){return e.type==='task'?`data-drag="task:${e.id}"`:'';}
 function calTitle(){
@@ -914,8 +920,8 @@ function calMonthGrid(){
     const all=ev.filter(e=>!e.time),timed=ev.filter(e=>e.time);
     cells+=`<div class="mc ${d.getMonth()!==cur.getMonth()?'out':''} ${k===tk?'today':''} ${d.getDay()%6===0?'we':''}" data-drop="day:${k}" onclick="if(event.target===this||event.target.closest('.mcd'))openDay('${k}')" ondblclick="if(event.target===this)calNew('${k}')">
       <div class="mcd"><span class="num">${d.getDate()===1?fmtD(d,{month:'short'})+' ':''}${d.getDate()}</span></div>
-      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${tTick(e)}${esc(e.title)}</div>`).join('')}
-      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} title="${esc(e.time+' '+e.title)}">${e.type==='task'?tTick(e):`<span class="dot" style="background:${e.col}"></span>`}<span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span></div>`).join('')}
+      ${all.map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${tTick(e)}${esc(e.title)}${unplanBtn(e)}</div>`).join('')}
+      ${timed.map(e=>`<div class="mev ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} title="${esc(e.time+' '+e.title)}">${e.type==='task'?tTick(e):`<span class="dot" style="background:${e.col}"></span>`}<span class="mt">${esc(e.title)}</span><span class="mtime">${e.time}</span>${unplanBtn(e)}</div>`).join('')}
     </div>`;}
   return`<div class="mhead">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div>${x}</div>`).join('')}</div><div class="mgrid2" style="grid-template-rows:repeat(${weeks},minmax(118px,auto))">${cells}</div>`;
 }
@@ -930,12 +936,12 @@ function layoutDay(list){
 function calTimeGrid(days){
   const tk=todayKey(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
   const heads=days.map(d=>{const k=dk(d);return`<div class="tgdh ${k===tk?'today':''}" onclick="openDay('${k}')"><span class="wd">${fmtD(d,{weekday:'short'})}</span><span class="num">${d.getDate()}</span></div>`;}).join('');
-  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${tTick(e)}${esc(e.title)}</div>`).join('')}</div>`;}).join('');
+  const allday=days.map(d=>{const k=dk(d);return`<div class="tgad" data-drop="untime:${k}">${calEvents(k).filter(e=>!e.time).map(e=>`<div class="mev fill ${e.done?'done':''} ${calEditable(e)?'ed':''}" ${calAttrs(e,k,'chip')} style="--c:${e.col}" title="${esc(e.title)}">${tTick(e)}${esc(e.title)}${unplanBtn(e)}</div>`).join('')}</div>`;}).join('');
   const cols=days.map(d=>{const k=dk(d);
     const slots=Array.from({length:24},(_,h)=>`<div class="tgslot" data-drop="hour:${k}:${pad(h)}" onclick="calSlot(event,'${k}',${h})"></div>`).join('');
     const evs=layoutDay(calEvents(k).filter(e=>e.time)).map(x=>{const e=x.e,h=Math.max((x.en-x.s)*CAL_H/60-2,17),short=h<44,key=e.type+':'+e.id,sel=calSel===key,ed=calEditable(e)&&!(e.type==='acal'&&e.ref.day!==e.ref.endDay);
       const tm=`<span class="tm">${e.time}${e.end?' – '+e.end:''}</span>`;
-      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${sel?'sel':''} ${ed?'ed':''}" ${calAttrs(e,k,'grid',x)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${tTick(e)}${esc(e.title)}</b>${short?(sel?'':` <span>${e.time}</span>`):tm+(e.room&&h>50?`<span>${esc(e.room)}</span>`:'')}${ed?'<i class="rz rz-top"></i><i class="rz rz-bot"></i>':''}${sel?`<span class="evact"><button title="Edit" onclick="event.stopPropagation();calOpen('${key}','${k}')">✎</button>${ed||e.type==='task'?`<button title="Delete" onclick="event.stopPropagation();calDelete('${key}')">🗑</button>`:''}</span>`:''}</div>`;}).join('');
+      return`<div class="tgev ${short?'short':''} ${e.done?'done':''} ${sel?'sel':''} ${ed?'ed':''}" ${calAttrs(e,k,'grid',x)} style="--c:${e.col};top:${x.s*CAL_H/60+1}px;height:${h}px;left:calc(${x.c/x.n*100}% + 2px);width:calc(${100/x.n}% - 4px)" title="${esc(e.time+(e.end?'–'+e.end:'')+' '+e.title+(e.room?' · '+e.room:''))}"><b>${tTick(e)}${esc(e.title)}</b>${short?(sel?'':` <span>${e.time}</span>`):tm+(e.room&&h>50?`<span>${esc(e.room)}</span>`:'')}${ed?'<i class="rz rz-top"></i><i class="rz rz-bot"></i>':''}${sel?`<span class="evact">${e.type==='task'?`<button title="Back to task bank" onclick="event.stopPropagation();unplanTask('${e.id}')">↩</button>`:''}<button title="Edit" onclick="event.stopPropagation();calOpen('${key}','${k}')">✎</button>${ed||e.type==='task'?`<button title="Delete" onclick="event.stopPropagation();calDelete('${key}')">🗑</button>`:''}</span>`:''}</div>`;}).join('');
     return`<div class="tgcol ${k===tk?'today':''}" data-k="${k}">${slots}${evs}${k===tk?`<div class="tgnow" style="top:${nowM*CAL_H/60}px"></div>`:''}</div>`;}).join('');
   const hasNow=days.some(d=>dk(d)===tk);
   const gut=Array.from({length:24},(_,h)=>`<div class="tggh">${h&&!(hasNow&&Math.abs(nowM-h*60)<16)?pad(h)+':00':''}</div>`).join('');
