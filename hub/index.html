@@ -256,6 +256,16 @@ body.calfull .calapp.week,body.calfull .calapp.day{height:calc(100vh - 16px)}
 .bkrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 .bkrow .ttick{width:13px;height:13px}
 .calside.tasks [data-drop="bank"].over{outline:2px dashed #9CC9FF}
+.areablk{margin-top:12px}
+.areah{display:flex;align-items:center;gap:6px;margin:10px 0 6px}
+.subblk{background:#FAF7EE;border-left:3px solid var(--c);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.subh{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.subh b{font-family:Georgia,serif;font-weight:400;font-size:15px;cursor:pointer}
+.subh .spacer{flex:1}.subh .caret{cursor:pointer;color:#857B6C;width:12px}
+.subblk .row.planned .nm{opacity:.7}
+.subadd{margin-top:4px;background:transparent;border:1px dashed rgba(27,27,27,.18);font-size:12px;padding:6px 8px}
+.subnew{margin-top:2px;font-size:12px}
+.bksub{font-size:11px;font-weight:700;color:#857B6C;margin:6px 2px 3px;text-transform:uppercase;letter-spacing:.4px}
 /* month grid */
 .mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .mgrid .dh{font-size:11px;color:#857B6C;text-align:center;padding:2px}
@@ -558,7 +568,7 @@ function evHtml(e,cls){
 }
 
 // ── TASKS ──
-function addTask(o){const t={id:uid(),name:o.name.trim(),cat:o.cat||'life',p:o.p||0,due:o.due||'',day:o.day||'',time:o.time||'',note:o.note||'',done:false,doneAt:'',created:new Date().toISOString()};S.tasks.push(t);save();return t;}
+function addTask(o){const t={id:uid(),name:o.name.trim(),cat:o.cat||'life',grp:o.grp||'',p:o.p||0,due:o.due||'',day:o.day||'',time:o.time||'',note:o.note||'',done:false,doneAt:'',created:new Date().toISOString()};S.tasks.push(t);save();return t;}
 function toggleTask(id){const t=task(id);if(!t)return;t.done=!t.done;t.doneAt=t.done?new Date().toISOString():'';save();render();}
 function deleteTask(id){const t=task(id);if(!t)return;if(!confirm(`Delete "${t.name}"?`))return;S.tasks=S.tasks.filter(x=>x.id!==id);Object.keys(S.pri).forEach(k=>S.pri[k]=S.pri[k].map(x=>x===id?null:x));save();closeModal();render();toast('Deleted');}
 function moveTask(id,day,time){const t=task(id);if(!t)return;t.day=day||'';if(time!==undefined){if(time&&t.end&&t.time){const d=mins(t.end)-mins(t.time);t.end=d>0?hm(Math.min(mins(time)+d,1439)):'';}else if(!time)t.end='';t.time=time;}if(day&&!t.due)t.due=day;save();render();}
@@ -634,6 +644,7 @@ function handleDrop(data,zone){
     else if(z[0]==='hour')moveTask(id,z[1],z[2]+':'+(z[3]||'00'));
     else if(z[0]==='pri')setPriTask(z.slice(1,-1).join(':'),+z[z.length-1],id);
     else if(z[0]==='bank')moveTask(id,'','');
+    else if(z[0]==='grp'){const t=task(id);if(t){t.cat=z[1];t.grp=z[2]||'';save();render();}}
     else if(z[0]==='untime')moveTask(id,z[1],'');
   }else if(kind==='client'){
     if(z[0]==='stage'){const c=S.suede.clients.find(c=>c.id===id);if(c){c.stage=z[1];save();render();}}
@@ -644,13 +655,14 @@ function handleDrop(data,zone){
 function openModal(html){$('modal').innerHTML=html;$('mbg').classList.add('on');const f=$('modal').querySelector('input,textarea');if(f)setTimeout(()=>f.focus(),50);}
 function closeModal(){$('mbg').classList.remove('on');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('mbg').classList.contains('on'))closeModal();else if(document.body.classList.contains('calfull'))calFull(false);}});
-function catSel(v){return`<select id="m-cat">${S.cats.map(c=>`<option value="${c.id}" ${c.id===v?'selected':''}>${esc(c.label)}</option>`).join('')}</select>`;}
+function catSel(v){return`<select id="m-cat" onchange="const g=document.getElementById('m-grpw');if(g)g.innerHTML=grpSel(this.value,'')">${S.cats.map(c=>`<option value="${c.id}" ${c.id===v?'selected':''}>${esc(c.label)}</option>`).join('')}</select>`;}
 function openTask(id,defaults){
-  const t=id?task(id):Object.assign({name:'',cat:'life',p:0,due:'',day:'',time:'',note:''},defaults||{});
+  const t=id?task(id):Object.assign({name:'',cat:'life',grp:'',p:0,due:'',day:'',time:'',note:''},defaults||{});
   if(!t)return;
   openModal(`<h2>${id?'Edit task':'New task'}</h2>
   <div class="f"><label>Task</label><input id="m-name" value="${esc(t.name)}" onkeydown="if(event.key==='Enter')saveTask('${id||''}')"></div>
   <div class="fr"><div class="f"><label>Area</label>${catSel(t.cat)}</div><div class="f"><label>Priority</label><select id="m-p"><option value="0" ${!t.p?'selected':''}>None</option><option value="1" ${t.p==1?'selected':''}>P1</option><option value="2" ${t.p==2?'selected':''}>P2</option><option value="3" ${t.p==3?'selected':''}>P3</option></select></div></div>
+  <div class="f"><label>Subheading</label><span id="m-grpw">${grpSel(t.cat,t.grp||'')}</span></div>
   <div class="fr"><div class="f"><label>Due</label><input type="date" id="m-due" value="${t.due}"></div><div class="f"><label>Planned day</label><input type="date" id="m-day" value="${t.day}"></div></div>
   <div class="f"><label>Time (optional)</label><input type="time" id="m-time" value="${t.time}"></div>
   <div class="f"><label>Note</label><textarea id="m-note">${esc(t.note)}</textarea></div>
@@ -658,7 +670,7 @@ function openTask(id,defaults){
   <div class="mact">${id?`<button class="btn danger sm" onclick="deleteTask('${id}')">Delete</button>`:''}<button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn sky" onclick="saveTask('${id||''}')">Save</button></div>`);
 }
 function saveTask(id){
-  const o={name:$('m-name').value,cat:$('m-cat').value,p:+$('m-p').value,due:$('m-due').value,day:$('m-day').value,time:$('m-time').value,note:$('m-note').value};
+  const o={name:$('m-name').value,cat:$('m-cat').value,grp:$('m-grp')?$('m-grp').value:'',p:+$('m-p').value,due:$('m-due').value,day:$('m-day').value,time:$('m-time').value,note:$('m-note').value};
   if(!o.name.trim()){toast('Give it a name');return;}
   if(id){Object.assign(task(id),o);}else addTask(o);
   save();closeModal();render();
@@ -765,6 +777,43 @@ function delQStep(q,g,s){const G=quarter(q).goals.find(x=>x.id===g);G.steps=G.st
 
 // ── BRAIN DUMP ──
 let dumpFilter='all';
+// ── SUBHEADINGS: clients under Suede, modules under College, your own under Life/Money ──
+function subs(c){S.subs=S.subs||{};S.subsSeeded=S.subsSeeded||{};
+  if(!S.subs[c])S.subs[c]=[];
+  if(!S.subsSeeded[c]){S.subsSeeded[c]=true;
+    if(c==='suede')(S.suede.clients||[]).forEach(cl=>S.subs[c].push({id:'g'+(S.nid++),name:cl.name}));
+    if(c==='study')(S.modules||[]).filter(m=>m.sessions.length||m.assessments.length).forEach(m=>S.subs[c].push({id:'g'+(S.nid++),name:m.name}));
+    if(S.subs[c].length)save();}
+  return S.subs[c];}
+const subName=(c,g)=>((S.subs&&S.subs[c])||[]).find(x=>x.id===g)?.name||'';
+const SUB_HINT={suede:'Add a client',study:'Add a module or subject',life:'Add a subheading (e.g. Home, Gym, Admin)',money:'Add a subheading (e.g. Bills, Savings)'};
+let subOpen={};   // collapsed state per subheading
+function addSub(c,name){name=(name||'').trim();if(!name)return;subs(c).push({id:'g'+(S.nid++),name});save();render();}
+function renameSub(c,g){const s=subs(c).find(x=>x.id===g);if(!s)return;const n=prompt('Rename subheading',s.name);if(n&&n.trim()){s.name=n.trim();save();render();}}
+function delSub(c,g){const s=subs(c).find(x=>x.id===g);if(!s)return;const n=S.tasks.filter(t=>t.cat===c&&t.grp===g&&!t.done).length;
+  if(!confirm(`Delete "${s.name}"?${n?` Its ${n} task${n>1?'s':''} move to General.`:''}`))return;
+  S.tasks.forEach(t=>{if(t.cat===c&&t.grp===g)t.grp='';});S.subs[c]=subs(c).filter(x=>x.id!==g);save();render();}
+function moveSub(c,g,dir){const a=subs(c),i=a.findIndex(x=>x.id===g),j=i+dir;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];save();render();}
+function subTaskRow(t){return`<div class="row handle ${t.day?'planned':''}" data-drag="task:${t.id}"><span class="tick" onclick="toggleTask('${t.id}')"></span><span class="nm" onclick="openTask('${t.id}')">${esc(t.name)}</span>${t.p?`<span class="pb p${t.p}">P${t.p}</span>`:''}${t.day?`<span class="meta" onclick="openDay('${t.day}')">${fmtD(fromKey(t.day),{weekday:'short',day:'numeric',month:'short'})}${t.time?' '+t.time:''}</span>`:''}${dueChip(t.due)}</div>`;}
+function subBlock(c,g,name,list){
+  const key=c+':'+g,closed=subOpen[key]===false,col=cat(c).col;
+  const sorted=list.sort((a,b)=>(!!a.day-!!b.day)||(a.p||9)-(b.p||9)||((a.day||a.due||'9')<(b.day||b.due||'9')?-1:1));
+  return`<div class="subblk" data-drop="grp:${c}:${g}" style="--c:${col}">
+    <div class="subh"><span class="caret" onclick="subOpen['${key}']=${closed};render()">${closed?'▸':'▾'}</span><b onclick="${g?`renameSub('${c}','${g}')`:''}" ${g?'title="Click to rename"':''}>${esc(name)}</b><span class="muted">${list.length}</span><span class="spacer"></span>${g?`<button class="ib" title="Move up" onclick="moveSub('${c}','${g}',-1)">↑</button><button class="ib" title="Delete subheading" onclick="delSub('${c}','${g}')">×</button>`:''}</div>
+    ${closed?'':`${sorted.map(subTaskRow).join('')}<input class="subadd" placeholder="+ Add a task${g?' to '+esc(name):''}" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTask({name:this.value,cat:'${c}',grp:'${g}'});render();setTimeout(()=>{const i=document.querySelector('[data-drop=&quot;grp:${c}:${g}&quot;] .subadd');if(i)i.focus();},0)}">`}
+  </div>`;
+}
+function areaTasks(c,compact){
+  const open=S.tasks.filter(t=>!t.done&&t.cat===c),ss=subs(c);
+  const known=new Set(ss.map(s=>s.id)),general=open.filter(t=>!t.grp||!known.has(t.grp));
+  const empty=compact?ss.filter(s=>!open.some(t=>t.grp===s.id)).length:0;
+  return`${ss.filter(s=>!compact||open.some(t=>t.grp===s.id)).map(s=>subBlock(c,s.id,s.name,open.filter(t=>t.grp===s.id))).join('')}
+    ${!compact||general.length||!open.length?subBlock(c,'',ss.length?'General':'Tasks',general):''}
+    ${empty?`<div class="muted" style="margin:-2px 0 6px 4px">${empty} empty subheading${empty>1?'s':''} · <span class="link" onclick="dumpFilter='${c}';render()">show all</span></div>`:''}
+    <input class="subnew" placeholder="+ ${SUB_HINT[c]||'Add a subheading'}" onkeydown="if(event.key==='Enter'){addSub('${c}',this.value)}">`;
+}
+function grpSel(c,v){const ss=subs(c);return`<select id="m-grp"><option value="">General</option>${ss.map(s=>`<option value="${s.id}" ${s.id===v?'selected':''}>${esc(s.name)}</option>`).join('')}</select>`;}
+
 function rTasks(){
   const open=S.tasks.filter(t=>!t.done),list=open.filter(t=>dumpFilter==='all'||t.cat===dumpFilter);
   const unplanned=list.filter(t=>!t.day),planned=list.filter(t=>t.day).sort((a,b)=>a.day<b.day?-1:1);
@@ -773,8 +822,7 @@ function rTasks(){
     <div class="card"><h2>Tasks<small>${open.length} open</small></h2>
       <input placeholder="Type anything and press Enter" style="margin-bottom:10px" onkeydown="if(event.key==='Enter'&&this.value.trim()){addTask({name:this.value,cat:dumpFilter==='all'?'life':dumpFilter});render()}">
       <div class="tabs"><span class="chip ${dumpFilter==='all'?'on':''}" onclick="dumpFilter='all';render()">All</span>${S.cats.map(c=>`<span class="chip ${dumpFilter===c.id?'on':''}" onclick="dumpFilter='${c.id}';render()"><span class="dot" style="background:${c.col}"></span>${esc(c.label)}</span>`).join('')}</div>
-      <h3>Not yet planned</h3><div data-drop="bank" style="min-height:40px">${bankRows(unplanned)}</div>
-      <h3 style="margin-top:14px">Planned</h3>${planned.length?planned.map(t=>`<div class="row handle" data-drag="task:${t.id}"><span class="tick" onclick="toggleTask('${t.id}')"></span><span class="nm" onclick="openTask('${t.id}')">${esc(t.name)}</span>${t.p?`<span class="pb p${t.p}">P${t.p}</span>`:''}<span class="dot" style="background:${cat(t.cat).col}"></span><span class="meta" onclick="openDay('${t.day}')">${fmtD(fromKey(t.day),{weekday:'short',day:'numeric',month:'short'})}${t.time?' '+t.time:''}</span></div>`).join(''):'<div class="empty">Nothing planned</div>'}
+      ${(dumpFilter==='all'?S.cats:S.cats.filter(c=>c.id===dumpFilter)).map(c=>`<div class="areablk">${dumpFilter==='all'?`<h3 class="areah"><span class="dot" style="background:${c.col}"></span>${esc(c.label)}<span class="muted">${S.tasks.filter(t=>!t.done&&t.cat===c.id).length}</span></h3>`:''}${areaTasks(c.id,dumpFilter==='all')}</div>`).join('')}
     </div>
     <div class="grid" style="align-content:start">
       <div class="card"><h2>Quick notes<small>one thought per line</small></h2><textarea class="qn" oninput="S.quick=this.value;save()" placeholder="Anything on your mind">${esc(S.quick)}</textarea><div class="mact"><button class="btn ghost sm" onclick="quickToTasks()">Turn lines into tasks</button></div></div>
@@ -838,7 +886,7 @@ function calTaskBank(){
     <div class="bkchips"><span class="chip ${bankFilter==='all'?'on':''}" onclick="bankFilter='all';render()">All</span>${S.cats.map(c=>`<span class="chip ${bankFilter===c.id?'on':''}" onclick="bankFilter='${c.id}';render()"><span class="dot" style="background:${c.col}"></span>${esc(c.label)}</span>`).join('')}</div>
     <div class="muted bkhint">Drag a task onto the calendar to plan it. Drag it back here to unplan.</div>
     ${late.length?`<h4>Rolled over</h4>${late.map(row).join('')}`:''}
-    ${groups.map(g=>`<h4><span class="dot" style="background:${g.c.col};display:inline-block"></span> ${esc(g.c.label)} <span class="muted">${g.list.length}</span></h4>${g.list.map(row).join('')}`).join('')||(late.length?'':'<div class="empty">Every task is planned ✓</div>')}
+    ${groups.map(g=>{const ss=subs(g.c.id),known=new Set(ss.map(x=>x.id));const parts=[...ss.map(x=>[x.name,g.list.filter(t=>t.grp===x.id)]),[ss.length?'General':'',g.list.filter(t=>!t.grp||!known.has(t.grp))]].filter(p=>p[1].length);return`<h4><span class="dot" style="background:${g.c.col};display:inline-block"></span> ${esc(g.c.label)} <span class="muted">${g.list.length}</span></h4>${parts.map(p=>(p[0]?`<div class="bksub">${esc(p[0])}</div>`:'')+p[1].map(row).join('')).join('')}`;}).join('')||(late.length?'':'<div class="empty">Every task is planned ✓</div>')}
   </div>`;
 }
 function calSidebar(){
@@ -1317,7 +1365,7 @@ function hubContext(){
   const tp=pri(k).map((id,i)=>id&&task(id)?`${i+1}. ${task(id).name}${task(id).done?' [done]':''}`:null).filter(Boolean);L.push(`Top 3 today: ${tp.join(' | ')||'not set'}.`);
   const wp=pri('W:'+dk(wk)).map((id,i)=>id&&task(id)?`${i+1}. ${task(id).name}`:null).filter(Boolean);L.push(`Priorities this week: ${wp.join(' | ')||'not set'}.`);
   if(S.oneGoal&&S.oneGoal.k===k&&S.oneGoal.t)L.push(`Today's one goal: ${S.oneGoal.t}${S.oneGoal.done?' [done]':''}.`);
-  const open=S.tasks.filter(t=>!t.done);L.push(`Open tasks (${open.length}): ${open.slice(0,40).map(t=>`${t.name} [${cat(t.cat).label}${t.p?', P'+t.p:''}${t.due?', due '+t.due:''}${t.day?', planned '+t.day+(t.time?' '+t.time:''):''}]`).join('; ')||'none'}.`);
+  const open=S.tasks.filter(t=>!t.done);L.push(`Open tasks (${open.length}): ${open.slice(0,40).map(t=>`${t.name} [${cat(t.cat).label}${t.grp&&subName(t.cat,t.grp)?' › '+subName(t.cat,t.grp):''}${t.p?', P'+t.p:''}${t.due?', due '+t.due:''}${t.day?', planned '+t.day+(t.time?' '+t.time:''):''}]`).join('; ')||'none'}.`);
   const due=[];S.modules.forEach(m=>m.assessments.filter(a=>!a.done&&a.due).forEach(a=>due.push(`${a.title} (${m.code}${a.weight?', '+a.weight+'%':''}) due ${a.due}`)));L.push(`College deadlines: ${due.join('; ')||'none entered'}.`);
   L.push(`Modules: ${S.modules.map(m=>`${m.code} ${m.name} (${m.sessions.map(s=>DAYN[s.day]+' '+s.start).join(', ')})`).join('; ')}. Term ${S.term.start} to ${S.term.end}.`);
   const wkEv=wkeys.flatMap(kk=>getEvents(kk).filter(e=>e.type!=='class').map(e=>`${kk} ${e.time||''} ${e.title}`));L.push(`Rest of this week (non-class): ${wkEv.join('; ')||'nothing planned'}.`);
@@ -1338,7 +1386,7 @@ You can change the Hub. When she asks you to plan, add, move, complete, prioriti
 \`\`\`
 
 Available actions (omit fields you don't need):
-- add_task {name, area, due, day, time, p}
+- add_task {name, area, group, due, day, time, p}   — group = client / module / subheading name inside the area (created if new)
 - complete_task {name}            — name can be a partial match
 - delete_task {name}
 - move_task {name, day, time}     — day "" unplans it; time "" removes the time
@@ -1369,7 +1417,7 @@ function applyActions(text){
   const area=a=>S.cats.some(c=>c.id===(a||'').trim())?a.trim():'life';
   const k=todayKey(),wk='W:'+dk(monday(new Date()));
   for(const a of list){try{switch(a.do){
-    case 'add_task':{if(!a.name)break;const t=addTask({name:a.name,cat:area(a.area),due:a.due||'',day:a.day||'',time:a.time||'',p:+a.p||0});done.push('Added task: '+t.name+(t.day?' on '+t.day+(t.time?' '+t.time:''):''));break;}
+    case 'add_task':{if(!a.name)break;const ar=area(a.area);let gid='';if(a.group){const gs=subs(ar),gn=String(a.group).trim();let gg=gs.find(x=>x.name.toLowerCase()===gn.toLowerCase());if(!gg){gg={id:'g'+(S.nid++),name:gn};gs.push(gg);}gid=gg.id;}const t=addTask({grp:gid,name:a.name,cat:ar,due:a.due||'',day:a.day||'',time:a.time||'',p:+a.p||0});done.push('Added task: '+t.name+(t.day?' on '+t.day+(t.time?' '+t.time:''):''));break;}
     case 'complete_task':{const t=findTask(a.name);if(!t){done.push('No open task matching "'+a.name+'"');break;}t.done=true;t.doneAt=new Date().toISOString();done.push('Completed: '+t.name);break;}
     case 'delete_task':{const t=findTask(a.name);if(!t){done.push('No open task matching "'+a.name+'"');break;}S.tasks=S.tasks.filter(x=>x.id!==t.id);Object.keys(S.pri).forEach(kk=>S.pri[kk]=S.pri[kk].map(x=>x===t.id?null:x));done.push('Deleted: '+t.name);break;}
     case 'move_task':{const t=findTask(a.name);if(!t){done.push('No open task matching "'+a.name+'"');break;}if(a.day!==undefined)t.day=a.day||'';if(a.time!==undefined)t.time=a.time||'';if(t.day&&!t.due)t.due=t.day;done.push((t.day?'Planned ':'Unplanned ')+t.name+(t.day?' for '+t.day+(t.time?' at '+t.time:''):''));break;}
