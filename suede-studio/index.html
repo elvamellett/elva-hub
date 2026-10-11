@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Suede Studio — the AI-powered ecommerce studio</title>
+<meta name="description" content="Suede Studio takes over ecommerce and social for small businesses on Shopify — the store, the content, the busywork — with AI built into your everyday operations. Dublin, Ireland.">
+<link rel="icon" href="assets/logo-espresso.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Archivo:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ============ SUEDE STUDIO — BRAND TOKENS ============
+     Neutral blocks (white / cream / tan / black) + grain.
+     Espresso = small details. Ice blue = CTAs & pops. */
+  --espresso:      #14100D;   /* espresso retired — now maps to ink */
+  --espresso-deep: #2E1604;
+  --ink:           #14100D;
+  --soft:          #6E6257;
+  --tan:           #D6BC96;
+  --tan-block:     #EFE3D2;   /* tan section block */
+  --ice:           #BFD5EB;
+  --ice-deep:      #A5C6E4;
+  --ice-block:     #E4EEF7;   /* ice section block */
+  --cream:         #FAF7F3;
+  --white:         #FFFFFF;
+  --line:          #E8E0D5;
+  --line-dark:     rgba(250,247,243,.16);
+  --font:'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --maxw:1180px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--white);color:var(--ink);font-size:16px;line-height:1.75;font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--tan);color:var(--ink)}
+h1,h2,h3{font-weight:800;color:var(--ink);line-height:1.1;text-transform:uppercase;letter-spacing:.04em}
+h2{font-size:clamp(2rem,4.8vw,3.4rem)}
+h3{font-size:1.05rem;letter-spacing:.08em}
+p{max-width:62ch;color:var(--soft)}
+a{color:var(--ink);text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.label{text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.28em;color:var(--espresso)}
+section{padding:110px 0;position:relative}
+.section-head{margin-bottom:56px}
+.section-head .label{display:block;margin-bottom:14px}
+.section-head p{margin-top:14px;font-size:1.02rem}
+
+/* grain — the texture layer */
+body::after{content:"";position:fixed;inset:-50%;width:200%;height:200%;pointer-events:none;z-index:80;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0 0.14 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* buttons */
+.btn{display:inline-block;padding:16px 34px;border-radius:100px;font-weight:700;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;transition:all .25s ease;border:1.5px solid transparent;cursor:pointer}
+.btn-ice{background:var(--ink);color:var(--cream);border-color:rgba(250,247,243,.28)}
+.btn-ice:hover{background:#000;border-color:rgba(250,247,243,.45);transform:translateY(-2px)}
+.btn-dark{background:var(--ink);color:var(--white);border-color:var(--ink)}
+.btn-dark:hover{background:#000;transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:var(--white);transform:translateY(-2px)}
+.btn-cream{background:transparent;border-color:rgba(250,247,243,.55);color:var(--cream)}
+.btn-cream:hover{background:var(--cream);color:var(--ink);border-color:var(--cream)}
+
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--espresso);width:0;z-index:95}
+
+/* ---------- header: nav either side of the logo, boxed like the deck ---------- */
+header{position:sticky;top:0;z-index:60;background:rgba(20,16,13,.92);backdrop-filter:blur(10px)}
+.nav-box{border:1px solid var(--line-dark);border-top:none;display:grid;grid-template-columns:auto 1fr;align-items:center;height:94px;padding:0 30px;gap:18px}
+.nav-side{display:flex;gap:28px;align-items:center;list-style:none}
+.nav-side.right{justify-content:flex-end}
+.nav-side a:not(.btn){text-transform:uppercase;font-weight:600;font-size:.66rem;letter-spacing:.22em;color:var(--cream);padding-bottom:3px;background:linear-gradient(var(--tan) 0 0) bottom left/0 1.5px no-repeat;transition:background-size .3s ease}
+.nav-side a:not(.btn):hover{background-size:100% 1.5px}
+.nav-side .btn{padding:10px 22px}
+.nav-logo{display:flex;flex-direction:row;align-items:center;gap:16px;justify-self:start}
+.nav-logo img{height:46px;transition:transform .4s ease}
+.nav-logo:hover img{transform:rotate(180deg)}
+/* wordmark under the squiggle — TT Firs Neue when licensed, Archivo until then */
+.nav-logo .wm{font-family:'TT Firs Neue','Archivo',var(--font);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream);font-weight:800;white-space:nowrap}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:8px;justify-self:end}
+.burger span{display:block;width:22px;height:2px;background:var(--cream);margin:5px 0;transition:transform .25s ease,opacity .25s ease}
+.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.m-menu{display:none}
+
+/* ---------- hero: the suede cover ---------- */
+.hero{background:#B8A794 url('assets/suede-light.jpg') center/cover;color:var(--ink);min-height:82vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:90px 28px}
+.hero-lockup{position:relative;text-align:center;width:100%}
+.hero-squiggle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:clamp(240px,34vw,440px);width:auto;z-index:1;opacity:.55;will-change:transform;pointer-events:none}
+.hero-mark{position:relative;z-index:2;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:clamp(2.5rem,9vw,7.6rem);line-height:.95;color:#8A7A6C;white-space:nowrap}
+.hero-ctas{margin-top:215px;display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:center;position:relative;z-index:2}
+.link-cta{text-transform:uppercase;font-weight:700;font-size:.72rem;letter-spacing:.18em;color:#6E5F52;border-bottom:1.5px solid #8A7A6C;padding-bottom:4px;transition:color .25s ease,border-color .25s ease}
+.link-cta:hover{color:var(--ink);border-color:var(--ink)}
+.hero-arrow{position:absolute;right:40px;bottom:26px;font-size:2rem;color:#8A7A6C;animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(8px)}}
+
+
+/* ---------- intro (cream block) ---------- */
+.intro{background:var(--cream);padding:130px 0;position:relative;overflow:hidden}
+.intro-logo{position:absolute;right:-70px;top:50%;transform:translateY(-50%);width:320px;opacity:.4;pointer-events:none;will-change:transform}
+.intro .wrap{position:relative}
+.intro .label{display:block;margin-bottom:22px}
+.intro p.big{font-size:clamp(1.5rem,3.4vw,2.4rem);line-height:1.35;max-width:26ch;color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.intro p.big em{font-style:normal;color:var(--espresso);border-bottom:5px solid var(--espresso)}
+.intro .sub{margin-top:22px;font-size:1rem}
+
+/* ---------- services (white block) ---------- */
+.svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.svc{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:42px 38px;position:relative;overflow:hidden;transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease}
+.svc:hover{transform:translateY(-6px) rotate(-.4deg);box-shadow:0 24px 48px rgba(20,16,13,.09);border-color:var(--tan)}
+.svc .num{font-size:.66rem;font-weight:700;letter-spacing:.24em;color:var(--espresso);text-transform:uppercase;display:inline-block;border:1px solid var(--line);border-radius:100px;padding:7px 15px;margin-bottom:24px}
+.svc h3{margin-bottom:12px}
+.svc p{font-size:.94rem;margin-bottom:18px}
+.svc ul{list-style:none;display:grid;gap:8px}
+.svc li{font-size:.87rem;color:var(--soft);padding-left:22px;position:relative}
+.svc li::before{content:"";position:absolute;left:0;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--espresso)}
+.svc .ghost{position:absolute;bottom:-26px;right:-6px;font-size:6rem;font-weight:800;color:var(--cream);-webkit-text-stroke:1.5px var(--line);line-height:1;pointer-events:none}
+
+/* ---------- photo strip (tan block) ---------- */
+.strip{background:var(--ink);padding:120px 0;overflow:hidden;position:relative}
+.strip .doodle{position:absolute;width:260px;opacity:.16;pointer-events:none}
+.strip .doodle.a{top:-60px;left:-40px;transform:rotate(24deg)}
+.strip .doodle.b{bottom:-70px;right:-30px;transform:rotate(-18deg)}
+.strip .doodle.c{top:30%;left:44%;width:180px;transform:rotate(64deg)}
+.strip-imgs{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;align-items:start}
+.polaroid{background:#fff;padding:12px 12px 44px;box-shadow:0 22px 48px rgba(0,0,0,.35);position:relative;transition:transform .35s ease}
+.polaroid:nth-child(1){transform:rotate(-3deg)}
+.polaroid:nth-child(2){transform:rotate(1.5deg)}
+.polaroid:nth-child(3){transform:rotate(2.5deg)}
+.polaroid:nth-child(4){transform:rotate(-2deg)}
+.polaroid:hover{transform:rotate(0) scale(1.03);z-index:2}
+.polaroid figure{overflow:hidden}
+.polaroid img{width:100%;aspect-ratio:3/3.7;object-fit:cover}
+.polaroid .cap{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-weight:700;font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--espresso)}
+.polaroid .tape{position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-4deg);width:92px;height:28px;background:rgba(214,188,150,.75)}
+
+/* ---------- AI band (black block) ---------- */
+.ai-band{background:var(--ink);color:var(--cream);padding:130px 0;position:relative;overflow:hidden}
+.ai-logo{position:absolute;left:-70px;bottom:-90px;width:400px;opacity:.14;pointer-events:none;will-change:transform}
+.ai-hide{position:absolute;top:0;right:0;width:clamp(70px,10vw,180px);height:100%;background:url('assets/cowhide.jpg') center/cover;opacity:.28}
+.ai-band .wrap{position:relative}
+.ai-band .label{color:var(--tan);display:block;margin-bottom:16px}
+.ai-band h2{color:var(--cream)}
+.ai-band .lede{margin:18px 0 64px;color:#B9AFA6;font-size:1.04rem;max-width:52ch}
+.ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.ai-card{border:1px solid var(--line-dark);border-radius:20px;padding:34px 30px;transition:border-color .3s ease,transform .3s ease;background:rgba(250,247,243,.02)}
+.ai-card:hover{border-color:var(--tan);transform:translateY(-5px)}
+.ai-card h3{color:var(--cream);font-size:.95rem;margin-bottom:14px}
+.ai-card h3 em{font-style:normal;color:var(--tan)}
+.ai-card p{font-size:.92rem;color:#B9AFA6;max-width:none}
+.ai-note{margin-top:60px;font-size:.92rem;color:#B9AFA6;max-width:62ch;border-top:1px solid var(--line-dark);padding-top:28px}
+.ai-note strong{color:var(--cream);text-transform:uppercase;letter-spacing:.14em;font-size:.8rem}
+
+/* ---------- packages teaser (packages-page card style) ---------- */
+.packages{background:var(--cream)}
+.tez{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch}
+.tez a{display:flex;flex-direction:column;border-radius:28px;padding:44px 38px;box-shadow:0 20px 48px rgba(20,16,13,.1);transition:transform .3s ease,box-shadow .3s ease}
+.tez a:hover{transform:translateY(-6px);box-shadow:0 30px 60px rgba(20,16,13,.16)}
+.tez .tier{font-size:.62rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;display:inline-block;width:fit-content;border-radius:100px;padding:8px 18px;border:1px solid;margin-bottom:20px}
+.tez h3{font-size:clamp(1.9rem,3.6vw,2.7rem)}
+.tez .promise{font-size:.93rem;margin:14px 0 30px;max-width:none}
+.tez .go{margin-top:auto;font-weight:700;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase}
+.tez .go span{display:inline-block;transition:transform .25s ease}
+.tez a:hover .go span{transform:translateX(6px)}
+.tez .silver{background:var(--white);border:1px solid var(--line)}
+.tez .silver .tier{color:var(--ink);border-color:var(--line)}
+.tez .silver .promise{color:var(--soft)}
+.tez .silver .go{color:var(--ink)}
+.tez .gold{background:var(--tan-block);border:1px solid var(--tan)}
+.tez .gold .tier{color:var(--ink);border-color:var(--tan)}
+.tez .gold .promise{color:#6E5B44}
+.tez .gold .go{color:var(--ink)}
+.tez .platinum{background:var(--ink);border:1px solid var(--ink)}
+.tez .platinum h3{color:var(--cream)}
+.tez .platinum .tier{color:var(--tan);border-color:rgba(214,188,150,.45)}
+.tez .platinum .promise{color:#B9AFA6}
+.tez .platinum .go{color:var(--cream)}
+.tez .platinum .sig{display:inline-block;width:fit-content;background:var(--cream);color:var(--ink);font-weight:700;font-size:.54rem;letter-spacing:.22em;text-transform:uppercase;padding:5px 12px;border-radius:100px;margin-bottom:12px}
+.pkg-note{text-align:center;margin-top:54px;font-size:.9rem;color:var(--soft);max-width:none}
+.pkg-note a{font-weight:700;border-bottom:2px solid var(--espresso)}
+
+
+/* ---------- about (duo photo, pinned chips) + bios block ---------- */
+.about{background:var(--cream);text-align:center}
+.about .section-head{margin-bottom:48px}
+.about .section-head p{margin-left:auto;margin-right:auto}
+.about-photo{position:relative;max-width:920px;margin:0 auto;border-radius:24px;overflow:hidden;border:1px solid var(--line);box-shadow:0 28px 60px rgba(20,16,13,.14)}
+.about-photo img{width:100%;aspect-ratio:16/10.5;object-fit:cover;object-position:center 16%;transition:transform .6s ease}
+.about-photo:hover img{transform:scale(1.03)}
+.about-line{margin:40px auto 0;max-width:54ch;color:var(--soft);font-size:1rem}
+.about-line b{color:var(--ink);font-weight:700}
+
+.bios{background:var(--white)}
+.bio-rows{border-top:1.5px solid var(--ink)}
+.bio-row{display:grid;grid-template-columns:1fr 1.7fr;gap:44px;padding:56px 10px;border-bottom:1.5px solid var(--ink);align-items:start;transition:background .3s ease,padding .3s ease}
+.bio-row:hover{background:var(--cream);padding-left:26px}
+.bio-row h3{font-size:clamp(1.6rem,3.2vw,2.4rem)}
+.bio-row .role{display:block;margin-top:10px}
+.bio-row p{font-size:.95rem;max-width:none}
+
+
+/* ---------- process (hairline columns, outline numbers) ---------- */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1.5px solid var(--ink);padding-top:48px}
+.step{padding:6px 36px 6px 30px;border-left:1px solid var(--line);transition:transform .3s ease}
+.step:first-child{border-left:none;padding-left:0}
+.step:hover{transform:translateY(-5px)}
+.step .num{display:block;font-size:3rem;font-weight:800;line-height:1;color:transparent;-webkit-text-stroke:1.5px var(--espresso);margin-bottom:20px}
+.step h3{font-size:.88rem;margin-bottom:10px}
+.step p{font-size:.86rem;max-width:none}
+
+
+/* ---------- quote band (black) ---------- */
+.quote-band{background:var(--ink);color:var(--cream);padding:110px 0;text-align:center;position:relative;overflow:hidden}
+.quote-band .qm{font-size:5rem;line-height:.5;color:var(--tan);font-weight:800;display:block;margin-bottom:26px}
+.quote-band p.q{font-size:clamp(1.3rem,3vw,2.1rem);font-weight:800;text-transform:uppercase;letter-spacing:.03em;line-height:1.35;max-width:26ch;margin:0 auto;color:var(--cream)}
+.quote-band p.q em{font-style:normal;color:var(--tan)}
+.quote-band .att{margin:30px auto 0;max-width:none}
+
+/* ---------- faq (tan block) ---------- */
+.faq{background:var(--cream)}
+.faq-list{max-width:800px;border-top:1.5px solid var(--espresso)}
+details{border-bottom:1.5px solid rgba(20,16,13,.25)}
+summary{cursor:pointer;padding:24px 4px;font-weight:800;font-size:.88rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;transition:color .2s ease}
+summary:hover{color:var(--espresso)}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:1.5rem;color:var(--espresso);font-weight:400;flex-shrink:0;transition:transform .25s ease}
+details[open] summary::after{transform:rotate(45deg)}
+details .a{padding:0 4px 26px;font-size:.93rem}
+details .a p{max-width:62ch}
+
+/* ---------- contact (black block, deck style) ---------- */
+.contact{background:var(--ink);color:var(--cream);padding:130px 0;position:relative;overflow:hidden}
+.contact-logo{position:absolute;right:-80px;top:-70px;width:340px;opacity:.12;pointer-events:none}
+.contact .wrap{position:relative}
+.contact-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center}
+.contact .label{color:var(--tan)}
+.contact h2{color:var(--cream);margin:14px 0 10px}
+.contact .lede{font-size:1rem;margin-bottom:36px;color:#B9AFA6}
+.c-rows{display:grid;gap:24px;margin-bottom:40px}
+.c-row{display:grid;grid-template-columns:28px 1fr;gap:14px;align-items:start}
+.c-row .arw{color:var(--tan);font-weight:800;font-size:1.05rem;line-height:1.5}
+.c-row .k{font-weight:800;font-size:.8rem;text-transform:uppercase;letter-spacing:.16em;color:var(--cream)}
+.c-row .v{font-size:.92rem;color:#B9AFA6}
+.c-row a{color:#D8CFC5;border-bottom:1.5px solid var(--tan)}
+.c-row a:hover{color:var(--cream)}
+.contact figure{overflow:hidden;border-radius:6px;aspect-ratio:4/4.8;border:6px solid rgba(250,247,243,.07)}
+.contact img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.contact figure:hover img{transform:scale(1.03)}
+
+/* ---------- footer ---------- */
+footer{background:var(--ink);color:#B9AFA6;padding:0 0 34px}
+.foot-top{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:34px 0;border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);margin-bottom:26px}
+.foot-brand{display:flex;align-items:center;gap:14px}
+.foot-brand img{height:34px}
+.foot-brand span{color:var(--cream);font-weight:800;letter-spacing:.18em;text-transform:uppercase;font-size:.85rem}
+footer nav{display:flex;gap:26px;flex-wrap:wrap}
+footer nav a{color:#B9AFA6;font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+footer nav a:hover{color:var(--tan)}
+.foot-copy{font-size:.74rem;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+/* ---------- scroll reveals ---------- */
+.rv{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.22,.61,.36,1),transform .9s cubic-bezier(.22,.61,.36,1)}
+.rv.left{transform:translateX(-44px)}
+.rv.right{transform:translateX(44px)}
+.rv.zoom{transform:scale(.9)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  .hero-arrow{animation:none}
+  body::after{display:none}
+  .hero-squiggle,.intro-logo,.ai-logo{transform:none!important}
+}
+
+/* ---------- responsive ---------- */
+@media(max-width:980px){
+  section{padding:84px 0}
+  .ai-grid{grid-template-columns:1fr}
+  .tez{grid-template-columns:1fr}
+
+  .steps{grid-template-columns:1fr 1fr;gap:38px 0}
+  .strip-imgs{grid-template-columns:1fr 1fr;gap:34px}
+  .contact-grid{grid-template-columns:1fr;gap:44px}
+  .bio-row{grid-template-columns:1fr;gap:16px;padding:40px 10px}
+}
+@media(max-width:760px){
+  section{padding:70px 0}
+  .svc-grid,.steps{grid-template-columns:1fr}
+  .step{border-left:none;padding:0}
+  .strip-imgs{grid-template-columns:1fr 1fr;gap:22px}
+  .nav-box{grid-template-columns:1fr auto;height:96px;position:relative}
+  .nav-side{display:none}
+  .nav-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);flex-direction:column;gap:5px}
+  .nav-logo img{height:40px}
+  .nav-logo .wm{font-size:.58rem}
+  .burger{display:block;grid-column:2}
+  .m-menu{display:block;position:fixed;inset:96px 0 auto 0;background:var(--ink);border-bottom:1px solid var(--line-dark);box-shadow:0 20px 40px rgba(0,0,0,.4);transform:translateY(-130%);transition:transform .3s ease;z-index:55;padding:10px 0 28px;list-style:none;text-align:center}
+  .m-menu.open{transform:none}
+  .m-menu .btn{margin:14px auto 0;display:inline-block}
+  .m-menu a:not(.btn){display:block;padding:15px 0;color:var(--cream);text-transform:uppercase;font-weight:600;font-size:.72rem;letter-spacing:.22em}
+  .hero{min-height:70vh;padding:70px 20px}
+  .hero-ctas{gap:12px;margin-top:130px}
+  .intro-logo{width:170px;right:-50px;opacity:.35}
+  .hero-mark{font-size:clamp(1.9rem,9.5vw,3rem);letter-spacing:.04em}
+  .hero-squiggle{height:clamp(160px,52vw,260px)}
+  .hero-arrow{right:22px;bottom:16px}
+  }
+
+/* ---------- global mobile scale-down ---------- */
+@media(max-width:760px){
+  html{font-size:14px}
+  body{font-size:14.5px}
+  section{padding:54px 0}
+  .section-head{margin-bottom:38px}
+}
+@media(max-width:760px){
+  .hero{min-height:62vh;padding:56px 20px}
+  .hero-mark{font-size:clamp(1.7rem,8.3vw,2.6rem)}
+  .hero-squiggle{height:clamp(140px,46vw,220px)}
+  .hero-ctas{margin-top:110px}
+  .intro{padding:70px 0}
+  .strip{padding:64px 0}
+  .ai-band,.contact{padding:70px 0}
+  .quote-band{padding:64px 0}
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<header>
+  <div class="nav-box">
+    <a href="#top" class="nav-logo" aria-label="The Suede Studio home">
+      <img src="assets/logo-tan.png" alt="The Suede Studio">
+      <span class="wm">The Suede Studio</span>
+    </a>
+    <ul class="nav-side right">
+      <li><a href="#services">Services</a></li>
+      <li><a href="packages.html">Packages</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Enquire</a></li>
+    </ul>
+    <button class="burger" id="burger" aria-label="menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <ul class="m-menu" id="mMenu">
+    <li><a href="#services">Services</a></li>
+    <li><a href="packages.html">Packages</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#contact" class="btn btn-ice">Enquire</a></li>
+  </ul>
+</header>
+
+<!-- ================= HERO — the suede cover ================= -->
+<div class="hero" id="top">
+  <div class="hero-lockup">
+    <img src="assets/logo-tan.png" alt="" class="hero-squiggle" id="heroSquiggle">
+    <h1 class="hero-mark" id="heroMark">Suede Studio</h1>
+  </div>
+  <div class="hero-ctas">
+    <!-- Replace YOUR-GOOGLE-FORM-LINK everywhere with the real Google Form URL (see client-questionnaire.md) -->
+    <a href="YOUR-GOOGLE-FORM-LINK" class="link-cta">Start with the questionnaire</a>
+    <a href="packages.html" class="link-cta">See packages</a>
+  </div>
+  <span class="hero-arrow" aria-hidden="true">↓</span>
+</div>
+
+<!-- ================= INTRO (cream block) ================= -->
+<div class="intro">
+  <img src="assets/logo-tan.png" alt="" class="intro-logo" id="introLogo">
+  <div class="wrap">
+    <span class="label rv">the studio</span>
+    <p class="big rv d1">most small businesses don't need another consultant. they need someone to <em>take it off their plate</em>.</p>
+    <p class="sub rv d2">that's where we come in — we look after the day-to-day, so you can get back to the parts of your business you love.</p>
+  </div>
+</div>
+
+<!-- ================= SERVICES (white block) ================= -->
+<section id="services" style="overflow:hidden">
+  <img src="assets/logo-espresso.png" alt="" style="position:absolute;left:-90px;top:-70px;width:300px;opacity:.05;pointer-events:none">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">01 — what we take over</span>
+      <h2>Your Ecommerce,<br>Handled</h2>
+      <p>we work exclusively with businesses on shopify — depth over breadth, on the platform we know inside out.</p>
+    </div>
+    <div class="svc-grid">
+      <div class="svc rv left">
+        <span class="ghost">i</span>
+        <span class="num">i — ecommerce</span>
+        <h3>Ecommerce Management</h3>
+        <p>your shopify store, run by someone who manages ecommerce for a living — not checked on when there's a spare evening.</p>
+        <ul>
+          <li>store setup, refresh or migration onto shopify</li>
+          <li>product pages, collections, checkout &amp; shipping done right</li>
+          <li>ongoing management: promotions, apps, optimisation</li>
+        </ul>
+      </div>
+      <div class="svc rv right">
+        <span class="ghost">ii</span>
+        <span class="num">ii — ai</span>
+        <h3>AI In Your Operations</h3>
+        <p>the repetitive work that eats your week — drafted, automated and quietly handled by ai, with you in control.</p>
+        <ul>
+          <li>product descriptions drafted in your voice</li>
+          <li>customer-service replies ready for one-tap approval</li>
+          <li>weekly sales summaries that write themselves</li>
+        </ul>
+      </div>
+      <div class="svc rv left d1">
+        <span class="ghost">iii</span>
+        <span class="num">iii — content</span>
+        <h3>Content, Made For You</h3>
+        <p>instagram and tiktok that actually gets made — planned, shot, written and scheduled in your brand's voice.</p>
+        <ul>
+          <li>reels, carousels and captions, done for you</li>
+          <li>monthly content calendars you never have to think about</li>
+          <li>a grid that finally looks like one brand</li>
+        </ul>
+      </div>
+      <div class="svc rv right d1">
+        <span class="ghost">iv</span>
+        <span class="num">iv — operations</span>
+        <h3>Operations &amp; Brand</h3>
+        <p>the back office and the shopfront — streamlined day-to-day operations and a brand kit that holds it all together.</p>
+        <ul>
+          <li>order flow, returns and supplier comms, smoothed out</li>
+          <li>brand starter kits: logo direction, colours, fonts, voice</li>
+          <li>everything consistent, everywhere customers look</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PHOTO STRIP (tan block) ================= -->
+<div class="strip">
+  <img src="assets/logo-cream.png" alt="" class="doodle a">
+  <img src="assets/logo-cream.png" alt="" class="doodle b">
+  <img src="assets/logo-cream.png" alt="" class="doodle c">
+  <div class="wrap">
+    <div class="strip-imgs">
+      <div class="polaroid rv zoom"><span class="tape"></span><figure><img src="assets/studio-chair.jpg" alt="Behind the scenes at The Suede Studio" loading="lazy"></figure><span class="cap">behind the studio</span></div>
+      <div class="polaroid rv zoom d1"><span class="tape"></span><figure><img src="assets/laura.jpg" alt="Laura Callaghan" loading="lazy"></figure><span class="cap">laura · content</span></div>
+      <div class="polaroid rv zoom d2"><span class="tape"></span><figure><img src="assets/elva.jpg" alt="Elva Mallet" loading="lazy"></figure><span class="cap">elva · ecom &amp; ai</span></div>
+      <div class="polaroid rv zoom d3"><span class="tape"></span><figure><img src="assets/studio-desk.jpg" alt="Studio workspace" loading="lazy"></figure><span class="cap">the quiet engine</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= AI BAND (black block) ================= -->
+<section id="ai" class="ai-band">
+  <div class="ai-hide" aria-hidden="true"></div>
+  <img src="assets/logo-cream.png" alt="" class="ai-logo" id="aiLogo">
+  <div class="wrap">
+    <div class="rv">
+      <span class="label">02 — the quiet engine</span>
+      <h2>AI That Works<br>While You Sleep</h2>
+      <p class="lede">this is what makes us different. we don't just advise on ai — we build it into your everyday operations, so the hours you spend on busywork go back to being yours.</p>
+    </div>
+    <div class="ai-grid">
+      <div class="ai-card rv">
+        <h3>It Drafts<em>.</em></h3>
+        <p>product descriptions, customer replies, review responses — written in your voice, waiting for your one-tap approval each morning.</p>
+      </div>
+      <div class="ai-card rv d1">
+        <h3>It Watches<em>.</em></h3>
+        <p>your week's sales, your bestsellers, your slow movers — summarised into a plain-english report that lands without you asking.</p>
+      </div>
+      <div class="ai-card rv d2">
+        <h3>It Remembers<em>.</em></h3>
+        <p>the reorder that's due, the promotion that's ending, the customer who's waiting — the small things that used to slip at 11pm.</p>
+      </div>
+    </div>
+    <p class="ai-note rv"><strong>our rule: ai drafts, humans send.</strong><br>nothing customer-facing goes out without a person behind it, and you decide what gets automated — it's the first thing we ask in the questionnaire.</p>
+  </div>
+</section>
+
+<!-- ================= PACKAGES TEASER (ice block) ================= -->
+<section id="packages" class="packages">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">03 — packages</span>
+      <h2>Silver. Gold.<br>Platinum.</h2>
+      <p>every business is different — we quote after a free discovery call, not from a rate card.</p>
+    </div>
+    <div class="tez rv">
+      <a class="silver" href="packages.html#silver">
+        <span class="tier">01 · once-off · one lane</span>
+        <h3>Silver</h3>
+        <p class="promise">just social or just ecom — one part of your business, fixed properly and handed back better.</p>
+        <span class="go">Explore <span>→</span></span>
+      </a>
+      <a class="gold" href="packages.html#gold">
+        <span class="tier">02 · once-off · both lanes</span>
+        <h3>Gold</h3>
+        <p class="promise">social and ecom together — the full rebuild: store, content system, brand and your first automations.</p>
+        <span class="go">Explore <span>→</span></span>
+      </a>
+      <a class="platinum" href="packages.html#platinum">
+        <span class="sig">our signature</span>
+        <span class="tier">03 · retainer · the takeover</span>
+        <h3>Platinum</h3>
+        <p class="promise">social, ecom or both — taken over and run for you, month after month, with ai in the background.</p>
+        <span class="go">Explore <span>→</span></span>
+      </a>
+    </div>
+    <p class="pkg-note rv">full details on the <a href="packages.html">packages page</a> — or skip ahead and <a href="YOUR-GOOGLE-FORM-LINK">start the questionnaire</a>.</p>
+  </div>
+</section>
+
+<!-- ================= ABOUT (duo) ================= -->
+<section id="about" class="about">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">04 — about us</span>
+      <h2>Two Friends,<br>One Studio</h2>
+    </div>
+    <div class="about-photo rv zoom">
+      <img src="assets/team.jpg" alt="Laura Callaghan and Elva Mallet — The Suede Studio" loading="lazy">
+    </div>
+    <p class="about-line rv">we both work in this world every single day — <b>laura</b> owns everything you see and hear, <b>elva</b> owns everything that sells and runs itself. the suede studio is where that experience goes to work for your business.</p>
+  </div>
+</section>
+
+<!-- ================= BIOS (separate block) ================= -->
+<section class="bios">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">the founders</span>
+    </div>
+    <div class="bio-rows rv">
+      <div class="bio-row">
+        <div>
+          <h3>Laura Callaghan</h3>
+          <span class="label role">content creation · social management</span>
+        </div>
+        <p>social media is so much more than posting pretty content — it's about building a brand people remember. laura creates scroll-stopping content that reflects your business, connects with your audience and helps you grow, whether you're elevating your social presence or telling your story in a fresh way.</p>
+      </div>
+      <div class="bio-row">
+        <div>
+          <h3>Elva Mallet</h3>
+          <span class="label role">e-commerce management · ai</span>
+        </div>
+        <p>elva is passionate about all things e-commerce and loves bringing online stores to life — shopping experiences that feel effortless for customers, stores that are organised, engaging and built to convert. from the smallest update to full store optimisation and the ai that runs quietly underneath, she builds shops that keep customers coming back.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= QUOTE BAND (black block) ================= -->
+<div class="quote-band">
+  <div class="wrap rv">
+    <span class="qm">“</span>
+    <p class="q">The most powerful shops aren't the loudest. <em>They're the ones that run.</em></p>
+    <p class="att label" style="color:var(--tan)">— the suede studio</p>
+  </div>
+</div>
+
+<!-- ================= PROCESS (checkerboard) ================= -->
+<section id="process">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">05 — how it works</span>
+      <h2>No Mystery,<br>No Maze</h2>
+    </div>
+    <div class="steps rv">
+      <div class="step">
+        <span class="num">01</span>
+        <h3>The Questionnaire</h3>
+        <p>ten minutes about your business — so we arrive already knowing your shop.</p>
+      </div>
+      <div class="step">
+        <span class="num">02</span>
+        <h3>Discovery Call</h3>
+        <p>free, 20 minutes. we've read everything — we talk about what matters.</p>
+      </div>
+      <div class="step">
+        <span class="num">03</span>
+        <h3>Proposal</h3>
+        <p>a one-page plan with your price, in writing, within 3 days.</p>
+      </div>
+      <div class="step">
+        <span class="num">04</span>
+        <h3>The Takeover</h3>
+        <p>we get to work — with a short update from us every single week.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ (tan block) ================= -->
+<section id="faq" class="faq" style="overflow:hidden">
+  <img src="assets/logo-espresso.png" alt="" style="position:absolute;right:-80px;bottom:-90px;width:320px;opacity:.08;pointer-events:none;transform:rotate(18deg)">
+  <div class="wrap">
+    <div class="section-head rv">
+      <span class="label">06 — faq</span>
+      <h2>Fair Questions</h2>
+    </div>
+    <div class="faq-list rv">
+      <details>
+        <summary>why shopify only?</summary>
+        <div class="a"><p>because depth beats breadth. we know shopify inside out — every app, every setting, every shortcut — and our automations are built for it. if you're on another platform, moving you onto shopify can be part of the work; staying put means we're probably not your studio, and we'll say so honestly.</p></div>
+      </details>
+      <details>
+        <summary>what does "ai in our operations" actually mean?</summary>
+        <div class="a"><p>practical things, not buzzwords: product descriptions drafted in your voice, customer-service replies waiting for your approval, a weekly plain-english sales summary, reminders that never slip. you approve everything customer-facing, and you decide what's off-limits — we ask before we build.</p></div>
+      </details>
+      <details>
+        <summary>why don't you show prices?</summary>
+        <div class="a"><p>because a five-product candle shop and a 400-product boutique aren't the same job, and pretending they are is how you end up overpaying. we scope from your questionnaire and the free call, and you get a fixed price in writing within 3 days — no surprises after that.</p></div>
+      </details>
+      <details>
+        <summary>what does "taking over" mean — do we lose control?</summary>
+        <div class="a"><p>the opposite. it stays your shop, your brand, your final say — we do the running: the updating, the posting, the replying, the optimising. you get a monthly call, a weekly one-line update, and a report that tells you what we did and what it moved.</p></div>
+      </details>
+      <details>
+        <summary>will you need our passwords?</summary>
+        <div class="a"><p>never your actual login. shopify has proper collaborator access built in, and we remove our access the day an engagement ends. your shop stays yours.</p></div>
+      </details>
+      <details>
+        <summary>how long do things take?</summary>
+        <div class="a"><p>silver is delivered within 1–2 weeks. gold runs 3–4 weeks. platinum starts on the 1st of the month after your proposal is signed. we'll always give you an honest start date — if we're at capacity, we'll tell you rather than let your project queue silently.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT (black block, deck style) ================= -->
+<section id="contact" class="contact">
+  <img src="assets/logo-cream.png" alt="" class="contact-logo">
+  <div class="wrap">
+    <div class="contact-grid">
+      <div class="rv left">
+        <span class="label">07 — contact</span>
+        <h2>Let's Work<br>Together</h2>
+        <p class="lede">the fastest way to start is the questionnaire — ten minutes about your business, and we'll come back within one business day.</p>
+        <div class="c-rows">
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Email</div><div class="v"><a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a></div></div>
+          </div>
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Phone</div><div class="v"><a href="tel:+353852867737">085 286 7737</a> · <a href="tel:+353830499445">083 049 9445</a></div></div>
+          </div>
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Social</div><div class="v">@the.suede.studio — dms open, say hello</div></div>
+          </div>
+          <div class="c-row">
+            <span class="arw">↗</span>
+            <div><div class="k">Studio</div><div class="v">dublin · working with shopify businesses across ireland</div></div>
+          </div>
+        </div>
+        <a href="YOUR-GOOGLE-FORM-LINK" class="btn btn-ice">Start the questionnaire</a>
+      </div>
+      <figure class="rv right"><img src="assets/team.jpg" alt="Laura and Elva — Suede Studio" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="assets/logo-cream.png" alt="">
+        <span>The Suede Studio</span>
+      </div>
+      <nav>
+        <a href="#services">Services</a>
+        <a href="packages.html">Packages</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-copy">
+      <span>© 2026 the suede studio · dublin, ireland</span>
+      <span>est. 2026 · @the.suede.studio</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// mobile nav
+const burger = document.getElementById('burger');
+const mMenu = document.getElementById('mMenu');
+burger.addEventListener('click', () => {
+  const open = mMenu.classList.toggle('open');
+  burger.classList.toggle('open', open);
+  burger.setAttribute('aria-expanded', open);
+});
+mMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  mMenu.classList.remove('open');
+  burger.classList.remove('open');
+  burger.setAttribute('aria-expanded', 'false');
+}));
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const progress = document.getElementById('progress');
+const heroSquiggle = document.getElementById('heroSquiggle');
+const introLogo = document.getElementById('introLogo');
+const aiLogo = document.getElementById('aiLogo');
+
+// scroll-driven effects (scrub)
+addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - innerHeight;
+  progress.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+  if (reduced) return;
+  const y = scrollY;
+  heroSquiggle.style.transform = `translate(-50%,-50%) rotate(${y * .04}deg)`;
+  introLogo.style.transform = `translateY(-50%) rotate(${y * .015}deg)`;
+  const ar = aiLogo.parentElement.getBoundingClientRect();
+  aiLogo.style.transform = `translateY(${ar.top * -.1}px) rotate(${ar.top * -.01}deg)`;
+}, {passive: true});
+
+// staggered scroll reveals
+if (reduced) {
+  document.querySelectorAll('.rv').forEach(el => el.classList.add('in'));
+} else {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold: .12});
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Suede Studio — Ecommerce &amp; Content, Beautifully Run</title>
+<meta name="description" content="The Suede Studio is a Wicklow ecommerce & content studio for small Irish businesses on Shopify. We run the store and make the content, so you can get back to the parts you love.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THE SUEDE STUDIO — DRAFT 2
+   Suede brand + serif twist · interactive single page
+   ============================================================ */
+:root{
+  --cream:#FAF8F4;
+  --cream-2:#F1EDE5;
+  --ink:#161310;
+  --ink-soft:#242019;
+  --espresso-deep:#332C25;
+  --tan:#D9CFBF;
+  --tan-deep:#84705C;
+  --tan-soft:#EAE4D8;
+  --soft:#6E6257;
+  --ivory:#F0E9DD;
+  --line:#E8E0D5;
+  --tick:#5A7A4E;
+  --cross:#A85B4B;
+  --sans:'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --r-card:26px;
+  --r-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--cream);
+  color:var(--ink);
+  font-size:16px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--sans);cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+::selection{background:var(--tan);color:var(--ink)}
+
+/* ---------- type helpers ---------- */
+.serif-i{font-family:var(--serif);font-style:italic;font-weight:400;text-transform:none;letter-spacing:0}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:.72rem;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--soft);
+}
+.eyebrow::before{content:'';width:26px;height:1.5px;background:var(--tan-deep);display:inline-block}
+.h-xl{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.05em;
+  font-size:clamp(2.4rem,5.2vw,4.4rem);line-height:1.12;
+}
+.h-lg{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.05em;
+  font-size:clamp(1.9rem,3.6vw,3rem);line-height:1.18;
+}
+.script{
+  font-family:var(--sans);font-weight:600;text-transform:uppercase;
+  letter-spacing:.32em;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:10px;justify-content:center;
+  padding:15px 32px;border-radius:var(--r-pill);
+  font-size:.8rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  background:var(--ink);color:var(--cream);border:1.5px solid var(--ink);
+  transition:transform .25s ease,background .25s ease,border-color .25s ease;
+}
+.pill:hover{transform:translateY(-2px);background:#2E2925;border-color:#2E2925}
+.pill.pill-ink{background:var(--ink);border-color:var(--ink);color:var(--cream)}
+.pill.pill-ink:hover{background:var(--espresso-deep);border-color:var(--espresso-deep)}
+.pill.pill-ghost{background:transparent;border-color:rgba(250,247,243,.4);color:var(--cream)}
+.pill.pill-ghost:hover{background:rgba(250,247,243,.1)}
+.text-link{
+  font-size:.82rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:inherit;border-bottom:1.5px solid var(--tan-deep);padding-bottom:3px;
+  transition:opacity .2s ease;
+}
+.text-link:hover{opacity:.65}
+
+/* ---------- reveals ---------- */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.22,.8,.3,1),transform .8s cubic-bezier(.22,.8,.3,1)}
+.rv.rv-l{transform:translateX(-36px)}
+.rv.rv-r{transform:translateX(36px)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}.rv.d4{transition-delay:.4s}
+
+/* ============================================================
+   HEADER — transparent → frosted on scroll
+   ============================================================ */
+.hdr{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  transition:background .35s ease,box-shadow .35s ease,backdrop-filter .35s ease;
+}
+.hdr-in{
+  max-width:1280px;margin:0 auto;padding:0 32px;height:84px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.hdr.scrolled,.hdr.menu-open{
+  background:rgba(250,247,243,.9);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 1px 0 rgba(20,16,13,.08),0 10px 30px rgba(20,16,13,.06);
+}
+.hdr-logo{display:flex;align-items:center;gap:14px}
+.hdr-logo img{height:40px;width:auto;transition:filter .35s ease}
+.hdr-wm{
+  font-weight:800;text-transform:uppercase;letter-spacing:.22em;font-size:.86rem;
+  color:var(--cream);transition:color .35s ease;white-space:nowrap;
+}
+.hdr.scrolled .hdr-wm,.hdr.menu-open .hdr-wm{color:var(--ink)}
+.hdr.on-light .hdr-wm{color:var(--ink)}
+.hdr-nav{display:flex;align-items:center;gap:34px}
+.hdr-nav a{
+  font-size:.74rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cream);transition:color .35s ease,opacity .2s ease;
+}
+.hdr.scrolled .hdr-nav a,.hdr.on-light .hdr-nav a{color:var(--ink)}
+.hdr-nav a:hover{opacity:.6}
+.hdr-nav a.on{border-bottom:1.5px solid currentColor;padding-bottom:3px}
+.m-menu a.on{font-weight:800}
+.burger{
+  display:none;background:none;border:none;width:40px;height:40px;
+  flex-direction:column;justify-content:center;align-items:center;gap:6px;
+}
+.burger span{display:block;width:24px;height:2px;background:var(--cream);transition:all .3s ease}
+.hdr.scrolled .burger span,.hdr.on-light .burger span,.hdr.menu-open .burger span{background:var(--ink)}
+.hdr.menu-open .burger span:nth-child(1){transform:translateY(8px) rotate(45deg)}
+.hdr.menu-open .burger span:nth-child(2){opacity:0}
+.hdr.menu-open .burger span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
+.m-menu{
+  display:none;position:fixed;top:84px;left:0;right:0;z-index:99;
+  background:rgba(250,247,243,.96);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+  padding:14px 32px 30px;
+}
+.m-menu.open{display:block}
+.m-menu a{
+  display:block;padding:14px 0;border-bottom:1px solid var(--line);
+  font-size:.8rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);
+}
+.m-menu .pill{display:inline-flex;margin-top:20px;border-bottom:none}
+
+/* ============================================================
+   HERO — warm gradient + marquee service cards
+   ============================================================ */
+.hero{
+  position:relative;
+  background:
+    radial-gradient(1000px 600px at 85% 10%,rgba(250,247,243,.32),transparent 60%),
+    linear-gradient(150deg,#D3C9BA 0%,#C5BAA9 55%,#B4A896 100%);
+  color:var(--ink);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;
+}
+.hero-main{position:relative;overflow:hidden;min-height:676px;display:flex;align-items:center}
+.hero-squig{
+  position:absolute;right:-10%;bottom:-14%;height:95%;width:auto;opacity:.14;
+  pointer-events:none;
+}
+.hero-body{
+  position:relative;z-index:2;
+  max-width:1200px;margin:0 auto;width:100%;
+  padding:84px 32px 40px;
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+}
+.hero-eyebrow{
+  font-family:var(--sans);font-size:.76rem;font-weight:600;
+  letter-spacing:.34em;text-transform:uppercase;
+  color:#6E5B44;margin-bottom:22px;
+}
+.hero-h{
+  font-family:var(--serif);font-weight:400;text-transform:uppercase;
+  font-size:clamp(2rem,4.6vw,3.7rem);line-height:1.14;letter-spacing:.045em;
+  max-width:17ch;color:var(--ink);
+}
+.hero-h .serif-i{font-weight:400;color:#6E5B44}
+.hero-sub{
+  margin-top:28px;max-width:500px;color:#55493D;
+  font-size:1.1rem;font-weight:400;line-height:1.95;
+}
+.hero-ctas{margin-top:42px;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.hero .text-link{color:var(--ink);border-bottom-color:#8A7A6C}
+/* marquee */
+.marq{
+  position:relative;z-index:2;border-top:1px solid rgba(20,16,13,.14);
+  padding:26px 0 34px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+.marq-track{display:flex;gap:16px;width:max-content;animation:marq 34s linear infinite}
+.marq:hover .marq-track{animation-play-state:paused}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.marq-card{
+  display:flex;align-items:center;gap:12px;white-space:nowrap;
+  background:rgba(250,247,243,.3);border:1px solid rgba(20,16,13,.16);
+  border-radius:18px;padding:16px 26px;
+  font-size:.78rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:#3E362E;
+}
+.marq-card::before{content:'';width:8px;height:8px;border-radius:50%;background:#8A7A6C}
+
+/* ============================================================
+   INTRO — serif statement, passing AI mention
+   ============================================================ */
+.intro{padding:130px 0 120px;text-align:center}
+.intro-mark{width:54px;margin:0 auto 34px;opacity:.9}
+.intro p.big{
+  font-family:var(--serif);font-weight:300;font-size:clamp(1.35rem,2.6vw,2.05rem);
+  line-height:1.6;max-width:22em;margin:0 auto;color:#4E463C;
+}
+.intro p.big em{font-style:italic;color:var(--tan-deep)}
+.intro p.small{
+  margin:30px auto 0;max-width:560px;color:var(--soft);font-size:.98rem;font-weight:300;
+}
+
+/* ============================================================
+   SERVICES — dark editorial 3-card grid (TMP cue)
+   ============================================================ */
+.svc{background:var(--tan-soft);color:var(--ink);padding:120px 0 130px}
+.svc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:64px;flex-wrap:wrap}
+.svc-head .eyebrow{color:var(--soft)}
+.svc-head .eyebrow::before{background:var(--tan-deep)}
+.svc-head .h-lg{max-width:none}
+.svc-head .h-lg .serif-i{color:var(--tan-deep);font-weight:400}
+.svc .text-link{color:var(--ink);border-bottom-color:var(--tan-deep);white-space:nowrap;margin-bottom:10px}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.svc-card{
+  background:#FFFDFA;border:1px solid var(--line);
+  border-radius:var(--r-card);overflow:hidden;
+  box-shadow:0 14px 40px rgba(20,16,13,.06);
+  transition:transform .35s ease,border-color .35s ease;
+}
+.svc-card:hover{transform:translateY(-6px);border-color:var(--tan-deep)}
+.svc-img{position:relative;aspect-ratio:4/3;overflow:hidden}
+.svc-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.svc-card:hover .svc-img img{transform:scale(1.05)}
+.svc-tag{
+  position:absolute;top:16px;left:16px;
+  background:var(--ink);color:var(--cream);border-radius:var(--r-pill);
+  padding:7px 16px;font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+}
+.svc-body{padding:26px 26px 30px}
+.svc-body h3{font-size:1.02rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.svc-body p{font-size:.9rem;font-weight:300;color:var(--soft);line-height:1.75}
+
+/* ============================================================
+   WORK — iPhone video showcase
+   ============================================================ */
+.work{background:#141312;padding:100px 0 140px}
+.work .wrap{position:relative}
+.work-head{text-align:center;color:var(--cream);margin-bottom:70px}
+.work-head .eyebrow{color:var(--tan);justify-content:center}
+.work-head .eyebrow::before{background:var(--tan)}
+.work-head .h-lg{margin-top:16px}
+.work-head .h-lg .serif-i{color:var(--tan);font-weight:400}
+.work-head p{margin:18px auto 0;max-width:480px;color:rgba(250,247,243,.6);font-size:.95rem;font-weight:300}
+.phones{
+  display:flex;justify-content:center;align-items:center;gap:48px;
+}
+.phone{
+  position:relative;width:252px;flex:0 0 auto;
+  border-radius:40px;background:#0B0908;
+  border:1px solid rgba(250,247,243,.14);
+  box-shadow:0 40px 80px rgba(0,0,0,.55),inset 0 0 0 8px #0B0908,inset 0 0 0 9px rgba(250,247,243,.08);
+  padding:8px;
+}
+.phone-screen{
+  position:relative;aspect-ratio:9/19.5;border-radius:32px;overflow:hidden;
+  background:linear-gradient(160deg,#2B2A28 0%,#1D1C1A 55%,#151413 100%);
+}
+.phone-screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phone-ph{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;padding:20px;
+}
+.phone-ph img{width:44px;opacity:.55}
+.phone-ph span{
+  font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(250,247,243,.45);line-height:1.9;
+}
+.phone-ph code{
+  font-family:ui-monospace,Menlo,monospace;font-size:.62rem;color:var(--tan);
+  background:rgba(250,247,243,.08);padding:4px 10px;border-radius:8px;letter-spacing:.04em;
+}
+.notch{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;
+  width:74px;height:22px;border-radius:14px;background:#0B0908;
+}
+.work-note{
+  margin-top:64px;text-align:center;
+  font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,247,243,.35);
+}
+
+/* ============================================================
+   COMPARISON — ticks vs crosses
+   ============================================================ */
+.vs{padding:130px 0;background:var(--cream)}
+.vs-head{text-align:center;margin-bottom:64px}
+.vs-head .eyebrow{justify-content:center}
+.vs-head .h-lg{margin-top:16px}
+.vs-head .h-lg .serif-i{color:var(--tan-deep);font-weight:400}
+.vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;max-width:980px;margin:0 auto}
+.vs-col{border-radius:var(--r-card);padding:44px 42px 48px}
+.vs-col.us{background:var(--ink);color:var(--cream);box-shadow:0 30px 70px rgba(20,16,13,.22)}
+.vs-col.them{background:var(--tan-soft);border:1px solid var(--line)}
+.vs-col h3{
+  font-size:.8rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;
+}
+.vs-col .vs-sub{font-family:var(--serif);font-style:italic;font-size:1.25rem;margin-bottom:28px}
+.vs-col.us .vs-sub{color:var(--tan)}
+.vs-col.them .vs-sub{color:var(--soft)}
+.vs-col ul{list-style:none}
+.vs-col li{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:15px 0;font-size:.92rem;font-weight:300;line-height:1.65;
+}
+.vs-col.us li{border-bottom:1px solid rgba(250,247,243,.1)}
+.vs-col.them li{border-bottom:1px solid rgba(20,16,13,.08);color:var(--soft)}
+.vs-col li:last-child{border-bottom:none}
+.vs-ic{
+  flex:0 0 auto;width:24px;height:24px;border-radius:50%;margin-top:2px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:700;
+}
+.vs-col.us .vs-ic{background:rgba(90,122,78,.25);color:#9DC28C}
+.vs-col.them .vs-ic{background:rgba(168,91,75,.14);color:var(--cross)}
+
+/* sound-like-you question grid */
+.ask-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:0 60px;
+  max-width:980px;margin:0 auto;
+}
+.ask-item{
+  display:flex;gap:16px;align-items:flex-start;
+  padding:20px 4px;border-bottom:1px solid rgba(62,56,46,.14);
+  font-size:.96rem;font-weight:300;line-height:1.7;color:#4A443A;
+}
+.ask-ic{background:rgba(62,56,46,.08);color:#3E382E;margin-top:3px}
+.ask-close{text-align:center;margin-top:56px}
+.ask-close .text-link{border-bottom:2px solid #B8DFFF}
+.ask-close p{
+  font-family:var(--serif);font-style:italic;font-size:1.3rem;color:#2E2925;margin-bottom:26px;
+}
+
+/* ============================================================
+   PROCESS — staggered dotted steps
+   ============================================================ */
+.proc{padding:120px 0 140px;background:var(--cream-2);}
+.proc-head{margin-bottom:80px}
+.proc-head .h-lg{margin-top:16px;max-width:16ch}
+.proc-head .h-lg .serif-i{color:var(--tan-deep);font-weight:400}
+.proc-steps{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
+.proc-line{
+  position:absolute;top:23px;left:6%;right:6%;height:2px;z-index:0;
+  background-image:linear-gradient(90deg,var(--tan-deep) 0 6px,transparent 6px 14px);
+  background-size:14px 2px;opacity:.55;
+}
+.step{position:relative;z-index:1}
+.step:nth-child(odd){margin-top:56px}
+.step-dot{
+  width:48px;height:48px;border-radius:50%;background:var(--ink);color:var(--cream);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-style:italic;font-size:1.15rem;font-weight:500;
+  box-shadow:0 0 0 8px var(--cream-2);margin-bottom:24px;
+}
+.step h3{font-size:.92rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.step p{font-size:.9rem;font-weight:300;color:var(--soft);line-height:1.75}
+
+/* ============================================================
+   TESTIMONIALS — full-width carousel
+   ============================================================ */
+.tst{padding:130px 0;text-align:center;position:relative;background:var(--tan-soft)}
+.tst .eyebrow{justify-content:center;margin-bottom:40px}
+.tst-viewport{position:relative;max-width:900px;margin:0 auto;min-height:280px}
+.tst-slide{
+  position:absolute;inset:0;opacity:0;transform:translateY(14px);
+  transition:opacity .6s ease,transform .6s ease;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+}
+.tst-slide.active{opacity:1;transform:none;pointer-events:auto;position:relative}
+.tst-q{
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(1.5rem,3.2vw,2.5rem);line-height:1.45;max-width:20em;
+}
+.tst-who{
+  margin-top:30px;font-size:.72rem;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:var(--soft);
+}
+.tst-who b{color:var(--ink);font-weight:700}
+.tst-cta{margin-top:34px}
+.tst-arrows{display:flex;justify-content:center;gap:14px;margin-top:46px}
+.tst-arrow{
+  width:52px;height:52px;border-radius:50%;border:1.5px solid var(--ink);background:transparent;
+  font-size:1.05rem;color:var(--ink);transition:all .25s ease;
+}
+.tst-arrow:hover{background:var(--ink);color:var(--cream)}
+.tst-note{margin-top:26px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#9A8C7A}
+
+/* ============================================================
+   PACKAGES teaser
+   ============================================================ */
+.pkg{background:var(--ink);color:var(--cream);padding:120px 0 130px}
+.pkg-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:60px;flex-wrap:wrap}
+.pkg-head .eyebrow{color:var(--tan)}
+.pkg-head .eyebrow::before{background:var(--tan)}
+.pkg-head .h-lg .serif-i{color:var(--tan);font-weight:400}
+.pkg .text-link{color:var(--cream);border-bottom-color:var(--tan);margin-bottom:10px;white-space:nowrap}
+.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.pkg-card{
+  border-radius:var(--r-card);padding:40px 34px 44px;display:flex;flex-direction:column;
+  transition:transform .35s ease;
+}
+.pkg-card:hover{transform:translateY(-6px)}
+.pkg-card.s{background:var(--cream);color:var(--ink)}
+.pkg-card.g{background:var(--tan);color:var(--ink)}
+.pkg-card.d{background:#C9BEAD;color:var(--ink)}
+.pkg-card.p{background:var(--ink-soft);border:1px solid rgba(217,207,191,.3)}
+.pkg-tier{font-size:.66rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;opacity:.65;margin-bottom:14px}
+.pkg-name{font-family:var(--serif);font-style:italic;font-size:2.1rem;font-weight:500;margin-bottom:16px}
+.pkg-card p{font-size:.88rem;font-weight:300;line-height:1.75;opacity:.82;flex:1}
+.pkg-card .text-link{margin-top:26px;align-self:flex-start;font-size:.72rem}
+.pkg-card.s .text-link,.pkg-card.g .text-link,.pkg-card.d .text-link{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* ============================================================
+   FAQ — two-column accordion
+   ============================================================ */
+.faq{padding:130px 0}
+.faq-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:70px;align-items:start}
+.faq-left .h-lg{margin-top:16px}
+.faq-left .h-lg .serif-i{color:var(--tan-deep);font-weight:400}
+.faq-left p{margin-top:22px;color:var(--soft);font-size:.95rem;font-weight:300;max-width:38ch}
+.faq-left .text-link{display:inline-block;margin-top:28px}
+.acc{border-top:1px solid var(--line)}
+.acc-item{border-bottom:1px solid var(--line)}
+.acc-btn{
+  width:100%;background:none;border:none;text-align:left;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:26px 4px;font-size:1rem;font-weight:600;color:var(--ink);letter-spacing:.02em;
+}
+.acc-ic{
+  flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:1.05rem;font-weight:400;transition:transform .35s ease,background .35s ease,color .35s ease;
+}
+.acc-item.open .acc-ic{transform:rotate(45deg);background:var(--ink);color:var(--cream)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.22,.8,.3,1)}
+.acc-body p{padding:0 44px 28px 4px;font-size:.92rem;font-weight:300;color:var(--soft);line-height:1.8}
+
+/* ============================================================
+   CONTACT — serif split + dark form card (Swap cue)
+   ============================================================ */
+.contact{padding:130px 0 140px}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:start}
+.contact-left .h-lg{margin-top:16px;text-transform:none;font-weight:400;font-family:var(--serif);font-size:clamp(2.2rem,4vw,3.4rem);line-height:1.2;letter-spacing:0}
+.contact-left .h-lg em{font-style:italic;color:var(--tan-deep)}
+.contact-left p{margin-top:24px;color:var(--soft);font-size:.96rem;font-weight:300;max-width:40ch}
+.contact-meta{margin-top:36px;display:flex;flex-direction:column;gap:12px}
+.contact-meta a,.contact-meta span{
+  font-size:.82rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+}
+.contact-meta a{border-bottom:2px solid #B8DFFF;align-self:flex-start;padding-bottom:3px}
+.form-card{
+  background:var(--ink);border-radius:32px;padding:48px 44px 52px;color:var(--cream);
+  box-shadow:0 40px 90px rgba(20,16,13,.28);
+}
+.form-card h3{font-size:.8rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--tan);margin-bottom:6px}
+.form-card .fc-sub{font-family:var(--serif);font-style:italic;font-size:1.35rem;margin-bottom:30px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(250,247,243,.5);margin-bottom:8px;
+}
+.field input,.field textarea{
+  width:100%;background:rgba(250,247,243,.06);border:1px solid rgba(250,247,243,.16);
+  border-radius:14px;padding:14px 16px;color:var(--cream);font-family:var(--sans);
+  font-size:.92rem;font-weight:300;outline:none;transition:border-color .25s ease;resize:vertical;
+}
+.field input:focus,.field textarea:focus{border-color:var(--tan)}
+.form-card .pill{width:100%;margin-top:10px;background:var(--cream);color:var(--ink);border-color:var(--cream)}
+.form-card .pill:hover{background:var(--tan);border-color:var(--tan)}
+.form-note{margin-top:16px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,247,243,.35);text-align:center}
+.chips-note{margin-top:10px;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,248,244,.35)}
+/* multi-select toggle box */
+.dd{position:relative}
+.dd-btn{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  background:rgba(250,248,244,.06);border:1px solid rgba(250,248,244,.16);border-radius:14px;
+  padding:14px 16px;color:rgba(250,248,244,.85);font-family:var(--sans);font-size:.92rem;font-weight:300;
+  text-align:left;cursor:pointer;transition:border-color .25s ease;
+}
+.dd.open .dd-btn,.dd-btn:focus{border-color:var(--tan);outline:none}
+.dd-arrow{
+  flex:0 0 auto;width:8px;height:8px;margin-top:-4px;
+  border-right:1.5px solid rgba(250,248,244,.6);border-bottom:1.5px solid rgba(250,248,244,.6);
+  transform:rotate(45deg);transition:transform .25s ease;
+}
+.dd.open .dd-arrow{transform:rotate(225deg);margin-top:4px}
+.dd-panel{
+  display:none;margin-top:10px;border:1px solid rgba(250,248,244,.16);border-radius:14px;
+  overflow:hidden;background:rgba(250,248,244,.04);
+}
+.dd.open .dd-panel{display:block}
+.dd-opt{
+  display:flex;gap:12px;align-items:center;padding:13px 16px;
+  font-size:.88rem;font-weight:300;color:rgba(250,248,244,.8);cursor:pointer;user-select:none;
+  border-bottom:1px solid rgba(250,248,244,.08);transition:background .2s ease,color .2s ease;
+}
+.dd-opt:last-child{border-bottom:none}
+.dd-opt:hover{background:rgba(250,248,244,.06)}
+.dd-box{
+  flex:0 0 auto;width:20px;height:20px;border-radius:6px;
+  border:1.5px solid rgba(250,248,244,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.68rem;font-weight:700;color:var(--ink);
+  transition:background .2s ease,border-color .2s ease;
+}
+.dd-opt.on{color:var(--cream)}
+.dd-opt.on .dd-box{background:var(--cream);border-color:var(--cream)}
+.dd-opt.on .dd-box::after{content:'✓'}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.foot{background:var(--ink);color:var(--cream);padding:80px 0 40px}
+.foot-grid{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;flex-wrap:wrap;margin-bottom:60px}
+.foot-brand img{height:64px;margin-bottom:18px}
+.foot-brand .wm{font-weight:800;text-transform:uppercase;letter-spacing:.24em;font-size:.9rem}
+.foot-brand p{margin-top:12px;font-size:.82rem;font-weight:300;color:rgba(250,247,243,.5);max-width:30ch}
+.foot-col h4{font-size:.66rem;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--tan);margin-bottom:18px}
+.foot-col a{
+  display:block;padding:6px 0;font-size:.82rem;font-weight:400;color:rgba(250,247,243,.72);transition:color .2s ease;
+}
+.foot-col a:hover{color:var(--cream)}
+.foot-base{
+  border-top:1px solid rgba(250,247,243,.12);padding-top:28px;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,247,243,.4);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:1020px){
+  .svc-grid,.pkg-grid{grid-template-columns:1fr 1fr}
+  .phones{flex-wrap:wrap;gap:26px}
+  .phone{width:200px}
+  .proc-steps{grid-template-columns:1fr 1fr;gap:44px 30px}
+  .proc-line{display:none}
+  .step:nth-child(odd){margin-top:0}
+}
+@media(max-width:860px){
+  .hdr-nav{display:none}
+  .burger{display:flex}
+  .faq-grid,.contact-grid,.vs-grid{grid-template-columns:1fr;gap:44px}
+  .ask-grid{grid-template-columns:1fr;gap:0}
+}
+@media(max-width:760px){
+  html{font-size:14px}
+  body{font-size:14.5px}
+  .wrap{padding:0 22px}
+  .hdr-in{height:72px;padding:0 22px}
+  .m-menu{top:72px}
+  .hdr-logo img{height:34px}
+  .hero-body{padding:72px 22px 32px}
+  .hero-main{min-height:560px}
+  .hero-squig{height:95%;width:auto;max-width:none;top:auto;bottom:-14%;right:-16%}
+  .hero-sub{font-size:1.02rem}
+  .marq-card{padding:13px 20px}
+  .intro{padding:90px 0 84px}
+  .svc,.pkg{padding:84px 0 90px}
+  .svc-grid,.pkg-grid{grid-template-columns:1fr;gap:20px}
+  .svc-head,.pkg-head{margin-bottom:44px}
+  .work{padding:70px 0 96px}
+  .work-head{margin-bottom:48px}
+  .phones{gap:18px;flex-wrap:wrap}
+  .phone{width:calc(50% - 9px);max-width:190px}
+  .vs{padding:90px 0}
+  .vs-col{padding:34px 26px 38px}
+  .proc{padding:84px 0 92px;}
+  .proc-head{margin-bottom:52px}
+  .proc-steps{grid-template-columns:1fr;gap:38px}
+  .tst{padding:96px 0}
+  .tst-viewport{min-height:320px}
+  .faq{padding:90px 0}
+  .contact{padding:80px 0 96px}
+  .form-card{padding:36px 26px 40px}
+  .form-row{grid-template-columns:1fr}
+  .foot{padding:64px 0 32px}
+  .foot-grid{gap:44px 0}
+  .foot-brand,.foot-col:nth-child(3){flex:0 0 58%}
+  .foot-col:nth-child(2),.foot-col:nth-child(4){flex:0 0 32%}
+}
+
+/* ---------- reduced motion ---------- */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  .marq-track{animation:none;flex-wrap:wrap;width:auto}
+  .phone,.hero-squig{transform:none!important}
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+
+/* ============================================================
+   THEME: olive mist / warm sand / beach linen / teal pops
+   ============================================================ */
+.hero{background:
+  radial-gradient(1000px 600px at 85% 10%,rgba(215,203,189,.1),transparent 60%),
+  linear-gradient(150deg,#746A5C 0%,#645B4E 55%,#4E4639 100%);
+  color:#D7CBBD;}
+.hero-h{color:#E9E2D6}
+.hero-h .serif-i{color:#B8DFFF}
+.hero-eyebrow{color:#BCAE9C}
+.hero-sub{color:#EDE6DA}
+.hero .text-link{color:#E9E2D6;border-bottom-color:#B8DFFF}
+.marq{border-top-color:rgba(215,203,189,.2)}
+.marq-card{background:rgba(215,203,189,.12);border-color:rgba(215,203,189,.3);color:#E2D9CC}
+.marq-card::before{background:#B8DFFF}
+.hdr.on-light:not(.scrolled):not(.menu-open) .hdr-wm{color:#E9E2D6}
+.hdr.on-light:not(.scrolled):not(.menu-open) .hdr-nav a{color:#E9E2D6}
+.hdr.on-light:not(.scrolled):not(.menu-open) .burger span{background:#E9E2D6}
+.hero-squig{opacity:.1}
+.intro{background:#EBE4D9}
+.intro p.big{color:#4E4639}
+.intro p.big em{color:#645B4E;font-weight:700}
+.intro p.small{color:#6E6355}
+.svc{background:#AA9E90;color:#3E382E}
+.svc-head .eyebrow{color:#544C40}
+.svc-head .eyebrow::before{background:#B8DFFF}
+.svc-head .h-lg .serif-i{color:#645B4E}
+.svc .text-link{color:#3E382E;border-bottom-color:#B8DFFF}
+.svc-card{background:#E7E0D4;border-color:#C4B8A8}
+.svc-tag{background:#B8DFFF;color:#2E3A3C}
+.svc-body h3{color:#3E382E}
+.svc-body p{color:#5E564A}
+.work{background:#AA9E90}
+.work-head .eyebrow{color:#544C40}
+.work-head .eyebrow::before{background:#B8DFFF}
+.work-head .h-lg{color:#2E2925}
+.work-head .h-lg .serif-i{color:#645B4E}
+.work-head p{color:#4A443A}
+.phone-ph span{color:rgba(215,203,189,.5)}
+.phone-ph code{color:#B8DFFF;background:rgba(215,203,189,.1)}
+.work-note{color:#645B4E}
+.phone{box-shadow:0 40px 80px rgba(40,35,28,.38),inset 0 0 0 8px #0B0908,inset 0 0 0 9px rgba(250,247,243,.08)}
+.vs{background:#EBE4D9}
+.vs-head .h-lg .serif-i{color:#645B4E;font-weight:700}
+.vs-col.us{background:#645B4E}
+.vs-col.us .vs-sub{color:#B8DFFF}
+.vs-col.them{background:#DCD2C2;border-color:#C4B8A8}
+.vs-col.them .vs-sub{color:#6E6355}
+.proc{background:#DDD3C4}
+.proc-head .h-lg .serif-i{color:#645B4E}
+.proc-line{background-image:linear-gradient(90deg,#8A7E6E 0 6px,transparent 6px 14px)}
+.step-dot{background:#B8DFFF;color:#2E2925;box-shadow:0 0 0 8px #DDD3C4}
+.step h3{color:#3E382E}
+.step p{color:#5E564A}
+.tst{background:#CFC4B3}
+.tst-q{color:#3E382E}
+.tst-who{color:#5E564A}
+.tst-who b{color:#3E382E}
+.tst .pill{background:#645B4E;border-color:#645B4E;color:#E9E2D6}
+.tst-arrow{border-color:#3E382E;color:#3E382E}
+.tst-note{color:#8A7E6E}
+.pkg{background:#645B4E}
+.pkg-head .eyebrow{color:#BCAE9C}
+.pkg-head .h-lg{color:#E9E2D6}
+.pkg-head .h-lg .serif-i{color:#645B4E}
+.pkg .text-link{color:#E9E2D6;border-bottom-color:#B8DFFF}
+.pkg-card.s{background:#E9E2D6}
+.pkg-card.g{background:#BCAE9C}
+.pkg-card.p{background:#4E4639;border-color:rgba(215,203,189,.3)}
+.pkg-card.s .pkg-name,.pkg-card.g .pkg-name{color:#3E382E}
+.faq{display:none}
+.contact{background:#F0EAE0}
+.contact-left .h-lg em{color:#645B4E}
+.form-card{background:#4E4639}
+.form-card h3{color:#BCAE9C}
+.form-card .pill{background:#E9E2D6;color:#3E382E;border-color:#E9E2D6}
+.foot{background:#3E382E}
+.foot-col h4{color:#B8DFFF}
+.eyebrow::before{background:#B8DFFF}
+
+
+/* legibility: soft shadow behind ice text on light backgrounds only */
+.intro p.big em,
+.svc-head .h-lg .serif-i,
+.vs-head .h-lg .serif-i,
+.proc-head .h-lg .serif-i,
+
+</style>
+<noscript><style>.rv{opacity:1!important;transform:none!important}</style></noscript>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-J9FXCTRLRB"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-J9FXCTRLRB');</script>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="hdr on-light" id="hdr">
+  <div class="hdr-in">
+    <a class="hdr-logo" href="#top" aria-label="The Suede Studio — home">
+      <img src="assets/logo-black.png" alt="The Suede Studio squiggle logo" id="hdrLogo">
+      <span class="hdr-wm">The Suede Studio</span>
+    </a>
+    <nav class="hdr-nav">
+      <a class="on" href="#top">Home</a>
+      <a href="packages-2.html">Packages</a>
+      <a href="about-2.html">About</a>
+      <a href="enquire-2.html">Enquire</a>
+    </nav>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<div class="m-menu" id="mMenu">
+  <a class="on" href="#top">Home</a>
+  <a href="packages-2.html">Packages</a>
+  <a href="about-2.html">About</a>
+  <a href="enquire-2.html">Enquire</a>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="top">
+  <div class="hero-main">
+  <img class="hero-squig" src="assets/logo-cream.png" alt="" aria-hidden="true" id="heroSquig">
+  <div class="hero-body">
+    <p class="hero-eyebrow rv in">Ecommerce &amp; content studio</p>
+    <h1 class="hero-h rv in d1">Your store &amp;<br>your content,<br><span class="serif-i">sorted.</span></h1>
+    <p class="hero-sub rv in d2">From your product pages to your reels, we make your business look as sharp online as it is in real life.</p>
+    <div class="hero-ctas rv in d3">
+      <a class="text-link" href="enquire-2.html">Start with the questionnaire</a>
+      <a class="text-link" href="packages-2.html">See packages</a>
+    </div>
+  </div>
+  </div>
+  <div class="marq" aria-hidden="true">
+    <div class="marq-track">
+      <span class="marq-card">Shopify management</span>
+      <span class="marq-card">Content creation</span>
+      <span class="marq-card">Product launches</span>
+      <span class="marq-card">Brand &amp; socials</span>
+      <span class="marq-card">Photography &amp; reels</span>
+      <span class="marq-card">Shopify management</span>
+      <span class="marq-card">Content creation</span>
+      <span class="marq-card">Product launches</span>
+      <span class="marq-card">Brand &amp; socials</span>
+      <span class="marq-card">Photography &amp; reels</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INTRO ================= -->
+<section class="intro">
+  <div class="wrap">
+    <img class="intro-mark rv" src="assets/logo-espresso.png" alt="">
+    <p class="big rv d1">The glow-up your shop's been <em>waiting</em> for.</p>
+    <p class="small rv d2">Based in Wicklow, working with businesses all over Ireland.</p>
+  </div>
+</section>
+
+<!-- ================= SERVICES (dark grid) ================= -->
+<section class="svc" id="services">
+  <div class="wrap">
+    <div class="svc-head">
+      <div>
+        <p class="eyebrow rv">What we do</p>
+        <h2 class="h-lg rv d1" style="margin-top:16px">Everything your shop needs<br>to <span class="serif-i">look the part</span>.</h2>
+      </div>
+      <a class="text-link rv d2" href="packages-2.html">See the packages &rarr;</a>
+    </div>
+    <div class="svc-grid">
+      <a class="svc-card rv" href="packages-2.html#content">
+        <div class="svc-img">
+          <span class="svc-tag">Social</span>
+          <img src="assets/content-cover.jpg" alt="Hands holding a phone, ready to shoot content" loading="lazy">
+        </div>
+        <div class="svc-body">
+          <h3>Content that stands out</h3>
+          <p>Reels, photos, stories and captions — planned, shot and edited by us, sounding like you.</p>
+        </div>
+      </a>
+      <a class="svc-card rv d1" href="packages-2.html#ecommerce">
+        <div class="svc-img">
+          <span class="svc-tag">Ecommerce</span>
+          <img src="assets/ecommerce-cover.jpg" alt="Working on a Shopify store from the studio chair" loading="lazy">
+        </div>
+        <div class="svc-body">
+          <h3>Website &amp; store</h3>
+          <p>From small fixes to a full Shopify build from scratch — designed and set up to sell.</p>
+        </div>
+      </a>
+      <a class="svc-card rv d2" href="packages-2.html#duo">
+        <div class="svc-img">
+          <span class="svc-tag">The Duo</span>
+          <img src="assets/duo-cover.jpg" alt="Campaign planning flat-lay with laptop and croissants" loading="lazy">
+        </div>
+        <div class="svc-body">
+          <h3>The best of both</h3>
+          <p>Social and ecommerce booked together — one plan, one team, everything cohesive across all channels.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SOUND LIKE YOU ================= -->
+<section class="vs">
+  <div class="wrap">
+    <div class="vs-head">
+      <p class="eyebrow rv">Sound like you?</p>
+      <h2 class="h-lg rv d1">Any of this <span class="serif-i">ringing a bell</span>?</h2>
+    </div>
+    <div class="ask-grid">
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>Got a website that looks okay&hellip; but never gets any orders?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>Posting content nobody sees, likes or shares?</div>
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>Spending your evenings on captions instead of your actual business?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>People visit your shop online &mdash; then vanish without buying?</div>
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>Your Instagram doesn't look like your brand &mdash; and you know it?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>Nobody finds you when they Google what you sell?</div>
+      <div class="ask-item rv"><span class="vs-ic ask-ic">?</span>You want reels but hate making them?</div>
+      <div class="ask-item rv d1"><span class="vs-ic ask-ic">?</span>You've a brilliant business that just looks ordinary online?</div>
+    </div>
+    <div class="ask-close rv d2">
+      <p>If you nodded at even one of these &mdash; that's exactly what we fix.</p>
+      <a class="text-link" href="enquire-2.html">Start the questionnaire</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROCESS ================= -->
+<section class="proc" id="process">
+  <div class="wrap">
+    <div class="proc-head">
+      <p class="eyebrow rv">How it works</p>
+      <h2 class="h-lg rv d1">Four steps. <span class="serif-i">That's it.</span></h2>
+    </div>
+    <div class="proc-steps">
+      <div class="proc-line" aria-hidden="true"></div>
+      <div class="step rv">
+        <div class="step-dot">1</div>
+        <h3>Questionnaire</h3>
+        <p>Tell us about your business in a couple of minutes — or just pick up the phone. We'd love a chat.</p>
+      </div>
+      <div class="step rv d1">
+        <div class="step-dot">2</div>
+        <h3>Blueprint</h3>
+        <p>We turn your answers into a tailored strategy blueprint — your store and content plan on one page.</p>
+      </div>
+      <div class="step rv d2">
+        <div class="step-dot">3</div>
+        <h3>Build &amp; create</h3>
+        <p>We get to work: the store takes shape, the content gets made, and you approve everything before it goes live.</p>
+      </div>
+      <div class="step rv d3">
+        <div class="step-dot">4</div>
+        <h3>Handover or stay</h3>
+        <p>Everything goes live, working and explained — and we stick around, whether that's a monthly retainer or just being a phone call away.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TESTIMONIALS ================= -->
+<!-- HIDDEN FOR LAUNCH: remove style="display:none" when real client quotes replace the example ones -->
+<section class="tst" style="display:none">
+  <div class="wrap">
+    <p class="eyebrow rv">Kind words</p>
+    <div class="tst-viewport rv d1" id="tstViewport">
+      <div class="tst-slide active">
+        <p class="tst-q">“They rebuilt our Shopify store and suddenly the shop looked like the brand we always meant it to be.”</p>
+        <p class="tst-who"><b>Sarah</b> &nbsp;·&nbsp; Homeware brand</p>
+        <a class="pill pill-ink tst-cta" href="enquire-2.html">Work with us</a>
+      </div>
+      <div class="tst-slide">
+        <p class="tst-q">“One team doing the store <em>and</em> the content changed everything — it all finally matches.”</p>
+        <p class="tst-who"><b>Aoife</b> &nbsp;·&nbsp; Skincare brand</p>
+        <a class="pill pill-ink tst-cta" href="enquire-2.html">Work with us</a>
+      </div>
+      <div class="tst-slide">
+        <p class="tst-q">“I got my evenings back. That's it. That's the review.”</p>
+        <p class="tst-who"><b>Ciara</b> &nbsp;·&nbsp; Coffee brand</p>
+        <a class="pill pill-ink tst-cta" href="enquire-2.html">Work with us</a>
+      </div>
+    </div>
+    <div class="tst-arrows">
+      <button class="tst-arrow" id="tstPrev" aria-label="Previous testimonial">&larr;</button>
+      <button class="tst-arrow" id="tstNext" aria-label="Next testimonial">&rarr;</button>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ================= FAQ ================= -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="faq-grid">
+      <div class="faq-left">
+        <p class="eyebrow rv">FAQ</p>
+        <h2 class="h-lg rv d1">Answers, before <span class="serif-i">you even ask</span></h2>
+        <p class="rv d2">Anything else on your mind? Send it over — we answer every enquiry ourselves, usually within a day.</p>
+        <a class="text-link rv d3" href="enquire-2.html">Ask us anything &rarr;</a>
+      </div>
+      <div class="acc rv rv-r">
+        <div class="acc-item">
+          <button class="acc-btn">Do we need to be on Shopify already?<span class="acc-ic">+</span></button>
+          <div class="acc-body"><p>No — if you're starting from scratch or moving from another platform, setting you up on Shopify is exactly the kind of project we love. If you're already on Shopify, even better: we can get straight to improving it.</p></div>
+        </div>
+        <div class="acc-item">
+          <button class="acc-btn">How much of our time will this take?<span class="acc-ic">+</span></button>
+          <div class="acc-body"><p>A couple of minutes for the questionnaire, one kick-off chat, and quick approvals along the way. The whole point is that we take the day-to-day off your plate — not add meetings to it.</p></div>
+        </div>
+        <div class="acc-item">
+          <button class="acc-btn">Who owns the content you make?<span class="acc-ic">+</span></button>
+          <div class="acc-body"><p>You do. Every photo, reel, template and asset we create for your brand is yours to keep and use anywhere, whether or not you keep working with us.</p></div>
+        </div>
+        <div class="acc-item">
+          <button class="acc-btn">What does it cost?<span class="acc-ic">+</span></button>
+          <div class="acc-body"><p>Every business is different, so we scope each project from your questionnaire and send a clear, fixed proposal — no surprise invoices. The packages page explains what each tier includes.</p></div>
+        </div>
+        <div class="acc-item">
+          <button class="acc-btn">Where are you based — and do we need to be?<span class="acc-ic">+</span></button>
+          <div class="acc-body"><p>We're in Wicklow and work with small businesses all over Ireland. Shoots are easiest within reach of Wicklow, but the store side works from anywhere.</p></div>
+        </div>
+        <div class="acc-item">
+          <button class="acc-btn">How do we start?<span class="acc-ic">+</span></button>
+          <div class="acc-body"><p>Fill in the enquiry form below (or the client questionnaire, if you're ready). We'll read it, have a think, and come back with our honest take on where we can help.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section class="contact" id="contact">
+  <div class="wrap">
+    <div class="contact-grid">
+      <div class="contact-left">
+        <p class="eyebrow rv">Enquire</p>
+        <h2 class="h-lg rv d1">Tell us about <em>your</em> business.</h2>
+        <p class="rv d2">Fill this in, or just ring us — either way you'll be talking to Elva or Laura.</p>
+        <div class="contact-meta rv d3">
+          <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a>
+          <span>+353 83 049 9445</span>
+          <span>Wicklow, Ireland</span>
+        </div>
+      </div>
+      <form class="form-card rv rv-r" id="enquiryForm">
+        <h3>Start the conversation</h3>
+        <p class="fc-sub">usually answered within a day</p>
+        <div class="form-row">
+          <div class="field">
+            <label for="fName">Your name</label>
+            <input id="fName" name="name" type="text" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="fBiz">Business name</label>
+            <input id="fBiz" name="business" type="text">
+          </div>
+        </div>
+        <div class="field">
+          <label for="fEmail">Email</label>
+          <input id="fEmail" name="email" type="email" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="fSocial">Website or Instagram (if you have one)</label>
+          <input id="fSocial" name="social" type="text" placeholder="@yourbrand or yourshop.ie">
+        </div>
+        <div class="field">
+          <label>What are you looking for?</label>
+          <div class="dd" id="laneDD">
+            <button type="button" class="dd-btn" id="laneBtn" aria-expanded="false">
+              <span id="laneLabel">Pick one</span>
+              <span class="dd-arrow" aria-hidden="true"></span>
+            </button>
+            <div class="dd-panel" id="lanePanel">
+              <div class="dd-opt" data-v="Content for my socials"><span class="dd-box"></span>Content for my socials</div>
+              <div class="dd-opt" data-v="Help with my store / website"><span class="dd-box"></span>Help with my store / website</div>
+              <div class="dd-opt" data-v="Both — content and ecommerce"><span class="dd-box"></span>Both — content and ecommerce</div>
+              <div class="dd-opt" data-v="Honestly not sure yet"><span class="dd-box"></span>Honestly not sure yet</div>
+            </div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label>Which of these sounds like you?</label>
+          <div class="dd" id="painDD">
+            <button type="button" class="dd-btn" id="painBtn" aria-expanded="false">
+              <span id="painCount">Select as many as you like</span>
+              <span class="dd-arrow" aria-hidden="true"></span>
+            </button>
+            <div class="dd-panel" id="painPanel">
+              <div class="dd-opt" data-v="My website needs work (or building from scratch)"><span class="dd-box"></span>My website needs work — or doesn't exist yet</div>
+              <div class="dd-opt" data-v="My product pages aren't converting"><span class="dd-box"></span>People visit but don't buy</div>
+              <div class="dd-opt" data-v="People can't find us on Google"><span class="dd-box"></span>Nobody finds us on Google</div>
+              <div class="dd-opt" data-v="My brand doesn't look how I want it to"><span class="dd-box"></span>My brand doesn't look how I want</div>
+              <div class="dd-opt" data-v="I never have time to make content"><span class="dd-box"></span>I never have time for content</div>
+              <div class="dd-opt" data-v="My feed doesn't feel like my brand"><span class="dd-box"></span>My feed doesn't feel like my brand</div>
+              <div class="dd-opt" data-v="I want reels but hate making them"><span class="dd-box"></span>I want reels but hate making them</div>
+            </div>
+          </div>
+          <p class="chips-note">No wrong answers — this just helps us reply with the right ideas</p>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label for="fMsg">Anything else you'd like us to know? <span style="text-transform:none;letter-spacing:.04em">(optional)</span></label>
+          <textarea id="fMsg" name="message" rows="4" placeholder="What you sell, what's working, what's driving you mad — anything at all."></textarea>
+        </div>
+        <button class="pill" type="submit">Send enquiry</button>
+        <p class="form-note">Sends straight to us — no email app needed</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- WORK SECTION (iPhone reels) hidden until real content exists — restore by uncommenting.
+<!~~ ================= WORK (iPhone reels — drop files at videos/reel-1..4.mp4, vertical 9:16 MP4s; they autoplay in the phones) ================= ~~>
+<section class="work" id="work">
+  <div class="wrap">
+    <div class="work-head">
+      <p class="eyebrow rv">Our work</p>
+      <h2 class="h-lg rv d1">Content, <span class="serif-i">in motion</span></h2>
+      <p class="rv d2">Shot by us, posted by brands like yours.</p>
+    </div>
+    <div class="phones">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="phone-ph">
+            <img src="assets/logo-cream.png" alt="">
+            <span>Fresh reels<br>coming soon</span>
+          </div>
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="videos/reel-1.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="phone-ph">
+            <img src="assets/logo-cream.png" alt="">
+            <span>Fresh reels<br>coming soon</span>
+          </div>
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="videos/reel-2.mp4" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+    <p class="work-note rv">Shot in Ireland, for Irish brands</p>
+  </div>
+</section>
+END HIDDEN WORK SECTION -->
+
+<!-- ================= FOOTER ================= -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="assets/logo-cream.png" alt="The Suede Studio logo">
+        <p class="wm">The Suede Studio</p>
+        <p>Ecommerce &amp; content for small Irish businesses. Wicklow, est. 2025.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Site</h4>
+        <a href="#services">Services</a>
+        <a href="packages-2.html">Packages</a>
+        <a href="about-2.html">About</a>
+        <a href="#process">Process</a>
+      </div>
+      <div class="foot-col">
+        <h4>Say hello</h4>
+        <a href="mailto:hello@thesuedestudio.com">hello@thesuedestudio.com</a>
+        <a href="tel:+353830499445">+353 83 049 9445</a>
+        <a href="enquire-2.html">Enquiry form</a>
+      </div>
+      <div class="foot-col">
+        <h4>Follow</h4>
+        <a href="https://www.instagram.com/the.suede.studio/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.tiktok.com/@the.suede.studio" target="_blank" rel="noopener">TikTok</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>&copy; 2026 The Suede Studio</span>
+      <span>Made with care in Wicklow</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- header: transparent → frosted ---------- */
+  var hdr = document.getElementById('hdr');
+  var hdrLogo = document.getElementById('hdrLogo');
+  function setHeader(){
+    var sc = window.scrollY > 40;
+    hdr.classList.toggle('scrolled', sc);
+    hdrLogo.src = (sc || hdr.classList.contains('menu-open')) ? 'assets/logo-black.png' : 'assets/logo-cream.png';
+  }
+
+  /* ---------- mobile menu ---------- */
+  var burger = document.getElementById('burger');
+  var mMenu = document.getElementById('mMenu');
+  burger.addEventListener('click', function(){
+    var open = mMenu.classList.toggle('open');
+    hdr.classList.toggle('menu-open', open);
+    burger.setAttribute('aria-expanded', open);
+    setHeader();
+  });
+  mMenu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      mMenu.classList.remove('open');
+      hdr.classList.remove('menu-open');
+      burger.setAttribute('aria-expanded','false');
+      setHeader();
+    });
+  });
+
+  /* ---------- scroll-linked motion (rAF) ---------- */
+  var squig = document.getElementById('heroSquig');
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      setHeader();
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  setHeader();
+  onScroll();
+
+  /* ---------- reveals ---------- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:.12, rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+  /* ---------- testimonial carousel ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.tst-slide'));
+  var idx = 0, timer = null;
+  function show(i){
+    idx = (i + slides.length) % slides.length;
+    slides.forEach(function(s, n){ s.classList.toggle('active', n === idx); });
+  }
+  function auto(){ clearInterval(timer); if(!reduced) timer = setInterval(function(){ show(idx+1); }, 6500); }
+  document.getElementById('tstPrev').addEventListener('click', function(){ show(idx-1); auto(); });
+  document.getElementById('tstNext').addEventListener('click', function(){ show(idx+1); auto(); });
+  var vp = document.getElementById('tstViewport'), sx = null;
+  vp.addEventListener('touchstart', function(e){ sx = e.touches[0].clientX; }, {passive:true});
+  vp.addEventListener('touchend', function(e){
+    if(sx === null) return;
+    var dx = e.changedTouches[0].clientX - sx;
+    if(Math.abs(dx) > 44) show(idx + (dx < 0 ? 1 : -1));
+    sx = null; auto();
+  }, {passive:true});
+  auto();
+
+  /* ---------- FAQ accordion ---------- */
+  document.querySelectorAll('.acc-item').forEach(function(item){
+    var btn = item.querySelector('.acc-btn');
+    var body = item.querySelector('.acc-body');
+    btn.addEventListener('click', function(){
+      var open = item.classList.contains('open');
+      document.querySelectorAll('.acc-item.open').forEach(function(o){
+        o.classList.remove('open');
+        o.querySelector('.acc-body').style.maxHeight = null;
+      });
+      if(!open){
+        item.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+      }
+    });
+  });
+
+  /* ---------- video placeholders: hide broken videos ---------- */
+  document.querySelectorAll('.phone-screen video').forEach(function(v){
+    var src = v.querySelector('source');
+    v.addEventListener('error', function(){ v.style.display = 'none'; }, true);
+    if(src) src.addEventListener('error', function(){ v.style.display = 'none'; });
+  });
+
+  /* ---------- guided enquiry form ---------- */
+  function wireDD(ddId, btnId){
+    var dd = document.getElementById(ddId);
+    var btn = document.getElementById(btnId);
+    btn.addEventListener('click', function(){
+      var open = dd.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+    });
+    document.addEventListener('click', function(e){
+      if(!dd.contains(e.target)){ dd.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+    });
+    return dd;
+  }
+  var laneDD = wireDD('laneDD', 'laneBtn');
+  var laneLabel = document.getElementById('laneLabel');
+  document.querySelectorAll('#lanePanel .dd-opt').forEach(function(o){
+    o.addEventListener('click', function(){
+      document.querySelectorAll('#lanePanel .dd-opt').forEach(function(x){ if(x !== o) x.classList.remove('on'); });
+      o.classList.toggle('on');
+      var on = o.classList.contains('on');
+      laneLabel.textContent = on ? o.dataset.v : 'Pick one';
+      if(on){ laneDD.classList.remove('open'); document.getElementById('laneBtn').setAttribute('aria-expanded','false'); }
+    });
+  });
+  wireDD('painDD', 'painBtn');
+  var painCount = document.getElementById('painCount');
+  document.querySelectorAll('#painPanel .dd-opt').forEach(function(o){
+    o.addEventListener('click', function(){
+      o.classList.toggle('on');
+      var n = document.querySelectorAll('#painPanel .dd-opt.on').length;
+      painCount.textContent = n ? n + ' selected' : 'Select as many as you like';
+    });
+  });
+  document.getElementById('enquiryForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var f = e.target;
+    var lane = Array.prototype.map.call(
+      document.querySelectorAll('#lanePanel .dd-opt.on'),
+      function(o){ return o.dataset.v; });
+    var pains = Array.prototype.map.call(
+      document.querySelectorAll('#painPanel .dd-opt.on'),
+      function(o){ return o.dataset.v; });
+    var btn = f.querySelector('.pill');
+    var note = f.querySelector('.form-note');
+    btn.disabled = true; btn.textContent = 'Sending\u2026';
+    fetch('https://formsubmit.co/ajax/hello@thesuedestudio.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: 'Enquiry from ' + (f.business.value || f.name.value),
+        _template: 'table',
+        _captcha: 'false',
+        'Name': f.name.value,
+        'Business': f.business.value || '-',
+        'Email': f.email.value,
+        'Website / Instagram': f.social.value || '-',
+        'Looking for': lane.length ? lane.join(', ') : '-',
+        'Sounds like them': pains.length ? pains.join('; ') : '-',
+        'Message': f.message.value || '-'
+      })
+    }).then(function(r){ if(!r.ok) throw new Error(); return r.json(); })
+    .then(function(){
+      btn.textContent = 'Sent \u2014 talk soon!';
+      if(note) note.textContent = 'Thanks! Your enquiry is on its way to us.';
+    })
+    .catch(function(){
+      btn.disabled = false; btn.textContent = 'Send enquiry';
+      if(note) note.textContent = 'Hmm, that didn\u2019t send \u2014 try again, or email hello@thesuedestudio.com';
+    });
+  });
+})();
+</script>
+</body>
+</html>

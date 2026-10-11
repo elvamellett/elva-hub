@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Suede Studio — Brand Guidelines</title>
+<link rel="icon" href="assets/logo-espresso.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ============ THE SUEDE STUDIO — BRAND TOKENS ============
+     This block is the single source of truth. Change a value
+     here and the whole document (and website) follows. */
+
+  /* PANTONE 732 C — deep chocolate brown. the voice. */
+  --suede:      #623412;
+  --suede-dark: #14100D;   /* headings on light */
+  --suede-deep: #2E1604;   /* near-black chocolate: hero/footer/feature bands */
+  --suede-soft: #8A5B36;   /* hover states, secondary text on cream */
+
+  /* PANTONE 13-4202 TCX "Ice Water" — pale ice blue. the air. */
+  --ice:        #BFD5EB;   /* digital equivalent of the TCX swatch */
+  --ice-light:  #EAF1F8;   /* section tint backgrounds */
+  --tan:        #D6BC96;   /* logo tan — subtle accents */
+
+  /* supporting neutrals — never dominant, never branded */
+  --cream:      #FAF7F3;   /* page background */
+  --ink:        #2B1D10;   /* body text */
+  --line:       #E6DCD2;   /* hairline borders */
+
+  --font: 'Poppins',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --maxw: 1040px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--cream);color:var(--ink);font-size:16px;line-height:1.65;font-weight:400;-webkit-font-smoothing:antialiased}
+
+/* ---------- typography rules (the law) ---------- */
+h1,h2,h3,.caps{font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--suede-dark);line-height:1.15}
+h1{font-size:clamp(2rem,5vw,3.2rem)}
+h2{font-size:clamp(1.3rem,3vw,1.8rem)}
+h3{font-size:1.02rem;letter-spacing:.09em}
+p{max-width:62ch}
+.label{text-transform:uppercase;font-weight:700;font-size:.7rem;letter-spacing:.18em;color:var(--suede-soft)}
+.wordmark{text-transform:uppercase;font-weight:800;letter-spacing:.18em;color:var(--suede-dark)}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+section{padding:72px 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:none}
+.section-no{display:block;margin-bottom:10px}
+.lede{font-size:1.05rem;margin:18px 0 0;color:var(--suede-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:36px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ---------- cover ---------- */
+.cover{background:var(--suede);color:var(--ice);padding:110px 0 90px;border-bottom:none}
+.cover .rule{width:64px;height:2px;background:var(--ice);margin:26px 0}
+.cover h1{color:var(--cream);letter-spacing:.18em}
+.cover .sub{color:var(--ice);text-transform:uppercase;letter-spacing:.22em;font-size:.75rem;font-weight:700}
+.cover p{color:var(--ice-light);margin-top:18px}
+
+/* ---------- wordmark section ---------- */
+.mark-card{background:#fff;border:1px solid var(--line);padding:56px 32px;text-align:center;border-radius:6px}
+.mark-card.on-suede{background:var(--suede);border-color:var(--suede)}
+.mark-card.on-suede .wordmark{color:var(--cream)}
+.mark-card.on-suede .mini-rule{background:var(--ice)}
+.mark-inline{font-size:clamp(1.1rem,2.6vw,1.6rem)}
+.mark-stacked{font-size:clamp(1.6rem,4vw,2.6rem);line-height:1.2}
+.mini-rule{width:56px;height:2px;background:var(--ice);margin:14px auto}
+.mark-note{margin-top:14px}
+.monogram{width:84px;height:84px;border-radius:20px;background:var(--suede);color:var(--ice);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:2.2rem;letter-spacing:0}
+.rules-list{margin-top:28px;display:grid;gap:12px}
+.rules-list li{list-style:none;padding-left:26px;position:relative}
+.rules-list li::before{content:"—";position:absolute;left:0;color:var(--suede-soft)}
+
+/* ---------- colour section ---------- */
+.swatch{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}
+.swatch .chip{height:170px}
+.swatch .meta{padding:20px 22px}
+.swatch .meta h3{margin-bottom:6px}
+.swatch .codes{font-size:.85rem;color:var(--suede-soft);display:grid;gap:2px;margin-top:8px}
+.swatch.small .chip{height:70px}
+.ratio-bar{display:flex;height:56px;border-radius:6px;overflow:hidden;margin-top:36px;border:1px solid var(--line)}
+.ratio-bar div{display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.usage{margin-top:28px;display:grid;gap:10px}
+
+/* ---------- typography section ---------- */
+.spec{background:#fff;border:1px solid var(--line);border-radius:6px;padding:34px;display:grid;gap:26px;margin-top:36px}
+.spec-row{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:baseline;border-bottom:1px dashed var(--line);padding-bottom:22px}
+.spec-row:last-child{border-bottom:none;padding-bottom:0}
+@media(max-width:760px){.spec-row{grid-template-columns:1fr;gap:6px}}
+.spec .h1x{font-size:2.4rem}
+.spec .h2x{font-size:1.5rem}
+.spec .bodyx{font-size:.95rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)}
+.spec .labelx{font-size:.7rem}
+code,pre{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.82rem}
+pre{background:var(--suede-dark);color:var(--ice-light);padding:22px;border-radius:6px;overflow-x:auto;margin-top:28px;line-height:1.6}
+.fontnote{background:var(--ice-light);border:1px solid var(--ice);border-radius:6px;padding:22px;margin-top:28px}
+.fontnote p{font-size:.92rem}
+
+/* ---------- voice section ---------- */
+.voice-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:26px}
+.voice-card h3{margin-bottom:12px}
+.voice-card .yes,.voice-card .no{font-size:.92rem;padding-left:26px;position:relative;margin-top:10px}
+.voice-card .yes::before{content:"✓";position:absolute;left:0;color:var(--suede);font-weight:800}
+.voice-card .no::before{content:"✕";position:absolute;left:0;color:#B4552D;font-weight:800}
+.voice-card .no{color:var(--suede-soft)}
+
+/* ---------- do / don't ---------- */
+.dd{border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.dd .tile{height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;text-align:center}
+.dd .verdict{padding:14px 18px;font-size:.82rem;border-top:1px solid var(--line)}
+.dd .verdict strong{text-transform:uppercase;letter-spacing:.12em;font-size:.68rem;display:block;margin-bottom:3px}
+.dd.good .verdict strong{color:var(--suede)}
+.dd.bad .verdict strong{color:#B4552D}
+.dd.bad .tile{opacity:.9}
+.t-caps{text-transform:uppercase;font-weight:800;letter-spacing:.08em;font-size:.95rem}
+.t-body{font-size:.78rem;text-transform:none;letter-spacing:0}
+
+/* ---------- instagram grid ---------- */
+.ig{max-width:520px;margin:36px auto 0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fff;padding:10px}
+.ig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ig-tile{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;text-align:center;border-radius:3px}
+.ig-tile.quote{background:#171310;color:var(--ice)}
+.ig-tile.quote .q{text-transform:uppercase;font-weight:800;letter-spacing:.06em;font-size:.72rem;line-height:1.35}
+.ig-tile.cover{background:var(--ice);color:var(--suede-dark)}
+.ig-tile.cover .q{text-transform:uppercase;font-weight:800;letter-spacing:.08em;font-size:.7rem}
+.ig-tile.cover .n{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--suede-soft)}
+.ig-tile.photo{background:var(--cream);border:1.5px dashed var(--line);color:var(--suede-soft)}
+.ig-tile.photo .q{font-size:.66rem;text-transform:uppercase;letter-spacing:.14em;font-weight:700}
+.ig-rules{margin-top:28px}
+
+/* ---------- footer ---------- */
+footer{background:var(--suede-dark);color:var(--ice-light);padding:44px 0;text-align:center}
+footer .wordmark{color:var(--cream);font-size:.95rem}
+footer p{font-size:.78rem;margin-top:10px;color:var(--ice);max-width:none}
+
+/* ---------- print ---------- */
+@media print{
+  body{background:#fff}
+  section{padding:34px 0;page-break-inside:avoid}
+  .cover{padding:60px 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <div class="wrap">
+    <span class="sub">brand guidelines · v2 · 2026</span>
+    <div class="rule"></div>
+    <img src="assets/logo-cream.png" alt="Suede Studio monogram" style="width:74px;margin-bottom:22px">
+    <h1>Suede<br>Studio</h1>
+    <p>the ai-powered ecommerce studio — we take over your shopify store, your content, and your busywork.<br>
+    this document is the brand. when in doubt, come back here.</p>
+  </div>
+</div>
+
+<!-- ================= 01 WORDMARK ================= -->
+<section id="wordmark">
+  <div class="wrap">
+    <span class="label section-no">01 — the mark</span>
+    <h2>The squiggle &amp; the wordmark</h2>
+    <p class="lede">one monogram — the double-S squiggle — plus a caps wordmark. together or apart, always with room to breathe.</p>
+
+    <div class="grid2">
+      <div class="mark-card">
+        <img src="assets/logo-espresso.png" alt="Suede Studio squiggle — espresso" style="height:110px;margin:0 auto 8px">
+        <p class="mark-note label">the squiggle — espresso, on light backgrounds</p>
+      </div>
+      <div class="mark-card on-suede" style="background:var(--suede-deep);border-color:var(--suede-deep)">
+        <img src="assets/logo-tan.png" alt="Suede Studio squiggle — tan" style="height:110px;margin:0 auto 8px">
+        <p class="mark-note label" style="color:var(--ice)">the squiggle — tan or cream, on dark</p>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="mark-card">
+        <img src="assets/logo-espresso.png" alt="" style="height:34px;display:inline-block;vertical-align:middle;margin-right:12px"><span class="wordmark mark-inline" style="vertical-align:middle">Suede Studio</span>
+        <p class="mark-note label">lockup — squiggle + caps wordmark (nav, footer, covers)</p>
+      </div>
+      <div>
+        <ul class="rules-list">
+          <li><strong>clear space:</strong> leave at least half the squiggle's height empty around every side.</li>
+          <li><strong>the wordmark</strong> is always caps, tracked 0.18em: SUEDE STUDIO. big headings elsewhere are Title Case — the wordmark is the exception.</li>
+          <li><strong>colours:</strong> espresso or black on light; tan, cream or ice on dark. one colour at a time.</li>
+          <li><strong>the squiggle alone</strong> works as favicon, profile picture, and — a signature move — embossed oversized background art at 5–15% opacity on any block.</li>
+          <li><strong>never:</strong> stretch it, rotate it upright, add a drop shadow, or place it over a busy photo.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 COLOUR ================= -->
+<section id="colour">
+  <div class="wrap">
+    <span class="label section-no">02 — colour</span>
+    <h2>Neutral base. Blue pop. Espresso details.</h2>
+    <p class="lede">white, cream and black do the heavy lifting. ice blue is the call-to-action pop; espresso brown lives in the small details — never in big chunks.</p>
+
+    <div class="grid2">
+      <div class="swatch">
+        <div class="chip" style="background:var(--suede)"></div>
+        <div class="meta">
+          <h3>Suede Brown</h3>
+          <div class="codes">
+            <span>PANTONE 732 C</span>
+            <span>HEX #623412 · RGB 98 · 52 · 18</span>
+          </div>
+          <p style="font-size:.9rem;margin-top:12px">small details only: labels, thin rules, the squiggle, tiny accents. espresso seasons the page — it never floods it.</p>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--ice)"></div>
+        <div class="meta">
+          <h3>Ice Water</h3>
+          <div class="codes">
+            <span>PANTONE 13-4202 TCX · digital equivalent</span>
+            <span>HEX #BFD5EB · RGB 191 · 213 · 235</span>
+          </div>
+          <p style="font-size:.9rem;margin-top:12px">the pop: call-to-action buttons, bullet dots, small highlights. one or two moments of blue per screen — a pop, not a wash.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="swatch small">
+        <div class="chip" style="background:var(--cream)"></div>
+        <div class="meta"><h3 style="font-size:.85rem">Cream</h3><div class="codes"><span>#FAF7F3 — page background</span></div></div>
+      </div>
+      <div class="swatch small">
+        <div class="chip" style="background:var(--ink)"></div>
+        <div class="meta"><h3 style="font-size:.85rem">Ink</h3><div class="codes"><span>#2B1D10 — body text</span></div></div>
+      </div>
+      <div class="swatch small">
+        <div class="chip" style="background:var(--ice-light)"></div>
+        <div class="meta"><h3 style="font-size:.85rem">Ice Light</h3><div class="codes"><span>#EAF1F8 — section tints</span></div></div>
+      </div>
+    </div>
+
+    <div class="ratio-bar">
+      <div style="background:#fff;color:var(--suede-soft);flex:45">white ~45</div>
+      <div style="background:var(--cream);color:var(--suede-soft);flex:25">cream ~25</div>
+      <div style="background:#171310;color:var(--cream);flex:18">black ~18</div>
+      <div style="background:var(--ice);color:#171310;flex:8">ice ~8</div>
+      <div style="background:var(--suede-dark);color:var(--cream);flex:4">esp.</div>
+    </div>
+
+    <ul class="rules-list usage">
+      <li><strong>the base is neutral:</strong> white and cream pages, black (ink) headings and text. black also carries the ticker, one feature band and the footer — dramatic moments, not the default.</li>
+      <li><strong>tan = the action colour.</strong> buttons, arrows, stickers and small accents come from the logo's tan. ice blue retreats to rare, tiny pops — never backgrounds, never text.</li>
+      <li><strong>espresso = seasoning.</strong> labels, hairlines, the squiggle, small caps details. never headings, never text walls, never big blocks.</li>
+      <li>ice text only ever sits on black/espresso — <strong>never on white or cream</strong> (it fails contrast).</li>
+      <li>tan (from the logo) may appear in the squiggle and faint watermarks only.</li>
+      <li>no new accent colours. if a design feels flat, adjust space and scale — don’t add colour.</li>
+      <li>in print/product, reference the pantone codes; on screen, the hex values above are canonical.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 03 TYPOGRAPHY ================= -->
+<section id="typography">
+  <div class="wrap">
+    <span class="label section-no">03 — typography</span>
+    <h2>Caps speak. Lowercase explains.</h2>
+    <p class="lede">one family, two behaviours: headings are chunky, bold and <strong>ALL CAPS</strong> — always; body copy is lowercase, regular and smaller. the contrast between the two <em>is</em> the typographic style.</p>
+
+    <div class="spec">
+      <div class="spec-row">
+        <span class="label">h1 · 800 · caps</span>
+        <div class="caps h1x">Done Properly</div>
+      </div>
+      <div class="spec-row">
+        <span class="label">h2 · 800 · caps</span>
+        <div class="caps h2x">Ecommerce &amp; Content</div>
+      </div>
+      <div class="spec-row">
+        <span class="label">body · 400 · lowercase</span>
+        <p class="bodyx">we help small irish businesses sell online and show up well. body copy is written in a lowercase, plain-spoken voice — like a good text message from someone who knows what they’re doing.</p>
+      </div>
+      <div class="spec-row">
+        <span class="label">label · 600 · caps · .24em</span>
+        <div class="label labelx">enquire for pricing</div>
+      </div>
+    </div>
+
+<pre>h1, h2, h3      { font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.wordmark       { text-transform: uppercase; font-weight: 800; letter-spacing: .18em; }
+body            { font-weight: 400; font-size: 16px; line-height: 1.7; }
+.label, button  { text-transform: uppercase; font-weight: 600; font-size: .66rem;
+                  letter-spacing: .24em; }
+
+font-family: 'Poppins', -apple-system, 'Helvetica Neue', Arial, sans-serif;</pre>
+
+    <div class="fontnote">
+      <h3>The working font</h3>
+      <p style="margin-top:10px">the deck's display face is a chunky geometric sans. on the web we use <strong>Poppins</strong> (free, google fonts, weights 400–800) — the closest open match to that rounded, confident feel. if we later license the exact deck typeface, it slots in first in the font stack and everything follows.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 VOICE ================= -->
+<section id="voice">
+  <div class="wrap">
+    <span class="label section-no">04 — tone of voice</span>
+    <h2>Warm. Plain-spoken. Quietly expert.</h2>
+    <p class="lede">we write like a knowledgeable friend, not an agency. lowercase in captions and body copy is part of the voice — relaxed, never sloppy.</p>
+
+    <div class="grid3">
+      <div class="voice-card">
+        <h3>Warm</h3>
+        <p class="yes">“your shop deserves better product photos — here’s how to take them on your phone.”</p>
+        <p class="no">“businesses must optimise visual assets to maximise conversion.”</p>
+      </div>
+      <div class="voice-card">
+        <h3>Plain-spoken</h3>
+        <p class="yes">“your checkout is asking people for too much. cut two fields, sell more.”</p>
+        <p class="no">“we leverage synergistic funnel optimisation strategies.”</p>
+      </div>
+      <div class="voice-card">
+        <h3>Quietly expert</h3>
+        <p class="yes">“we manage ecommerce for a living. this is what actually works.”</p>
+        <p class="no">“🚀🚀 THE #1 SECRET SHOPIFY HACK THEY DON’T WANT YOU TO KNOW 🚀🚀”</p>
+      </div>
+    </div>
+
+    <ul class="rules-list" style="margin-top:32px">
+      <li>captions and body copy: lowercase, first person plural (“we”), short sentences.</li>
+      <li>headings: chunky ALL CAPS. buttons and labels: small tracked caps. body: lowercase. confident, no exclamation marks needed.</li>
+      <li>the punch line device: short caps statements ending in full stops — “the store. handled.” “the busywork. automated.” — used in tickers, tiles and story covers.</li>
+      <li>emoji: sparing — one, sometimes, where it earns its place. never strings of them.</li>
+      <li>never promise “growth hacks”, “secrets” or overnight results. we sell done-properly.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 05 DO / DON'T ================= -->
+<section id="dodont">
+  <div class="wrap">
+    <span class="label section-no">05 — do / don’t</span>
+    <h2>The fast rules</h2>
+
+    <div class="grid3">
+      <div class="dd good">
+        <div class="tile" style="background:#fff">
+          <span class="t-caps" style="color:#171310">Chunky caps heading</span>
+          <span class="t-body" style="color:var(--ink)">black heading, lowercase body, loads of air.</span>
+        </div>
+        <div class="verdict"><strong>do</strong> big black caps headings on white/cream.</div>
+      </div>
+      <div class="dd good">
+        <div class="tile" style="background:#fff">
+          <span style="background:var(--tan);color:#171310;font-weight:700;font-size:.68rem;border-radius:100px;padding:9px 18px;text-transform:uppercase;letter-spacing:.14em">start the questionnaire</span>
+          <span class="t-body" style="color:var(--ink)">if it's blue, it's clickable.</span>
+        </div>
+        <div class="verdict"><strong>do</strong> tan buttons &amp; accents — straight from the logo.</div>
+      </div>
+      <div class="dd good">
+        <div class="tile" style="background:#171310">
+          <span class="t-caps" style="color:var(--ice)">Ice on black</span>
+          <span class="t-body" style="color:var(--cream)">accents pop on the dark feature bands.</span>
+        </div>
+        <div class="verdict"><strong>do</strong> use black bands for drama — one or two per page.</div>
+      </div>
+      <div class="dd bad">
+        <div class="tile" style="background:var(--cream)">
+          <span class="t-caps" style="color:var(--ice)">Ice on cream</span>
+          <span class="t-body" style="color:var(--ice)">can you even read this? exactly.</span>
+        </div>
+        <div class="verdict"><strong>don’t</strong> put ice text on cream — it fails contrast.</div>
+      </div>
+      <div class="dd bad">
+        <div class="tile" style="background:var(--suede)">
+          <span class="t-caps" style="color:var(--cream)">Brown everywhere</span>
+          <span class="t-body" style="color:var(--ice-light)">big brown blocks are the old look.</span>
+        </div>
+        <div class="verdict"><strong>don’t</strong> flood pages with brown — espresso is a detail, not a wall.</div>
+      </div>
+      <div class="dd bad">
+        <div class="tile" style="background:linear-gradient(135deg,#e8b4d8,var(--ice))">
+          <span class="t-caps" style="color:var(--suede-dark)">Third colour??</span>
+          <span class="t-body" style="color:var(--suede-dark)">no pinks, no gradients, no “just this once”.</span>
+        </div>
+        <div class="verdict"><strong>don’t</strong> introduce extra colours or gradients.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 INSTAGRAM ================= -->
+<section id="instagram">
+  <div class="wrap">
+    <span class="label section-no">06 — instagram grid</span>
+    <h2>The grid is the portfolio</h2>
+    <p class="lede">three tile types, rotated so the grid always reads as one calm system. one brown tile per row, maximum.</p>
+
+    <div class="ig">
+      <div class="ig-grid">
+        <div class="ig-tile photo"><span class="q">photo / reel<br>cover</span></div>
+        <div class="ig-tile quote"><span class="q">“your checkout is losing you sales”</span></div>
+        <div class="ig-tile cover"><span class="q">5 shopify fixes</span><span class="n">carousel · shop talk</span></div>
+        <div class="ig-tile quote"><span class="q">“post less. plan more.”</span></div>
+        <div class="ig-tile cover"><span class="q">before / after</span><span class="n">carousel · glow-up</span></div>
+        <div class="ig-tile photo"><span class="q">photo / reel<br>cover</span></div>
+        <div class="ig-tile cover"><span class="q">what to post this week</span><span class="n">carousel · strategy</span></div>
+        <div class="ig-tile photo"><span class="q">photo / reel<br>cover</span></div>
+        <div class="ig-tile quote"><span class="q">“built in 6 hours a week”</span></div>
+      </div>
+    </div>
+
+    <ul class="rules-list ig-rules">
+      <li><strong>black quote tiles:</strong> ice caps text on black. short, punchy, saveable lines.</li>
+      <li><strong>ice carousel covers:</strong> brown caps title on ice, small label underneath naming the pillar.</li>
+      <li><strong>photo tiles:</strong> real photography and reel covers — warm light, natural texture, no heavy filters.</li>
+      <li>keep the three-column rhythm when scheduling: never two black tiles touching.</li>
+      <li>captions in the lowercase voice; hashtags from the content plan’s pool, never the same block twice.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="wordmark">The Suede Studio</div>
+    <p>brand guidelines v1 · 2026 · hello@thesuedestudio.com · print me as a pdf — file → print → save as pdf</p>
+  </div>
+</footer>
+
+</body>
+</html>
