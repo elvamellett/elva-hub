@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 95)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 97)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7056 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7166 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 95</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 97</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1640,6 +1640,12 @@ function venueGroups() {
     // and who has no booking here: her order's venue is stale (she moved
     // after the Shopify order was placed). Skip the row \u2014 she already
     // shows at the venue she was actually seen at.
+    // Moved venue in Appointly: her order still names THIS venue but her
+    // only upcoming booking is somewhere else - she belongs there, not here
+    // as a phantom "not booked" (Claire Finnegan / Sara Cosgrave -> Westbury).
+    if (!a && !(o.eventDate && o.eventDate < todayStr())
+      && DB.appointments.some(x => x.customerId === o.customerId && x.eventHotel && x.status !== 'cancelled'
+        && x.appointmentAt >= todayStr() && venOf(x.eventHotel) !== venue)) { seen.add(k); continue; }
     if (!a && typeof Invoices !== 'undefined' && Invoices.bought) {
       const bv = Invoices.bought(o.customerId);
       if (bv) {
@@ -1695,6 +1701,24 @@ function dedupeDayRows(rows) {
     seen.add(k);
     return true;
   });
+}
+/* Reschedules and venue moves ONLY reach the dashboard through the
+   Appointly booking export - Shopify orders keep the ORIGINAL slot
+   forever. So every sheet says which export its times came from, and the
+   venue page shouts when that export is old enough to be dangerous. */
+function exportAgeDays() {
+  const at = DB.exportInfo && DB.exportInfo.at;
+  if (!at) return null;
+  const ms = Date.now() - new Date(at).getTime();
+  return isFinite(ms) ? ms / 86400000 : null;
+}
+function exportStampLine() {
+  const at = DB.exportInfo && DB.exportInfo.at;
+  if (!at && DB.exportInfo && DB.exportInfo.shared) return 'Booking times from the shared Appointly export (its date was never recorded - upload a fresh export on Connect data to date-stamp it).';
+  if (!at) return 'No Appointly booking export on file - slot times come from the original orders and will MISS any reschedules.';
+  const d = new Date(at);
+  const when = d.toLocaleString('en-IE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return 'Booking times from the Appointly export of ' + when + ' - changes made in Appointly since then are NOT shown.';
 }
 function dayApptTaker(day) {
   const used = new Map();
@@ -2183,9 +2207,13 @@ let venueBoughtFilter = ''; // '' all \u00b7 'bought' \u00b7 'not'
    the working window starts at the first booked hour. */
 function slotBoard(venue, day) {
   const cfg = DB.settings.eventDay;
+  const seenSlot = new Set();
   const appts = DB.appointments.filter(a => a.appointmentAt === day && a.time
     && String(a.eventHotel || a.service || '').includes(venue)
-    && a.status !== 'cancelled' && !custCancelled(a.customerId));
+    && a.status !== 'cancelled' && !custCancelled(a.customerId))
+    // One person in one slot counts once, however many copies of the
+    // booking exist (order stamp + export row).
+    .filter(a => { const k = a.customerId + '|' + a.time; if (seenSlot.has(k)) return false; seenSlot.add(k); return true; });
   const hourOf = t => parseInt(String(t).slice(0, 2), 10);
   const staff = new Set(appts.map(a => a.staffName).filter(Boolean)).size;
   const perHour = staff || cfg.slotCapacity;
@@ -2308,6 +2336,11 @@ Pages.venueDetail = (venueName) => {
         <button class="primary" onclick="Actions.printCustomerSheets('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">\ud83d\udda8 Customer sheets (A4, one per customer)</button>
         <button class="primary" style="background:var(--red); border-color:var(--red)" onclick="Actions.printSchoolWatch('${encodeURIComponent(v.venue).replace(/'/g, '%27')}','${day}')">\ud83c\udfeb School watch sheet</button>
         <span class="small muted">Up to ${cfg.slotCapacity} customers per slot \u00b7 one staff member per customer (private appointments).</span>
+      </div>
+      <div class="small" style="margin:4px 0 10px">
+        ${(exportAgeDays() == null || exportAgeDays() > 2)
+          ? `<span class="badge b-amber">\u26a0 Reschedule risk</span> ${esc(exportStampLine())} <b>Export fresh bookings from Appointly and upload them on Connect data before printing.</b>`
+          : `<span class="muted">${esc(exportStampLine())}</span>`}
       </div>
       ${(() => {
         const watch = schoolWatch(v.venue, day);
@@ -2921,6 +2954,16 @@ const ImportService = {
     return null;
   },
   _digits: s => String(s || '').replace(/\D/g, ''),
+  // Matching key for a phone number across sources: Shopify stores
+  // +353 86 848 3156, Appointly forms say 086 848 3156 - the same phone.
+  // (_digits stays as-is: stored correction keys are built from it.)
+  _phoneKey(s) {
+    let d = String(s || '').replace(/\D/g, '');
+    if (d.indexOf('00') === 0) d = d.slice(2);
+    if (d.indexOf('353') === 0 && d.length >= 11) d = '0' + d.slice(3).replace(/^0/, '');
+    else if (d.indexOf('44') === 0 && d.length >= 12) d = '0' + d.slice(2).replace(/^0/, '');
+    return d.length >= 7 ? d : '';
+  },
   _normDate(str) {
     const s = String(str || '').trim();
     if (!s) return '';
@@ -3128,7 +3171,7 @@ const ImportService = {
       const createdCol = col(H, 'createdat', 'created at', 'booked at', 'created');
       for (const r of s.appointly.records) {
         if (!((email && r[email]) || (name && r[name]))) continue;
-        if (statusCol && /cancel/i.test(r[statusCol])) continue;
+        if (statusCol && /cancel|reschedul|declin|reject|delet|refund|void/i.test(r[statusCol])) continue; // not a live booking
         const cust = findOrCreateCustomer(name ? r[name] : '', email ? r[email] : '', phone ? r[phone] : '');
         // "Appointment Time" often carries date AND time in one cell.
         const rawWhen = (date ? r[date] : '') || (time ? r[time] : '');
@@ -3178,8 +3221,16 @@ const ImportService = {
     const rawCsv = ImportService.state.appointly && ImportService.state.appointly.raw;
     const b = ImportService.build();
     const stubById = new Map(b.customers.map(c => [c.id, c]));
-    const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [c.email.toLowerCase(), c]));
-    const byPhone = new Map(DB.customers.filter(c => ImportService._digits(c.phone)).map(c => [ImportService._digits(c.phone), c]));
+    const emKey = e => String(e || '').trim().toLowerCase();
+    const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [emKey(c.email), c]));
+    // Customers WITH a Shopify order first, so a shared phone lands on the
+    // real record rather than on a booking-only copy of the same person.
+    const withOrder0 = new Set(DB.orders.map(o => o.customerId));
+    const byPhone = new Map();
+    for (const c of DB.customers.slice().sort((x, y) => (withOrder0.has(y.id) ? 1 : 0) - (withOrder0.has(x.id) ? 1 : 0))) {
+      const pk = ImportService._phoneKey(c.phone);
+      if (pk && !byPhone.has(pk)) byPhone.set(pk, c);
+    }
     let added = 0, created = 0;
     const resolved = [];
     const daughters = new Map();
@@ -3188,8 +3239,8 @@ const ImportService = {
     for (const a of b.appointments) {
       const stub = stubById.get(a.customerId);
       if (!stub) continue;
-      let real = (stub.email && byEmail.get(stub.email.toLowerCase()))
-        || (ImportService._digits(stub.phone) && byPhone.get(ImportService._digits(stub.phone)))
+      let real = (stub.email && byEmail.get(emKey(stub.email)))
+        || (ImportService._phoneKey(stub.phone) && byPhone.get(ImportService._phoneKey(stub.phone)))
         || (a._orderRef && custById.get(byOrderRef.get(a._orderRef))) || null;
       // Bookings made without a Shopify order (added by staff, or no deposit
       // paid online) belong to customers Shopify has never seen \u2014 create them.
@@ -3197,8 +3248,8 @@ const ImportService = {
         real = { id: uid(), name: stub.name, daughterName: stub.daughterName || '', email: stub.email || '',
           phone: stub.phone || '', address: stub.address || '', notes: '', createdAt: nowIso() };
         DB.customers.push(real);
-        if (real.email) byEmail.set(real.email.toLowerCase(), real);
-        if (ImportService._digits(real.phone)) byPhone.set(ImportService._digits(real.phone), real);
+        if (real.email) byEmail.set(emKey(real.email), real);
+        if (ImportService._phoneKey(real.phone)) byPhone.set(ImportService._phoneKey(real.phone), real);
         created++;
       }
       if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
@@ -3222,8 +3273,8 @@ const ImportService = {
         if (!real.notes && refOwner.notes) real.notes = refOwner.notes;
         DB.customers = DB.customers.filter(x => x.id !== refOwner.id);
         custById.delete(refOwner.id);
-        if (refOwner.email) byEmail.set(String(refOwner.email).toLowerCase(), real);
-        if (ImportService._digits(refOwner.phone)) byPhone.set(ImportService._digits(refOwner.phone), real);
+        if (refOwner.email) byEmail.set(emKey(refOwner.email), real);
+        if (ImportService._phoneKey(refOwner.phone)) byPhone.set(ImportService._phoneKey(refOwner.phone), real);
       }
       a.customerId = real.id; a.source = 'appointly_csv';
       resolved.push(a);
@@ -3246,6 +3297,38 @@ const ImportService = {
     // cancellations (no row in the export = gone) both take effect.
     // Bookings made through Shopify AFTER the export was generated survive
     // until the next export speaks for them.
+    // Split identities: the export found (or created) a booking-only record
+    // while the SAME person's Shopify record exists under another email.
+    // Left apart they're counted twice - the Shopify copy still sitting at
+    // the ORIGINAL slot. Same phone, or same name AND same child = same
+    // person: fold the booking-only copy into the Shopify record.
+    {
+      const hasOrder = new Set(DB.orders.map(o => o.customerId));
+      const nk = s2 => String(s2 || '').toLowerCase().replace(/[^a-z]/g, '');
+      const byPk = new Map(), byNameKid = new Map();
+      for (const c of DB.customers) {
+        if (!hasOrder.has(c.id)) continue;
+        const pk = ImportService._phoneKey(c.phone);
+        if (pk && !byPk.has(pk)) byPk.set(pk, c);
+        if (c.daughterName) {
+          const k2 = nk(c.name) + '|' + nk(c.daughterName);
+          byNameKid.set(k2, byNameKid.has(k2) ? null : c);
+        }
+      }
+      const pointed = new Set(resolved.map(a => a.customerId));
+      const remap = new Map();
+      for (const c of DB.customers.slice()) {
+        if (hasOrder.has(c.id) || c.manual || !pointed.has(c.id)) continue;
+        const pk = ImportService._phoneKey(c.phone);
+        const target = (pk && byPk.get(pk))
+          || (c.daughterName && byNameKid.get(nk(c.name) + '|' + nk(c.daughterName))) || null;
+        if (target && target.id !== c.id) { Dupes.fold(target, c); remap.set(c.id, target.id); }
+      }
+      for (const a of resolved) if (remap.has(a.customerId)) a.customerId = remap.get(a.customerId);
+    }
+    // When was this export taken? Its newest "created" stamp if it has that
+    // column; otherwise the moment it was uploaded here (shared with every
+    // device through the staff file, so replays agree).
     let exportCut = '';
     const cCol2 = ImportService._col(ImportService.state.appointly.headers, 'createdat', 'created at', 'booked at', 'created');
     for (const r of ImportService.state.appointly.records) {
@@ -3253,9 +3336,30 @@ const ImportService = {
       if (!isNaN(d0)) { const iso = d0.toISOString(); if (iso > exportCut) exportCut = iso; }
     }
     if (exportCut) DB.exportInfo = { at: exportCut };
-    else exportCut = (DB.exportInfo && DB.exportInfo.at) || '';
-    DB.appointments = DB.appointments.filter(x => x.source === 'manual'
-      || (x.source === 'appointly' && !(exportCut && String(x.bookedAt || '') <= exportCut)));
+    else if (!fromServer) { exportCut = nowIso(); DB.exportInfo = { at: exportCut, byUpload: true }; }
+    else {
+      exportCut = (DB.exportInfo && DB.exportInfo.at) || '';
+      if (!exportCut) DB.exportInfo = { at: '', shared: true }; // applied, but undated
+    }
+    // Booking copies stamped on Shopify orders keep the slot as ORIGINALLY
+    // booked - Appointly reschedules and venue moves never reach them. So:
+    // - finished days: keep them as history, unless the export speaks for
+    //   that customer on that day;
+    // - upcoming days: the export wins for anything booked before it was
+    //   taken (reschedule = new time, move = new venue, missing = cancelled);
+    //   only bookings made AFTER the export survive until the next one.
+    //   With no idea when the export was taken, any customer the export lists
+    //   is spoken for entirely.
+    const csvCust = new Set(resolved.map(a => a.customerId));
+    const csvDay = new Set(resolved.map(a => a.customerId + '|' + a.appointmentAt));
+    const today0 = todayStr();
+    DB.appointments = DB.appointments.filter(x => {
+      if (x.source === 'manual') return true;
+      if (x.source !== 'appointly') return false; // an older export: replaced wholesale
+      if (x.appointmentAt && x.appointmentAt < today0) return !csvDay.has(x.customerId + '|' + x.appointmentAt);
+      if (exportCut) return String(x.bookedAt || '') > exportCut;
+      return !csvCust.has(x.customerId);
+    });
     const seenKeys = new Set();
     for (const a of resolved) {
       const k = a.customerId + '|' + a.appointmentAt + '|' + (a.time || '');
@@ -3574,7 +3678,7 @@ const LiveSync = {
       customers.push(c);
       if (sc.id != null) bySrcId.set(String(sc.id), c);
       if (c.email) byEmail.set(c.email.toLowerCase(), c);
-      const digits = ImportService._digits(c.phone);
+      const digits = ImportService._phoneKey(c.phone);
       if (digits) byPhone.set(digits, c);
     }
     const diagRows = [];
@@ -3681,17 +3785,17 @@ const LiveSync = {
     for (const oc of DB.customers || []) {
       if (!oc.manual) continue;
       const hit = (oc.email && byEmail.get(String(oc.email).toLowerCase()))
-        || (ImportService._digits(oc.phone) && byPhone.get(ImportService._digits(oc.phone)));
+        || (ImportService._phoneKey(oc.phone) && byPhone.get(ImportService._phoneKey(oc.phone)));
       if (hit) continue;
       customers.push(oc);
       if (oc.email) byEmail.set(String(oc.email).toLowerCase(), oc);
-      if (ImportService._digits(oc.phone)) byPhone.set(ImportService._digits(oc.phone), oc);
+      if (ImportService._phoneKey(oc.phone)) byPhone.set(ImportService._phoneKey(oc.phone), oc);
     }
     for (const a of preserved) {
       if (!a._orderRef) continue;
       const oc0 = oldCustById.get(a.customerId);
       const nc0 = (oc0 && ((oc0.email && byEmail.get(String(oc0.email).toLowerCase()))
-        || (ImportService._digits(oc0.phone) && byPhone.get(ImportService._digits(oc0.phone))))) || null;
+        || (ImportService._phoneKey(oc0.phone) && byPhone.get(ImportService._phoneKey(oc0.phone))))) || null;
       const dup = custByIdNew.get(refToCust.get(String(a._orderRef).trim()));
       if (!nc0 || !dup || dup.id === nc0.id) continue;
       for (const o of orders) if (o.customerId === dup.id) o.customerId = nc0.id;
@@ -3707,19 +3811,19 @@ const LiveSync = {
       custByIdNew.delete(dup.id);
       // The second email/phone belongs to the same human from now on.
       if (dup.email) byEmail.set(String(dup.email).toLowerCase(), nc0);
-      if (ImportService._digits(dup.phone)) byPhone.set(ImportService._digits(dup.phone), nc0);
+      if (ImportService._phoneKey(dup.phone)) byPhone.set(ImportService._phoneKey(dup.phone), nc0);
     }
     for (const a of preserved) {
       const oc = oldCustById.get(a.customerId);
       const nc = (oc && ((oc.email && byEmail.get(String(oc.email).toLowerCase()))
-        || (ImportService._digits(oc.phone) && byPhone.get(ImportService._digits(oc.phone))))) || null;
+        || (ImportService._phoneKey(oc.phone) && byPhone.get(ImportService._phoneKey(oc.phone))))) || null;
       if (!nc) {
         // Customer exists only in Appointly (booked without an order) \u2014
         // carry them and their booking through the sync untouched.
         if (oc) {
           customers.push(oc);
           if (oc.email) byEmail.set(String(oc.email).toLowerCase(), oc);
-          if (ImportService._digits(oc.phone)) byPhone.set(ImportService._digits(oc.phone), oc);
+          if (ImportService._phoneKey(oc.phone)) byPhone.set(ImportService._phoneKey(oc.phone), oc);
           appointments.push(a);
         }
         continue;
@@ -3917,7 +4021,7 @@ const LiveSync = {
     }
     for (const inv of (DB.invoices || [])) {
       const em = String((inv.contact && inv.contact.email) || '').toLowerCase();
-      const ph = ImportService._digits((inv.contact && inv.contact.phone) || '');
+      const ph = ImportService._phoneKey((inv.contact && inv.contact.phone) || '');
       const nc = (em && byEmail.get(em)) || (ph && byPhone.get(ph)) || null;
       if (nc) inv.customerId = nc.id;
     }
@@ -4095,7 +4199,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 95'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 97'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5024,7 +5128,7 @@ const Staff = {
     return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
       custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [],
       checklist: DB.prodChecklist || [], apptChanges: DB.apptChanges || {},
-      manualCusts: DB.manualCusts || [] });
+      manualCusts: DB.manualCusts || [], exportInfo: DB.exportInfo || null });
   },
   maybePush() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
@@ -5063,6 +5167,10 @@ const Staff = {
       if (!r || String(i.at || '') > String(r.at || '')) cById.set(i.id, i);
     }
     if (cById.size) DB.prodChecklist = [...cById.values()];
+    // When the shared booking export was taken: newest wins, so every
+    // device replays it with the same cut-off.
+    if (sj.exportInfo && sj.exportInfo.at && (!DB.exportInfo || String(sj.exportInfo.at) > String(DB.exportInfo.at || '')))
+      DB.exportInfo = sj.exportInfo;
     // Walk-in customers created by hand: union by id, so one made on any
     // device exists on every device.
     const mById = new Map((sj.manualCusts || []).map(c => [c.id, c]));
@@ -6842,6 +6950,7 @@ const Actions = {
     </style></head><body>
       <h1>\ud83c\udfeb School watch \u2014 ${esc(venue)}</h1>
       <div class="m">${esc(dayLabel)} \u00b7 ${watch.reduce((n2, w) => n2 + w.girls.length, 0)} girls \u00b7 ${watch.length} schools</div>
+      <div class="m" style="font-size:11px">${esc(exportStampLine())}</div>
       ${multi.length ? `<h2>\u26a0 2 OR MORE GIRLS TODAY</h2>
         ${multi.map(w => `<div class="sch hot">
           <div class="nm">${esc(w.name)}<span class="gc">${w.girls.length} girls</span></div>
@@ -6905,6 +7014,7 @@ const Actions = {
     </style></head><body>
       <h1>Darcybow \u2014 staff run sheet</h1>
       <div class="m">${esc(venue)} \u00b7 <b>${esc(dayLabel)}</b> \u00b7 private appointments, up to ${cfg.slotCapacity} customers per slot</div>
+      <div class="m" style="font-size:11px">${esc(exportStampLine())}</div>
       ${(() => {
         // Answers only, one per line, with a short label instead of the
         // full question wording.
