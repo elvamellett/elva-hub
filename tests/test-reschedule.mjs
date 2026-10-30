@@ -20,7 +20,7 @@ page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
 
-check('version stamp is 97', (await page.locator('#sidebar').textContent()).includes('version 97'));
+check('version stamp is 98', (await page.locator('#sidebar').textContent()).includes('version 98'));
 
 // Upcoming weekend, a fortnight out.
 const sat = (() => { const d = new Date(Date.now() + 14 * 86400000); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7)); return d; })();
@@ -53,12 +53,13 @@ const payload = csv => ({
 });
 // The Appointly export: NEW times/venues, different emails, local phone
 // format, and NO "created at" column (the worst case for the reschedule rule).
+const qa = kid => '"Ques: What is your Daughter\'s Name?\nAns: ' + kid + '\nQues: What is the name(s) of your Daughter\'s School?  (Abbreviation, Irish and/ English name, please).\nAns: Scoil ' + kid + '\nQues: When is your Communion? (If known)\nAns: May 2027"';
 const csv = [
-  'Customer name,Email,Phone,Appointment date,Start time,Service,Staff,Status',
-  `Mairead Sheridan,mairead.booking@example.com,086 848 0001,${SUN},1:00 PM,Darcy Day Out at The Westbury,Staff 1,Confirmed`,
-  `Claire Finnegan,claire.booking@example.com,086 848 0002,${SAT},2:00 PM,Darcy Day Out at The Westbury,Staff 2,Confirmed`,
-  `Kate Kennedy,kate.booking@example.com,086 848 0003,${SUN},10:00 AM,Darcy Day Out at The Westbury,Staff 3,Confirmed`,
-  `Kate Kennedy,kate.booking@example.com,086 848 0003,${SAT},10:00 AM,Darcy Day Out at The Westbury,Staff 3,Rescheduled`,
+  'Customer name,Email,Phone,Appointment date,Start time,Service,Staff,Status,Custom Questions',
+  `Mairead Sheridan,mairead.booking@example.com,086 848 0001,${SUN},1:00 PM,Darcy Day Out at The Westbury,Staff 1,Confirmed,` + qa('Fiadh'),
+  `Claire Finnegan,claire.booking@example.com,086 848 0002,${SAT},2:00 PM,Darcy Day Out at The Westbury,Staff 2,Confirmed,` + qa('Ava'),
+  `Kate Kennedy,kate.booking@example.com,086 848 0003,${SUN},10:00 AM,Darcy Day Out at The Westbury,Staff 3,Confirmed,` + qa('Chloe'),
+  `Kate Kennedy,kate.booking@example.com,086 848 0003,${SAT},10:00 AM,Darcy Day Out at The Westbury,Staff 3,Rescheduled,` + qa('Chloe'),
 ].join('\n');
 
 await page.evaluate(() => {
@@ -129,6 +130,33 @@ check('phone key: +353 and 08 formats are the same phone', await page.evaluate((
   ImportService._phoneKey('+353 86 848 0001') === ImportService._phoneKey('086 848 0001')
   && ImportService._phoneKey('00353868480001') === '0868480001'
   && ImportService._phoneKey('+353 (0)86 848 0001') === '0868480001'));
+
+// A ticket-holder whose booking no longer exists in Appointly (cancelled
+// / moved event): listed separately, never counted or printed (v98).
+await page.evaluate(p => {
+  // As in real life: the export is dated (CreatedAt column / upload moment).
+  DB.exportInfo = { at: new Date().toISOString(), byUpload: true };
+  p.customers.push({ id: 5, first_name: 'Ticket', last_name: 'Only', email: 'ticket@example.com', phone: '', created_at: '2026-08-01T10:00:00Z' });
+  const o = JSON.parse(JSON.stringify(p.orders[0]));
+  o.id = 9005; o.name = '#9005'; o.email = 'ticket@example.com'; o.customer = { id: 5, first_name: 'Ticket', last_name: 'Only' };
+  p.orders.push(o);
+  LiveSync.applyPayload(p);
+}, payload(csv));
+await page.waitForTimeout(300);
+const westName = await page.evaluate(() => venueGroups().find(x => /Westbury/.test(x.venue)).venue);
+await page.evaluate(v => { location.hash = '#/venue/' + encodeURIComponent(v); App.route(); }, westName);
+await page.waitForTimeout(300);
+const sunChip = await page.evaluate(() => [...document.querySelectorAll('#main .chip')].map(x => x.textContent).find(x => /Sunday/.test(x)) || '');
+check('day total counts booked people only (2), not the ticket-only one', /\(2\)/.test(sunChip));
+const cs = await page.evaluate(d => {
+  Actions.printCustomerSheets(encodeURIComponent(venueGroups().find(x => /Westbury/.test(x.venue)).venue), d);
+  return new Promise(res => setTimeout(() => res(document.getElementById('csframe').srcdoc), 400));
+}, SUN);
+check('customer sheets: no sheet for the ticket-only customer', !String(cs).includes('Ticket Only'));
+check('customer sheets: no sheet says "No booking answers"', !String(cs).includes('No booking answers on file'));
+check('customer sheets: all three Appointly questions print', String(cs).includes('When is your Communion')
+  && String(cs).includes('Fiadh') && String(cs).includes('Scoil Fiadh') && String(cs).includes('May 2027'));
+await page.evaluate(() => UI.closeModal());
 
 check('no JS errors', errors.length === 0);
 if (errors.length) console.log(errors.slice(0, 5));
