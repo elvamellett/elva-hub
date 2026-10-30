@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 98)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 99)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7173 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7199 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 98</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 99</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -3170,7 +3170,7 @@ const ImportService = {
       // leftover column that isn't an obvious id/timestamp/money field.
       const withQ = H.filter(h => h.includes('?'));
       const qCols = withQ.length ? withQ
-        : H.filter(h => h && !known.has(h) && !/\bid\b|created|updated|duration|price|amount|currency|order|payment|end time|timezone/i.test(h));
+        : H.filter(h => h && !known.has(h) && !/\bid\b|created|updated|duration|price|amount|currency|order|payment|end time|timezone|^variant$/i.test(h));
       if (!qCols.length) warnings.push('Appointly file: no question columns found \u2014 booking answers may be missing.');
       const orderCol = col(H, 'order');
       const createdCol = col(H, 'createdat', 'created at', 'booked at', 'created');
@@ -3244,17 +3244,38 @@ const ImportService = {
     for (const a of b.appointments) {
       const stub = stubById.get(a.customerId);
       if (!stub) continue;
-      let real = (stub.email && byEmail.get(emKey(stub.email)))
-        || (ImportService._phoneKey(stub.phone) && byPhone.get(ImportService._phoneKey(stub.phone)))
+      // An email/phone match only counts when the NAMES agree too: a
+      // booking handed on to someone else keeps the original customer's
+      // email (Aine Lennehan's 9:00 given to Jerry Daly, booked on Aine's
+      // email) - that is a different person, not Aine.
+      const sameName = (x, y) => {
+        const toks = n => String(n || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)
+          .filter(w => w.length >= 3 && !/^(mrs|mr|ms|miss|dr)$/.test(w));
+        const A = toks(x), B = new Set(toks(y));
+        return !A.length || !B.size || A.some(w => B.has(w));
+      };
+      const viaContact = (stub.email && byEmail.get(emKey(stub.email)))
+        || (ImportService._phoneKey(stub.phone) && byPhone.get(ImportService._phoneKey(stub.phone))) || null;
+      const handedOn = !!(viaContact && !sameName(stub.name, viaContact.name));
+      let real = (viaContact && !handedOn ? viaContact : null)
         || (a._orderRef && custById.get(byOrderRef.get(a._orderRef))) || null;
+      if (!real && handedOn) {
+        // Reuse this person's own record from earlier rows/syncs if there is one.
+        real = DB.customers.find(c => !c.manual && emKey(c.email) === emKey(stub.email)
+          && String(c.name).trim().toLowerCase() === String(stub.name).trim().toLowerCase()) || null;
+      }
       // Bookings made without a Shopify order (added by staff, or no deposit
       // paid online) belong to customers Shopify has never seen \u2014 create them.
       if (!real) {
         real = { id: uid(), name: stub.name, daughterName: stub.daughterName || '', email: stub.email || '',
           phone: stub.phone || '', address: stub.address || '', notes: '', createdAt: nowIso() };
         DB.customers.push(real);
-        if (real.email) byEmail.set(emKey(real.email), real);
-        if (ImportService._phoneKey(real.phone)) byPhone.set(ImportService._phoneKey(real.phone), real);
+        // A handed-on booking shares the original customer's contact
+        // details - never let it take over her email/phone lookups.
+        if (!handedOn) {
+          if (real.email) byEmail.set(emKey(real.email), real);
+          if (ImportService._phoneKey(real.phone)) byPhone.set(ImportService._phoneKey(real.phone), real);
+        }
         created++;
       }
       if (stub.daughterName && !real.daughterName) real.daughterName = stub.daughterName;
@@ -4204,7 +4225,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 98'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 99'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -7018,6 +7039,7 @@ const Actions = {
       td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
       .t { font-weight: 800; font-size: 15px; white-space: nowrap; } .s { font-weight: 700; }
       .blank { color: #bbb; } @media print { body { padding: 0 } }
+      .note { margin-top: 6px; padding: 5px 8px; background: #fff4d6; border-left: 3px solid #d39b00; border-radius: 4px; font-size: 12.5px; }
     </style></head><body>
       <h1>Darcybow \u2014 staff run sheet</h1>
       <div class="m">${esc(venue)} \u00b7 <b>${esc(dayLabel)}</b> \u00b7 private appointments, up to ${cfg.slotCapacity} customers per slot</div>
@@ -7031,11 +7053,15 @@ const Actions = {
           : /occasion/i.test(q) ? 'Occasion' : '';
         const answers = r => {
           const all = ImportService._expandQas(r.qa ? r.qa.questions : []).filter(z => z.a);
+          const isNote = z => /^(notes?|booking notes?|internal notes?)$/i.test(String(z.q).trim());
           const trio = all.filter(z => label(z.q));
-          const qas = trio.length ? trio : all;
-          return qas.length ? qas.map((z, n) => '<div>' + (n + 1) + '. ' +
+          const qas = trio.length ? trio : all.filter(z => !isNote(z));
+          // Staff notes written in Appointly (who's coming, sensitivities)
+          // MUST reach the people on the floor - always printed, highlighted.
+          const notes = all.filter(isNote).map(z => '<div class="note">\u26a0 <b>Note:</b> ' + esc(z.a) + '</div>').join('');
+          return (qas.length ? qas.map((z, n) => '<div>' + (n + 1) + '. ' +
             (label(z.q) ? '<span class="m">' + label(z.q) + ':</span> ' : '') + '<b>' + esc(z.a) + '</b></div>').join('')
-            : '<span class="blank">\u2014</span>';
+            : '<span class="blank">\u2014</span>') + notes;
         };
         const head = '<thead><tr><th style="width:60px">Time</th><th style="width:26%">Customer</th><th style="width:20%">Dress / occasion</th><th>Booking answers</th></tr></thead>';
         return blockRows.map(b => `<h2>${b.label}</h2>
