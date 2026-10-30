@@ -11,12 +11,12 @@ const errors = [];
 page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(500);
-check('version stamp is 99', (await page.locator('#sidebar').textContent()).includes('version 99'));
+check('version stamp is 100', (await page.locator('#sidebar').textContent()).includes('version 100'));
 
 const day = (() => { const d = new Date(Date.now() + 10 * 86400000); return d; })();
 const ISO = day.toISOString().slice(0, 10);
 const MDY = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-const q = (kid) => '"Ques: What is your Daughter\'s Name?\nAns: ' + kid + '\nQues: When is your Communion? (If known)\nAns: May 2027"';
+const q = (kid) => '"Ques: What is your Daugther\'s Name?\nAns: ' + kid + '\nQues: When is your Communion? (If known)\nAns: May 2027"';
 const csv = [
   'Appointment Time,Service,Variant,Team Member,Order,Customer Name,Customer Email,Custom Questions,Notes,CreatedAt',
   `"${MDY} 9:00 AM",Darcy Day Out at The Test Hotel Event,Default Title,Staff 6,,Pat Newman,original@example.com,` + q('Rosa') +
@@ -46,6 +46,7 @@ let r = await look();
 check('handed-on slot prints under the NEW person (Pat Newman)', r.html.includes('Pat Newman'));
 check('...and not under the email owner (Ann Original)', !r.html.includes('Ann Original'));
 check('Appointly booking note prints on the run sheet', r.html.includes('please be discreet'));
+check('child name prints even with the "Daugther" typo question', r.html.includes('Rosa'));
 check('Variant "Default Title" is not printed as an answer', !r.html.includes('Default Title'));
 check('a "Mrs" prefix still matches the same customer', r.html.includes('Beth Booker') && r.booked === 2);
 await page.evaluate(() => UI.closeModal());
