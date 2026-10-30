@@ -285,7 +285,7 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 99)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 100)</span><br>' +
     (cut
       ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7199 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 99</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 100</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1676,7 +1676,7 @@ function venueGroups() {
 // child in the answers, which beats the single name on the customer record).
 function apptDaughter(a) {
   if (!a || !a.questions) return '';
-  const q = a.questions.find(x => /daughter'?s\s+name|child'?s\s+name/i.test(String(x.q)) && x.a);
+  const q = a.questions.find(x => /daug(?:h?ter|ther)['\u2019]?s\s+name|child'?s\s+name/i.test(String(x.q)) && x.a);
   return q ? String(q.a).trim() : '';
 }
 
@@ -3145,7 +3145,7 @@ const ImportService = {
             retailPriceCents: parseEuros(linePrice ? r[linePrice] : '') || 0 });
         }
         const qas2 = ImportService._expandQas(cls.qas);
-        const dq = qas2.find(qa => /daughter'?s\s+name/i.test(qa.q));
+        const dq = qas2.find(qa => /daug(?:h?ter|ther)['\u2019]?s\s+name/i.test(qa.q));
         if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
         if (cls.bDate || qas2.length) {
           const at = cls.bDate || normDate(createdAt.slice(0, 10)) || todayStr();
@@ -3183,7 +3183,7 @@ const ImportService = {
         const d = normDate(rawWhen);
         const qas = ImportService._absorbContactQas(cust,
           ImportService._expandQas(qCols.map(h => ({ q: h, a: r[h] || '' })).filter(qa => qa.a)));
-        const dq = qas.find(qa => /daughter'?s\s+name/i.test(qa.q));
+        const dq = qas.find(qa => /daug(?:h?ter|ther)['\u2019]?s\s+name/i.test(qa.q));
         if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
         const svcRaw = (service ? r[service] : '').replace(/\s*\(deleted\)\s*/ig, ' ').trim();
         const eventHotel = /\sat\s/i.test(svcRaw) ? ImportService._eventFromTitle(svcRaw) : '';
@@ -3768,7 +3768,7 @@ const LiveSync = {
       }
       // Apntly's first custom question asks for the daughter's name \u2014 use it.
       const qas2 = ImportService._absorbContactQas(cust, ImportService._expandQas(cls.qas));
-      const dq = qas2.find(qa => /daughter'?s\s+name/i.test(qa.q));
+      const dq = qas2.find(qa => /daug(?:h?ter|ther)['\u2019]?s\s+name/i.test(qa.q));
       if (dq && dq.a && !cust.daughterName) cust.daughterName = dq.a;
       if (cls.bDate || qas2.length) {
         const at = cls.bDate || ImportService._normDate(order.createdAt.slice(0, 10)) || todayStr();
@@ -4225,7 +4225,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 99'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 100'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -7047,7 +7047,7 @@ const Actions = {
       ${(() => {
         // Answers only, one per line, with a short label instead of the
         // full question wording.
-        const label = q => /daughter'?s\s+name|child'?s\s+name/i.test(q) ? "Child's name"
+        const label = q => /daug(?:h?ter|ther)['\u2019]?s\s+name|child'?s\s+name/i.test(q) ? "Child's name"
           : /school/i.test(q) ? 'School'
           : /communion/i.test(q) ? 'Communion date'
           : /occasion/i.test(q) ? 'Occasion' : '';
@@ -7156,7 +7156,7 @@ const Gate = {
     const before = (a.questions || []).length;
     a.questions = ImportService._expandQas(a.questions || []);
     if (a.questions.length !== before) migrated = true;
-    const dq = a.questions.find(qa => /daughter'?s\s+name/i.test(qa.q));
+    const dq = a.questions.find(qa => /daug(?:h?ter|ther)['\u2019]?s\s+name/i.test(qa.q));
     if (dq && dq.a) {
       const c = (DB.customers || []).find(x => x.id === a.customerId);
       if (c && !c.daughterName) { c.daughterName = dq.a; migrated = true; }
