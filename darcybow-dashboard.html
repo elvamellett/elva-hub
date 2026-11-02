@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 105)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 106)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7639 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7881 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 105</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 106</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1620,6 +1620,14 @@ function venueGroups() {
   const groups = new Map();
   const seen = new Set();
   const taken = new Map();
+  // Bookings handed on: the original customer no longer comes to that
+  // venue for it (the new holder shows instead).
+  const handedOut = new Set();
+  for (const t of DB.transfers || []) {
+    if (t.removed) continue;
+    const f = findCust(t.from, true);
+    if (f) handedOut.add(f.id + '|' + t.venue);
+  }
   const push = (venue, entry) => { if (!groups.has(venue)) groups.set(venue, []); groups.get(venue).push(entry); };
   for (const o of DB.orders) {
     if (!o.eventHotel || custCancelled(o.customerId)) continue;
@@ -1643,6 +1651,7 @@ function venueGroups() {
     // Moved venue in Appointly: her order still names THIS venue but her
     // only upcoming booking is somewhere else - she belongs there, not here
     // as a phantom "not booked" (Claire Finnegan / Sara Cosgrave -> Westbury).
+    if (!a && handedOut.has(k)) { seen.add(k); continue; }
     if (!a && !(o.eventDate && o.eventDate < todayStr())
       && DB.appointments.some(x => x.customerId === o.customerId && x.eventHotel && x.status !== 'cancelled'
         && x.appointmentAt >= todayStr() && venOf(x.eventHotel) !== venue)) { seen.add(k); continue; }
@@ -1885,6 +1894,80 @@ function applyManualBookings() {
 }
 // Little pencil button beside a row on the customer page.
 const editBtn = (custId, field, title) => `<button class="small" style="padding:1px 8px; margin-left:6px" title="${title || 'Edit'}" onclick="Actions.editField('${custId}','${field}')">\u270e</button>`;
+/* ---- Booking transfers ("handed on") ----
+   A customer buys her dress, then gives her appointment to someone else.
+   That can happen in Appointly (the name on the booking changes, the
+   original email or order number stays) or here on the dashboard
+   (\u21c4 Hand on). Every transfer is recorded once - who booked it, who
+   has it now, which slot - re-applied after every sync/import, shared
+   with every device, and shown on both customers' pages, the venue page
+   and the printed sheets. */
+const custKey = c => {
+  if (!c) return '';
+  const ph = ImportService._digits(c.phone);
+  return custEmail(c) || (ph ? 'p' + ph : 'id:' + c.id);
+};
+const nameKey = n => String(n || '').toLowerCase().replace(/^(mrs|mr|ms|miss|dr)\.?\s+/, '').replace(/[^a-z]/g, '');
+const venOfEh = eh => { const p = String(eh || '').split(/\s+\u2014\s+/); return (p[1] || p[0] || '').trim(); };
+// Find the person a transfer names. strict: the name must agree too (a
+// handed-on booking shares the original customer's email).
+function findCust(ref, strict) {
+  if (!ref) return null;
+  const byId = ref.id && DB.customers.find(c => c.id === ref.id);
+  if (byId) return byId;
+  const same = DB.customers.filter(c => ref.key && custKey(c) === ref.key);
+  return same.find(c => nameKey(c.name) === nameKey(ref.name))
+    || (!strict && same.length === 1 ? same[0] : null)
+    || (ref.name ? DB.customers.find(c => nameKey(c.name) === nameKey(ref.name) && (!ref.key || custKey(c) === ref.key)) : null) || null;
+}
+const custRef = c => ({ id: c.id, key: custKey(c), name: c.name });
+function noteTransfer(t) {
+  DB.transfers = DB.transfers || [];
+  const id = t.id || ('tr-' + [t.via, t.from.key, nameKey(t.from.name), t.date, nameKey(t.to.name)].join('|'));
+  const cur = DB.transfers.find(x => x.id === id);
+  if (cur) { if (!cur.removed) { cur.to = t.to; cur.from = t.from; cur.time = t.time; } return cur; }
+  const rec = Object.assign({ at: nowIso() }, t, { id });
+  DB.transfers.push(rec);
+  return rec;
+}
+function applyTransfers() {
+  for (const a of DB.appointments) delete a.transfer;
+  for (const t of DB.transfers || []) {
+    if (t.removed) continue;
+    const to = findCust(t.to, true);
+    if (!to) continue;
+    const from = findCust(t.from, true);
+    const slot = a => a.appointmentAt === t.date && venOfEh(a.eventHotel || a.service) === t.venue;
+    // Every copy of the booking (order stamp + export row) moves across -
+    // only the hand-on slot, so the original keeps any other booking.
+    if (t.via !== 'slot' && from && from.id !== to.id) {
+      for (const a of DB.appointments)
+        if (a.customerId === from.id && slot(a) && (!t.time || !a.time || a.time === t.time)) a.customerId = to.id;
+    }
+    for (const a of DB.appointments)
+      if (a.customerId === to.id && slot(a))
+        a.transfer = { id: t.id, fromName: t.from.name, fromId: from ? from.id : '', via: t.via, at: t.at };
+  }
+}
+// Transfers touching a customer: handed OUT by her, or taken over BY her.
+function transfersOf(c) {
+  const out = [], inn = [];
+  for (const t of DB.transfers || []) {
+    if (t.removed) continue;
+    const to = findCust(t.to, true), from = findCust(t.from, true);
+    if (from && from.id === c.id && (!to || to.id !== c.id)) out.push({ t, other: to });
+    else if (to && to.id === c.id) inn.push({ t, other: from });
+  }
+  return { out, inn };
+}
+const transferVia = t => t.via === 'dashboard' ? 'changed on the dashboard' : t.via === 'slot' ? 'looks like it was handed on in Appointly (same slot, new name)' : 'changed in Appointly';
+const transferSlot = t => (t.venue ? t.venue + ' \u00b7 ' : '') + fmtWd(t.date) + (t.time ? ' \u00b7 ' + t.time : '');
+// Is this customer (on this day) holding someone else's booking? For the sheets.
+function transferInto(c, day) {
+  const { inn } = transfersOf(c);
+  const hit = inn.filter(x => !day || x.t.date === day).sort((a, b) => String(b.t.at).localeCompare(String(a.t.at)))[0];
+  return hit ? hit.t : null;
+}
 // The dashboard runs one season at a time \u2014 Sept 2026 to May 2027.
 // Events from before the season are hidden everywhere, and so are
 // customers, appointments, schools and bookings whose only activity is
@@ -1931,7 +2014,7 @@ function apptSnapshot() {
     const key = custEmail(c) || ('p' + ImportService._digits(c.phone));
     if (!key || key === 'p') continue;
     if (!map.has(key)) map.set(key, []);
-    map.get(key).push({ v: venOf(a.eventHotel), d: a.appointmentAt, t: a.time || '' });
+    map.get(key).push({ v: venOf(a.eventHotel), d: a.appointmentAt, t: a.time || '', s: a.staffName || '' });
   }
   return map;
 }
@@ -1940,7 +2023,7 @@ function recordApptChanges(prev) {
   const now = apptSnapshot();
   DB.apptChanges = DB.apptChanges || {};
   const label = x => (x.v ? x.v + ' \u00b7 ' : '') + fmtWd(x.d) + (x.t ? ' \u00b7 ' + x.t : '');
-  let changed = false;
+  let changed = false, slotTransfers = false;
   for (const [key, oldList] of prev) {
     const newLeft = (now.get(key) || []).slice();
     const oldLeft = [];
@@ -1958,12 +2041,33 @@ function recordApptChanges(prev) {
       const to = i < newLeft.length ? label(newLeft[i]) : '';
       // A past slot that simply happened is not a cancellation.
       if (!to && oldLeft[i].d < todayStr()) continue;
+      if (!to) {
+        const o = oldLeft[i];
+        // Handed on (recorded already) - shown as a transfer, not a cancellation.
+        if ((DB.transfers || []).some(t => !t.removed && t.from.key === key && t.date === o.d && t.venue === o.v)) continue;
+        // Same slot, same staff member, now under a NEW name and contact:
+        // the booking was handed on in Appointly.
+        let taker = '';
+        if (o.t) for (const [k2, l2] of now) {
+          if (k2 === key || !l2.some(n => n.v === o.v && n.d === o.d && n.t === o.t && (!o.s || !n.s || n.s === o.s))) continue;
+          if ((prev.get(k2) || []).some(n => n.v === o.v && n.d === o.d && n.t === o.t)) continue;
+          taker = k2; break;
+        }
+        const fc = taker && DB.customers.find(c => custKey(c) === key);
+        const tc = taker && DB.customers.find(c => custKey(c) === taker);
+        if (fc && tc) {
+          noteTransfer({ via: 'slot', from: custRef(fc), to: custRef(tc), date: o.d, time: o.t, venue: o.v });
+          slotTransfers = true; changed = true;
+          continue;
+        }
+      }
       if (sigs.has(from + '|' + to)) continue;
       list.push({ at: nowIso(), from, to, gone: !to });
       changed = true;
     }
     if (list.length > 8) DB.apptChanges[key] = list.slice(-8);
   }
+  if (slotTransfers) applyTransfers();
   if (changed) { Store.save(); if (typeof Staff !== 'undefined') Staff.maybePush(); }
 }
 function custCancelled(customerId) {
@@ -2396,7 +2500,7 @@ Pages.venueDetail = (venueName) => {
     <div class="vrow" onclick="App.go('#/customer/${r.c.id}')">
       <div class="vtime">${timeHtml}</div>
       <div style="flex:1; min-width:0">
-        <span class="cname">${esc(r.c.name)}</span>${kid ? ` <span class="small muted">for ${esc(kid)}</span>` : ''}
+        <span class="cname">${esc(r.c.name)}</span>${kid ? ` <span class="small muted">for ${esc(kid)}</span>` : ''}${appt && appt.transfer ? ` <span class="badge b-amber" title="Originally booked by ${esc(appt.transfer.fromName)}">\u21c4 was ${esc(appt.transfer.fromName)}\u2019s booking</span>` : ''}
         <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' \u00b7 event ' + fmtWd(r.o.eventDate) : ''}${r.school ? ' \u00b7 \ud83c\udfeb ' + esc(r.school) : ''}</span>
       </div>
       <div>${inv
@@ -2543,6 +2647,20 @@ Pages.venueDetail = (venueName) => {
     <p><a class="plain" href="#/venues">\u2190 Venues</a></p>
     <h1 style="margin-bottom:2px">\ud83d\udccd ${esc(v.venue)}</h1>
     <p class="sub">${v.nextDate ? 'Next event <b>' + fmtWd(v.nextDate) + '</b> \u00b7 ' : ''}${v.orders.length} customer${v.orders.length === 1 ? '' : 's'} \u00b7 <b>${boughtCust.size} of ${allCust.size} bought</b> \u00b7 slot times from Appointly.</p>
+    ${(() => {
+      const ts = (DB.transfers || []).filter(t => !t.removed && t.venue === v.venue)
+        .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+      if (!ts.length) return '';
+      const lk = (x, ref) => x ? `<a class="plain" href="#/customer/${x.id}" style="font-weight:700">${esc(x.name)}</a>` : esc(ref.name);
+      return `<details class="card" style="margin-bottom:12px; border-left:5px solid #c77700"${ts.some(t => t.date >= todayStr()) ? ' open' : ''}>
+        <summary style="cursor:pointer"><b>\u21c4 Handed-on bookings (${ts.length})</b> <span class="small muted">\u2014 who booked it, and who has it now</span></summary>
+        <div class="tablewrap" style="margin-top:8px"><table>
+          <thead><tr><th>Slot</th><th>Was (booked by)</th><th></th><th>Now (coming in)</th><th>How</th></tr></thead>
+          <tbody>${ts.map(t => `<tr><td>${fmtWd(t.date)}${t.time ? ' \u00b7 <b>' + esc(t.time) + '</b>' : ''}</td>
+            <td>${lk(findCust(t.from, true), t.from)}</td><td>\u2192</td><td>${lk(findCust(t.to, true), t.to)}</td>
+            <td class="small muted">${esc(transferVia(t))}</td></tr>`).join('')}</tbody>
+        </table></div></details>`;
+    })()}
     <input id="pagesearch" class="searchbar" style="max-width:420px; margin-bottom:10px" placeholder="Search a customer at this venue\u2026 name, daughter, school, email or phone"
       value="${esc(venueCustQuery)}" oninput="venueCustQuery = this.value; App.route()">
     <div class="chips">
@@ -2868,6 +2986,18 @@ Pages.customerDetail = (id) => {
           <span class="small muted">\u00b7 noticed ${fmtDate(String(ch.at).slice(0, 10))}</span>
           <a class="plain" style="float:right; cursor:pointer" title="Dismiss this note" onclick="Actions.dismissApptChange('${encodeURIComponent(key)}','${encodeURIComponent(ch.from + '|' + ch.to)}')">\u2715</a></div>`).join('');
     })()}
+    ${(() => {
+      const { out, inn } = transfersOf(c);
+      const who = (x, ref) => x ? `<a class="plain" href="#/customer/${x.id}" style="font-weight:700">${esc(x.name)} \u2192</a>` : '<b>' + esc(ref.name) + '</b>';
+      const undo = t => `<a class="plain" style="float:right; cursor:pointer" onclick="Actions.undoTransfer('${encodeURIComponent(t.id)}')">${t.via === 'dashboard' ? '\u21a9 Undo' : '\u2715 Not a hand-on'}</a>`;
+      const box = 'border-left:5px solid #c77700; background:#fff7e8; color:#3d2a00';
+      return out.map(({ t, other }) => `<div class="note" style="${box}">\u21c4 <b>BOOKING HANDED ON</b>${undo(t)}<br>
+          <span class="badge b-grey">WAS</span> <b>${esc(c.name)}</b> &nbsp;\u2192&nbsp; <span class="badge b-amber">NOW</span> ${who(other, t.to)}
+          <br>\ud83d\udccd ${esc(transferSlot(t))} <span class="small muted">\u00b7 ${esc(transferVia(t))} \u00b7 ${fmtDate(String(t.at).slice(0, 10))}. ${esc(c.name)} keeps her order and invoice.</span></div>`).join('')
+        + inn.map(({ t, other }) => `<div class="note" style="${box}">\u21c4 <b>TAKEN-OVER BOOKING</b>${undo(t)}<br>
+          <span class="badge b-grey">WAS</span> ${who(other, t.from)} &nbsp;\u2192&nbsp; <span class="badge b-amber">NOW</span> <b>${esc(c.name)}</b>
+          <br>\ud83d\udccd ${esc(transferSlot(t))} <span class="small muted">\u00b7 originally booked by ${esc(t.from.name)} \u00b7 ${esc(transferVia(t))} \u00b7 ${fmtDate(String(t.at).slice(0, 10))}</span></div>`).join('');
+    })()}
     <div class="toolbar">
       <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">\ud83d\udda8 Print this customer's sheet (details + booking answers)</button>
       <button onclick="Invoices.open('${c.id}')">\ud83e\uddfe ${Invoices.invFor(c.id) ? 'Show invoice' : 'Create invoice'}</button>
@@ -2934,9 +3064,11 @@ Pages.customerDetail = (id) => {
           <div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
             <div class="flex" style="margin-bottom:10px">
               <b>${esc(a.service)}</b>
+              ${a.transfer ? `<span class="badge b-amber" title="Originally booked by ${esc(a.transfer.fromName)}">\u21c4 was ${esc(a.transfer.fromName)}\u2019s</span>` : ''}
               <span class="badge ${a.status === 'upcoming' ? 'b-blue' : 'b-grey'}">${a.status === 'upcoming' ? 'Upcoming' : 'Completed'}</span>
               <span class="small muted">${fmtDate(a.appointmentAt)}${a.time ? ' \u00b7 <b>' + esc(a.time) + '</b>' : ''}${a.source === 'appointly' ? ' \u00b7 booked online' : ' \u00b7 logged by staff'}</span>
               ${a.status === 'upcoming' ? `<button class="small" onclick="Actions.changeApptTime('${a.id}')">\u270e Change time</button>` : ''}
+              ${a.eventHotel ? `<button class="small" title="She gave this appointment to someone else" onclick="Actions.transferBooking('${a.id}')">\u21c4 Hand on</button>` : ''}
             </div>
             ${a.staffName ? `<div class="small" style="margin-bottom:8px">Looked after by <b>${esc(a.staffName)}</b></div>` : ''}
             ${a.source === 'walkin' ? '<div class="small muted" style="margin-bottom:8px">\ud83d\udccd Booked in by staff (walk-in / phone)</div>' : ''}
@@ -3449,6 +3581,7 @@ const ImportService = {
     }
     let added = 0, created = 0;
     const resolved = [];
+    const handedIds = new Set(); // people holding someone else's booking
     const daughters = new Map();
     const custById = new Map(DB.customers.map(c => [c.id, c]));
     const byOrderRef = new Map(DB.orders.map(o => [String(o.reference || '').trim(), o.customerId]));
@@ -3468,9 +3601,14 @@ const ImportService = {
       const viaContact = (stub.email && byEmail.get(emKey(stub.email)))
         || (ImportService._phoneKey(stub.phone) && byPhone.get(ImportService._phoneKey(stub.phone))) || null;
       const handedOn = !!(viaContact && !sameName(stub.name, viaContact.name));
-      let real = (viaContact && !handedOn ? viaContact : null)
-        || (a._orderRef && custById.get(byOrderRef.get(a._orderRef))) || null;
-      if (!real && handedOn) {
+      const ordOwner = a._orderRef ? (custById.get(byOrderRef.get(String(a._orderRef).trim())) || null) : null;
+      // The booking still carries the ORIGINAL customer's order number but
+      // a different person's name and contact: handed on too.
+      const refHanded = !!(ordOwner && !sameName(stub.name, ordOwner.name)
+        && (!viaContact || (viaContact.id !== ordOwner.id && !handedOn)));
+      const original = handedOn ? viaContact : refHanded ? ordOwner : null;
+      let real = (viaContact && !handedOn ? viaContact : null) || (!refHanded ? ordOwner : null) || null;
+      if (!real && original) {
         // Reuse this person's own record from earlier rows/syncs if there is one.
         real = DB.customers.find(c => !c.manual && emKey(c.email) === emKey(stub.email)
           && String(c.name).trim().toLowerCase() === String(stub.name).trim().toLowerCase()) || null;
@@ -3497,7 +3635,7 @@ const ImportService = {
       // second email). Fold the order's record into this one \u2014 orders,
       // invoices and the newest delivery address all move across.
       const refOwner = a._orderRef ? custById.get(byOrderRef.get(String(a._orderRef).trim())) : null;
-      if (refOwner && refOwner.id !== real.id) {
+      if (refOwner && refOwner.id !== real.id && !original) {
         const normA2 = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         for (const o of DB.orders) if (o.customerId === refOwner.id) o.customerId = real.id;
         for (const ap of DB.appointments) if (ap.customerId === refOwner.id) ap.customerId = real.id;
@@ -3515,6 +3653,11 @@ const ImportService = {
       }
       a.customerId = real.id; a.source = 'appointly_csv';
       resolved.push(a);
+      if (original && original.id !== real.id) {
+        handedIds.add(real.id);
+        noteTransfer({ via: 'appointly', from: custRef(original), to: custRef(real),
+          date: a.appointmentAt, time: a.time || '', venue: venOfEh(a.eventHotel || a.service) });
+      }
       const dn = apptDaughter(a);
       if (dn) {
         if (!daughters.has(real.id)) daughters.set(real.id, []);
@@ -3555,7 +3698,9 @@ const ImportService = {
       const pointed = new Set(resolved.map(a => a.customerId));
       const remap = new Map();
       for (const c of DB.customers.slice()) {
-        if (hasOrder.has(c.id) || c.manual || !pointed.has(c.id)) continue;
+        // A handed-on booking keeps the original's phone - never fold the
+        // new person back into her.
+        if (hasOrder.has(c.id) || c.manual || !pointed.has(c.id) || handedIds.has(c.id)) continue;
         const pk = ImportService._phoneKey(c.phone);
         const target = (pk && byPk.get(pk))
           || (c.daughterName && byNameKid.get(nk(c.name) + '|' + nk(c.daughterName))) || null;
@@ -3621,6 +3766,7 @@ const ImportService = {
     applyCustEdits();
     applyTimeEdits();
     applyManualBookings();
+    applyTransfers();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
@@ -4042,6 +4188,14 @@ const LiveSync = {
         || (ImportService._phoneKey(oc0.phone) && byPhone.get(ImportService._phoneKey(oc0.phone))))) || null;
       const dup = custByIdNew.get(refToCust.get(String(a._orderRef).trim()));
       if (!nc0 || !dup || dup.id === nc0.id) continue;
+      // Only the SAME human (names agree): a booking handed on to someone
+      // else still carries the original's order number - never merge the
+      // original customer into the person who took her booking.
+      if (a.transfer) continue;
+      const toks = n => String(n || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)
+        .filter(w => w.length >= 3 && !/^(mrs|mr|ms|miss|dr)$/.test(w));
+      const tA = toks(nc0.name), tB = new Set(toks(dup.name));
+      if (tA.length && tB.size && !tA.some(w => tB.has(w))) continue;
       for (const o of orders) if (o.customerId === dup.id) o.customerId = nc0.id;
       for (const ap of appointments) if (ap.customerId === dup.id) ap.customerId = nc0.id;
       if (dup.address && normAddr(dup.address) !== normAddr(nc0.address)) {
@@ -4173,6 +4327,7 @@ const LiveSync = {
     applyCustEdits();
     applyTimeEdits();
     applyManualBookings();
+    applyTransfers();
     // The website's product catalogue (fetched server-side from the public
     // storefront) \u2014 powers the dress/colour/size dropdowns on invoices.
     if (Array.isArray(p.products) && p.products.length) DB.catalogue = LiveSync._mapCatalogue(p.products);
@@ -4445,7 +4600,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 105'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 106'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5374,7 +5529,7 @@ const Staff = {
     return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
       custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [],
       checklist: DB.prodChecklist || [], apptChanges: DB.apptChanges || {},
-      manualCusts: DB.manualCusts || [], exportInfo: DB.exportInfo || null, manualBookings: DB.manualBookings || [] });
+      manualCusts: DB.manualCusts || [], exportInfo: DB.exportInfo || null, manualBookings: DB.manualBookings || [], transfers: DB.transfers || [] });
   },
   maybePush() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
@@ -5434,6 +5589,13 @@ const Staff = {
       if (!r || String(m.at || '') > String(r.at || '')) bById.set(m.id, m);
     }
     if (bById.size) { DB.manualBookings = [...bById.values()]; applyManualBookings(); }
+    // Handed-on bookings: union by id, newest change wins (undo = tombstone).
+    const tById = new Map((sj.transfers || []).map(t => [t.id, t]));
+    for (const t of DB.transfers || []) {
+      const r = tById.get(t.id);
+      if (!r || String(t.at || '') > String(r.at || '')) tById.set(t.id, t);
+    }
+    if (tById.size) { DB.transfers = [...tById.values()]; applyTransfers(); }
     // Booking-change notes: union per customer, a dismissal anywhere sticks.
     const acR = sj.apptChanges || {};
     DB.apptChanges = DB.apptChanges || {};
@@ -6873,6 +7035,7 @@ const Actions = {
           <div class="staffbox"><div class="m">Staff member</div>
             <div class="s">${esc(r.staffName || '')}</div></div>
         </div>
+        ${(() => { const t = transferInto(r.c); return t ? `<div style="border:2px solid #c77700; color:#6b4000; border-radius:8px; padding:5px 10px; margin:6px 0; font-weight:700">\u21c4 HANDED-ON BOOKING \u2014 originally booked by ${esc(t.from.name)} (${esc(transferSlot(t))}). Now: ${esc(r.c.name)}.</div>` : ''; })()}
         <div class="cust"${r.clash ? ' style="color:#b3261e"' : ''}>${esc(r.c.name)}${(r.kid || r.c.daughterName) ? ' <span class="m" style="font-weight:400">\u2014 for ' + esc(r.kid || r.c.daughterName) + '</span>' : ''}</div>
         ${r.clash ? `<div style="border:2.5px solid #b3261e; color:#b3261e; border-radius:8px; padding:6px 10px; margin:6px 0; font-weight:700">\u26a0 DRESS CLASH${r.clash.overridden ? ' \u2014 OVERRIDDEN: \u201c' + esc(r.clash.reason) + '\u201d' : ''} \u2014 ${esc(r.clash.text)}</div>` : ''}
         ${r.taken && r.taken.length ? `<div style="border:2.5px solid #b3261e; background:#fdecec; color:#b3261e; border-radius:8px; padding:6px 10px; margin:6px 0; font-weight:800">\ud83d\udeab CANNOT TRY ON \u2014 already taken for her school: ${r.taken.map(t => esc(dressBaseName(t.dress).replace(/ Communion Dress$/i, '')) + ' (' + esc(t.who) + (t.year ? ' \u00b7 ' + esc(t.year) : '') + ')').join(' \u00b7 ')}</div>` : ''}
@@ -7129,6 +7292,85 @@ const Actions = {
     if (!m || !confirm('Remove this hand-made booking?')) return;
     m.removed = true; m.at = nowIso();
     applyManualBookings();
+    Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush();
+    App.route();
+  },
+  /* \u21c4 Hand a booking on to someone else (she keeps her dress order). */
+  transferBooking(apptId) {
+    const a = DB.appointments.find(x => x.id === apptId);
+    const c = a && Domain.customer(a.customerId);
+    if (!a || !c) return;
+    Actions._trAppt = { id: a.id, custId: c.id, date: a.appointmentAt, time: a.time || '', venue: venOfEh(a.eventHotel || a.service) };
+    const opts = DB.customers.filter(x => x.id !== c.id).slice().sort((p, q) => String(p.name).localeCompare(String(q.name)))
+      .map(x => `<option value="${esc(x.name + ' \u00b7 ' + (x.email || x.phone || 'no contact'))}">`).join('');
+    UI.modal(`
+      <h3>\u21c4 Hand on ${esc(c.name)}'s booking</h3>
+      <div class="note info" style="margin-top:0"><b>${esc(transferSlot(Actions._trAppt))}</b><br>
+        <span class="small">${esc(c.name)} keeps her order and invoice. Only the appointment moves to the new person, and both pages will show who it came from.</span></div>
+      <label class="f">Who has the appointment now?</label>
+      <input id="tr-who" list="tr-custs" style="width:100%" placeholder="Start typing a name\u2026 or type a new person's name" oninput="Actions._trCheck()">
+      <datalist id="tr-custs">${opts}</datalist>
+      <div id="tr-new" class="formgrid" style="margin-top:8px">
+        <div><label class="f">Child's name</label><input id="tr-kid"></div>
+        <div><label class="f">Phone</label><input id="tr-phone" type="tel"></div>
+        <div><label class="f">Email</label><input id="tr-email" type="email"></div>
+      </div>
+      <p id="tr-hint" class="small muted" style="margin-bottom:0">Not on the dashboard yet? Just type her name \u2014 she\u2019ll be added as a new customer.</p>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions._saveTransfer()">\u21c4 Hand on</button></div>`);
+    setTimeout(() => { const el = document.getElementById('tr-who'); if (el) el.focus(); }, 50);
+  },
+  _trPick() {
+    const v = String((document.getElementById('tr-who') || { value: '' }).value || '').trim();
+    const c0 = Actions._trAppt && Actions._trAppt.custId;
+    return DB.customers.find(x => x.id !== c0 && (x.name + ' \u00b7 ' + (x.email || x.phone || 'no contact')) === v) || null;
+  },
+  _trCheck() {
+    const hit = Actions._trPick();
+    const nw = document.getElementById('tr-new'), hint = document.getElementById('tr-hint');
+    if (nw) nw.style.display = hit ? 'none' : '';
+    if (hint) hint.textContent = hit ? 'Existing customer \u2014 the booking moves onto her record.' : 'Not on the dashboard yet? Just type her name \u2014 she\u2019ll be added as a new customer.';
+  },
+  _saveTransfer() {
+    const s0 = Actions._trAppt;
+    const from = s0 && Domain.customer(s0.custId);
+    if (!from) return;
+    let to = Actions._trPick();
+    const v = id => String((document.getElementById(id) || { value: '' }).value || '').trim();
+    if (!to) {
+      const name = v('tr-who');
+      if (!name) { UI.err(new Error('Type the name of the person who has the booking now.')); return; }
+      to = { id: 'm' + uid(), manual: true, name, daughterName: v('tr-kid'), phone: v('tr-phone'), email: v('tr-email').toLowerCase(),
+        address: '', notes: '', createdAt: nowIso() };
+      DB.customers.push(to);
+      DB.manualCusts = DB.manualCusts || [];
+      DB.manualCusts.push(to);
+    }
+    noteTransfer({ id: 'tr-' + uid(), via: 'dashboard', from: custRef(from), to: custRef(to),
+      date: s0.date, time: s0.time, venue: s0.venue, at: nowIso() });
+    applyTransfers();
+    Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush();
+    UI.closeModal();
+    App.go('#/customer/' + to.id);
+    UI.toast('\u21c4 ' + from.name + '\u2019s booking is now ' + to.name + '\u2019s.', 4000);
+  },
+  undoTransfer(idEnc) {
+    const id = decodeURIComponent(idEnc);
+    const t = (DB.transfers || []).find(x => x.id === id);
+    if (!t) return;
+    const msg = t.via === 'dashboard' ? 'Give this booking back to ' + t.from.name + '?'
+      : 'Stop marking this as a handed-on booking? (Appointly decides who holds it \u2014 this only removes the label.)';
+    if (!confirm(msg)) return;
+    if (t.via === 'dashboard') {
+      const from = findCust(t.from, true), to = findCust(t.to, true);
+      if (from && to) for (const a of DB.appointments)
+        if (a.customerId === to.id && a.appointmentAt === t.date && venOfEh(a.eventHotel || a.service) === t.venue
+          && (!t.time || !a.time || a.time === t.time)) a.customerId = from.id;
+    }
+    t.removed = true; t.at = nowIso();
+    applyTransfers();
     Store.save();
     if (typeof Staff !== 'undefined') Staff.maybePush();
     App.route();
@@ -7507,13 +7749,13 @@ const Actions = {
         <table>${head}
         <tbody>${b.rows.map(r => `<tr${r.clash ? ' style="background:#fdecec; color:#b3261e"' : ''}>
           <td class="t">${esc(r.a.time)}${r.clash ? '<div style="font-size:10px; font-weight:800">\u26a0 CLASH' + (r.clash.overridden ? ' (o/r)' : '') + '</div>' : ''}</td>
-          <td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
+          <td class="s">${esc(r.c.name)}${r.a && r.a.transfer ? '<div style="font-size:11px; font-weight:700; color:#8a5300">\u21c4 was ' + esc(r.a.transfer.fromName) + '\u2019s booking</div>' : ''}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
           <td>${r.dress ? esc(r.dress.title) + '<br><span class="m">' + esc(r.dress.colour) + ' \u00b7 ' + esc(r.dress.size) + '</span><br>' : ''}<span class="m">${esc(r.occasion)}</span>${r.taken && r.taken.length ? '<div style="color:#b3261e; font-weight:800; font-size:11px">\ud83d\udeab TAKEN FOR SCHOOL: ' + r.taken.map(t => esc(dressBaseName(t.dress).replace(/ Communion Dress$/i, ''))).join(', ') + '</div>' : ''}</td>
           <td>${answers(r)}</td>
         </tr>`).join('')}</tbody></table>`).join('') +
         (unslotted.length ? `<h2>No slot time yet</h2><table>${head}
         <tbody>${unslotted.map(r => `<tr${r.clash ? ' style="background:#fdecec; color:#b3261e"' : ''}>
-          <td class="t blank">____</td><td class="s">${esc(r.c.name)}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
+          <td class="t blank">____</td><td class="s">${esc(r.c.name)}${r.a && r.a.transfer ? '<div style="font-size:11px; font-weight:700; color:#8a5300">\u21c4 was ' + esc(r.a.transfer.fromName) + '\u2019s booking</div>' : ''}<br><span class="m" style="font-weight:400">${esc(r.c.phone)}</span></td>
           <td>${r.dress ? esc(r.dress.title) : '\u2014'}${r.taken && r.taken.length ? '<div style="color:#b3261e; font-weight:800; font-size:11px">\ud83d\udeab TAKEN FOR SCHOOL: ' + r.taken.map(t => esc(dressBaseName(t.dress).replace(/ Communion Dress$/i, ''))).join(', ') + '</div>' : ''}</td>
           <td>${answers(r)}</td>
         </tr>`).join('')}</tbody></table>` : '');

@@ -11,7 +11,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(500);
-check('version stamp is 105', (await page.locator('#sidebar').textContent()).includes('version 105'));
+check('version stamp is 106', (await page.locator('#sidebar').textContent()).includes('version 106'));
 
 const day = (() => { const d = new Date(Date.now() + 10 * 86400000); return d; })();
 const ISO = day.toISOString().slice(0, 10);
@@ -44,7 +44,7 @@ await page.evaluate(p => LiveSync.applyPayload(p), shop);
 await page.waitForTimeout(300);
 let r = await look();
 check('handed-on slot prints under the NEW person (Pat Newman)', r.html.includes('Pat Newman'));
-check('...and not under the email owner (Ann Original)', !r.html.includes('Ann Original'));
+check('...and not under the email owner (Ann Original) - she appears only as "was Ann Original\'s booking"', !/<td class="s">Ann Original/.test(r.html) && r.html.includes('was Ann Original'));
 check('Appointly booking note prints on the run sheet', r.html.includes('please be discreet'));
 check('child name prints even with the "Daugther" typo question', r.html.includes('Rosa'));
 check('Variant "Default Title" is not printed as an answer', !r.html.includes('Default Title'));
@@ -53,7 +53,7 @@ await page.evaluate(() => UI.closeModal());
 await page.evaluate(p => LiveSync.applyPayload(p), shop); // every device replays on each sync
 await page.waitForTimeout(300);
 r = await look();
-check('stays right after another sync', r.html.includes('Pat Newman') && !r.html.includes('Ann Original') && r.booked === 2);
+check('stays right after another sync', r.html.includes('Pat Newman') && !/<td class="s">Ann Original/.test(r.html) && r.booked === 2);
 check('no JS errors', errors.length === 0);
 if (errors.length) console.log(errors.slice(0, 5));
 await browser.close();

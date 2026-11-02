@@ -20,7 +20,7 @@ page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
 
-check('version stamp is 105', (await page.locator('#sidebar').textContent()).includes('version 105'));
+check('version stamp is 106', (await page.locator('#sidebar').textContent()).includes('version 106'));
 
 // Upcoming weekend, a fortnight out.
 const sat = (() => { const d = new Date(Date.now() + 14 * 86400000); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7)); return d; })();
