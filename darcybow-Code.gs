@@ -40,7 +40,7 @@
  */
 var HTTP_FNS_ = ['checkSitePassword', 'syncShopify', 'saveStaff', 'saveNotes', 'saveInvoices',
   'saveSchools', 'saveBookingsCsv', 'fetchCustomerEmails', 'emailHealth', 'testEmailSetup',
-  'sendInvoiceEmail', 'exportProductionXlsx', 'savePhoto', 'getPhoto', 'deletePhoto'];
+  'sendInvoiceEmail', 'exportProductionXlsx', 'savePhoto', 'getPhoto', 'deletePhoto', 'updateShopifyCustomer'];
 function doPost(e) {
   var out;
   try {
@@ -541,6 +541,62 @@ function sendInvoiceEmail(siteTok, payload) {
     }
     GmailApp.sendEmail(to, p.subject, p.textBody || '', opts);
     return JSON.stringify({ ok: true, sentTo: to, warning: warning });
+  } catch (e) {
+    return JSON.stringify({ error: String((e && e.message) || e) });
+  }
+}
+
+/**
+ * Writes a customer's corrected details back to Shopify (name, email,
+ * phone, note). Needs the app permission write_customers. The dashboard
+ * keeps the change locally whatever happens here.
+ */
+function shopifyPhone_(p) {
+  var raw = String(p || '').trim();
+  if (!raw) return null; // clears the phone
+  if (raw.charAt(0) === '+') return '+' + raw.replace(/\D/g, '');
+  var d = raw.replace(/\D/g, '');
+  if (d.indexOf('00') === 0) return '+' + d.slice(2);
+  if (d.charAt(0) === '0') return '+353' + d.slice(1); // Irish local -> international
+  return '+' + d;
+}
+function updateShopifyCustomer(siteTok, payload) {
+  gate_(siteTok);
+  try {
+    var p = JSON.parse(payload);
+    var id = String(p.id || '').replace(/^sc/, '');
+    if (!/^\d+$/.test(id)) {
+      return JSON.stringify({ error: 'this customer only exists in Appointly, not on Shopify - nothing to update there.' });
+    }
+    var props = PropertiesService.getScriptProperties();
+    var store = (props.getProperty('SHOPIFY_STORE') || '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    var c = { id: Number(id) };
+    if ('first_name' in p) c.first_name = String(p.first_name || '');
+    if ('last_name' in p) c.last_name = String(p.last_name || '');
+    if ('email' in p) c.email = String(p.email || '').trim();
+    if ('phone' in p) c.phone = shopifyPhone_(p.phone);
+    if ('note' in p) c.note = String(p.note || '');
+    var put = function (tok) {
+      return UrlFetchApp.fetch('https://' + store + '/admin/api/2024-10/customers/' + id + '.json', {
+        method: 'put', contentType: 'application/json', payload: JSON.stringify({ customer: c }),
+        headers: { 'X-Shopify-Access-Token': tok }, muteHttpExceptions: true });
+    };
+    var resp = put(getAccessToken_(store));
+    var code = resp.getResponseCode();
+    if ((code === 401 || code === 403) && !(props.getProperty('SHOPIFY_TOKEN') || '').trim()) {
+      resp = put(getAccessToken_(store, true)); // permission may have just been granted
+      code = resp.getResponseCode();
+    }
+    if (code === 200) return JSON.stringify({ ok: true });
+    if (code === 401 || code === 403) {
+      return JSON.stringify({ error: 'the dashboard app is not allowed to edit customers yet - add write_customers to its access scopes in the Shopify Dev Dashboard, release, and approve it on the store.' });
+    }
+    var msg = '';
+    try {
+      var errs = JSON.parse(resp.getContentText()).errors || {};
+      msg = typeof errs === 'string' ? errs : Object.keys(errs).map(function (k) { return k + ' ' + [].concat(errs[k]).join(', '); }).join('; ');
+    } catch (e2) { msg = resp.getContentText().slice(0, 200); }
+    return JSON.stringify({ error: msg || ('Shopify replied ' + code) });
   } catch (e) {
     return JSON.stringify({ error: String((e && e.message) || e) });
   }
