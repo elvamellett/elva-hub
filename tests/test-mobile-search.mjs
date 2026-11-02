@@ -12,7 +12,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
-check('version stamp is 107', (await page.content()).includes('version 107'));
+check('version stamp is 108', (await page.content()).includes('version 108'));
 
 const shop = {
   customers: [
@@ -75,6 +75,23 @@ await page.tap('#custresults tr.click');
 await page.waitForTimeout(300);
 check('tapping a result opens her page', await page.evaluate(() => location.hash === '#/customer/sc3'));
 
+// Sizing: the search box gets its own full row at every width - never
+// squeezed or covered by the event / dress dropdowns.
+await page.evaluate(() => { location.hash = '#/customers'; });
+await page.waitForTimeout(300);
+for (const w of [320, 375, 390, 430, 768, 834, 1024, 1366]) {
+  await page.setViewportSize({ width: w, height: 800 });
+  await page.waitForTimeout(150);
+  const g = await page.evaluate(() => {
+    const r = el => el.getBoundingClientRect();
+    const s = r(document.getElementById('pagesearch')), e = r(document.getElementById('ev-filter')), d = r(document.getElementById('dress-filter'));
+    const row = r(document.querySelector('.custsearch'));
+    const overlap = (a, b) => !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+    return { sw: s.width, rowW: row.width, below: e.top >= s.bottom - 1 && d.top >= s.bottom - 1, overlap: overlap(s, e) || overlap(s, d) };
+  });
+  check(`width ${w}: search box is full-width (${Math.round(g.sw)}px) with the dropdowns underneath, not over it`,
+    !g.overlap && g.below && g.sw >= Math.min(g.rowW, 640) - 2);
+}
 check('no JS errors', errors.length === 0);
 if (errors.length) console.log(errors.slice(0, 5));
 await page.screenshot({ path: 'mobile-search.png' });

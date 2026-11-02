@@ -11,7 +11,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(500);
-check('version stamp is 107', (await page.locator('#sidebar').textContent()).includes('version 107'));
+check('version stamp is 108', (await page.locator('#sidebar').textContent()).includes('version 108'));
 
 const day = (() => { const d = new Date(Date.now() + 10 * 86400000); return d; })();
 const ISO = day.toISOString().slice(0, 10);
