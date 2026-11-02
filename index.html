@@ -38,7 +38,8 @@
   #sidebar .logo { padding: 22px 20px 14px; }
   #sidebar .logo b { font-size: 1.35rem; letter-spacing: .04em; color: #fff; font-weight: 600; }
   #sidebar .logo span { display:block; font-size: .72rem; color: #b99aa8; letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
-  #menubtn { display: none; }
+  #menubtn, #findbtn { display: none; }
+  .show-m { display: none; }
   #sidebar nav { flex: 1; padding: 8px 10px; }
   #sidebar nav a {
     display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 2px 0;
@@ -197,7 +198,14 @@
     #sidebar .logo span { display: inline; margin: 0; font-size: .58rem; flex: 1; }
     #menubtn { display: block; min-height: 0; background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.25);
       border-radius: 8px; padding: 7px 14px; font-size: .9rem; font-weight: 600; }
+    #findbtn { display: block; min-height: 0; background: #fff; color: #241019; border: 0;
+      border-radius: 8px; padding: 7px 12px; font-size: .9rem; font-weight: 700; }
     #sidebar nav { display: none; }
+    .hide-m { display: none !important; }
+    .show-m { display: inline; }
+    .custsearch { position: sticky; top: -13px; z-index: 6; background: var(--bg); padding: 8px 0 6px; margin: -8px 0 8px !important; }
+    .custsearch #pagesearch { flex: 1 1 100% !important; font-size: 17px; padding: 13px 14px; }
+    .custsearch select { flex: 1 1 45%; max-width: none; }
     #sidebar.open nav { display: block; position: absolute; top: 100%; left: 0; right: 0; background: #241019;
       padding: 6px 10px 12px; box-shadow: 0 14px 24px rgba(0,0,0,.4); border-radius: 0 0 14px 14px; }
     #sidebar.open nav a { display: flex; align-items: center; padding: 13px 14px; margin: 2px 0; font-size: 1rem; border-radius: 10px; }
@@ -285,9 +293,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 106)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 107)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7881 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7937 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -296,10 +304,11 @@ setTimeout(function () {
 </script>
   <aside id="sidebar">
     <div class="logo"><b>Darcybow</b><span>Customers &amp; Events</span>
+      <button id="findbtn" onclick="App.findCustomer()" aria-label="Find a customer">&#x1F50D; Find</button>
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 106</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 107</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1442,6 +1451,15 @@ const App = {
   },
   go(hash) { if (location.hash === hash) App.route(); else location.hash = hash; },
   toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); },
+  // Phone top bar \u2192 Customers with the search box focused. Rendered inside
+  // the tap itself (no hashchange round-trip) so iPhones open the keyboard.
+  findCustomer() {
+    if (!/^#\/customers/.test(location.hash)) { history.pushState(null, '', '#/customers'); App.route(); }
+    const s2 = document.getElementById('pagesearch');
+    if (s2) { s2.focus(); s2.select(); }
+    const m = document.getElementById('main');
+    if (m) m.scrollTop = 0;
+  },
 };
 
 const Pages = {};
@@ -1518,24 +1536,35 @@ let customerQuery = '';
 let customerEventFilter = '';
 let customerNoSchool = false; // show only customers with no school on file
 let customerDressFilter = '';
-Pages.customers = () => {
+// Who matches the search + filters. Phone numbers match in any format
+// (086 123 4567 = +353861234567 = 861234567), and school, child and order
+// numbers are searchable too.
+Pages._custMatches = () => {
   const q = customerQuery.trim().toLowerCase();
-  const dupFlags = Dupes.flaggedIds();
   const inSeason = seasonCustIds();
-  const events = [...new Set(DB.orders.map(o => o.eventHotel).filter(Boolean))].sort();
-  const dresses = [...new Set(DB.orderItems.filter(i => i.category === 'dress').map(i => i.title))].sort();
-  const matches = DB.customers.filter(c => {
+  const qDigits = q.replace(/\D/g, '');
+  const qPhone = qDigits.length >= 5 ? (ImportService._phoneKey(q) || qDigits) : '';
+  const words = q.split(/\s+/).filter(w => w && !(qPhone && /^[\d+()\-\s]+$/.test(w)));
+  return DB.customers.filter(c => {
     if (!inSeason.has(c.id)) return false; // only 2025 activity \u2014 hidden this season
     const orders = Domain.ordersOf(c.id);
     if (customerNoSchool && (Schools.of(c.id) || c.cancelled)) return false;
     if (customerEventFilter && !orders.some(o => o.eventHotel === customerEventFilter)) return false;
     if (customerDressFilter && !orders.some(o => Domain.itemsOf(o.id).some(i => i.title === customerDressFilter))) return false;
     if (!q) return true;
-    const hay = [c.name, c.daughterName, c.email, c.phone,
-      ...orders.map(o => o.eventHotel),
+    if (qPhone) {
+      const pk = ImportService._phoneKey(c.phone), dg = ImportService._digits(c.phone);
+      if (!((pk && pk.indexOf(qPhone) > -1) || (dg && dg.indexOf(qDigits) > -1))) {
+        if (!orders.some(o => String(o.reference || '').replace(/\D/g, '') === qDigits)) return false;
+      }
+    }
+    if (!words.length) return true;
+    const hay = [c.name, c.daughterName, c.email, c.phone, Schools.of(c.id),
+      ...orders.map(o => o.eventHotel + ' ' + (o.reference || '')),
       ...orders.flatMap(o => Domain.itemsOf(o.id).map(i => i.title + ' ' + i.styleCode)),
+      ...AppointlyService.bookingsFor(c.id).map(a => (a.eventHotel || '') + ' ' + (apptDaughter(a) || '')),
     ].join(' ').toLowerCase();
-    return q.split(/\s+/).every(w => hay.includes(w));
+    return words.every(w => hay.includes(w));
   }).map(c => {
     // Most recent activity first: latest order, or latest booking for
     // customers who only booked (no Shopify order).
@@ -1544,17 +1573,40 @@ Pages.customers = () => {
     for (const a of AppointlyService.bookingsFor(c.id)) if ((a.bookedAt || '') > k) k = a.bookedAt;
     return { c, k: k || c.createdAt || '' };
   }).sort((a, b) => a.k < b.k ? 1 : a.k > b.k ? -1 : a.c.name.localeCompare(b.c.name)).map(x => x.c);
+};
+// Typing in the search box redraws ONLY the list - the box itself stays put,
+// so the phone keyboard stays open while you type.
+Pages.custSearch = v => {
+  customerQuery = v;
+  clearTimeout(Pages._custT);
+  Pages._custT = setTimeout(() => {
+    const matches = Pages._custMatches();
+    const box = document.getElementById('custresults');
+    if (!box) { App.route(); return; }
+    box.innerHTML = Pages._custResults(matches);
+    const n = document.getElementById('custcount');
+    if (n) n.textContent = matches.length;
+    const clr = document.getElementById('custclear');
+    if (clr) clr.style.display = (customerEventFilter || customerDressFilter || customerQuery || customerNoSchool) ? '' : 'none';
+  }, 90);
+};
+Pages.customers = () => {
+  const inSeason = seasonCustIds();
+  const events = [...new Set(DB.orders.map(o => o.eventHotel).filter(Boolean))].sort();
+  const dresses = [...new Set(DB.orderItems.filter(i => i.category === 'dress').map(i => i.title))].sort();
+  const matches = Pages._custMatches();
   return `
     <div class="flex" style="justify-content:space-between; margin-bottom:14px">
-      <h1 style="margin:0">Customers <span class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
+      <h1 style="margin:0">Customers <span id="custcount" class="muted" style="font-size:1rem; font-weight:400">${matches.length}</span></h1>
       <div class="flex">
         <button onclick="Actions.addCustomer()">\uff0b Add customer</button>
         <button class="primary" onclick="Actions.printAllCustomerSheets()">\ud83d\udda8 Print all customer sheets</button>
       </div>
     </div>
-    <div class="flex" style="margin-bottom:16px">
-      <input id="pagesearch" class="searchbar" style="margin:0; flex:1; max-width:460px" placeholder="Search name, daughter, phone, email\u2026"
-        value="${esc(customerQuery)}" oninput="customerQuery = this.value; App.route()">
+    <div class="flex custsearch" style="margin-bottom:16px">
+      <input id="pagesearch" class="searchbar" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        style="margin:0; flex:1; max-width:460px" placeholder="\ud83d\udd0d Search name, child, phone, email, school, order\u2026"
+        value="${esc(customerQuery)}" oninput="Pages.custSearch(this.value)" onkeydown="if (event.key === 'Enter') this.blur()">
       <select id="ev-filter" class="bigselect" onchange="customerEventFilter = this.value; App.route()">
         <option value="">All events</option>
         ${events.map(ev => `<option value="${esc(ev)}" ${customerEventFilter === ev ? 'selected' : ''}>${esc(ev)}</option>`).join('')}
@@ -1565,12 +1617,16 @@ Pages.customers = () => {
       </select>
       <button class="chip ${customerNoSchool ? 'on' : ''}" onclick="customerNoSchool = !customerNoSchool; App.route()"
         title="Only customers with no school on file">\ud83c\udfeb No school (${DB.customers.filter(x => inSeason.has(x.id) && !x.cancelled && !Schools.of(x.id)).length})</button>
-      ${customerEventFilter || customerDressFilter || customerQuery || customerNoSchool ? `<button class="small" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; customerNoSchool=false; App.route()">\u2715 Clear</button>` : ''}
+      <button id="custclear" class="small" style="${customerEventFilter || customerDressFilter || customerQuery || customerNoSchool ? '' : 'display:none'}" onclick="customerQuery=''; customerEventFilter=''; customerDressFilter=''; customerNoSchool=false; App.route()">\u2715 Clear</button>
     </div>
-    <div class="tablewrap"><table class="roomy">
-      <thead><tr><th>Customer</th><th>Contact</th><th>Event</th><th>Ordered</th><th>Next appointment</th><th>Booking answers</th></tr></thead>
+    <div id="custresults">${Pages._custResults(matches)}</div>`;
+};
+Pages._custResults = matches => {
+  const dupFlags = Dupes.flaggedIds();
+  return `<div class="tablewrap"><table class="roomy">
+      <thead><tr><th>Customer</th><th class="hide-m">Contact</th><th class="hide-m">Event</th><th class="hide-m">Ordered</th><th>Next appointment</th><th class="hide-m">Booking answers</th></tr></thead>
       <tbody>
-        ${matches.map(c => {
+        ${matches.slice(0, 400).map(c => {
           const orders = Domain.ordersOf(c.id);
           const latest = orders.slice().sort((a, b) => a.createdAt < b.createdAt ? 1 : -1)[0];
           const items = orders.flatMap(o => Domain.itemsOf(o.id));
@@ -1580,14 +1636,14 @@ Pages.customers = () => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.bought(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}</td>
-            <td class="small">${c.phone ? telLink(c.phone) : ''}<br><span class="muted">${esc(c.email)}</span></td>
-            <td class="small">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
-            <td class="small">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
+            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.bought(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}${c.phone ? `<span class="show-m small muted"><br>\ud83d\udcde ${esc(c.phone)}</span>` : ''}</td>
+            <td class="small hide-m">${c.phone ? telLink(c.phone) : ''}<br><span class="muted">${esc(c.email)}</span></td>
+            <td class="small hide-m">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
+            <td class="small hide-m">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
             <td class="small">${upcoming ? `<b>${fmtDate(upcoming.appointmentAt)}</b>${upcoming.time ? ' \u00b7 <span class="vclock" style="font-size:.9rem">' + esc(upcoming.time) + '</span>' : ''}` : '<span class="muted">\u2014</span>'}</td>
-            <td>${answered ? `<span class="badge b-brand">${answered} booking${answered === 1 ? '' : 's'}</span>` : '<span class="muted small">none yet</span>'}</td></tr>`;
-        }).join('') || '<tr><td colspan="6" class="muted">No customers match.</td></tr>'}
-      </tbody></table></div>`;
+            <td class="hide-m">${answered ? `<span class="badge b-brand">${answered} booking${answered === 1 ? '' : 's'}</span>` : '<span class="muted small">none yet</span>'}</td></tr>`;
+        }).join('') || `<tr><td colspan="6" class="muted">No customers match \u201c${esc(customerQuery)}\u201d${customerEventFilter || customerDressFilter || customerNoSchool ? ' with the filters on \u2014 tap \u2715 Clear' : ''}.</td></tr>`}
+      </tbody></table></div>${matches.length > 400 ? `<p class="small muted">Showing the first 400 of ${matches.length} \u2014 type more to narrow it down.</p>` : ''}`;
 };
 
 /* =============================== VENUES =============================== */
@@ -4600,7 +4656,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 106'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 107'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
