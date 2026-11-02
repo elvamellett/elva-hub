@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 102)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 103)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7208 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7277 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 102</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 103</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1745,7 +1745,7 @@ function applyTimeEdits() {
     const cand = DB.appointments.filter(a => {
       const c = custById.get(a.customerId);
       if (!c) return false;
-      return (e.email && String(c.email || '').toLowerCase() === e.email)
+      return (e.email && custEmail(c) === e.email)
         || (e.phone && ImportService._digits(c.phone) === e.phone);
     }).filter(a => a.appointmentAt === e.date);
     if (!cand.length) return false; // booking gone altogether \u2014 edit obsolete
@@ -1768,7 +1768,7 @@ function applyAddrEdits() {
   const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const key of Object.keys(DB.addrEdits)) {
     const e = DB.addrEdits[key];
-    const c = DB.customers.find(x => (e.email && String(x.email || '').toLowerCase() === e.email)
+    const c = DB.customers.find(x => (e.email && (custEmail(x) === e.email || (e.newEmail && String(x.email || '').toLowerCase() === e.newEmail)))
       || (e.phone && ImportService._digits(x.phone) === e.phone));
     if (!c) continue;
     if (norm(c.address) === norm(e.text)) { delete DB.addrEdits[key]; c.addressManual = false; continue; }
@@ -1781,16 +1781,42 @@ function applyAddrEdits() {
 // Staff edits to a customer's details \u2014 and the cancelled flag \u2014 win over
 // whatever Shopify sends: re-applied after every sync and import, keyed by
 // email/phone like the address and time edits.
+// A customer's email can be corrected from her page. Everything stored
+// against her (photos, notes, school/address corrections, booking notes)
+// stays keyed by her ORIGINAL email - her "home" email - so changing it
+// never detaches anything. Aliases come from the shared customer edits.
+let _aliasMemo = { sig: '', map: null };
+function homeEmail(email) {
+  const e0 = String(email || '').trim().toLowerCase();
+  if (!e0) return '';
+  const m = DB.custEdits || {};
+  const keys = Object.keys(m);
+  const sig = keys.length + '|' + keys.map(k => (m[k] && m[k].newEmail) || '').join(',');
+  if (_aliasMemo.sig !== sig) {
+    const map = {};
+    for (const k of keys) {
+      const ed = m[k];
+      if (ed && ed.newEmail && ed.email && ed.newEmail !== ed.email) map[ed.newEmail] = ed.email;
+    }
+    _aliasMemo = { sig, map };
+  }
+  let e = e0;
+  for (let i = 0; i < 6 && _aliasMemo.map[e]; i++) e = _aliasMemo.map[e];
+  return e;
+}
+const custEmail = c => homeEmail(c && c.email);
 function applyCustEdits() {
   const m = DB.custEdits || {};
   for (const k of Object.keys(m)) {
     const e = m[k];
-    const c = DB.customers.find(x => (e.email && String(x.email || '').toLowerCase() === e.email)
+    const c = DB.customers.find(x => (e.email && (custEmail(x) === e.email || (e.newEmail && String(x.email || '').toLowerCase() === e.newEmail)))
       || (e.phone && ImportService._digits(x.phone) === e.phone));
     if (!c) continue;
     if (e.name) c.name = e.name;
     if (e.daughterName) c.daughterName = e.daughterName;
     if (e.newPhone) c.phone = e.newPhone;
+    if (e.newEmail) c.email = e.newEmail;
+    if ('note' in e) c.notes = e.note;
     if ('cancelled' in e) c.cancelled = !!e.cancelled;
     if ('waitlist' in e) c.waitlist = e.waitlist || null;
   }
@@ -1838,7 +1864,7 @@ function apptSnapshot() {
     if (!a.appointmentAt || a.appointmentAt < SEASON_START) continue;
     const c = (DB.customers || []).find(x => x.id === a.customerId);
     if (!c) continue;
-    const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+    const key = custEmail(c) || ('p' + ImportService._digits(c.phone));
     if (!key || key === 'p') continue;
     if (!map.has(key)) map.set(key, []);
     map.get(key).push({ v: venOf(a.eventHotel), d: a.appointmentAt, t: a.time || '' });
@@ -1956,7 +1982,7 @@ const Dupes = {
   // phone match must never pick the record already chosen as the keeper).
   reapply() {
     for (const m of DB.custMerges || []) {
-      const byEmail = e => e ? DB.customers.find(c => String(c.email || '').toLowerCase() === e) : null;
+      const byEmail = e => e ? DB.customers.find(c => custEmail(c) === e || String(c.email || '').toLowerCase() === e) : null;
       const byPhone = (p, notId) => p ? DB.customers.find(c => ImportService._digits(c.phone) === p && c.id !== notId) : null;
       const keep = byEmail(m.keep.email) || byPhone(m.keep.phone);
       if (!keep) continue;
@@ -2022,18 +2048,18 @@ const Schools = {
   // Corrections are keyed by email/phone so they survive every sync.
   editFor(c) {
     const m = DB.schoolEdits || {};
-    return (c.email && m[String(c.email).toLowerCase()]) || m['p' + ImportService._digits(c.phone)] || null;
+    return (custEmail(c) && m[custEmail(c)]) || m['p' + ImportService._digits(c.phone)] || null;
   },
   setFor(custId, school) {
     const c = Domain.customer(custId);
     if (!c) return;
     DB.schoolEdits = DB.schoolEdits || {};
-    const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+    const key = custEmail(c) || ('p' + ImportService._digits(c.phone));
     const name = String(school || '').trim();
     // Snap a typed spelling onto the pick-list entry it matches.
     const hit = name && Schools.list().find(x => Schools.squash(x) === Schools.squash(name));
     if (!name) delete DB.schoolEdits[key];
-    else DB.schoolEdits[key] = { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone), school: hit || name, at: nowIso() };
+    else DB.schoolEdits[key] = { email: custEmail(c), phone: ImportService._digits(c.phone), school: hit || name, at: nowIso() };
     Schools._save();
     UI.toast(name ? c.name + ' \u2192 \u201c' + (hit || name) + '\u201d \u2014 corrected, and it sticks through syncs.' : 'School correction cleared \u2014 the booking answer applies again.');
   },
@@ -2771,7 +2797,7 @@ Pages.customerDetail = (id) => {
     ${c.cancelled ? '<div class="note err">\ud83d\udeab <b>Cancelled</b> \u2014 this customer is off the day planners, run sheets and printed sheets. Reinstate them below if they come back.</div>' : ''}
     ${c.waitlist ? `<div class="note">\u23f3 <b>On the waiting list</b> since ${fmtDate(String(c.waitlist.at).slice(0, 10))}${c.waitlist.note ? ' \u2014 ' + esc(c.waitlist.note) : ''} \u00b7 she shows on the dashboard until booked in.</div>` : ''}
     ${(() => {
-      const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+      const key = custEmail(c) || ('p' + ImportService._digits(c.phone));
       return ((DB.apptChanges || {})[key] || []).filter(x => !x.hidden).slice(-3).reverse().map(ch => `
         <div class="note info">\u21c4 <b>Booking ${ch.gone ? 'cancelled' : 'changed'}:</b> ${esc(ch.from)}${ch.gone ? '' : ' \u2192 <b>' + esc(ch.to) + '</b>'}
           <span class="small muted">\u00b7 noticed ${fmtDate(String(ch.at).slice(0, 10))}</span>
@@ -3236,6 +3262,9 @@ const ImportService = {
     const stubById = new Map(b.customers.map(c => [c.id, c]));
     const emKey = e => String(e || '').trim().toLowerCase();
     const byEmail = new Map(DB.customers.filter(c => c.email).map(c => [emKey(c.email), c]));
+    // An email corrected on her page: Appointly bookings made under the OLD
+    // email still find her.
+    for (const c of DB.customers) { const h = custEmail(c); if (h && !byEmail.has(h)) byEmail.set(h, c); }
     // Customers WITH a Shopify order first, so a shared phone lands on the
     // real record rather than on a booking-only copy of the same person.
     const withOrder0 = new Set(DB.orders.map(o => o.customerId));
@@ -4233,7 +4262,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 102'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 103'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5239,7 +5268,7 @@ const Staff = {
    sync and travel inside the backup file. Tap to open, buttons/wheel/drag
    to zoom and pan. ---- */
 const Photos = {
-  key: c => (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone)) || c.id,
+  key: c => custEmail(c) || ('p' + ImportService._digits(c.phone)) || c.id,
   _cache: {}, // photo file name -> dataURL, fetched once per session
   // Photos live in the darcybow-photos folder on Drive when the live link
   // is connected: no browser storage limit, and every device sees them.
@@ -5460,7 +5489,7 @@ const Photos = {
    Outlook forwards a copy), plus a shared "email notes" box keyed by the
    customer's email address so it survives re-syncs and reaches every browser. */
 const CustNotes = {
-  key: c => String((c && c.email) || '').trim().toLowerCase(),
+  key: c => custEmail(c),
   get(c) { const k = CustNotes.key(c); return (k && DB.custNotes && DB.custNotes[k] && DB.custNotes[k].text) || ''; },
   set(custId, text) {
     if (!Invoices.unlocked()) { UI.err(new Error('Email notes need the invoicing passcode.')); return; }
@@ -6746,35 +6775,75 @@ const Actions = {
   editCustomer(custId) {
     const c = Domain.customer(custId);
     if (!c) return;
+    const onShopify = /^sc\d+$/.test(String(c.id));
     UI.modal(`
       <h3>Edit ${esc(c.name)}</h3>
       <div class="formgrid">
         <div><label class="f">Name</label><input id="ec-name" value="${esc(c.name)}"></div>
         <div><label class="f">Daughter's name</label><input id="ec-daughter" value="${esc(c.daughterName || '')}"></div>
-        <div><label class="f">Phone</label><input id="ec-phone" value="${esc(c.phone || '')}"></div>
+        <div><label class="f">Email</label><input id="ec-email" type="email" value="${esc(c.email || '')}"></div>
+        <div><label class="f">Phone</label><input id="ec-phone" type="tel" value="${esc(c.phone || '')}"></div>
       </div>
-      <p class="small muted" style="margin-bottom:0">Email, address, school and notes are edited from the customer page itself. Changes here stick through every sync.</p>
+      <label class="f">Notes (the customer's note on Shopify)</label>
+      <textarea id="ec-note" rows="3" style="width:100%">${esc(c.notes || '')}</textarea>
+      <label style="display:flex; gap:8px; align-items:center; margin-top:10px${onShopify ? '' : '; opacity:.5'}">
+        <input type="checkbox" id="ec-shopify" ${onShopify ? 'checked' : 'disabled'}>
+        ${onShopify ? 'Also update this customer on Shopify' : 'Not on Shopify (booked through Appointly only) - saved here only'}
+      </label>
+      <p class="small muted" style="margin-bottom:0">Saved here straight away and kept through every Shopify sync and Appointly import. Photos, notes and corrections stay attached even if the email changes.</p>
       <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
-        <button class="primary" onclick="Actions._saveCustomerEdit('${custId}')">\ud83d\udcbe Save</button></div>`);
+        <button class="primary" onclick="Actions._saveCustomerEdit('${custId}')">Save</button></div>`);
   },
   _custEditKey(c) {
-    return (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone)) || c.id;
+    return custEmail(c) || ('p' + ImportService._digits(c.phone)) || c.id;
   },
   _saveCustomerEdit(custId) {
     const c = Domain.customer(custId);
     if (!c) return;
     const v = id => (document.getElementById(id) || { value: '' }).value.trim();
-    if (!v('ec-name')) { UI.err(new Error('A name is needed.')); return; }
+    const name = v('ec-name'), email = v('ec-email').toLowerCase(), phone = v('ec-phone'), note = v('ec-note');
+    if (!name) { UI.err(new Error('A name is needed.')); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { UI.err(new Error('That email does not look right.')); return; }
+    const toShopify = !!(document.getElementById('ec-shopify') || {}).checked;
     DB.custEdits = DB.custEdits || {};
     const key = Actions._custEditKey(c);
     const prev = DB.custEdits[key] || {};
-    DB.custEdits[key] = Object.assign({}, prev, { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone),
-      name: v('ec-name'), daughterName: v('ec-daughter'), newPhone: v('ec-phone'), at: nowIso() });
-    c.name = v('ec-name'); c.daughterName = v('ec-daughter'); if (v('ec-phone')) c.phone = v('ec-phone');
+    const home = custEmail(c);
+    const changed = { name: name !== c.name, email: !!email && email !== String(c.email || '').toLowerCase(),
+      phone: phone !== String(c.phone || ''), note: note !== String(c.notes || '') };
+    DB.custEdits[key] = Object.assign({}, prev, { email: home, phone: prev.phone || ImportService._digits(c.phone),
+      name, daughterName: v('ec-daughter'), note, at: nowIso() },
+      phone ? { newPhone: phone } : {},
+      changed.email ? { newEmail: email } : {});
+    c.name = name; c.daughterName = v('ec-daughter');
+    if (phone) c.phone = phone;
+    if (changed.email) c.email = email;
+    c.notes = note;
     Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush(); // every device gets the edit
     if (typeof Invoices !== 'undefined') Invoices.refreshContacts(); // her invoice follows the new details
     UI.closeModal(); App.route();
-    UI.toast('Details updated \u2014 the change sticks through syncs.');
+    if (!toShopify || !(changed.name || changed.email || changed.phone || changed.note)) {
+      UI.toast('Details updated - the change sticks through syncs.');
+      return;
+    }
+    if (!LiveSync.available()) { UI.toast('Saved here. Shopify can only be updated from the live dashboard.'); return; }
+    UI.toast('Saved - updating Shopify...');
+    const parts = name.split(/\s+/);
+    const payload = { id: c.id };
+    if (changed.name) { payload.first_name = parts[0]; payload.last_name = parts.slice(1).join(' '); }
+    if (changed.email) payload.email = email;
+    if (changed.phone) payload.phone = phone;
+    if (changed.note) payload.note = note;
+    google.script.run
+      .withSuccessHandler(res => {
+        let r = {};
+        try { r = JSON.parse(res); } catch (e) { /* treat as error */ }
+        if (r.ok) UI.toast('Updated on Shopify too.', 4000);
+        else UI.err(new Error('Saved here, but Shopify said: ' + (r.error || 'unknown error') + ' - the dashboard keeps your change either way.'));
+      })
+      .withFailureHandler(e => UI.err(new Error('Saved here, but Shopify could not be reached: ' + ((e && e.message) || e))))
+      .updateShopifyCustomer(Gate.token(), JSON.stringify(payload));
   },
   toggleCancelled(custId) {
     const c = Domain.customer(custId);
@@ -6783,7 +6852,7 @@ const Actions = {
     if (to && !confirm(c.name + ' \u2014 mark as CANCELLED?\n\nThey drop off the day planners, run sheets and printed sheets. Their record and history stay here, and you can reinstate them any time.')) return;
     DB.custEdits = DB.custEdits || {};
     const key = Actions._custEditKey(c);
-    DB.custEdits[key] = Object.assign({}, DB.custEdits[key] || {}, { email: String(c.email || '').toLowerCase(),
+    DB.custEdits[key] = Object.assign({}, DB.custEdits[key] || {}, { email: custEmail(c),
       phone: ImportService._digits(c.phone), cancelled: to, at: nowIso() });
     c.cancelled = to;
     Store.save(); App.route();
@@ -6811,7 +6880,7 @@ const Actions = {
     }
     DB.custEdits = DB.custEdits || {};
     const key = Actions._custEditKey(c);
-    DB.custEdits[key] = Object.assign({}, DB.custEdits[key] || {}, { email: String(c.email || '').toLowerCase(),
+    DB.custEdits[key] = Object.assign({}, DB.custEdits[key] || {}, { email: custEmail(c),
       phone: ImportService._digits(c.phone), waitlist: wl, at: nowIso() });
     c.waitlist = wl;
     Store.save(); App.route();
@@ -6825,7 +6894,7 @@ const Actions = {
     const t = prompt(`Delivery address for ${c.name} (leave empty to go back to Shopify's address):`, c.address || '');
     if (t === null) return;
     DB.addrEdits = DB.addrEdits || {};
-    const key = (c.email && String(c.email).toLowerCase()) || ('p' + ImportService._digits(c.phone));
+    const key = custEmail(c) || ('p' + ImportService._digits(c.phone));
     if (!t.trim()) {
       delete DB.addrEdits[key];
       c.addressManual = false;
@@ -6833,7 +6902,7 @@ const Actions = {
       UI.toast('Typed address cleared \u2014 the next sync brings back Shopify\u2019s address.');
       return;
     }
-    DB.addrEdits[key] = { email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone), text: t.trim(), at: nowIso() };
+    DB.addrEdits[key] = { email: custEmail(c), phone: ImportService._digits(c.phone), text: t.trim(), at: nowIso() };
     c.address = t.trim(); c.addressManual = true; c.addressCheck = null;
     Store.save();
     if (typeof Invoices !== 'undefined') Invoices.refreshContacts(); // her invoice follows the new address
@@ -6850,7 +6919,7 @@ const Actions = {
     const t = Actions._parseTime(raw);
     if (!t) { UI.toast('Couldn\u2019t read that time \u2014 try \u201c2pm\u201d or \u201c14:00\u201d.'); return; }
     DB.timeEdits = DB.timeEdits || [];
-    DB.timeEdits.push({ id: uid(), email: String(c.email || '').toLowerCase(), phone: ImportService._digits(c.phone || ''),
+    DB.timeEdits.push({ id: uid(), email: custEmail(c), phone: ImportService._digits(c.phone || ''),
       date: a.appointmentAt, from: a.time || '', to: t, bookedAt: a.bookedAt || '', at: nowIso() });
     a.time = t;
     Store.save(); App.route();
