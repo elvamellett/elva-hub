@@ -1,4 +1,4 @@
-// Test (v103): editing a customer's email / phone / notes on her page -
+// Test (v104): editing a customer's email / phone / notes on her page -
 // sticks through Shopify syncs and Appointly imports, nothing detaches
 // when the email changes, and the change is sent to Shopify.
 import { chromium } from 'playwright';
@@ -28,7 +28,7 @@ await page.addInitScript(() => {
 });
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1500);
-check('version stamp is 103', (await page.locator('#sidebar').textContent()).includes('version 103'));
+check('version stamp is 104', (await page.locator('#sidebar').textContent()).includes('version 104'));
 
 const future = new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10);
 const shop = (email, phone, note) => ({
