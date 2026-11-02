@@ -12,7 +12,7 @@ page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
 
-check('version stamp is 100', (await page.locator('#sidebar').textContent()).includes('version 100'));
+check('version stamp is 101', (await page.locator('#sidebar').textContent()).includes('version 101'));
 
 const future = new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10);
 await page.evaluate(d => {

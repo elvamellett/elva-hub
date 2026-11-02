@@ -113,26 +113,36 @@ function wrapDashboard_(raw) {
     '</script></body></html>';
 }
 
-/* ================== DASHBOARD PASSWORD — CHANGE THIS ==================
- * Everyone opening the dashboard link must type this once per browser.
- * Change the text between the quotes, save (⌘S), then deploy a new
- * version — every browser is asked again after a password change.    */
-var SITE_PASSWORD = 'darcy2026';
+/* ========================= DASHBOARD PASSWORD =========================
+ * The password is deliberately NOT in this file - this code is public on
+ * GitHub. It lives in Project Settings -> Script properties under the
+ * name SITE_PASSWORD, so pasting a new version of this file can never
+ * change it. To change it later: edit that property (no redeploy needed);
+ * every browser is asked for the new one.
+ * If the property is missing, nobody can log in at all - never open.   */
+function sitePassword_() {
+  return String(PropertiesService.getScriptProperties().getProperty('SITE_PASSWORD') || '').trim();
+}
 /* ====================================================================== */
 
 // A browser that knows the password holds this token; every data call
 // verifies it, so the customer data itself is locked, not just the page.
 function siteToken_() {
-  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'darcybow-gate|' + SITE_PASSWORD);
+  var pw = sitePassword_();
+  if (!pw) return '';
+  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'darcybow-gate|' + pw);
   return Utilities.base64EncodeWebSafe(d);
 }
 function checkSitePassword(pw) {
   Utilities.sleep(400); // slows down password guessing
-  if (String(pw || '').trim() === SITE_PASSWORD) return JSON.stringify({ ok: true, token: siteToken_() });
+  var real = sitePassword_();
+  if (!real) return JSON.stringify({ ok: false, error: 'No dashboard password is set up yet - add SITE_PASSWORD in the Apps Script project (Project Settings -> Script properties).' });
+  if (String(pw || '').trim() === real) return JSON.stringify({ ok: true, token: siteToken_() });
   return JSON.stringify({ ok: false });
 }
 function gate_(token) {
-  if (String(token || '') !== siteToken_()) {
+  var expected = siteToken_();
+  if (!expected || String(token || '') !== expected) {
     throw new Error('Locked — refresh the page and enter the dashboard password.');
   }
 }
