@@ -285,9 +285,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 103)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 104)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7277 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7581 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -299,7 +299,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 103</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 104</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1768,7 +1768,7 @@ function applyAddrEdits() {
   const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const key of Object.keys(DB.addrEdits)) {
     const e = DB.addrEdits[key];
-    const c = DB.customers.find(x => (e.email && (custEmail(x) === e.email || (e.newEmail && String(x.email || '').toLowerCase() === e.newEmail)))
+    const c = DB.customers.find(x => (e.custId && x.id === e.custId) || (e.email && (custEmail(x) === e.email || (e.newEmail && String(x.email || '').toLowerCase() === e.newEmail)))
       || (e.phone && ImportService._digits(x.phone) === e.phone));
     if (!c) continue;
     if (norm(c.address) === norm(e.text)) { delete DB.addrEdits[key]; c.addressManual = false; continue; }
@@ -1809,7 +1809,7 @@ function applyCustEdits() {
   const m = DB.custEdits || {};
   for (const k of Object.keys(m)) {
     const e = m[k];
-    const c = DB.customers.find(x => (e.email && (custEmail(x) === e.email || (e.newEmail && String(x.email || '').toLowerCase() === e.newEmail)))
+    const c = DB.customers.find(x => (e.custId && x.id === e.custId) || (e.email && (custEmail(x) === e.email || (e.newEmail && String(x.email || '').toLowerCase() === e.newEmail)))
       || (e.phone && ImportService._digits(x.phone) === e.phone));
     if (!c) continue;
     if (e.name) c.name = e.name;
@@ -1821,6 +1821,64 @@ function applyCustEdits() {
     if ('waitlist' in e) c.waitlist = e.waitlist || null;
   }
 }
+// The three compulsory Appointly answers, corrected by staff on the
+// customer page. Past bookings are no longer re-exported, so these edits
+// are the record; they also win over any later export.
+const ANSWER_Q = {
+  child: { re: /daug(?:h?ter|ther)['\u2019]?s\s+name|child'?s\s+name/i, q: "What is your Daughter's Name?" },
+  school: { re: /school/i, q: "What is the name of your Daughter's School?" },
+  communion: { re: /communion/i, q: 'When is your Communion? (If known)' },
+};
+function answerEdits(c) {
+  if (!c) return {};
+  const ed = (DB.custEdits || {})[Actions._custEditKey(c)];
+  const a = Object.assign({}, (ed && ed.answers) || {});
+  if (!a.school && Schools.editFor(c)) a.school = Schools.of(c.id);
+  return a;
+}
+function qaWithEdits(c, qs) {
+  const ans = answerEdits(c);
+  const out = (qs || []).map(x => Object.assign({}, x));
+  // Twins: each booking names its own child - never overwrite those.
+  const kids = new Set(AppointlyService.bookingsFor(c.id).map(apptDaughter).filter(Boolean).map(k2 => k2.toLowerCase()));
+  for (const k of Object.keys(ANSWER_Q)) {
+    if (!ans[k] || (k === 'child' && kids.size > 1)) continue;
+    const hit = out.find(x => ANSWER_Q[k].re.test(String(x.q)));
+    if (hit) hit.a = ans[k]; else out.push({ q: ANSWER_Q[k].q, a: ans[k] });
+  }
+  return out;
+}
+// What a customer's three answers are right now (edits first, then her
+// most recent booking).
+function custAnswers(c) {
+  const appts = AppointlyService.bookingsFor(c.id).filter(a => (a.questions || []).some(z => z.a))
+    .sort((p, q) => p.appointmentAt < q.appointmentAt ? 1 : -1);
+  const qs = qaWithEdits(c, ImportService._expandQas(appts.length ? appts[0].questions : []));
+  const get = k => { const h = qs.find(x => ANSWER_Q[k].re.test(String(x.q)) && x.a); return h ? String(h.a).trim() : ''; };
+  return { child: get('child'), school: get('school'), communion: get('communion') };
+}
+
+// Walk-ins and phone bookings: staff put a customer into an event day by
+// hand. Shared with every device and re-applied after every sync/import.
+function applyManualBookings() {
+  const all = DB.manualBookings || [];
+  if (!all.length) return;
+  const gone = new Set(all.filter(m => m.removed).map(m => 'mb-' + m.id));
+  if (gone.size) DB.appointments = DB.appointments.filter(a => !gone.has(a.id));
+  const have = new Set(DB.appointments.map(a => a.id));
+  for (const m of all) {
+    if (m.removed || have.has('mb-' + m.id)) continue;
+    const c = DB.customers.find(x => x.id === m.custId)
+      || (m.email && DB.customers.find(x => custEmail(x) === m.email))
+      || (m.phone && DB.customers.find(x => ImportService._phoneKey(x.phone) === m.phone)) || null;
+    if (!c) continue;
+    DB.appointments.push({ id: 'mb-' + m.id, customerId: c.id, source: 'walkin', service: m.eventHotel,
+      eventHotel: m.eventHotel, appointmentAt: m.date, time: m.time || '', staffName: m.staff || '',
+      status: m.date >= todayStr() ? 'upcoming' : 'completed', bookedAt: m.at, syncedAt: nowIso(), questions: [] });
+  }
+}
+// Little pencil button beside a row on the customer page.
+const editBtn = (custId, field, title) => `<button class="small" style="padding:1px 8px; margin-left:6px" title="${title || 'Edit'}" onclick="Actions.editField('${custId}','${field}')">\u270e</button>`;
 // The dashboard runs one season at a time \u2014 Sept 2026 to May 2027.
 // Events from before the season are hidden everywhere, and so are
 // customers, appointments, schools and bookings whose only activity is
@@ -2787,6 +2845,7 @@ Pages.customerDetail = (id) => {
   const schoolInfo = Schools.clashes(c.id);
   const canEditNotes = Invoices.unlocked();
   const dupPairs = Dupes.candidatesFor(c);
+  const ans = custAnswers(c);
   setTimeout(() => Emails.load(id), 60); // fill the email module once the page is on screen
   setTimeout(() => Invoices.mountPage1(id), 80); // draw the invoice's first page
   setTimeout(() => Photos.loadFor(id), 120); // fetch this customer's Drive photos
@@ -2806,7 +2865,7 @@ Pages.customerDetail = (id) => {
     <div class="toolbar">
       <button class="primary" onclick="Actions.printCustomerSheet('${c.id}')">\ud83d\udda8 Print this customer's sheet (details + booking answers)</button>
       <button onclick="Invoices.open('${c.id}')">\ud83e\uddfe ${Invoices.invFor(c.id) ? 'Show invoice' : 'Create invoice'}</button>
-      <button onclick="Actions.editCustomer('${c.id}')">\u270e Edit details</button>
+      <button onclick="Actions.bookIntoEvent('${c.id}')">\ud83d\udccd Book into an event (walk-in / phone)</button>
       <button onclick="Actions.toggleCancelled('${c.id}')">${c.cancelled ? '\u21a9 Reinstate customer' : '\ud83d\udeab Mark as cancelled'}</button>
       <button onclick="Actions.toggleWaitlist('${c.id}')">${c.waitlist ? '\u2713 Take off waiting list' : '\u23f3 Add to waiting list'}</button>
       ${Invoices.statusBadge(c.id)}
@@ -2840,20 +2899,31 @@ Pages.customerDetail = (id) => {
     <div class="cols2">
       <div class="card">
         <h2 style="margin-top:0">Details</h2>
-        <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '\u2014')}</span></div>
-        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${telLink(c.phone)}</span></div>
-        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '\u2014')}${c.addressManual ? ' <span class="badge b-amber" title="Typed by staff \u2014 syncs can\u2019t overwrite it">\u270e typed by staff</span>' : ''}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''} <button class="small" onclick="Actions.editAddress('${c.id}')">\u270e Edit</button></span></div>
+        <p class="small muted" style="margin:-4px 0 8px">Tap \u270e beside any row to change it. Name, email, phone and notes can go to Shopify too.</p>
+        <div class="dl-row"><span class="dl-label">Name</span><span class="dl-value">${esc(c.name)}${editBtn(c.id, 'name', 'Edit name')}</span></div>
+        <div class="dl-row"><span class="dl-label">Child</span><span class="dl-value">${esc(c.daughterName || ans.child || '\u2014')}${editBtn(c.id, 'daughter', "Edit child's name")}</span></div>
+        <div class="dl-row"><span class="dl-label">Email</span><span class="dl-value">${esc(c.email || '\u2014')}${editBtn(c.id, 'email', 'Edit email')}</span></div>
+        <div class="dl-row"><span class="dl-label">Phone</span><span class="dl-value">${telLink(c.phone)}${editBtn(c.id, 'phone', 'Edit phone')}</span></div>
+        <div class="dl-row"><span class="dl-label">Delivery</span><span class="dl-value">${esc(c.address || '\u2014')}${c.addressManual ? ' <span class="badge b-amber" title="Typed by staff \u2014 syncs can\u2019t overwrite it">\u270e typed by staff</span>' : ''}${c.addressCheck ? ' <span class="badge b-amber">from order ' + esc(c.addressCheck.ref) + '</span>' : ''} <button class="small" style="padding:1px 8px; margin-left:6px" title="Edit delivery address" onclick="Actions.editAddress('${c.id}')">\u270e</button></span></div>
         ${c.addressCheck ? `<div class="note" style="margin-bottom:0">\ud83d\udccd <b>Address check:</b> this customer's saved Shopify profile says \u201c${esc(c.addressCheck.was)}\u201d, but their latest order ${esc(c.addressCheck.ref)} was placed with the delivery address above \u2014 the dashboard now uses the order address. If the profile one is actually correct, fix it on the customer in Shopify and re-sync.</div>` : ''}
         ${dupPairs.length ? `<div class="note" style="margin-bottom:0">\ud83d\udc65 <b>Possible duplicate record${dupPairs.length === 1 ? '' : 's'}:</b> ${dupPairs.map(d =>
           `<a class="plain" href="#/customer/${d.c.id}" style="font-weight:600">${esc(d.c.name)}</a> (${d.why} \u00b7 ${Domain.ordersOf(d.c.id).length} order${Domain.ordersOf(d.c.id).length === 1 ? '' : 's'}) <button class="small" onclick="Dupes.merge('${c.id}','${d.c.id}')">Merge into this record</button>`).join(' \u00b7 ')}
           \u2014 if it's the same person, merging puts their orders, bookings and address in one place, and the merge re-applies itself after every sync.</div>` : ''}
-        <div class="dl-row"><span class="dl-label">School</span><span class="dl-value">${schoolInfo ? '\ud83c\udfeb ' + esc(schoolInfo.name) : (Schools.of(c.id) ? esc(Schools.of(c.id)) : '\u2014')}${Schools.editFor(c) ? ' <span class="badge b-amber" title="Corrected by staff \u2014 wins over the booking answer">\u270e corrected</span>' : ''} <button class="small" onclick="Schools.editModal('${c.id}')">\u270e Edit</button></span></div>
-        ${c.notes ? `<div class="dl-row"><span class="dl-label">Notes from Shopify</span><span class="dl-value">${esc(c.notes)}</span></div>` : ''}
+        <div class="dl-row"><span class="dl-label">School</span><span class="dl-value">${schoolInfo ? '\ud83c\udfeb ' + esc(schoolInfo.name) : (Schools.of(c.id) ? esc(Schools.of(c.id)) : '\u2014')}${Schools.editFor(c) ? ' <span class="badge b-amber" title="Corrected by staff \u2014 wins over the booking answer">\u270e corrected</span>' : ''} <button class="small" style="padding:1px 8px; margin-left:6px" title="Edit school" onclick="Schools.editModal('${c.id}')">\u270e</button></span></div>
+        <div class="dl-row"><span class="dl-label">Communion</span><span class="dl-value">${esc(ans.communion || '\u2014')}${editBtn(c.id, 'communion', 'Edit communion date')}</span></div>
+        <div class="dl-row"><span class="dl-label">Notes</span><span class="dl-value" style="white-space:pre-wrap">${esc(c.notes || '\u2014')}${editBtn(c.id, 'note', 'Edit notes')}</span></div>
+        <div class="dl-row"><span class="dl-label">Venue</span><span class="dl-value">${(() => {
+          const ups = AppointlyService.bookingsFor(c.id).filter(a => a.eventHotel && a.appointmentAt >= todayStr())
+            .sort((p2, q2) => (p2.appointmentAt + (p2.time || '')) < (q2.appointmentAt + (q2.time || '')) ? -1 : 1);
+          return (ups.map(a => esc(String(a.eventHotel).split(/\s+\u2014\s+/).pop()) + ', ' + fmtWd(a.appointmentAt) + (a.time ? ' ' + esc(a.time) : '')
+            + (a.source === 'walkin' ? ` <button class="small" style="padding:1px 8px" title="Remove this hand-made booking" onclick="Actions.removeManualBooking('${a.id}')">\u2715</button>` : '')).join('<br>') || '<span class="muted">No upcoming booking</span>');
+        })()} <button class="small" style="padding:1px 8px; margin-left:6px" title="Book into an event" onclick="Actions.bookIntoEvent('${c.id}')">\ud83d\udccd \uff0b</button></span></div>
         ${schoolInfo && schoolInfo.dressClash.length ? `<div class="note err" style="margin-bottom:0">\u26a0 <b>SAME DRESS, SAME SCHOOL:</b> ${schoolInfo.dressClash.map(o => esc(o.c.name) + (o.c.daughterName ? ' (for ' + esc(o.c.daughterName) + ')' : '')).join(', ')} \u2014 one dress per school!</div>`
         : schoolInfo && schoolInfo.others.length ? `<div class="note" style="margin-bottom:0">\ud83c\udfeb ${schoolInfo.others.length} more customer${schoolInfo.others.length === 1 ? '' : 's'} from this school: ${schoolInfo.others.map(o => esc(o.c.name) + (o.dress ? ' \u2014 ' + esc(o.dress.title) : '')).join(' \u00b7 ')}. <a class="plain" href="#/schools">Schools page \u2192</a></div>` : ''}
       </div>
       <div class="card" style="grid-row: span 2">
-        <h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
+        <div class="flex" style="align-items:center"><h2 style="margin:0">Appointment questions <span class="badge b-brand">Appointly</span></h2>
+          <span style="flex:1"></span><button class="small" onclick="Actions.editAnswers('${c.id}')">\u270e Edit answers</button></div>
         ${AppointlyService.bookingsFor(c.id).map(a => `
           <div style="border-top:1px solid var(--line); margin-top:12px; padding-top:12px">
             <div class="flex" style="margin-bottom:10px">
@@ -2863,7 +2933,8 @@ Pages.customerDetail = (id) => {
               ${a.status === 'upcoming' ? `<button class="small" onclick="Actions.changeApptTime('${a.id}')">\u270e Change time</button>` : ''}
             </div>
             ${a.staffName ? `<div class="small" style="margin-bottom:8px">Looked after by <b>${esc(a.staffName)}</b></div>` : ''}
-            ${a.questions.length ? a.questions.map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
+            ${a.source === 'walkin' ? '<div class="small muted" style="margin-bottom:8px">\ud83d\udccd Booked in by staff (walk-in / phone)</div>' : ''}
+            ${(a.questions.length || a.source === 'walkin') && qaWithEdits(c, ImportService._expandQas(a.questions)).length ? qaWithEdits(c, ImportService._expandQas(a.questions)).map(qa => `<div class="qa"><div class="q">${esc(qa.q)}</div>
               <ul>${(qa.a || '\u2014').split(/\n+/).map(line => `<li>${esc(line)}</li>`).join('')}</ul></div>`).join('')
               : '<div class="small muted">Event-day slot \u2014 no booking questions.</div>'}
           </div>`).join('') || '<p class="muted small" style="margin-bottom:0; margin-top:10px">No booking answers yet \u2014 they appear here once the customer books through the site.</p>'}
@@ -2987,6 +3058,54 @@ const ImportService = {
   clear(kind) { ImportService.state[kind] = null; App.route(); },
 
   // First header equal to a candidate wins; then first header containing one.
+  /* ---- The booking book ----
+     Exports now carry UPCOMING bookings only (past ones are edited here, not
+     re-exported). So every upload is merged into the booking book: the new
+     export speaks for everything from today on, and every booking that
+     already happened is kept from the previous book - past events never
+     lose their bookings or answers. The combined book is what gets shared. */
+  BOOK_KEY: 'darcybow-bookings-book',
+  _bookGet() { try { return localStorage.getItem(ImportService.BOOK_KEY) || ''; } catch (e) { return ''; } },
+  _bookSet(t) { try { localStorage.setItem(ImportService.BOOK_KEY, String(t || '')); } catch (e) { /* storage full - the central copy still holds it */ } },
+  _csvText(headers, records) {
+    const q = v => { const s2 = String(v == null ? '' : v); return /[",\n\r]/.test(s2) ? '"' + s2.replace(/"/g, '""') + '"' : s2; };
+    return [headers.map(q).join(',')].concat(records.map(r => headers.map(h => q(r[h])).join(','))).join('\n');
+  },
+  _whenCol(H) {
+    return ImportService._col(H, 'appointment date', 'booking date', 'start date', 'date')
+      || ImportService._col(H, 'start time', 'appointment time', 'booking time', 'time');
+  },
+  _keepPastBookings() {
+    const st = ImportService.state.appointly;
+    if (!st) return 0;
+    const prevText = ImportService._bookGet();
+    if (!prevText) return 0;
+    const prev = parseCsv(prevText);
+    if (!prev.records.length) return 0;
+    const today = todayStr();
+    const pW = ImportService._whenCol(prev.headers), nW = ImportService._whenCol(st.headers);
+    const pE = ImportService._col(prev.headers, 'email'), nE = ImportService._col(st.headers, 'email');
+    if (!pW) return 0;
+    const sig = (r, w, e) => String(e ? r[e] : '').trim().toLowerCase() + '|' + String(w ? r[w] : '').trim();
+    const have = new Set(st.records.map(r => sig(r, nW, nE)));
+    const headers = st.headers.slice();
+    for (const h of prev.headers) if (h && headers.indexOf(h) < 0) headers.push(h);
+    let kept = 0;
+    for (const r of prev.records) {
+      const d = ImportService._normDate(r[pW]);
+      if (!d || d >= today) continue; // from today on, the new export is the truth
+      if (have.has(sig(r, pW, pE))) continue;
+      const row = {};
+      for (const h of headers) row[h] = r[h] != null ? r[h] : '';
+      if (nW && nW !== pW) row[nW] = r[pW];
+      if (nE && pE && nE !== pE) row[nE] = r[pE];
+      st.records.push(row);
+      kept++;
+    }
+    st.headers = headers;
+    st.raw = ImportService._csvText(headers, st.records);
+    return kept;
+  },
   _col(headers, ...cands) {
     for (const cand of cands) { const h = headers.find(x => x.toLowerCase() === cand); if (h) return h; }
     for (const cand of cands) { const h = headers.find(x => x.toLowerCase().includes(cand)); if (h) return h; }
@@ -3257,7 +3376,10 @@ const ImportService = {
     // Manual import: diff here. From the server, applyPayload diffs once
     // at the end of the whole pipeline instead.
     const prevAppts = fromServer ? null : apptSnapshot();
+    // Upcoming-only exports: carry every past booking over from the book.
+    if (!fromServer && ImportService.state.appointly) ImportService._keepPastBookings();
     const rawCsv = ImportService.state.appointly && ImportService.state.appointly.raw;
+    if (!fromServer && rawCsv) ImportService._bookSet(rawCsv);
     const b = ImportService.build();
     const stubById = new Map(b.customers.map(c => [c.id, c]));
     const emKey = e => String(e || '').trim().toLowerCase();
@@ -3440,6 +3562,7 @@ const ImportService = {
     applyAddrEdits();
     applyCustEdits();
     applyTimeEdits();
+    applyManualBookings();
     Store.save(); Domain.refreshAll();
     ImportService.state = { customers: null, orders: null, appointly: null };
     UI.closeModal(); App.route();
@@ -3991,6 +4114,7 @@ const LiveSync = {
     applyAddrEdits();
     applyCustEdits();
     applyTimeEdits();
+    applyManualBookings();
     // The website's product catalogue (fetched server-side from the public
     // storefront) \u2014 powers the dress/colour/size dropdowns on invoices.
     if (Array.isArray(p.products) && p.products.length) DB.catalogue = LiveSync._mapCatalogue(p.products);
@@ -4093,6 +4217,7 @@ const LiveSync = {
     // imported it last) so this browser has the bookings and answers too.
     if (p.bookingsCsv) {
       try {
+        ImportService._bookSet(p.bookingsCsv);
         const parsed = parseCsv(p.bookingsCsv);
         if (parsed.records.length) {
           ImportService.state.appointly = { name: 'shared bookings', raw: '', headers: parsed.headers, records: parsed.records };
@@ -4262,7 +4387,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 103'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 104'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -5191,7 +5316,7 @@ const Staff = {
     return JSON.stringify({ timeEdits: DB.timeEdits || [], addrEdits: DB.addrEdits || {},
       custEdits: DB.custEdits || {}, custMerges: DB.custMerges || [], overrideLog: DB.overrideLog || [],
       checklist: DB.prodChecklist || [], apptChanges: DB.apptChanges || {},
-      manualCusts: DB.manualCusts || [], exportInfo: DB.exportInfo || null });
+      manualCusts: DB.manualCusts || [], exportInfo: DB.exportInfo || null, manualBookings: DB.manualBookings || [] });
   },
   maybePush() {
     if (typeof LiveSync === 'undefined' || !LiveSync.available() || !Gate.token()) return;
@@ -5243,6 +5368,14 @@ const Staff = {
       const here = new Set((DB.customers || []).map(c => c.id));
       for (const c of DB.manualCusts) if (!here.has(c.id)) DB.customers.push(c);
     }
+    // Walk-in bookings: union by id, newest change wins (removals are
+    // tombstones so a removal on one phone sticks everywhere).
+    const bById = new Map((sj.manualBookings || []).map(m => [m.id, m]));
+    for (const m of DB.manualBookings || []) {
+      const r = bById.get(m.id);
+      if (!r || String(m.at || '') > String(r.at || '')) bById.set(m.id, m);
+    }
+    if (bById.size) { DB.manualBookings = [...bById.values()]; applyManualBookings(); }
     // Booking-change notes: union per customer, a dismissal anywhere sticks.
     const acR = sj.apptChanges || {};
     DB.apptChanges = DB.apptChanges || {};
@@ -6691,8 +6824,9 @@ const Actions = {
           <div style="grid-column:1/-1"><b>Address:</b> ${esc(r.c.address || '\u2014')}</div>
         </div>
         <h2>What they told us when booking (Appointly)</h2>
-        ${r.qa ? r.qa.questions.map(q => `<div class="qa"><div class="q">${esc(q.q)}</div><div class="a">${esc(q.a || '\u2014')}</div></div>`).join('')
-          : '<div class="m">No booking answers on file.</div>'}
+        ${(() => { const qs = qaWithEdits(r.c, ImportService._expandQas(r.qa ? r.qa.questions : []));
+          return qs.length ? qs.map(q => `<div class="qa"><div class="q">${esc(q.q)}</div><div class="a">${esc(q.a || '\u2014')}</div></div>`).join('')
+          : '<div class="m">No booking answers on file.</div>'; })()}
         <h2>Already on order${r.orderRef ? ' (' + esc(r.orderRef) + ')' : ''}</h2>
         <table class="itms">${r.items.map(i => `<tr><td><b>${esc(i.title)}</b></td><td>${esc(i.colour || '\u2014')}</td><td>${esc(i.size || '\u2014')}</td><td>\u00d7 ${i.quantity}</td></tr>`).join('') || '<tr><td class="m">Nothing yet.</td></tr>'}</table>
         <h2>Ordered at this appointment \u2014 fill in</h2>
@@ -6769,8 +6903,177 @@ const Actions = {
     const c = { id: uid(), manual: true, name: v('nc-name'), daughterName: v('nc-daughter'),
       phone: v('nc-phone'), email: v('nc-email').toLowerCase(), address: v('nc-address'), notes: '', createdAt: nowIso() };
     DB.customers.push(c);
-    Store.save(); UI.closeModal(); App.go('#/customer/' + c.id);
-    UI.toast(c.name + ' added \u2014 hand-added customers survive every sync.');
+    DB.manualCusts = DB.manualCusts || [];
+    DB.manualCusts.push(c); // every device gets her, and syncs keep her
+    Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush();
+    UI.closeModal(); App.go('#/customer/' + c.id);
+    UI.toast(c.name + ' added \u2014 now pick her venue and day.');
+    setTimeout(() => Actions.bookIntoEvent(c.id), 120);
+  },
+  /* One field at a time - the pencil beside each row on the customer page. */
+  editField(custId, field) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const onShopify = /^sc\d+$/.test(String(c.id));
+    const ans = custAnswers(c);
+    const F = {
+      name: { label: 'Name', val: c.name, shop: true },
+      daughter: { label: "Child's name", val: c.daughterName || ans.child || '', shop: false },
+      email: { label: 'Email', val: c.email || '', shop: true, type: 'email' },
+      phone: { label: 'Phone', val: c.phone || '', shop: true, type: 'tel' },
+      note: { label: 'Notes', val: c.notes || '', shop: true, area: true },
+      communion: { label: 'Communion date', val: ans.communion || '', shop: false },
+    }[field];
+    if (!F) return;
+    UI.modal(`
+      <h3>${esc(F.label)} \u2014 ${esc(c.name)}</h3>
+      ${F.area ? `<textarea id="ef-val" rows="4" style="width:100%">${esc(F.val)}</textarea>`
+        : `<input id="ef-val" type="${F.type || 'text'}" style="width:100%" value="${esc(F.val)}">`}
+      ${F.shop ? `<label style="display:flex; gap:8px; align-items:center; margin-top:10px${onShopify ? '' : '; opacity:.5'}">
+        <input type="checkbox" id="ef-shopify" ${onShopify ? 'checked' : 'disabled'}>
+        ${onShopify ? 'Also change it on Shopify' : 'Not on Shopify (Appointly / walk-in only) \u2014 saved here only'}</label>`
+        : '<p class="small muted" style="margin-bottom:0">Saved on the dashboard (Shopify has no place for this) and printed on every sheet.</p>'}
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions._saveField('${custId}','${field}')">Save</button></div>`);
+    setTimeout(() => { const el = document.getElementById('ef-val'); if (el) el.focus(); }, 50);
+  },
+  _saveField(custId, field) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const val = String((document.getElementById('ef-val') || { value: '' }).value || '').trim();
+    const toShopify = !!(document.getElementById('ef-shopify') || {}).checked;
+    if (field === 'name' && !val) { UI.err(new Error('A name is needed.')); return; }
+    if (field === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { UI.err(new Error('That email does not look right.')); return; }
+    const ch = field === 'name' ? { name: val } : field === 'email' ? { email: val } : field === 'phone' ? { phone: val }
+      : field === 'note' ? { note: val } : field === 'daughter' ? { daughterName: val, answers: { child: val } }
+      : field === 'communion' ? { answers: { communion: val } } : null;
+    if (!ch) return;
+    UI.closeModal();
+    Actions._applyCustomerChanges(c, ch, toShopify);
+  },
+  /* The three booking answers together (child, school, communion). */
+  editAnswers(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const a = custAnswers(c);
+    UI.modal(`
+      <h3>Booking answers \u2014 ${esc(c.name)}</h3>
+      <label class="f">Child's name</label><input id="ea-child" style="width:100%" value="${esc(a.child)}">
+      <label class="f">School</label><input id="ea-school" list="schoollist" style="width:100%" value="${esc(a.school)}">
+      <datalist id="schoollist">${Schools.list().map(s2 => `<option value="${esc(s2)}">`).join('')}</datalist>
+      <label class="f">Communion date</label><input id="ea-communion" style="width:100%" value="${esc(a.communion)}">
+      <p class="small muted" style="margin-bottom:0">Printed on the run sheet and customer sheets from now on, and kept even when new exports arrive.</p>
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions._saveAnswers('${custId}')">Save</button></div>`);
+  },
+  _saveAnswers(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const v = id => String((document.getElementById(id) || { value: '' }).value || '').trim();
+    const child = v('ea-child'), school = v('ea-school'), communion = v('ea-communion');
+    UI.closeModal();
+    // The school lives in the school corrections, so the Schools page, the
+    // school watch and the clash checks all follow it.
+    const was = custAnswers(c).school;
+    if (school !== was) Schools.setFor(custId, school);
+    Actions._applyCustomerChanges(c, { daughterName: child, answers: { child, communion } }, false);
+  },
+  /* Every customer-page edit lands here: kept through syncs and imports,
+     shared with every device, optionally sent to Shopify. */
+  _applyCustomerChanges(c, ch, toShopify) {
+    DB.custEdits = DB.custEdits || {};
+    const key = Actions._custEditKey(c);
+    const prev = DB.custEdits[key] || {};
+    const e = Object.assign({}, prev, { custId: c.id, email: custEmail(c) || prev.email || '', phone: prev.phone || ImportService._digits(c.phone), at: nowIso() });
+    const changed = {};
+    if (ch.name && ch.name !== c.name) { e.name = ch.name; c.name = ch.name; changed.name = true; }
+    if ('daughterName' in ch && ch.daughterName !== (c.daughterName || '')) { e.daughterName = ch.daughterName; c.daughterName = ch.daughterName; }
+    if ('email' in ch) {
+      const em = String(ch.email || '').toLowerCase();
+      if (em && em !== String(c.email || '').toLowerCase()) { e.newEmail = em; c.email = em; changed.email = true; }
+    }
+    if ('phone' in ch && ch.phone !== String(c.phone || '')) { e.newPhone = ch.phone; c.phone = ch.phone; changed.phone = true; }
+    if ('note' in ch && ch.note !== String(c.notes || '')) { e.note = ch.note; c.notes = ch.note; changed.note = true; }
+    if (ch.answers) e.answers = Object.assign({}, prev.answers || {}, ch.answers);
+    DB.custEdits[key] = e;
+    Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush();
+    if (typeof Invoices !== 'undefined') Invoices.refreshContacts();
+    App.route();
+    const shopFields = Object.keys(changed);
+    if (!toShopify || !shopFields.length) { UI.toast('Saved \u2014 it sticks through every sync and export.'); return; }
+    if (!LiveSync.available()) { UI.toast('Saved here. Shopify can only be updated from the live dashboard.'); return; }
+    UI.toast('Saved \u2014 updating Shopify\u2026');
+    const payload = { id: c.id };
+    if (changed.name) { const parts = c.name.split(/\s+/); payload.first_name = parts[0]; payload.last_name = parts.slice(1).join(' '); }
+    if (changed.email) payload.email = c.email;
+    if (changed.phone) payload.phone = c.phone;
+    if (changed.note) payload.note = c.notes;
+    google.script.run
+      .withSuccessHandler(res => {
+        let r = {};
+        try { r = JSON.parse(res); } catch (e2) { /* treat as error */ }
+        if (r.ok) UI.toast('\u2713 Changed on Shopify too.', 4000);
+        else UI.err(new Error('Saved here, but Shopify said: ' + (r.error || 'unknown error') + ' \u2014 the dashboard keeps your change either way.'));
+      })
+      .withFailureHandler(err => UI.err(new Error('Saved here, but Shopify could not be reached: ' + ((err && err.message) || err))))
+      .updateShopifyCustomer(Gate.token(), JSON.stringify(payload));
+  },
+  /* Walk-in / phone booking: put the customer into an event day by hand. */
+  bookIntoEvent(custId) {
+    const c = Domain.customer(custId);
+    if (!c) return;
+    const vs = venueGroups();
+    Actions._bookVs = vs;
+    UI.modal(`
+      <h3>\ud83d\udccd Book ${esc(c.name)} into an event</h3>
+      <p class="small muted" style="margin-top:0">For walk-ins and bookings taken by phone. She then shows on that day's venue page, slot board, run sheet and customer sheets.</p>
+      <label class="f">Venue</label>
+      <select id="bk-venue" style="width:100%" onchange="Actions._bookDates()">
+        ${vs.map((v, i) => `<option value="${i}">${esc(v.venue)}</option>`).join('')}
+      </select>
+      <div class="formgrid">
+        <div><label class="f">Day</label><select id="bk-date" style="width:100%"></select></div>
+        <div><label class="f">Time (optional)</label><input id="bk-time" type="time" style="width:100%"></div>
+      </div>
+      <label class="f">Staff member (optional)</label><input id="bk-staff" style="width:100%" placeholder="e.g. Staff 2">
+      <div class="modalfoot"><button onclick="UI.closeModal()">Cancel</button>
+        <button class="primary" onclick="Actions._saveBooking('${custId}')">Book in</button></div>`);
+    Actions._bookDates();
+  },
+  _bookDates() {
+    const v = (Actions._bookVs || [])[parseInt((document.getElementById('bk-venue') || { value: 0 }).value, 10) || 0];
+    const el = document.getElementById('bk-date');
+    if (!el || !v) return;
+    const next = v.dates.find(d => d >= todayStr());
+    el.innerHTML = v.dates.map(d => `<option value="${d}"${d === next ? ' selected' : ''}>${fmtWd(d)}</option>`).join('');
+  },
+  _saveBooking(custId) {
+    const c = Domain.customer(custId);
+    const v = (Actions._bookVs || [])[parseInt((document.getElementById('bk-venue') || { value: 0 }).value, 10) || 0];
+    const date = (document.getElementById('bk-date') || { value: '' }).value;
+    if (!c || !v || !date) { UI.err(new Error('Pick a venue and a day.')); return; }
+    const occasion = (v.occasions && v.occasions[0]) || 'Darcy Day Out';
+    DB.manualBookings = DB.manualBookings || [];
+    DB.manualBookings.push({ id: uid(), custId: c.id, email: custEmail(c), phone: ImportService._phoneKey(c.phone),
+      name: c.name, eventHotel: occasion + ' \u2014 ' + v.venue, date,
+      time: (document.getElementById('bk-time') || { value: '' }).value || '',
+      staff: String((document.getElementById('bk-staff') || { value: '' }).value || '').trim(), at: nowIso() });
+    applyManualBookings();
+    Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush();
+    UI.closeModal(); App.route();
+    UI.toast(c.name + ' booked into ' + v.venue + ', ' + fmtWd(date) + '.');
+  },
+  removeManualBooking(apptId) {
+    const m = (DB.manualBookings || []).find(x => 'mb-' + x.id === apptId);
+    if (!m || !confirm('Remove this hand-made booking?')) return;
+    m.removed = true; m.at = nowIso();
+    applyManualBookings();
+    Store.save();
+    if (typeof Staff !== 'undefined') Staff.maybePush();
+    App.route();
   },
   editCustomer(custId) {
     const c = Domain.customer(custId);
@@ -6795,7 +7098,8 @@ const Actions = {
         <button class="primary" onclick="Actions._saveCustomerEdit('${custId}')">Save</button></div>`);
   },
   _custEditKey(c) {
-    return custEmail(c) || ('p' + ImportService._digits(c.phone)) || c.id;
+    const ph = ImportService._digits(c.phone);
+    return custEmail(c) || (ph ? 'p' + ph : c.id);
   },
   _saveCustomerEdit(custId) {
     const c = Domain.customer(custId);
@@ -7129,7 +7433,7 @@ const Actions = {
           : /communion/i.test(q) ? 'Communion date'
           : /occasion/i.test(q) ? 'Occasion' : '';
         const answers = r => {
-          const all = ImportService._expandQas(r.qa ? r.qa.questions : []).filter(z => z.a);
+          const all = qaWithEdits(r.c, ImportService._expandQas(r.qa ? r.qa.questions : [])).filter(z => z.a);
           const isNote = z => /^(notes?|booking notes?|internal notes?)$/i.test(String(z.q).trim());
           const trio = all.filter(z => label(z.q));
           const qas = trio.length ? trio : all.filter(z => !isNote(z));
