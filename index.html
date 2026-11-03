@@ -296,9 +296,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 108)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 109)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>7942 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8018 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -311,7 +311,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 108</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 109</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -383,20 +383,100 @@ function splitCents(total, n) {
 const STORE_KEY = 'darcybow-db-v5';
 let DB = null;
 
+/* The browser's quick store (localStorage) holds only ~5MB. A full season
+   of real customers, orders and booking answers outgrows it - and then
+   every save failed silently, so each visit reopened the OLD copy (the 14
+   sample customers). Now, the moment it's full, the copy moves into the
+   browser's big database (IndexedDB, hundreds of MB) for good. */
 const Store = {
-  load() {
+  FLAG: 'darcybow-db-where',
+  _mode() { try { return localStorage.getItem(Store.FLAG) || ''; } catch (e) { return ''; } },
+  _open(cb) {
     try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (raw) { DB = JSON.parse(raw); return; }
-    } catch (e) { /* corrupt store: fall through to reseed */ }
+      const rq = indexedDB.open('darcybow', 1);
+      rq.onupgradeneeded = () => { try { rq.result.createObjectStore('kv'); } catch (e) { /* exists */ } };
+      rq.onsuccess = () => cb(rq.result);
+      rq.onerror = () => cb(null);
+      rq.onblocked = () => cb(null);
+    } catch (e) { cb(null); }
+  },
+  _get(key, cb) {
+    Store._open(db => {
+      if (!db) { cb(''); return; }
+      try {
+        const rq = db.transaction('kv', 'readonly').objectStore('kv').get(key);
+        rq.onsuccess = () => cb(rq.result || '');
+        rq.onerror = () => cb('');
+      } catch (e) { cb(''); }
+    });
+  },
+  _put(key, val, cb) {
+    Store._open(db => {
+      if (!db) { cb && cb(false); return; }
+      try {
+        const tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put(val, key);
+        tx.oncomplete = () => cb && cb(true);
+        tx.onerror = tx.onabort = () => cb && cb(false);
+      } catch (e) { cb && cb(false); }
+    });
+  },
+  // A brand-new device on the live site starts EMPTY (then fills from the
+  // live sync) - the sample customers are only for the offline preview.
+  _fresh() {
     DB = Seed.build();
+    if (typeof DARCY_HOSTED !== 'undefined' && DARCY_HOSTED) {
+      for (const k of Object.keys(DB)) if (Array.isArray(DB[k]) && k !== 'products') DB[k] = [];
+      DB.blank = true;
+    }
     Store.save();
   },
+  load(then) {
+    const done = () => { if (!DB) Store._fresh(); if (then) then(); };
+    if (Store._mode() === 'idb') {
+      Store._get(STORE_KEY, raw => { try { if (raw) DB = JSON.parse(raw); } catch (e) { /* reseed */ } done(); });
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) DB = JSON.parse(raw);
+    } catch (e) { /* corrupt store: fall through to reseed */ }
+    done();
+  },
   save() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+    let json;
+    try { json = JSON.stringify(DB); } catch (e) { return; }
+    if (Store._mode() !== 'idb') {
+      try {
+        localStorage.setItem(STORE_KEY, json);
+        try { Staff.maybePush(); } catch (e) { /* boot order / non-fatal */ }
+        return;
+      } catch (e) {
+        // Full: free the quick store and switch to the big database.
+        try { localStorage.removeItem(STORE_KEY); localStorage.setItem(Store.FLAG, 'idb'); } catch (e2) { /* see below */ }
+      }
+    }
+    Store._pending = json;
+    if (!Store._t) Store._t = setTimeout(Store.flush, 30);
     try { Staff.maybePush(); } catch (e) { /* boot order / non-fatal */ }
   },
-  reset() { localStorage.removeItem(STORE_KEY); DB = Seed.build(); Store.save(); },
+  flush() {
+    Store._t = null;
+    const j = Store._pending;
+    Store._pending = null;
+    if (j == null) return;
+    Store._put(STORE_KEY, j, ok => { if (!ok) Store._full(); });
+  },
+  _full() {
+    if (Store._warned) return;
+    Store._warned = true;
+    try { UI.toast('This browser has no room left to keep a copy \u2014 the dashboard still works and reloads the live data each time it opens.', 9000); } catch (e) { /* too early */ }
+  },
+  reset() {
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* ignore */ }
+    DB = null;
+    Store._fresh();
+  },
 };
 
 const DEFAULT_SETTINGS = {
@@ -1491,8 +1571,8 @@ Pages.dashboard = () => {
     ${DB.importInfo ? `<div class="note ok" style="margin:0 0 16px">\u2705 Showing your ${DB.importInfo.live ? 'live Shopify + Appointly data \u2014 last sync' : 'imported Shopify + Appointly data \u2014 last import'} ${fmtDateTime(DB.importInfo.at)}. <a class="plain" href="#/import">Connect data \u2192</a></div>`
       : (typeof LiveSync !== 'undefined' && LiveSync.available())
         ? (LiveSync.syncing
-          ? '<div class="note info" style="margin:0 0 16px">\u23f3 <b>Fetching the live data for this device\u2026</b> The sample numbers disappear in a moment \u2014 the first pull can take half a minute on a phone.</div>'
-          : `<div class="note" style="margin:0 0 16px">\u26a0 <b>This device hasn\u2019t pulled the data yet</b> \u2014 every phone and laptop keeps its own copy and fills it from Shopify on first sync. ${LiveSync.lastError ? 'Last try failed: <b>' + esc(LiveSync.lastError) + '</b> \u00b7 ' : ''}<a class="plain" style="cursor:pointer" onclick="LiveSync.sync()"><b>\u27f3 Tap here to sync now</b></a></div>`)
+          ? '<div class="note info" style="margin:0 0 16px">\u23f3 <b>Loading your live data\u2026</b> The first time on a new device this can take up to a minute \u2014 after that it opens straight away.</div>'
+          : `<div class="note err" style="margin:0 0 16px">\u26a0 <b>Couldn\u2019t load the live data.</b> ${LiveSync.lastError ? 'Reason: <b>' + esc(LiveSync.lastError) + '</b>. ' : ''}<button class="small primary" onclick="LiveSync.sync()">\u27f3 Try again</button></div>`)
         : `<div class="seam">\ud83d\udd0c Sample data \u2014 nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly \u2192</b></a> Sync live via the free Google web app, or drop in CSV exports \u2014 either fills these screens with the real customers and booking answers.</div>`}
     ${(() => {
       const wl = DB.customers.filter(x => x.waitlist && !x.cancelled)
@@ -1606,6 +1686,9 @@ Pages.customers = () => {
         <button class="primary" onclick="Actions.printAllCustomerSheets()">\ud83d\udda8 Print all customer sheets</button>
       </div>
     </div>
+    ${!DB.importInfo && typeof LiveSync !== 'undefined' && LiveSync.available()
+      ? (LiveSync.syncing ? '<div class="note info">\u23f3 <b>Loading your live data\u2026</b> \u2014 the customers appear in a moment.</div>'
+        : `<div class="note err">\u26a0 <b>Couldn\u2019t load the live data.</b> ${LiveSync.lastError ? esc(LiveSync.lastError) + ' ' : ''}<button class="small primary" onclick="LiveSync.sync()">\u27f3 Try again</button></div>`) : ''}
     <div class="custsearch">
       <input id="pagesearch" class="searchbar" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         style="margin:0" placeholder="\ud83d\udd0d Search name, child, phone, email, school, order\u2026"
@@ -3937,22 +4020,13 @@ var DARCY_DEFAULT_SERVER = 'https:\/\/script.google.com\/macros\/s\/AKfycbxDO04l
     if (!url) url = localStorage.getItem('darcybow-server') || '';
   } catch (e) { /* private mode */ }
   if (!/^https:/.test(url) || url.indexOf('script.google') === -1) {
-    // Not connected yet: try the baked-in default, trusting it only once
-    // it answers like the Darcybow backend. Then remember it and reload.
+    // Opened from the website: always the business's own server, straight
+    // away - never the sample data, even in a browser that forgets
+    // everything (private windows, cleared history).
     if (DARCY_DEFAULT_SERVER && location.protocol.indexOf('http') === 0) {
-      fetch(DARCY_DEFAULT_SERVER, { method: 'POST', body: JSON.stringify({ fn: 'checkSitePassword', args: ['connectivity-probe', 'default-check'] }) })
-        .then(function (r) { return r.text(); })
-        .then(function (tx) {
-          var j = null;
-          try { j = JSON.parse(tx); } catch (e5) { /* not ours */ }
-          if (j && (j.result || j.err)) {
-            try { localStorage.setItem('darcybow-server', DARCY_DEFAULT_SERVER); } catch (e6) { /* private mode */ }
-            location.reload();
-          }
-        })
-        .catch(function () { /* offline or wrong address - card stays */ });
-    }
-    return; // not connected yet
+      url = DARCY_DEFAULT_SERVER;
+      try { localStorage.setItem('darcybow-server', url); } catch (e5) { /* private mode */ }
+    } else return; // offline preview (file) - sample data
   }
   DARCY_HOSTED = true;
   var mkRunner = function () {
@@ -4661,7 +4735,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 108'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 109'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -7879,7 +7953,9 @@ const Gate = {
   },
 };
 (function boot() {
-  Store.load();
+  Store.load(bootRest);
+})();
+function bootRest() {
   DB.schoolAliases = DB.schoolAliases || {};
   DB.photoIdx = DB.photoIdx || [];
   DB.schoolNotSame = DB.schoolNotSame || [];
@@ -7935,7 +8011,7 @@ const Gate = {
     }, 10 * 60 * 1000);
   }
   window.__bootDone = true; // boot watchdog: made it to the end
-})();
+}
 </script>
 <div id="df-eof" hidden></div>
 </body>
