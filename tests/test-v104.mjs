@@ -34,7 +34,7 @@ await page.addInitScript(() => {
 });
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1500);
-check('version stamp is 108', (await page.locator('#sidebar').textContent()).includes('version 108'));
+check('version stamp is 109', (await page.locator('#sidebar').textContent()).includes('version 109'));
 
 const iso = d => d.toISOString().slice(0, 10);
 const PAST = iso(new Date(Date.now() - 12 * 86400000));
