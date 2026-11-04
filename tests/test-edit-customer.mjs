@@ -28,7 +28,7 @@ await page.addInitScript(() => {
 });
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1500);
-check('version stamp is 109', (await page.locator('#sidebar').textContent()).includes('version 109'));
+check('version stamp is 110', (await page.locator('#sidebar').textContent()).includes('version 110'));
 
 const future = new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10);
 const shop = (email, phone, note) => ({

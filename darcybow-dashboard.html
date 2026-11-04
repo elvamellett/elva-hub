@@ -296,9 +296,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 109)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 110)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8018 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8055 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -311,7 +311,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 109</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 110</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -391,14 +391,23 @@ let DB = null;
 const Store = {
   FLAG: 'darcybow-db-where',
   _mode() { try { return localStorage.getItem(Store.FLAG) || ''; } catch (e) { return ''; } },
+  // ONE shared connection, so every write lands in the order it was made.
   _open(cb) {
+    if (Store._conn) { cb(Store._conn); return; }
+    if (Store._waiting) { Store._waiting.push(cb); return; }
+    Store._waiting = [cb];
+    const fin = db => {
+      Store._conn = db || null;
+      if (db) db.onclose = db.onversionchange = () => { try { db.close(); } catch (e) { /* gone */ } Store._conn = null; };
+      const w = Store._waiting; Store._waiting = null;
+      w.forEach(f => f(db || null));
+    };
     try {
       const rq = indexedDB.open('darcybow', 1);
       rq.onupgradeneeded = () => { try { rq.result.createObjectStore('kv'); } catch (e) { /* exists */ } };
-      rq.onsuccess = () => cb(rq.result);
-      rq.onerror = () => cb(null);
-      rq.onblocked = () => cb(null);
-    } catch (e) { cb(null); }
+      rq.onsuccess = () => fin(rq.result);
+      rq.onerror = () => fin(null);
+    } catch (e) { fin(null); }
   },
   _get(key, cb) {
     Store._open(db => {
@@ -433,14 +442,25 @@ const Store = {
   },
   load(then) {
     const done = () => { if (!DB) Store._fresh(); if (then) then(); };
-    if (Store._mode() === 'idb') {
-      Store._get(STORE_KEY, raw => { try { if (raw) DB = JSON.parse(raw); } catch (e) { /* reseed */ } done(); });
+    let lsRaw = '';
+    try { lsRaw = localStorage.getItem(STORE_KEY) || ''; } catch (e) { /* blocked */ }
+    // Copy in the big database (or the quick store came back empty for any
+    // reason - cleared, blocked, a lost marker): read the big database first.
+    if (Store._mode() === 'idb' || !lsRaw) {
+      const lsOnly = Store._mode() !== 'idb';
+      // A busy browser can fail a read now and then - try again before
+      // starting empty (and an empty start never overwrites the saved copy).
+      let tries = 0;
+      const read = () => Store._get(STORE_KEY, raw => {
+        try { if (raw) DB = JSON.parse(raw); } catch (e) { /* reseed */ }
+        if (DB && lsOnly) { try { localStorage.setItem(Store.FLAG, 'idb'); } catch (e) { /* fine */ } }
+        if (!DB && !lsOnly && ++tries < 4) { Store._conn = null; setTimeout(read, 150 * tries); return; }
+        done();
+      });
+      read();
       return;
     }
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (raw) DB = JSON.parse(raw);
-    } catch (e) { /* corrupt store: fall through to reseed */ }
+    try { DB = JSON.parse(lsRaw); } catch (e) { /* corrupt store: fall through to reseed */ }
     done();
   },
   save() {
@@ -456,16 +476,26 @@ const Store = {
         try { localStorage.removeItem(STORE_KEY); localStorage.setItem(Store.FLAG, 'idb'); } catch (e2) { /* see below */ }
       }
     }
+    // A blank start (new device, data not loaded yet) is never written over
+    // the saved copy - only real data is.
+    if (DB && DB.blank && !DB.importInfo && !(DB.customers || []).length) return;
     Store._pending = json;
-    if (!Store._t) Store._t = setTimeout(Store.flush, 30);
+    if (!Store._t && !Store._busy) Store._t = setTimeout(Store.flush, 30);
     try { Staff.maybePush(); } catch (e) { /* boot order / non-fatal */ }
   },
+  // One write at a time; whatever changed meanwhile is written next, so the
+  // newest copy always lands last.
   flush() {
     Store._t = null;
     const j = Store._pending;
     Store._pending = null;
-    if (j == null) return;
-    Store._put(STORE_KEY, j, ok => { if (!ok) Store._full(); });
+    if (j == null || Store._busy) { if (j != null) Store._pending = j; return; }
+    Store._busy = true;
+    Store._put(STORE_KEY, j, ok => {
+      Store._busy = false;
+      if (!ok) Store._full();
+      if (Store._pending != null) Store.flush();
+    });
   },
   _full() {
     if (Store._warned) return;
@@ -4735,7 +4765,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 109'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 110'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4748,6 +4778,10 @@ const PAY_METHODS = ['Cash', 'SumUp', 'Shopify'];
 let InvDraft = null;
 
 const Invoices = {
+  // The PDF's FILE name: "Jean/Thomas" becomes "Jean & Thomas". A slash or
+  // colon in the name broke OneDrive attachments ("can't find the link").
+  pdfName: inv => (inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq)
+    .replace(/\s*[\/\\]\s*/g, ' & ').replace(/[:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim(),
   settings() {
     if (!DB.invoiceSettings) DB.invoiceSettings = { paymentTo: Object.assign({}, INV_DEFAULT_PAYTO),
       terms: INV_DEFAULT_TERMS, eventCodes: {}, passHash: '', updatedAt: nowIso() };
@@ -4845,7 +4879,7 @@ const Invoices = {
       textBody: bodyText,
       htmlBody: bodyText.split('\n').map(l => esc(l) || '&nbsp;').join('<br>'),
       pdfHtml: Invoices.docHtml(inv, true),
-      filename: (inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq).replace(/[\\/:*?"<>|]/g, '-'),
+      filename: Invoices.pdfName(inv),
       replyTo: Invoices.settings().emailTemplate.replyTo || '',
       fromAddress: Invoices.settings().emailTemplate.fromAddress || '',
       bcc: Invoices.settings().emailTemplate.copyTo || '',
@@ -5535,7 +5569,7 @@ const Invoices = {
       if (!s) return '';
       return /^\d+\./.test(s) ? '<div class="th">' + esc(s.replace(/^\d+\.\s*/, '')) + '</div>' : '<div class="tl">' + esc(s) + '</div>';
     }).join('');
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(num)}</title><style>
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(Invoices.pdfName(inv))}</title><style>
       @page { size: A4; margin: 0; }
       body { margin: 0; font-family: "Georgia", "Times New Roman", serif; color: #3d4547; }
       .pg { width: 210mm; height: 296mm; box-sizing: border-box; display: flex; flex-direction: column;
@@ -7954,6 +7988,9 @@ const Gate = {
 };
 (function boot() {
   Store.load(bootRest);
+  const flushNow = () => { try { if (Store._t) { clearTimeout(Store._t); Store.flush(); } } catch (e) { /* closing */ } };
+  window.addEventListener('pagehide', flushNow);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });
 })();
 function bootRest() {
   DB.schoolAliases = DB.schoolAliases || {};

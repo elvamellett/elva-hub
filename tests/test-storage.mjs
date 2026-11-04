@@ -21,6 +21,14 @@ const mkShop = n => ({
   products: [], syncedAt: new Date().toISOString(),
 });
 
+const html = fs.readFileSync('/home/user/elva-hub/darcybow-dashboard.html');
+const srv = http.createServer((req, res) => {
+  if (req.url.startsWith('/version.json')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"version":110}'); return; }
+  res.writeHead(200, { 'content-type': 'text/html' }); res.end(html);
+});
+await new Promise(r => srv.listen(0, '127.0.0.1', r));
+const base = 'http://127.0.0.1:' + srv.address().port + '/';
+
 // ---------- A. quick store full ----------
 {
   const ctx = await browser.newContext();
@@ -39,9 +47,9 @@ const mkShop = n => ({
   });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('A: ' + e));
-  await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1200);
-  check('A: version stamp is 109', (await page.content()).includes('version 109'));
+  check('A: version stamp is 110', (await page.content()).includes('version 110'));
   const err = await page.evaluate(p => { try { LiveSync.applyPayload(p); return ''; } catch (e) { return String(e); } }, mkShop(120));
   await page.waitForTimeout(800);
   check('A: sync with a FULL quick store does not fail', err === '');
@@ -55,18 +63,15 @@ const mkShop = n => ({
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
   check('A: later changes keep saving too', await page.evaluate(() => DB.customers.some(c => c.name === 'Edited Name')));
+  await page.evaluate(() => localStorage.removeItem('darcybow-db-where')); // browser lost the marker
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  check('A: even if the browser loses the marker, the saved copy is found', await page.evaluate(() => DB.customers.length === 120 && localStorage.getItem('darcybow-db-where') === 'idb'));
   await ctx.close();
 }
 
 // ---------- B. live website on a brand-new laptop ----------
 {
-  const html = fs.readFileSync('/home/user/elva-hub/darcybow-dashboard.html');
-  const srv = http.createServer((req, res) => {
-    if (req.url.startsWith('/version.json')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"version":109}'); return; }
-    res.writeHead(200, { 'content-type': 'text/html' }); res.end(html);
-  });
-  await new Promise(r => srv.listen(0, '127.0.0.1', r));
-  const base = 'http://127.0.0.1:' + srv.address().port + '/';
   const ctx = await browser.newContext();
   let syncDelay = 1500;
   await ctx.route('https://script.google.com/**', async route => {
@@ -95,8 +100,8 @@ const mkShop = n => ({
   check('B: next open: customers there straight away, before the sync finishes', await page.evaluate(() => LiveSync.syncing && DB.customers.length === 3));
   syncDelay = 0;
   await ctx.close();
-  srv.close();
 }
+srv.close();
 
 check('no JS errors', errors.length === 0);
 if (errors.length) console.log(errors.slice(0, 5));
