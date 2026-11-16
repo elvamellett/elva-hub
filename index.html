@@ -296,9 +296,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 110)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 111)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8055 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8147 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -311,7 +311,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 110</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 111</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1754,7 +1754,7 @@ Pages._custResults = matches => {
             .sort((a, b) => (a.appointmentAt + (a.time || '')) < (b.appointmentAt + (b.time || '')) ? -1 : 1)[0];
           const answered = appts.filter(a => a.questions.some(qa => qa.a)).length;
           return `<tr class="click" onclick="App.go('#/customer/${c.id}')">
-            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.bought(c.id) ? (Invoices.status(c.id) === 'paid' ? ' <span class="badge b-green">\ud83e\uddfe Paid</span>' : ' <span class="badge b-blue">\ud83e\uddfe Invoiced</span>') : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}${c.phone ? `<span class="show-m small muted"><br>\ud83d\udcde ${esc(c.phone)}</span>` : ''}</td>
+            <td><span class="cname"${c.cancelled ? ' style="text-decoration:line-through; opacity:.55"' : ''}>${esc(c.name)}</span>${c.cancelled ? ' <span class="badge b-red">Cancelled</span>' : ''}${c.waitlist ? ' <span class="badge b-amber" title="On the waiting list \u2014 no confirmed booking yet">\u23f3 Wait list</span>' : ''}${c.cancelled || Schools.of(c.id) ? '' : ' <span class="badge b-amber" title="No school on file \u2014 ask and add it, the clash check needs it">\ud83c\udfeb No school</span>'}${Invoices.bought(c.id) ? ' ' + Invoices.tag(Invoices.bought(c.id)) : ''}${c.addressCheck ? ' <span class="badge b-amber" title="Delivery address updated from latest order \u2014 profile on Shopify disagrees">\ud83d\udccd address</span>' : ''}${dupFlags.has(c.id) ? ' <span class="badge b-amber" title="Another record shares this phone, name or daughter \u2014 open the page to review and merge">\ud83d\udc65 duplicate?</span>' : ''}${c.daughterName ? `<br><span class="small muted">for ${esc(c.daughterName)}</span>` : ''}${c.phone ? `<span class="show-m small muted"><br>\ud83d\udcde ${esc(c.phone)}</span>` : ''}</td>
             <td class="small hide-m">${c.phone ? telLink(c.phone) : ''}<br><span class="muted">${esc(c.email)}</span></td>
             <td class="small hide-m">${UI.eventBadge(latest ? latest.eventHotel : '')}</td>
             <td class="small hide-m">${latest ? `<span class="mono" style="font-weight:600">${esc(latest.reference)}</span><br>` : ''}${firstItem ? `<b>${esc(firstItem.title)}</b>${items.length > 1 ? ` <span class="muted">+${items.length - 1} more</span>` : ''}` : '<span class="muted">No orders</span>'}</td>
@@ -2678,7 +2678,7 @@ Pages.venueDetail = (venueName) => {
         <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' \u00b7 event ' + fmtWd(r.o.eventDate) : ''}${r.school ? ' \u00b7 \ud83c\udfeb ' + esc(r.school) : ''}</span>
       </div>
       <div>${inv
-        ? `${Invoices.status(r.c.id) === 'paid' ? '<span class="badge b-green">Paid</span> ' : ''}<button class="small" onclick="event.stopPropagation(); Invoices.open('${r.c.id}')">\ud83e\uddfe See invoice</button>`
+        ? `${Invoices.tag(inv)} <button class="small" onclick="event.stopPropagation(); Invoices.open('${r.c.id}')">\ud83e\uddfe See invoice</button>`
         : `<span class="badge b-amber">Hasn\u2019t bought</span>`}</div>
       ${appt && appt.staffName ? `<div><span class="badge b-grey">${esc(appt.staffName)}</span></div>` : ''}
       <div style="text-align:right">
@@ -3191,7 +3191,9 @@ Pages.customerDetail = (id) => {
           ${Invoices.statusBadge(c.id)}
           <span style="flex:1"></span>
           <button class="small" onclick="Invoices.open('${c.id}')">\u270e Edit</button>
-          <button class="small primary" onclick="Invoices.previewFor('${c.id}')">\ud83d\udc41 Preview / print</button>
+          <button class="small primary" onclick="Invoices.previewFor('${c.id}')">\ud83d\udc41 Invoice 1</button>
+          <button class="small" onclick="Invoices.previewFor('${c.id}', 'balance')">\ud83e\uddfe Remainder invoice</button>
+          <button class="small" onclick="Invoices.sendModal('balance', '${c.id}')">\u2709 Send remainder</button>
         </div>
         ${invLines.length ? `<div class="tablewrap" style="margin-top:8px"><table>
           <thead><tr><th>Dress</th><th>Colour</th><th>Size</th><th class="num">Qty</th><th class="num">Total</th></tr></thead>
@@ -4765,7 +4767,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 110'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 111'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4780,8 +4782,34 @@ let InvDraft = null;
 const Invoices = {
   // The PDF's FILE name: "Jean/Thomas" becomes "Jean & Thomas". A slash or
   // colon in the name broke OneDrive attachments ("can't find the link").
-  pdfName: inv => (inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq)
+  pdfName: (inv, kind) => (inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq + (kind === 'balance' ? 'R' : ''))
     .replace(/\s*[\/\\]\s*/g, ' & ').replace(/[:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim(),
+  /* ---- Two invoices per sale ----
+     Invoice 1 goes out at the sale (items, deposit, balance due). The
+     REMAINDER invoice ("...-54R") asks for what's left - same items and
+     payments (one record, so the two can never disagree) - and turns into
+     a PAID IN FULL copy once the balance comes in. */
+  num: inv => inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq,
+  balNum: inv => Invoices.num(inv) + 'R',
+  owing: inv => Invoices.isPaid(inv) ? 0 : Math.max(0, Invoices.totals(inv).remainderCents),
+  ensureBalance(inv) {
+    if (!inv.balance) { inv.balance = { issueDate: todayStr(), createdAt: nowIso() }; inv.updatedAt = nowIso(); }
+    return inv.balance;
+  },
+  // The tag bubble: "\u2713 Fully paid" or "\u20ac300 remaining".
+  tag(inv) {
+    if (!inv || Invoices.isEmpty(inv)) return '';
+    if (Invoices.isPaid(inv)) return '<span class="badge b-green" title="Nothing left to pay">\u2713 Fully paid</span>';
+    const owe = Invoices.owing(inv);
+    const some = Invoices.totals(inv).paidCents > 0;
+    return '<span class="badge ' + (some ? 'b-amber' : 'b-red') + '" title="' + (some ? 'Deposit paid' : 'Nothing paid yet') + '">' + eurPlain(owe) + ' remaining</span>';
+  },
+  // Which of the two have gone out.
+  sentTags(inv) {
+    if (!inv) return '';
+    return (inv.sentAt ? '<span class="badge b-blue" title="Invoice 1 emailed ' + fmtDateTime(inv.sentAt) + '">\u2709 Invoice 1 sent</span> ' : '')
+      + (inv.balance && inv.balance.sentAt ? '<span class="badge b-blue" title="Remainder invoice emailed ' + fmtDateTime(inv.balance.sentAt) + '">\u2709 Remainder sent</span>' : '');
+  },
   settings() {
     if (!DB.invoiceSettings) DB.invoiceSettings = { paymentTo: Object.assign({}, INV_DEFAULT_PAYTO),
       terms: INV_DEFAULT_TERMS, eventCodes: {}, passHash: '', updatedAt: nowIso() };
@@ -4798,34 +4826,47 @@ const Invoices = {
       body: 'Hi {{first_name}},\n\nThank you so much for your order with Darcybow! Your invoice ({{invoice_number}}) is attached.\n\nInvoice total: {{total}}\nRemainder to pay: {{remainder}}\n\nPayment details are on the invoice. If you have any questions, just reply to this email.\n\nDarcybow x',
       replyTo: '',
     };
+    if (!DB.invoiceSettings.balanceTemplate) DB.invoiceSettings.balanceTemplate = {
+      subject: 'Your Darcybow remainder invoice \u2014 {{invoice_number}}',
+      body: 'Hi {{first_name}},\n\nThank you again for your order with Darcybow! Attached is your remainder invoice ({{invoice_number}}).\n\nInvoice total: {{total}}\nPaid so far: {{paid}}\nRemaining to pay: {{remainder}}\n\nPayment details are on the invoice. If you have any questions, just reply to this email.\n\nDarcybow x',
+    };
     if (DB.invoiceSettings.emailTemplate.fromAddress == null) DB.invoiceSettings.emailTemplate.fromAddress = 'edelle@darcybow.ie';
     if (DB.invoiceSettings.emailTemplate.copyTo == null) DB.invoiceSettings.emailTemplate.copyTo = 'edelle@darcybow.ie';
     return DB.invoiceSettings;
   },
-  emailVars(inv) {
+  emailVars(inv, kind) {
     const t = Invoices.totals(inv);
     return {
       name: inv.contact.name, first_name: (inv.contact.name || '').split(' ')[0],
-      invoice_number: inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq,
+      invoice_number: kind === 'balance' ? Invoices.balNum(inv) : Invoices.num(inv),
+      original_number: Invoices.num(inv),
       total: eurPlain(t.linesTotal), paid: eurPlain(t.paidCents),
       remainder: (inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'nothing \u2014 paid in full!' : eurPlain(Math.max(t.remainderCents, 0)),
       issue_date: inv.issueDate,
     };
   },
   fill: (tpl, vars) => String(tpl || '').replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] != null ? vars[k] : ''),
-  sendModal() {
-    const inv = Invoices.save(true);
+  // kind: '' = invoice 1, 'balance' = the remainder invoice. With custId
+  // it sends the SAVED invoice (customer page / invoice book); without, it
+  // saves the open builder first.
+  sendModal(kind, custId) {
+    if (custId && !Invoices.unlocked() && !Invoices.unlock()) return;
+    const inv = custId ? Invoices.invFor(custId) : Invoices.save(true);
     if (!inv) return;
     if (!inv.contact.email) { UI.err(new Error('No email on the invoice \u2014 add one in \u201cBill to\u201d first.')); return; }
+    Invoices._sendCtx = { id: inv.id, kind: kind || '' };
     const st = Invoices.settings();
-    const vars = Invoices.emailVars(inv);
+    const vars = Invoices.emailVars(inv, kind);
+    const tpl = kind === 'balance' ? st.balanceTemplate : st.emailTemplate;
+    const lastSent = kind === 'balance' ? (inv.balance && inv.balance.sentAt) : inv.sentAt;
     UI.modal(`
-      <h3>\u2709 Send invoice ${esc(vars.invoice_number)}</h3>
+      <h3>\u2709 Send ${kind === 'balance' ? 'remainder invoice' : 'invoice'} ${esc(vars.invoice_number)} ${Invoices.tag(inv)}</h3>
+      ${kind === 'balance' ? `<p class="small muted" style="margin-top:0">The remainder invoice shows the same items, everything paid so far and ${Invoices.isPaid(inv) ? '<b>PAID IN FULL</b>' : 'the <b>' + eurPlain(Invoices.owing(inv)) + ' still to pay</b>'}.</p>` : ''}
       <div id="em-health" class="note info">Checking the email connection\u2026</div>
       <label class="f">To</label><input id="em-to" style="width:100%" value="${esc(inv.contact.email)}">
-      <label class="f">Subject</label><input id="em-subject" style="width:100%" value="${esc(Invoices.fill(st.emailTemplate.subject, vars))}">
-      <label class="f">Message</label><textarea id="em-body" rows="9" style="width:100%">${esc(Invoices.fill(st.emailTemplate.body, vars))}</textarea>
-      ${inv.sentAt ? `<p class="small muted">Last sent ${fmtDateTime(inv.sentAt)}.</p>` : ''}
+      <label class="f">Subject</label><input id="em-subject" style="width:100%" value="${esc(Invoices.fill(tpl.subject, vars))}">
+      <label class="f">Message</label><textarea id="em-body" rows="9" style="width:100%">${esc(Invoices.fill(tpl.body, vars))}</textarea>
+      ${lastSent ? `<p class="small muted">Last sent ${fmtDateTime(lastSent)}.</p>` : ''}
       <div class="modalfoot">
         <button onclick="UI.closeModal()">Cancel</button>
         <button onclick="Invoices.sendEmail(true)">\ud83d\udce7 Send test to me</button>
@@ -4864,8 +4905,11 @@ const Invoices = {
       .emailHealth(Gate.token());
   },
   sendEmail(isTest) {
-    const inv = Invoices.invFor(InvDraft ? InvDraft.customerId : '') || InvDraft;
+    const ctx = Invoices._sendCtx || { id: '', kind: '' };
+    const inv = (DB.invoices || []).find(i => i.id === ctx.id) || Invoices.invFor(InvDraft ? InvDraft.customerId : '') || InvDraft;
     if (!inv) return;
+    const kind = ctx.kind;
+    if (kind === 'balance') Invoices.ensureBalance(inv);
     if (typeof LiveSync === 'undefined' || !LiveSync.available()) {
       UI.err(new Error('Email sending only works from the live dashboard link (the Google web app).')); return;
     }
@@ -4873,13 +4917,12 @@ const Invoices = {
     const subject = document.getElementById('em-subject').value;
     const bodyText = document.getElementById('em-body').value;
     if (!isTest && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { UI.err(new Error('That customer email doesn\'t look right.')); return; }
-    const vars = Invoices.emailVars(inv);
     const payload = {
       to, isTest: !!isTest, subject: isTest ? '[TEST] ' + subject : subject,
       textBody: bodyText,
       htmlBody: bodyText.split('\n').map(l => esc(l) || '&nbsp;').join('<br>'),
-      pdfHtml: Invoices.docHtml(inv, true),
-      filename: Invoices.pdfName(inv),
+      pdfHtml: Invoices.docHtml(inv, true, kind),
+      filename: Invoices.pdfName(inv, kind),
       replyTo: Invoices.settings().emailTemplate.replyTo || '',
       fromAddress: Invoices.settings().emailTemplate.fromAddress || '',
       bcc: Invoices.settings().emailTemplate.copyTo || '',
@@ -4892,9 +4935,10 @@ const Invoices = {
           if (r.error) { UI.err(new Error(r.error)); return; }
           if (r.warning) UI.toast('\u26a0 ' + r.warning, 9000);
           if (isTest) { UI.toast('Test sent to your own inbox (' + (r.sentTo || 'you') + ') \u2014 check it before sending to the customer.'); return; }
-          inv.sentAt = nowIso(); inv.updatedAt = nowIso();
+          if (kind === 'balance') Invoices.ensureBalance(inv).sentAt = nowIso(); else inv.sentAt = nowIso();
+          inv.updatedAt = nowIso();
           Store.save(); Invoices._push(); UI.closeModal(); App.route();
-          UI.toast('Invoice emailed to ' + to + ' \u2713');
+          UI.toast((kind === 'balance' ? 'Remainder invoice' : 'Invoice') + ' emailed to ' + to + ' \u2713');
         } catch (e) { UI.err(e); }
       })
       .withFailureHandler(e => UI.err(e))
@@ -4934,10 +4978,8 @@ const Invoices = {
   statusBadge(custId) {
     const s = Invoices.status(custId);
     const inv = Invoices.invFor(custId);
-    const sent = inv && inv.sentAt ? ' \u00b7 sent \u2709' : '';
     const ovr = inv && inv.clashOverride ? ' <span class="badge b-red" title="Dress clash overridden \u2014 ' + esc(inv.clashOverride.reason || '') + '">Overridden</span>' : '';
-    return s === 'paid' ? '<span class="badge b-green">Invoice \u00b7 paid in full</span>' + ovr
-      : s === 'invoiced' ? '<span class="badge b-blue">Invoiced' + sent + '</span>' + ovr
+    return s ? Invoices.tag(inv) + ' ' + Invoices.sentTags(inv) + ovr
       : '<span class="badge b-grey">Not invoiced</span>';
   },
   // Event code from the hotel the customer is linked to: remembered override,
@@ -5154,7 +5196,17 @@ const Invoices = {
     if (inv._venueKey && inv.code) { st.eventCodes[inv._venueKey] = inv.code; st.updatedAt = nowIso(); }
     if (!DB.invoices) DB.invoices = [];
     const idx = DB.invoices.findIndex(x => x.id === inv.id);
+    // Things changed OUTSIDE this form since it opened (marked paid on the
+    // invoice book, emailed, remainder invoice made, moved venue) are kept -
+    // an older open copy must never undo them.
+    if (idx >= 0) {
+      const prev = DB.invoices[idx];
+      const formKeys = new Set(['id', 'customerId', 'contact', 'code', 'seq', 'issueDate', 'lines', 'depositCents', 'depositMethod', 'depositDate',
+        'otherPaidCents', 'otherMethod', 'otherDate', 'note', 'school', 'commYear', 'sterling', 'clashOverride', 'contactManual', 'updatedAt', '_venueKey']);
+      for (const k of Object.keys(prev)) if (!formKeys.has(k)) inv[k] = prev[k];
+    }
     if (idx >= 0) DB.invoices[idx] = inv; else DB.invoices.push(inv);
+    InvDraft = JSON.parse(JSON.stringify(inv));
     Store.save(); Invoices._push();
     App.route(); // refresh status badge / paid button (the preview modal sits above and survives)
     if (!silent) UI.toast('Invoice saved.');
@@ -5217,7 +5269,8 @@ const Invoices = {
     return inv && !Invoices.isEmpty(inv) ? inv : null;
   },
   daysSinceSent(inv) {
-    const base = inv.sentAt || inv.createdAt;
+    const last = [inv.sentAt, inv.balance && inv.balance.sentAt].filter(Boolean).sort().pop();
+    const base = last || inv.createdAt;
     if (!base) return 0;
     return Math.floor((Date.now() - new Date(base).getTime()) / 86400000);
   },
@@ -5404,7 +5457,9 @@ const Invoices = {
     if (!inv) return;
     if (!inv.contact.email) { UI.err(new Error('No email on the invoice \u2014 add one in \u201cBill to\u201d first.')); return; }
     InvDraft = JSON.parse(JSON.stringify(inv)); // sendEmail finds the saved invoice through this
-    const vars = Invoices.emailVars(inv);
+    // A reminder carries the REMAINDER invoice (what's still owed).
+    Invoices._sendCtx = { id: inv.id, kind: 'balance' };
+    const vars = Invoices.emailVars(inv, 'balance');
     const days = Invoices.daysSinceSent(inv);
     const subject = 'Friendly reminder \u2014 invoice ' + vars.invoice_number;
     const body = 'Hi ' + vars.first_name + ',\n\nJust a friendly reminder about invoice ' + vars.invoice_number
@@ -5499,6 +5554,9 @@ const Invoices = {
       <h2 class="small" style="margin-top:14px">Email template <span class="muted" style="text-transform:none">\u2014 placeholders: {{first_name}} {{name}} {{invoice_number}} {{total}} {{remainder}} {{issue_date}}</span></h2>
       <label class="f">Subject</label><input id="ist-em-subject" style="width:100%" value="${esc(st.emailTemplate.subject)}">
       <label class="f">Message</label><textarea id="ist-em-body" rows="8" style="width:100%; font-size:.82rem">${esc(st.emailTemplate.body)}</textarea>
+      <h2 class="small" style="margin-top:14px">Remainder invoice email <span class="muted" style="text-transform:none">\u2014 also {{paid}} and {{original_number}}</span></h2>
+      <label class="f">Subject</label><input id="ist-bal-subject" style="width:100%" value="${esc(st.balanceTemplate.subject)}">
+      <label class="f">Message</label><textarea id="ist-bal-body" rows="8" style="width:100%; font-size:.82rem">${esc(st.balanceTemplate.body)}</textarea>
       <label class="f">Send from address</label><input id="ist-em-from" style="width:100%" value="${esc(st.emailTemplate.fromAddress || '')}" placeholder="edelle@darcybow.ie">
       <p class="small muted" style="margin:4px 0 0">Used automatically once this address is added as a \u201cSend mail as\u201d alias in the Gmail account that runs this dashboard (Gmail \u2192 \u2699 Settings \u2192 Accounts and Import \u2192 \u201cSend mail as\u201d \u2192 Add another email address \u2192 verify). Until then, emails send from that Gmail account and you'll see a reminder.</p>
       <label class="f">Reply-to address (optional)</label><input id="ist-em-replyto" style="width:100%" value="${esc(st.emailTemplate.replyTo || '')}" placeholder="edelle@darcybow.ie">
@@ -5532,17 +5590,21 @@ const Invoices = {
       sortCode: v('ist-sc'), swift: v('ist-sw'), iban: v('ist-ib') };
     st.emailTemplate = { subject: v('ist-em-subject'), body: v('ist-em-body'), replyTo: v('ist-em-replyto').trim(),
       fromAddress: v('ist-em-from').trim(), copyTo: v('ist-em-copyto').trim() };
+    if (document.getElementById('ist-bal-subject')) st.balanceTemplate = { subject: v('ist-bal-subject'), body: v('ist-bal-body') };
     st.terms = v('ist-terms');
     st.updatedAt = nowIso();
     Store.save(); Invoices._push(); UI.closeModal(); UI.toast('Invoice settings saved.');
   },
   /* --------- the two-page invoice document (matches the PDF design) --------- */
-  docHtml(inv, pdfMode) {
+  docHtml(inv, pdfMode, kind) {
     const st = Invoices.settings();
     const t = Invoices.totals(inv);
-    const num = inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq;
-    const d = inv.issueDate.split('-');
-    const dateStr = d.length === 3 ? d[2] + '/' + d[1] + '/' + d[0] : inv.issueDate;
+    const isBal = kind === 'balance';
+    const num = isBal ? Invoices.balNum(inv) : Invoices.num(inv);
+    const dmy = ds => { const p3 = String(ds || '').split('-'); return p3.length === 3 ? p3[2] + '/' + p3[1] + '/' + p3[0] : String(ds || ''); };
+    const dateStr = dmy(isBal ? ((inv.balance && inv.balance.issueDate) || todayStr()) : inv.issueDate);
+    const paidUp = Invoices.isPaid(inv);
+    const owe = Invoices.owing(inv);
     const lines = inv.lines.filter(l => l.title);
     const rows = [];
     for (let i = 0; i < Math.max(2, lines.length); i++) {
@@ -5563,13 +5625,25 @@ const Invoices = {
       pay.push('Paid sterling @ \u00a3' + gbp.rate);
       pay.push(eurPlain(t.sterlingEur) + ' = \u00a3' + ((gbp.gbpCents / 100) % 1 ? (gbp.gbpCents / 100).toFixed(2) : Math.round(gbp.gbpCents / 100)));
     }
-    pay.push((inv.paidInFull || (t.linesTotal > 0 && t.remainderCents <= 0)) ? 'PAID IN FULL' : 'remainder ' + eurPlain(Math.max(t.remainderCents, 0)));
+    if (isBal) {
+      pay.unshift('Invoice total ' + eurPlain(t.linesTotal));
+      // Marked paid in full with the last payment not typed in: that last
+      // payment is the balance.
+      const last = t.linesTotal - t.paidCents;
+      if (paidUp && last > 0) pay.push('Balance paid ' + eurPlain(last) + paySuffix(inv.paidMethod, inv.paidDate));
+      pay.push(paidUp ? 'PAID IN FULL' : 'REMAINING TO PAY ' + eurPlain(owe));
+    } else {
+      pay.push(paidUp ? 'PAID IN FULL' : 'remainder ' + eurPlain(owe));
+    }
+    // The tag bubble printed under the title.
+    const pill = t.linesTotal > 0
+      ? (paidUp ? '<span class="pill paid">\u2713 FULLY PAID</span>' : '<span class="pill owe">' + esc(eurPlain(owe)) + ' REMAINING</span>') : '';
     const terms = String(st.terms || '').split('\n').map(line => {
       const s = line.trim();
       if (!s) return '';
       return /^\d+\./.test(s) ? '<div class="th">' + esc(s.replace(/^\d+\.\s*/, '')) + '</div>' : '<div class="tl">' + esc(s) + '</div>';
     }).join('');
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(Invoices.pdfName(inv))}</title><style>
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(Invoices.pdfName(inv, kind))}</title><style>
       @page { size: A4; margin: 0; }
       body { margin: 0; font-family: "Georgia", "Times New Roman", serif; color: #3d4547; }
       .pg { width: 210mm; height: 296mm; box-sizing: border-box; display: flex; flex-direction: column;
@@ -5577,7 +5651,12 @@ const Invoices = {
       .pg:last-child { page-break-after: auto; }
       .inner { padding: 10mm 16mm 0; flex: 1; display: flex; flex-direction: column; }
       .logo { text-align: center; margin: 4mm 0 3mm; } .logo img { width: 56mm; }
-      .invttl { text-align: center; letter-spacing: .5em; font-size: 12pt; color: #536161; margin-bottom: 6mm; }
+      .invttl { text-align: center; letter-spacing: .5em; font-size: 12pt; color: #536161; margin-bottom: 3mm; }
+      .pillrow { text-align: center; margin-bottom: 5mm; min-height: 2mm; }
+      .pill { display: inline-block; border-radius: 999px; padding: 1.6mm 5mm; font-family: Arial, sans-serif; font-size: 9pt;
+        font-weight: 700; letter-spacing: .12em; }
+      .pill.paid { background: #e3f4ea; color: #1b6b43; border: 1.5px solid #1b6b43; }
+      .pill.owe { background: #fff2dc; color: #8a5300; border: 1.5px solid #c77700; }
       table.meta { width: 100%; font-size: 9.5pt; margin-bottom: 6mm; border-collapse: collapse; }
       .meta td.l { vertical-align: top; padding-top: 2mm; } .meta td.l div { margin-bottom: 3mm; }
       .meta td.r { vertical-align: top; text-align: left; line-height: 1.55; border-left: 1px solid #c9cecd; padding-left: 6mm; width: 60mm; }
@@ -5619,11 +5698,13 @@ const Invoices = {
     <div class="pg">
       <div class="inner">
         <div class="logo"><img src="${DARCYBOW_LOGO}" alt="Darcybow"></div>
-        <div class="invttl">INVOICE</div>
+        <div class="invttl">${isBal ? 'REMAINDER INVOICE' : 'INVOICE'}</div>
+        <div class="pillrow">${pill}</div>
         <table class="meta"><tr>
           <td class="l">
             <div>Invoice #: ${esc(num)}</div>
             <div>Issue Date: ${esc(dateStr)}</div>
+            ${isBal ? '<div>Original invoice: ' + esc(Invoices.num(inv)) + ' (' + esc(dmy(inv.issueDate)) + ')</div>' : ''}
           </td>
           <td class="r">
             <b>${esc(inv.contact.name)}</b><br>
@@ -5663,25 +5744,30 @@ const Invoices = {
     </body></html>`;
   },
   // Preview a SAVED invoice from anywhere (customer page card) \u2014 no builder needed.
-  previewFor(custId) {
+  previewFor(custId, kind) {
     if (!Invoices.unlocked() && !Invoices.unlock()) return;
     const inv = Invoices.invFor(custId);
     if (!inv) return;
-    Invoices._previewModal(inv);
+    Invoices._previewModal(inv, kind);
   },
-  preview() {
+  preview(kind) {
     const inv = Invoices.save(true);
     if (!inv) return;
-    Invoices._previewModal(inv);
+    Invoices._previewModal(inv, kind);
   },
-  _previewModal(inv) {
+  _previewModal(inv, kind) {
+    // The remainder invoice keeps its number and date from the first look.
+    if (kind === 'balance' && !inv.balance) { Invoices.ensureBalance(inv); Store.save(); Invoices._push(); }
+    const other = kind === 'balance' ? '' : 'balance';
     UI.modal(`
-      <h3>${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</h3>
+      <h3>${kind === 'balance' ? 'Remainder invoice ' + esc(Invoices.balNum(inv)) : 'Invoice 1 \u00b7 ' + esc(Invoices.num(inv))} ${Invoices.tag(inv)}</h3>
       <p class="small muted">Both pages exactly as they'll print. Download PDF opens the print dialog \u2014 choose \u201cSave as PDF\u201d.</p>
       <iframe class="invoice-frame" id="invframe" style="height:62vh"></iframe>
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
+        <button onclick="Invoices._previewModal((DB.invoices || []).find(i => i.id === '${inv.id}'), '${other}')">\u21c4 Show ${other ? 'remainder invoice' : 'invoice 1'}</button>
+        <button onclick="UI.closeModal(); Invoices.sendModal('${kind || ''}', '${inv.customerId}')">\u2709 Email this one</button>
         <button class="primary" onclick="document.getElementById('invframe').contentWindow.print()">\u2b07 Download PDF</button></div>`, true);
-    document.getElementById('invframe').srcdoc = Invoices.docHtml(inv);
+    document.getElementById('invframe').srcdoc = Invoices.docHtml(inv, false, kind);
   },
 };
 
@@ -6948,7 +7034,7 @@ Pages.invoices = () => {
       venue: venue || 'No event on file',
       eventDate: sv.date || '',
       overdue: !paid && days >= 30,
-      sent: !!inv.sentAt,
+      sent: !!(inv.sentAt || (inv.balance && inv.balance.sentAt)),
       dresses: [...new Set((dl.length ? dl : titled).map(l => dressBaseName(l.title).replace(/ Communion Dress$/i, '')))].join(' + ') };
   });
   const paidN = all.filter(r => r.paid).length;
@@ -6970,16 +7056,18 @@ Pages.invoices = () => {
   const table = sr => `<div class="tablewrap" style="margin-top:6px"><table>
     <thead><tr><th>Invoice</th><th>Customer</th><th>Dress</th><th class="num">Total</th><th>Status</th><th>Production</th><th style="min-width:230px">Mark paid / remind</th></tr></thead>
     <tbody>${sr.map(r => `<tr${r.overdue ? ' style="background:var(--red-bg)"' : ''}>
-      <td class="small"><a class="plain" style="cursor:pointer" onclick="Invoices.previewFor('${r.inv.customerId}')"><b>${esc(r.inv.code + '-' + r.inv.seq)}</b></a>
-        <br><span class="muted">${r.inv.sentAt ? '\u2709 sent ' + fmtDate(String(r.inv.sentAt).slice(0, 10)) : 'created ' + fmtDate(String(r.inv.createdAt || '').slice(0, 10))}</span></td>
+      <td class="small"><a class="plain" style="cursor:pointer" title="Invoice 1" onclick="Invoices.previewFor('${r.inv.customerId}')"><b>${esc(r.inv.code + '-' + r.inv.seq)}</b></a>
+        <span class="muted">${r.inv.sentAt ? '\u2709 ' + fmtDate(String(r.inv.sentAt).slice(0, 10)) : 'not sent'}</span>
+        <br><a class="plain" style="cursor:pointer" title="Remainder invoice" onclick="Invoices.previewFor('${r.inv.customerId}', 'balance')"><b>${esc(r.inv.code + '-' + r.inv.seq)}R</b></a>
+        <span class="muted">${r.inv.balance && r.inv.balance.sentAt ? '\u2709 ' + fmtDate(String(r.inv.balance.sentAt).slice(0, 10)) : 'not sent'}</span></td>
       <td><a class="plain" href="#/customer/${r.inv.customerId}"><b>${esc((r.c && r.c.name) || r.inv.contact.name)}</b></a>${r.c && r.c.daughterName ? `<br><span class="small muted">for ${esc(r.c.daughterName)}</span>` : ''}</td>
       <td class="small"><b>${esc(r.dresses || '\u2014')}</b>${r.inv.clashOverride ? ' <span class="badge b-red">Overridden</span>' : ''}</td>
       <td class="num">${eurPlain(r.t.linesTotal)}</td>
-      <td>${r.paid
-        ? `<span class="badge b-green">\u2713 PAID</span><br><span class="small muted">${r.inv.paidDate ? fmtDate(r.inv.paidDate) : ''}${r.inv.paidMethod || r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.paidMethod || r.inv.depositMethod) : ''}</span>`
+      <td>${Invoices.tag(r.inv)}<br>${r.paid
+        ? `<span class="small muted">${r.inv.paidDate ? fmtDate(r.inv.paidDate) : ''}${r.inv.paidMethod || r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.paidMethod || r.inv.depositMethod) : ''}</span>`
         : r.t.paidCents > 0
-          ? `<span class="badge b-amber">DEP ${eurPlain(r.t.paidCents)}</span><br><span class="small muted">owes ${eurPlain(Math.max(0, r.t.remainderCents))}${r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.depositMethod) : ''}</span>`
-          : '<span class="badge b-red">NOT PAID</span>'}
+          ? `<span class="small muted">deposit ${eurPlain(r.t.paidCents)}${r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.depositMethod) : ''}</span>`
+          : '<span class="small muted">nothing paid yet</span>'}
         ${r.overdue ? `<br><span class="badge b-red" title="${r.days} days since the invoice \u2014 time for a reminder">\u23f0 ${r.days} days</span>` : ''}</td>
       <td><button class="small${r.inv.inProduction ? ' primary' : ''}" onclick="Invoices.toggleProduction('${r.inv.id}')">${r.inv.inProduction ? '\ud83d\udce6 In production' : '\ud83d\udce6 Not sent yet'}</button></td>
       <td>${r.paid
@@ -6989,6 +7077,7 @@ Pages.invoices = () => {
             <select id="pm-${r.inv.id}" class="mini" style="width:92px">
               <option value="">how?</option><option>Cash</option><option>SumUp</option><option>Shopify</option></select>
             <button class="small primary" onclick="Invoices.markPaidOn('${r.inv.id}')">\u2713 Paid</button>
+            <button class="small" title="Email the remainder invoice for ${eurPlain(Math.max(0, r.t.remainderCents))}" onclick="Invoices.sendModal('balance', '${r.inv.customerId}')">\u2709 ${r.inv.balance && r.inv.balance.sentAt ? 'Resend' : 'Send'} remainder</button>
             ${r.overdue ? `<button class="small danger" onclick="Invoices.reminderModal('${r.inv.id}')">\u23f0 Send reminder</button>` : ''}
           </div>`}
         <div style="margin-top:5px">${picker(r)}</div></td>
@@ -7088,12 +7177,15 @@ Pages.invoice = (custId) => {
           ? `<button onclick="Invoices.markPaid('${custId}', false)">\u21a9 Not fully paid</button>`
           : `<button onclick="Invoices.markPaid('${custId}', true)">\u2713 Mark paid in full</button>`) : ''}
         <button onclick="Invoices.save()">\ud83d\udcbe Save</button>
-        <button onclick="Invoices.sendModal()">\u2709 Send invoice</button>
-        <button class="primary" onclick="Invoices.preview()">\ud83d\udc41 Preview &amp; Download PDF</button>
+        <button onclick="Invoices.sendModal()">\u2709 Send invoice 1</button>
+        <button class="primary" onclick="Invoices.preview()">\ud83d\udc41 Invoice 1 &amp; PDF</button>
+        ${existing && !Invoices.isEmpty(existing) ? `<button onclick="Invoices.preview('balance')">\ud83e\uddfe Remainder invoice</button>
+        <button onclick="Invoices.sendModal('balance')">\u2709 Send remainder invoice</button>` : ''}
       </div>
     </div>
     <div id="inv-clash">${Invoices.clashBanner(inv)}</div>
-    <p class="sub">Invoice #: <b id="inv-num-preview">${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</b>${existing && existing.sentAt ? ' \u00b7 <span class="badge b-teal">\u2709 sent ' + fmtDateTime(existing.sentAt) + '</span>' : ''}</p>
+    <p class="sub">Invoice 1 #: <b id="inv-num-preview">${esc(inv.code + ' - ' + inv.contact.name + ' - ' + inv.seq)}</b>${existing && existing.sentAt ? ' \u00b7 <span class="badge b-teal">\u2709 sent ' + fmtDateTime(existing.sentAt) + '</span>' : ''}
+      ${existing && !Invoices.isEmpty(existing) ? '<br>Remainder invoice #: <b>' + esc(Invoices.balNum(existing)) + '</b>' + (existing.balance && existing.balance.sentAt ? ' \u00b7 <span class="badge b-teal">\u2709 sent ' + fmtDateTime(existing.balance.sentAt) + '</span>' : ' <span class="muted">\u00b7 not sent yet</span>') : ''}</p>
     <datalist id="dresslist">${dressOptions}</datalist>
     <datalist id="schoollist">${Schools.list().map(x => `<option value="${esc(x)}">`).join('')}</datalist>
     <div class="cols2">
