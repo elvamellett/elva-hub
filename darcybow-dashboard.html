@@ -296,9 +296,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 111)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 112)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8147 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8237 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -311,7 +311,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 111</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 112</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -2568,7 +2568,7 @@ Pages.venues = () => {
 let venueDayFilter = '';
 let venueDayFilterVenue = '';
 let venueCustQuery = '';
-let venueBoughtFilter = ''; // '' all \u00b7 'bought' \u00b7 'not'
+let venueBoughtFilter = ''; // '' all \u00b7 'bought' \u00b7 'not' \u00b7 'paid' \u00b7 'owing'
 /* How many appointment slots a day has and which are still empty \u2014 for
    offering a slot over the phone. Capacity per hour = how many staff
    Appointly books in parallel that day (fallback: the settings figure);
@@ -2647,10 +2647,16 @@ Pages.venueDetail = (venueName) => {
   const vq = venueCustQuery.trim().toLowerCase();
   const boughtCust = new Set(allRowsFull.filter(r => Invoices.bought(r.c.id)).map(r => r.c.id));
   const allCust = new Set(allRowsFull.map(r => r.c.id));
+  const paidCust = new Set([...boughtCust].filter(id => Invoices.isPaid(Invoices.bought(id))));
+  const owingCust = new Set([...boughtCust].filter(id => !paidCust.has(id)));
+  const owingTotal = [...owingCust].reduce((s2, id) => s2 + Invoices.owing(Invoices.bought(id)), 0);
+  const inFilter = id => !venueBoughtFilter
+    || (venueBoughtFilter === 'bought' && boughtCust.has(id)) || (venueBoughtFilter === 'not' && !boughtCust.has(id))
+    || (venueBoughtFilter === 'paid' && paidCust.has(id)) || (venueBoughtFilter === 'owing' && owingCust.has(id));
   const allRows = allRowsFull.filter(r =>
     (!vq || (r.c.name + ' ' + (r.c.daughterName || '') + ' ' + (r.school || '') + ' ' + (r.c.email || '')).toLowerCase().includes(vq)
       || (vq.replace(/\D/g, '').length >= 5 && ImportService._phoneKey(r.c.phone).indexOf(ImportService._phoneKey(vq) || vq.replace(/\D/g, '')) > -1))
-    && (!venueBoughtFilter || (venueBoughtFilter === 'bought') === boughtCust.has(r.c.id)));
+    && inFilter(r.c.id));
   const dayName = d => new Date(d + 'T00:00').toLocaleDateString('en-IE', { weekday: 'long' });
   const dayChips = v.dates.map(d => ({
     date: d,
@@ -2678,7 +2684,7 @@ Pages.venueDetail = (venueName) => {
         <br><span class="small muted">${r.dress ? esc(r.dress.title) : ''}${r.o.eventDate ? ' \u00b7 event ' + fmtWd(r.o.eventDate) : ''}${r.school ? ' \u00b7 \ud83c\udfeb ' + esc(r.school) : ''}</span>
       </div>
       <div>${inv
-        ? `${Invoices.tag(inv)} <button class="small" onclick="event.stopPropagation(); Invoices.open('${r.c.id}')">\ud83e\uddfe See invoice</button>`
+        ? `${Invoices.tag(inv)} <button class="small" onclick="event.stopPropagation(); Invoices.open('${r.c.id}')">\ud83e\uddfe See invoice</button>${Invoices.isPaid(inv) ? '' : ` <button class="small" title="Email a payment reminder with her remainder invoice attached" onclick="event.stopPropagation(); Invoices.reminderModal('${inv.id}')">\u23f0 Remind</button>${inv.remindedAt ? '<br><span class="small muted">reminded ' + fmtDate(String(inv.remindedAt).slice(0, 10)) + '</span>' : ''}`}`
         : `<span class="badge b-amber">Hasn\u2019t bought</span>`}</div>
       ${appt && appt.staffName ? `<div><span class="badge b-grey">${esc(appt.staffName)}</span></div>` : ''}
       <div style="text-align:right">
@@ -2844,7 +2850,13 @@ Pages.venueDetail = (venueName) => {
       <span style="width:10px"></span>
       <button class="chip ${venueBoughtFilter === 'bought' ? 'on' : ''}" onclick="venueBoughtFilter = venueBoughtFilter === 'bought' ? '' : 'bought'; App.route()">\ud83e\uddfe Bought (${boughtCust.size})</button>
       <button class="chip ${venueBoughtFilter === 'not' ? 'on' : ''}" onclick="venueBoughtFilter = venueBoughtFilter === 'not' ? '' : 'not'; App.route()">Hasn\u2019t bought (${allCust.size - boughtCust.size})</button>
+      <span style="width:10px"></span>
+      <button class="chip ${venueBoughtFilter === 'paid' ? 'on' : ''}" onclick="venueBoughtFilter = venueBoughtFilter === 'paid' ? '' : 'paid'; App.route()">\u2713 Fully paid (${paidCust.size})</button>
+      <button class="chip ${venueBoughtFilter === 'owing' ? 'on' : ''}" onclick="venueBoughtFilter = venueBoughtFilter === 'owing' ? '' : 'owing'; App.route()">\u20ac Still owing (${owingCust.size}${owingTotal ? ' \u00b7 ' + eurPlain(owingTotal) : ''})</button>
     </div>
+    ${owingCust.size && (venueBoughtFilter === 'owing' || venueBoughtFilter === 'bought') ? `<div class="note" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <span>\u20ac <b>${owingCust.size} customer${owingCust.size === 1 ? '' : 's'} still owe${owingCust.size === 1 ? 's' : ''} ${eurPlain(owingTotal)}</b> at ${esc(v.venue)}.</span>
+      <button class="small primary" onclick="Invoices.bulkRemindModal(${esc(JSON.stringify([...owingCust].map(id => Invoices.bought(id).id)))})">\u23f0 Remind everyone who still owes</button></div>` : ''}
     ${body}`;
 };
 
@@ -4767,7 +4779,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 111'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 112'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4917,16 +4929,7 @@ const Invoices = {
     const subject = document.getElementById('em-subject').value;
     const bodyText = document.getElementById('em-body').value;
     if (!isTest && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { UI.err(new Error('That customer email doesn\'t look right.')); return; }
-    const payload = {
-      to, isTest: !!isTest, subject: isTest ? '[TEST] ' + subject : subject,
-      textBody: bodyText,
-      htmlBody: bodyText.split('\n').map(l => esc(l) || '&nbsp;').join('<br>'),
-      pdfHtml: Invoices.docHtml(inv, true, kind),
-      filename: Invoices.pdfName(inv, kind),
-      replyTo: Invoices.settings().emailTemplate.replyTo || '',
-      fromAddress: Invoices.settings().emailTemplate.fromAddress || '',
-      bcc: Invoices.settings().emailTemplate.copyTo || '',
-    };
+    const payload = Invoices._payload(inv, kind, to, subject, bodyText, isTest);
     UI.toast(isTest ? 'Sending test\u2026' : 'Sending invoice\u2026');
     google.script.run
       .withSuccessHandler(res => {
@@ -4936,6 +4939,7 @@ const Invoices = {
           if (r.warning) UI.toast('\u26a0 ' + r.warning, 9000);
           if (isTest) { UI.toast('Test sent to your own inbox (' + (r.sentTo || 'you') + ') \u2014 check it before sending to the customer.'); return; }
           if (kind === 'balance') Invoices.ensureBalance(inv).sentAt = nowIso(); else inv.sentAt = nowIso();
+          if (ctx.reminder) inv.remindedAt = nowIso();
           inv.updatedAt = nowIso();
           Store.save(); Invoices._push(); UI.closeModal(); App.route();
           UI.toast((kind === 'balance' ? 'Remainder invoice' : 'Invoice') + ' emailed to ' + to + ' \u2713');
@@ -4943,6 +4947,95 @@ const Invoices = {
       })
       .withFailureHandler(e => UI.err(e))
       .sendInvoiceEmail(Gate.token(), JSON.stringify(payload));
+  },
+  // The PDF always goes as a real ATTACHMENT - no link that can expire or
+  // be locked to the Darcybow account.
+  _payload(inv, kind, to, subject, bodyText, isTest) {
+    const et = Invoices.settings().emailTemplate;
+    return {
+      to, isTest: !!isTest, subject: isTest ? '[TEST] ' + subject : subject,
+      textBody: bodyText,
+      htmlBody: bodyText.split('\n').map(l => esc(l) || '&nbsp;').join('<br>'),
+      pdfHtml: Invoices.docHtml(inv, true, kind),
+      filename: Invoices.pdfName(inv, kind),
+      replyTo: et.replyTo || '', fromAddress: et.fromAddress || '', bcc: et.copyTo || '',
+    };
+  },
+  reminderText(inv) {
+    const vars = Invoices.emailVars(inv, 'balance');
+    return {
+      subject: 'Friendly reminder \u2014 invoice ' + vars.invoice_number,
+      body: 'Hi ' + vars.first_name + ',\n\nJust a friendly reminder about your Darcybow invoice ' + vars.original_number
+        + (inv.sentAt ? ' sent ' + fmtDate(String(inv.sentAt).slice(0, 10)) : '')
+        + '.\n\nTotal: ' + vars.total + '\nPaid so far: ' + vars.paid + '\nStill to pay: ' + vars.remainder
+        + '\n\nYour remainder invoice is attached as a PDF, with the payment details on it. If you have already paid, please ignore this \u2014 and thank you!\n\nWarm regards,\nDarcybow',
+    };
+  },
+  /* \u23f0 Remind everyone who still owes - one tap for a venue (or the
+     invoice book's filter). Each gets her own remainder invoice attached. */
+  bulkRemindModal(invIds) {
+    if (!Invoices.unlocked() && !Invoices.unlock()) return;
+    const list = (invIds || []).map(id => (DB.invoices || []).find(i => i.id === id)).filter(i => i && !Invoices.isPaid(i) && !Invoices.isEmpty(i));
+    if (!list.length) { UI.toast('Nobody here owes anything \u2014 all paid up.'); return; }
+    Invoices._bulk = list.map(i => i.id);
+    const total = list.reduce((s2, i) => s2 + Invoices.owing(i), 0);
+    UI.modal(`
+      <h3>\u23f0 Remind ${list.length} customer${list.length === 1 ? '' : 's'} who still owe${list.length === 1 ? 's' : ''} \u2014 ${eurPlain(total)}</h3>
+      <div id="em-health" class="note info">Checking the email connection\u2026</div>
+      <p class="small muted" style="margin-top:0">Each one gets a friendly reminder with <b>her own remainder invoice attached as a PDF</b> (no link to open). Untick anyone you don\u2019t want to chase.</p>
+      <div class="tablewrap" style="max-height:42vh; overflow:auto"><table>
+        <thead><tr><th></th><th>Customer</th><th class="num">Still owes</th><th>Last emailed</th></tr></thead>
+        <tbody>${list.map(i => {
+          const last = [i.sentAt, i.balance && i.balance.sentAt, i.remindedAt].filter(Boolean).sort().pop();
+          return `<tr><td><input type="checkbox" class="br-pick" value="${i.id}" ${i.contact.email ? 'checked' : 'disabled'}></td>
+            <td><b>${esc(i.contact.name)}</b><br><span class="small muted">${esc(i.contact.email || 'no email on the invoice')}</span></td>
+            <td class="num">${eurPlain(Invoices.owing(i))}</td>
+            <td class="small">${last ? fmtDate(String(last).slice(0, 10)) : '<span class="muted">never</span>'}${i.remindedAt ? '<br><span class="muted">reminded ' + fmtDate(String(i.remindedAt).slice(0, 10)) + '</span>' : ''}</td></tr>`;
+        }).join('')}</tbody></table></div>
+      <div id="br-progress" class="small" style="margin-top:8px"></div>
+      <div class="modalfoot">
+        <button onclick="UI.closeModal()">Cancel</button>
+        <button onclick="Invoices.bulkRemindSend(true)">\ud83d\udce7 Send me a test of the first</button>
+        <button class="primary" onclick="Invoices.bulkRemindSend(false)">\u23f0 Send reminders</button>
+      </div>`, true);
+    Invoices._checkHealth();
+  },
+  bulkRemindSend(isTest) {
+    if (typeof LiveSync === 'undefined' || !LiveSync.available()) { UI.err(new Error('Email sending only works from the live dashboard.')); return; }
+    const picked = [...document.querySelectorAll('.br-pick')].filter(x => x.checked).map(x => x.value);
+    const queue = picked.map(id => (DB.invoices || []).find(i => i.id === id)).filter(i => i && i.contact.email);
+    if (!queue.length) { UI.err(new Error('Tick at least one customer with an email.')); return; }
+    const prog = document.getElementById('br-progress');
+    const say = t => { if (prog) prog.innerHTML = t; };
+    if (isTest) queue.length = 1;
+    let done = 0, failed = [];
+    const next = () => {
+      if (!queue.length) {
+        if (!isTest) { Store.save(); Invoices._push(); }
+        say(isTest ? '\u2705 Test sent to your own inbox \u2014 check it, then send for real.'
+          : '\u2705 <b>' + done + ' reminder' + (done === 1 ? '' : 's') + ' sent.</b>' + (failed.length ? ' \u26a0 Not sent: ' + failed.map(esc).join(', ') : ''));
+        if (!isTest) { App.route(); UI.toast('\u23f0 ' + done + ' reminder' + (done === 1 ? '' : 's') + ' sent' + (failed.length ? ' \u2014 ' + failed.length + ' failed' : '') + '.', 6000); }
+        return;
+      }
+      const inv = queue.shift();
+      const tx = Invoices.reminderText(inv);
+      Invoices.ensureBalance(inv);
+      say('Sending ' + (done + failed.length + 1) + ' of ' + (done + failed.length + queue.length + 1) + ' \u2014 ' + esc(inv.contact.name) + '\u2026');
+      google.script.run
+        .withSuccessHandler(res => {
+          let r = {};
+          try { r = JSON.parse(res); } catch (e) { r = { error: 'odd reply' }; }
+          if (r.error) failed.push(inv.contact.name);
+          else {
+            done++;
+            if (!isTest) { inv.remindedAt = nowIso(); inv.balance.sentAt = inv.remindedAt; inv.updatedAt = nowIso(); }
+          }
+          next();
+        })
+        .withFailureHandler(() => { failed.push(inv.contact.name); next(); })
+        .sendInvoiceEmail(Gate.token(), JSON.stringify(Invoices._payload(inv, 'balance', inv.contact.email, tx.subject, tx.body, isTest)));
+    };
+    next();
   },
   _hash(s) { let h = 5381; for (const ch of String(s)) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return String(h); },
   unlocked() { const st = Invoices.settings(); return !!st.passHash && localStorage.getItem('darcybow-inv-unlock') === st.passHash; },
@@ -5458,17 +5551,13 @@ const Invoices = {
     if (!inv.contact.email) { UI.err(new Error('No email on the invoice \u2014 add one in \u201cBill to\u201d first.')); return; }
     InvDraft = JSON.parse(JSON.stringify(inv)); // sendEmail finds the saved invoice through this
     // A reminder carries the REMAINDER invoice (what's still owed).
-    Invoices._sendCtx = { id: inv.id, kind: 'balance' };
+    Invoices._sendCtx = { id: inv.id, kind: 'balance', reminder: true };
     const vars = Invoices.emailVars(inv, 'balance');
     const days = Invoices.daysSinceSent(inv);
-    const subject = 'Friendly reminder \u2014 invoice ' + vars.invoice_number;
-    const body = 'Hi ' + vars.first_name + ',\n\nJust a friendly reminder about invoice ' + vars.invoice_number
-      + (inv.sentAt ? ' sent ' + fmtDate(String(inv.sentAt).slice(0, 10)) : '')
-      + '.\n\nTotal: ' + vars.total + '\nStill to pay: ' + vars.remainder
-      + '\n\nThe invoice is attached again for handiness. If you have already paid, please ignore this \u2014 and thank you!\n\nWarm regards,\nDarcybow';
+    const { subject, body } = Invoices.reminderText(inv);
     UI.modal(`
       <h3>\u23f0 Payment reminder \u2014 ${esc(vars.invoice_number)}</h3>
-      <p class="small muted" style="margin-top:0">${days} day${days === 1 ? '' : 's'} since the invoice ${inv.sentAt ? 'was emailed' : 'was created'}.</p>
+      <p class="small muted" style="margin-top:0">${days} day${days === 1 ? '' : 's'} since the invoice ${inv.sentAt ? 'was emailed' : 'was created'}${inv.remindedAt ? ' \u00b7 last reminded ' + fmtDate(String(inv.remindedAt).slice(0, 10)) : ''}. Still owes <b>${eurPlain(Invoices.owing(inv))}</b> \u2014 her remainder invoice goes as a PDF attachment.</p>
       <div id="em-health" class="note info">Checking the email connection\u2026</div>
       <label class="f">To</label><input id="em-to" style="width:100%" value="${esc(inv.contact.email)}">
       <label class="f">Subject</label><input id="em-subject" style="width:100%" value="${esc(subject)}">
@@ -7068,7 +7157,7 @@ Pages.invoices = () => {
         : r.t.paidCents > 0
           ? `<span class="small muted">deposit ${eurPlain(r.t.paidCents)}${r.inv.depositMethod ? ' \u00b7 ' + esc(r.inv.depositMethod) : ''}</span>`
           : '<span class="small muted">nothing paid yet</span>'}
-        ${r.overdue ? `<br><span class="badge b-red" title="${r.days} days since the invoice \u2014 time for a reminder">\u23f0 ${r.days} days</span>` : ''}</td>
+        ${r.overdue ? `<br><span class="badge b-red" title="${r.days} days since the invoice \u2014 time for a reminder">\u23f0 ${r.days} days</span>` : ''}${r.inv.remindedAt ? '<br><span class="small muted">reminded ' + fmtDate(String(r.inv.remindedAt).slice(0, 10)) + '</span>' : ''}</td>
       <td><button class="small${r.inv.inProduction ? ' primary' : ''}" onclick="Invoices.toggleProduction('${r.inv.id}')">${r.inv.inProduction ? '\ud83d\udce6 In production' : '\ud83d\udce6 Not sent yet'}</button></td>
       <td>${r.paid
         ? `<button class="small" onclick="Invoices.unmarkPaid('${r.inv.id}')">\u21a9 Unmark paid</button>`
@@ -7078,7 +7167,7 @@ Pages.invoices = () => {
               <option value="">how?</option><option>Cash</option><option>SumUp</option><option>Shopify</option></select>
             <button class="small primary" onclick="Invoices.markPaidOn('${r.inv.id}')">\u2713 Paid</button>
             <button class="small" title="Email the remainder invoice for ${eurPlain(Math.max(0, r.t.remainderCents))}" onclick="Invoices.sendModal('balance', '${r.inv.customerId}')">\u2709 ${r.inv.balance && r.inv.balance.sentAt ? 'Resend' : 'Send'} remainder</button>
-            ${r.overdue ? `<button class="small danger" onclick="Invoices.reminderModal('${r.inv.id}')">\u23f0 Send reminder</button>` : ''}
+            <button class="small${r.overdue ? ' danger' : ''}" onclick="Invoices.reminderModal('${r.inv.id}')">\u23f0 Remind</button>
           </div>`}
         <div style="margin-top:5px">${picker(r)}</div></td>
     </tr>`).join('')}</tbody></table></div>`;
@@ -7134,6 +7223,7 @@ Pages.invoices = () => {
         <button class="chip ${invPaidFilter === 'unpaid' ? 'on' : ''}" onclick="invPaidFilter = 'unpaid'; App.route()">\u26a0 Not paid (${all.length - paidN})</button>
         <button class="chip ${invPaidFilter === 'paid' ? 'on' : ''}" onclick="invPaidFilter = 'paid'; App.route()">\u2713 Paid (${paidN})</button>
       </div>
+      ${rows.some(r => !r.paid) ? `<button class="small primary" onclick="Invoices.bulkRemindModal(${esc(JSON.stringify(rows.filter(r => !r.paid).map(r => r.inv.id)))})">\u23f0 Remind all ${rows.filter(r => !r.paid).length} not paid${invVenueFilter ? ' at ' + esc(invVenueFilter) : ''}</button>` : ''}
     </div>
     <div class="chips" style="margin-bottom:10px">
       ${(Invoices._venues = venues) && venues.map((v2, i) => `<button class="chip ${invVenueFilter === v2 ? 'on' : ''}" onclick="Invoices.toggleVenueFilter(${i})">\ud83d\udccd ${esc(v2)}</button>`).join('')}

@@ -13,7 +13,7 @@ page.on('pageerror', e => errors.push(String(e)));
 page.on('dialog', d => d.accept());
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
-check('version stamp is 111', (await page.locator('#sidebar').textContent()).includes('version 111'));
+check('version stamp is 112', (await page.locator('#sidebar').textContent()).includes('version 112'));
 
 const day = new Date(Date.now() + 10 * 86400000);
 const ISO = day.toISOString().slice(0, 10);

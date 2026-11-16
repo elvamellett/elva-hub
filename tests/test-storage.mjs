@@ -23,7 +23,7 @@ const mkShop = n => ({
 
 const html = fs.readFileSync('/home/user/elva-hub/darcybow-dashboard.html');
 const srv = http.createServer((req, res) => {
-  if (req.url.startsWith('/version.json')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"version":111}'); return; }
+  if (req.url.startsWith('/version.json')) { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"version":112}'); return; }
   res.writeHead(200, { 'content-type': 'text/html' }); res.end(html);
 });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
@@ -49,7 +49,7 @@ const base = 'http://127.0.0.1:' + srv.address().port + '/';
   page.on('pageerror', e => errors.push('A: ' + e));
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1200);
-  check('A: version stamp is 111', (await page.content()).includes('version 111'));
+  check('A: version stamp is 112', (await page.content()).includes('version 112'));
   const err = await page.evaluate(p => { try { LiveSync.applyPayload(p); return ''; } catch (e) { return String(e); } }, mkShop(120));
   await page.waitForTimeout(800);
   check('A: sync with a FULL quick store does not fail', err === '');
