@@ -472,6 +472,16 @@ function ownerEmail_() {
  */
 function emailHealth(siteTok) {
   gate_(siteTok);
+  var ms = outlookConfig_();
+  if (ms) {
+    var o = { canSend: false, account: ms.sender || '(set MS_SENDER)', error: '', detail: '', via: 'outlook' };
+    try {
+      outlookToken_(ms, true);
+      o.canSend = !!ms.sender;
+      o.detail = 'via Outlook (Microsoft 365) · saved in ' + (ms.sender || '?') + ' Sent Items' + (ms.sender ? '' : ' · MS_SENDER missing');
+    } catch (eMs) { o.error = String((eMs && eMs.message) || eMs); o.detail = o.error; }
+    return JSON.stringify(o);
+  }
   var out = { canSend: false, account: '', error: '', detail: '' };
   try {
     GmailApp.getAliases();
@@ -510,16 +520,83 @@ function testEmailSetup() {
   GmailApp.sendEmail(me, 'Darcybow test', 'The dashboard can send email — all working. (Sent to: ' + me + ')');
 }
 
+/* ---- Outlook (Microsoft 365) sending ----
+   When MS_TENANT_ID, MS_CLIENT_ID and MS_CLIENT_SECRET are set in Script
+   Properties, invoice emails go out through the business's own Outlook
+   mailbox (MS_SENDER, e.g. edelle@darcybow.ie) via Microsoft Graph - they
+   come FROM that address and land in its Sent Items. Without them, Gmail
+   sends as before. The secret lives only in Script Properties. */
+function outlookConfig_() {
+  var pr = PropertiesService.getScriptProperties();
+  var g = function (k) { return String(pr.getProperty(k) || '').trim(); };
+  var c = { tenant: g('MS_TENANT_ID'), id: g('MS_CLIENT_ID'), secret: g('MS_CLIENT_SECRET'), sender: g('MS_SENDER') };
+  return (c.tenant && c.id && c.secret) ? c : null;
+}
+function outlookToken_(c, fresh) {
+  var cache = CacheService.getScriptCache();
+  var key = 'ms_tok_' + c.id;
+  if (!fresh) { var t = cache.get(key); if (t) return t; }
+  var r = UrlFetchApp.fetch('https://login.microsoftonline.com/' + encodeURIComponent(c.tenant) + '/oauth2/v2.0/token', {
+    method: 'post', muteHttpExceptions: true,
+    payload: { client_id: c.id, client_secret: c.secret, scope: 'https://graph.microsoft.com/.default', grant_type: 'client_credentials' },
+  });
+  var d = {};
+  try { d = JSON.parse(r.getContentText()); } catch (e) { /* below */ }
+  if (r.getResponseCode() !== 200 || !d.access_token) {
+    throw new Error('Microsoft sign-in failed: ' + String(d.error_description || d.error || ('HTTP ' + r.getResponseCode())).split('\n')[0]
+      + ' - check MS_TENANT_ID, MS_CLIENT_ID and MS_CLIENT_SECRET (secrets expire - make a new one in Entra if it has).');
+  }
+  cache.put(key, d.access_token, Math.max(60, Math.min(21600, (d.expires_in || 3600) - 120)));
+  return d.access_token;
+}
+function outlookSend_(c, sender, m) {
+  var addr = function (a) { return [{ emailAddress: { address: a } }]; };
+  var msg = {
+    subject: m.subject,
+    body: { contentType: 'HTML', content: m.html },
+    toRecipients: addr(m.to),
+    attachments: [{ '@odata.type': '#microsoft.graph.fileAttachment', name: m.pdf.getName(), contentType: 'application/pdf',
+      contentBytes: Utilities.base64Encode(m.pdf.getBytes()) }],
+  };
+  if (m.replyTo) msg.replyTo = addr(m.replyTo);
+  if (m.bcc) msg.bccRecipients = addr(m.bcc);
+  var url = 'https://graph.microsoft.com/v1.0/users/' + encodeURIComponent(sender) + '/sendMail';
+  for (var attempt = 0; attempt < 2; attempt++) {
+    var r = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { Authorization: 'Bearer ' + outlookToken_(c, attempt > 0) },
+      payload: JSON.stringify({ message: msg, saveToSentItems: true }) });
+    var code = r.getResponseCode();
+    if (code === 202 || code === 200) return;
+    if (code === 401 && attempt === 0) continue; // stale token - once more with a fresh one
+    var d = {};
+    try { d = JSON.parse(r.getContentText()); } catch (e) { /* below */ }
+    var why = (d.error && (d.error.message || d.error.code)) || ('HTTP ' + code);
+    if (code === 403 || code === 401) why += ' - in Microsoft Entra give the app the Mail.Send APPLICATION permission and press "Grant admin consent".';
+    if (code === 404) why += ' - MS_SENDER (' + sender + ') must be a real Outlook mailbox in this Microsoft account.';
+    throw new Error('Outlook refused the email: ' + why);
+  }
+}
+
 function sendInvoiceEmail(siteTok, payload) {
   gate_(siteTok);
   try {
     var p = JSON.parse(payload);
-    var to = p.isTest ? ownerEmail_() : String(p.to || '').trim();
+    var ms = outlookConfig_();
+    var msSender = ms ? (ms.sender || String(p.fromAddress || '').trim()) : '';
+    if (ms && !msSender) return JSON.stringify({ error: 'Outlook is connected but no sender is set - add MS_SENDER (e.g. edelle@darcybow.ie) in Script Properties.' });
+    // A test goes to the sending inbox itself (Outlook) or this Google account.
+    var to = p.isTest ? (ms ? msSender : ownerEmail_()) : String(p.to || '').trim();
     if (!to) return JSON.stringify({ error: p.isTest
       ? 'Could not work out your own address for the test — try “Send to customer” with your own email typed in the To box instead.'
       : 'No recipient email.' });
     var pdf = Utilities.newBlob(p.pdfHtml, 'text/html', p.filename + '.html')
       .getAs('application/pdf').setName(p.filename + '.pdf');
+    if (ms) {
+      // The business inbox already keeps it in Sent Items - no copy needed to itself.
+      var bcc = (p.bcc && !p.isTest && String(p.bcc).toLowerCase() !== msSender.toLowerCase() && String(p.bcc).toLowerCase() !== to.toLowerCase()) ? String(p.bcc).trim() : '';
+      outlookSend_(ms, msSender, { to: to, subject: p.subject, html: p.htmlBody, pdf: pdf, replyTo: p.replyTo || '', bcc: bcc });
+      return JSON.stringify({ ok: true, sentTo: to, via: 'outlook', from: msSender });
+    }
     var opts = { htmlBody: p.htmlBody, attachments: [pdf], name: 'Darcybow' };
     if (p.replyTo) opts.replyTo = p.replyTo;
     // Blind copy of every real send to the business inbox (Outlook), so the
