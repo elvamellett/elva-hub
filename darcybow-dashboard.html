@@ -296,9 +296,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 113)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 114)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8263 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8294 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -311,7 +311,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 113</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 114</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -1602,7 +1602,7 @@ Pages.dashboard = () => {
       : (typeof LiveSync !== 'undefined' && LiveSync.available())
         ? (LiveSync.syncing
           ? '<div class="note info" style="margin:0 0 16px">\u23f3 <b>Loading your live data\u2026</b> The first time on a new device this can take up to a minute \u2014 after that it opens straight away.</div>'
-          : `<div class="note err" style="margin:0 0 16px">\u26a0 <b>Couldn\u2019t load the live data.</b> ${LiveSync.lastError ? 'Reason: <b>' + esc(LiveSync.lastError) + '</b>. ' : ''}<button class="small primary" onclick="LiveSync.sync()">\u27f3 Try again</button></div>`)
+          : `<div class="note err" style="margin:0 0 16px">\u26a0 <b>Couldn\u2019t load the live data.</b> ${LiveSync.lastError ? 'Reason: <b>' + esc(LiveSync.lastError) + '</b>. ' : ''}<button class="small primary" onclick="LiveSync.sync()">\u27f3 Try again</button> <button class="small" onclick="LiveSync.testServer()">\ud83d\udd0e Test the Google server</button></div>`)
         : `<div class="seam">\ud83d\udd0c Sample data \u2014 nothing connected yet. <a class="plain" href="#/import"><b>Connect Shopify + Appointly \u2192</b></a> Sync live via the free Google web app, or drop in CSV exports \u2014 either fills these screens with the real customers and booking answers.</div>`}
     ${(() => {
       const wl = DB.customers.filter(x => x.waitlist && !x.cancelled)
@@ -4092,7 +4092,17 @@ var DARCY_DEFAULT_SERVER = 'https:\/\/script.google.com\/macros\/s\/AKfycbxDO04l
               if (j.err) throw new Error(j.err);
               ok(j.result);
             })
-            .catch(function (e4) { fail(e4); });
+            .catch(function (e4) {
+              // The browser only says "Failed to fetch" when Google answers
+              // with one of ITS OWN error pages (broken script, archived
+              // deployment, access changed) or the internet dropped.
+              var m4 = String((e4 && e4.message) || e4);
+              if (/failed to fetch|networkerror|load failed|network request failed/i.test(m4)) {
+                e4 = new Error('Couldn\u2019t reach the Google server. If the internet is working, the Google side has a problem \u2014 go to Connect data and press \u201cTest the Google server\u201d to see Google\u2019s own message.');
+                e4.unreachable = true;
+              }
+              fail(e4);
+            });
         };
       },
     });
@@ -4140,6 +4150,26 @@ const LiveSync = {
   syncing: false,
   _diag: null,
   available: () => typeof google !== 'undefined' && google.script && google.script.run,
+  // Opens the web app itself. Working: the dashboard loads there. Broken:
+  // Google shows the real reason (script error, access, deployment gone).
+  testServer() {
+    let u = '';
+    try { u = localStorage.getItem('darcybow-server') || ''; } catch (e) { /* private mode */ }
+    if (!u && typeof DARCY_DEFAULT_SERVER !== 'undefined') u = DARCY_DEFAULT_SERVER;
+    if (!u) { UI.err(new Error('No Google server link on this device.')); return; }
+    window.open(u, '_blank');
+    UI.modal(`
+      <h3>\ud83d\udd0e Testing the Google server</h3>
+      <p class="small" style="margin-top:0">A new tab just opened the dashboard\u2019s Google web app. What does it show?</p>
+      <ul class="small" style="line-height:1.7; padding-left:20px">
+        <li><b>The dashboard (or its password page)</b> \u2192 Google is fine. The failure was the internet or a one-off \u2014 press \u27f3 Sync again.</li>
+        <li><b>\u201cScript function not found\u201d, a syntax error or \u201cserver error\u201d</b> \u2192 the code in the Apps Script project (Code.gs) is broken \u2014 usually an incomplete paste. Put the full Code.gs back and redeploy the existing deployment (Deploy \u2192 Manage deployments \u2192 \u270f \u2192 New version).</li>
+        <li><b>A Google sign-in page or \u201cYou need access\u201d</b> \u2192 the deployment\u2019s \u201cWho has access\u201d is no longer <b>Anyone</b>. Set it back to Anyone.</li>
+        <li><b>\u201cSorry, unable to open the file\u201d / not found</b> \u2192 the deployment was archived or deleted.</li>
+      </ul>
+      <p class="small muted">Screenshot that tab if you\u2019re not sure \u2014 it says exactly what\u2019s wrong.</p>
+      <div class="modalfoot"><button class="primary" onclick="UI.closeModal()">OK</button></div>`);
+  },
   // One-screen debugging aid: what Shopify sent per order and how it was read.
   report() {
     const rows = LiveSync._diag;
@@ -4703,6 +4733,7 @@ Pages.importPage = () => {
       ${DB.scopeWarning ? `<div class="note err">\u26a0 ${esc(DB.scopeWarning)}</div>` : ''}
       <button class="primary" onclick="LiveSync.sync()">\u27f3 Sync from Shopify now</button>
       <button onclick="LiveSync.report()" style="margin-left:8px">\ud83d\udd0d Booking data report</button>
+      <button onclick="LiveSync.testServer()" style="margin-left:8px" title="Opens the Google web app in a new tab">\ud83d\udd0e Test the Google server</button>
       ${DB.importInfo && DB.importInfo.live ? `<span class="small muted" style="margin-left:10px">Last sync ${fmtDateTime(DB.importInfo.at)}</span>` : ''}
       <p class="small muted" style="margin-bottom:0; margin-top:10px">It also syncs by itself every time the page opens. If a sync fails, check the Script properties in the Apps Script project settings: SHOPIFY_STORE plus either SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET or SHOPIFY_TOKEN.</p>
     </div>`
@@ -4779,7 +4810,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 113'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 114'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';

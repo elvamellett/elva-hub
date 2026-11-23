@@ -25,7 +25,7 @@ await page.addInitScript(() => {
 });
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1200);
-check('version stamp is 113', (await page.content()).includes('version 113'));
+check('version stamp is 114', (await page.content()).includes('version 114'));
 const day = new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10);
 const MDY = new Date(day + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 await page.evaluate(([MDY]) => {

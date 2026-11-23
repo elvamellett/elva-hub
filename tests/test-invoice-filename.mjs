@@ -9,7 +9,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(String(e)));
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(800);
-check('version stamp is 113', (await page.content()).includes('version 113'));
+check('version stamp is 114', (await page.content()).includes('version 114'));
 const names = await page.evaluate(() => ['Jean/Thomas O\'Reilly', 'Jean:Thomas O\'Reilly', 'Ann \\ Bob', 'Mary "May" Byrne?', 'Plain Name']
   .map(n => Invoices.pdfName({ code: 'MER1', seq: 54, contact: { name: n } })));
 console.log(names);
