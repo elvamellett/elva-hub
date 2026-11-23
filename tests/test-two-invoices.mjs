@@ -25,7 +25,7 @@ await page.addInitScript(() => {
 });
 await page.goto('file:///home/user/elva-hub/darcybow-dashboard.html', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1200);
-check('version stamp is 112', (await page.content()).includes('version 112'));
+check('version stamp is 113', (await page.content()).includes('version 113'));
 
 await page.evaluate(() => {
   LiveSync.applyPayload({
