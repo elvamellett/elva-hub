@@ -296,9 +296,9 @@ setTimeout(function () {
   d.id = 'bootfail';
   d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:14px 18px;font:14px/1.6 -apple-system,"Segoe UI",Arial,sans-serif';
   var cut = !document.getElementById('df-eof'); // marker sits on the file's last line
-  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 112)</span><br>' +
+  d.innerHTML = '<b>\u26a0 The dashboard code did not start.</b> <span style="opacity:.85">(this file: version 113)</span><br>' +
     (cut
-      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8237 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
+      ? '<b>THIS COPY OF THE FILE IS CUT SHORT</b> \u2014 the end of the file never arrived. The full file is exactly <b>8263 lines</b> ending in &lt;/html&gt;. Delete everything in index.html and paste a complete copy \u2014 use the unzipped file Claude sent, never a preview window.'
       : window.__bootErrors.length
         ? 'The file is complete but hit an error: <b>' + window.__bootErrors[0].replace(/</g, '&lt;') + '</b> \u2014 screenshot this bar and send it to Claude.'
         : 'The file is complete but never finished starting \u2014 screenshot this bar and send it to Claude.');
@@ -311,7 +311,7 @@ setTimeout(function () {
       <button id="menubtn" onclick="App.toggleMenu()">&#x2630; Menu</button></div>
     <nav id="nav"></nav>
     <div class="demo"><button id="resetbtn" onclick="App.resetDemo()">&#x21BA; Reset demo data</button>
-      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 112</div></div>
+      <div style="text-align:center; margin-top:7px; font-size:.68rem; color:#7a5f6f; letter-spacing:.06em">version 113</div></div>
   </aside>
   <main id="main"></main>
   <div id="modalroot"><div class="scrim" onclick="UI.closeModal()"></div><div class="box" id="modalbox"></div></div>
@@ -4779,7 +4779,7 @@ const INV_DEFAULT_TERMS = [
 // stored settings upgrade to the current wording automatically.
 const INV_TERMS_2026_V1 = INV_DEFAULT_TERMS.replace('finalizing', 'finalising').replace('personalized', 'personalised');
 const eurPlain = c => '\u20ac' + ((c / 100) % 1 ? (c / 100).toFixed(2) : String(Math.round(c / 100)));
-const APP_VERSION = parseInt('version 112'.replace(/\D/g, ''), 10);
+const APP_VERSION = parseInt('version 113'.replace(/\D/g, ''), 10);
 // Tap-to-call: phone numbers render as tel: links, so on a phone one tap
 // rings the customer straight from the dashboard.
 const telLink = ph => ph ? `<a class="plain" href="tel:${esc(String(ph).replace(/[^+\d]/g, ''))}" onclick="event.stopPropagation()">${esc(ph)}</a>` : '\u2014';
@@ -4791,11 +4791,37 @@ const PAY_METHODS = ['Cash', 'SumUp', 'Shopify'];
 
 let InvDraft = null;
 
+/* "Save as PDF" names the file after the page title. A dot in it ("Mrs.
+   Byrne", the \u00b7 in sheet titles) made the Mac treat everything after it
+   as the file type - no ".pdf", and the file wouldn't open as a PDF. So
+   every printable page gets a clean name: no dots or symbols. */
+function fileTitle(s) {
+  return String(s || '').replace(/\s*[\/\\]\s*/g, ' & ').replace(/[\u2014\u2013]/g, '-')
+    .replace(/[.:*?"<>|\u00b7\u2022\u2026,;]/g, ' ').replace(/\s+/g, ' ')
+    .replace(/\s+-(\s+-)+\s+/g, ' - ')
+    .replace(/^[\s\-&]+|[\s\-&]+$/g, '').trim() || 'Darcybow';
+}
+function printFrame(id) {
+  const f = document.getElementById(id);
+  if (!f || !f.contentWindow) return;
+  let name = 'Darcybow';
+  try { name = fileTitle(f.contentDocument.title); f.contentDocument.title = name; } catch (e) { /* keep default */ }
+  // Some browsers name the PDF after the MAIN page instead - give it the
+  // same name while the print window is open, then put it back.
+  const was = document.title;
+  document.title = name;
+  let back = false;
+  const restore = () => { if (back) return; back = true; document.title = was; };
+  try { f.contentWindow.addEventListener('afterprint', restore); } catch (e) { /* fine */ }
+  window.addEventListener('afterprint', restore);
+  setTimeout(restore, 60000);
+  f.contentWindow.focus();
+  f.contentWindow.print();
+}
 const Invoices = {
   // The PDF's FILE name: "Jean/Thomas" becomes "Jean & Thomas". A slash or
   // colon in the name broke OneDrive attachments ("can't find the link").
-  pdfName: (inv, kind) => (inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq + (kind === 'balance' ? 'R' : ''))
-    .replace(/\s*[\/\\]\s*/g, ' & ').replace(/[:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim(),
+  pdfName: (inv, kind) => fileTitle(inv.code + ' - ' + ((inv.contact && inv.contact.name) || '') + ' - ' + inv.seq + (kind === 'balance' ? 'R' : '')),
   /* ---- Two invoices per sale ----
      Invoice 1 goes out at the sale (items, deposit, balance due). The
      REMAINDER invoice ("...-54R") asks for what's left - same items and
@@ -5855,7 +5881,7 @@ const Invoices = {
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
         <button onclick="Invoices._previewModal((DB.invoices || []).find(i => i.id === '${inv.id}'), '${other}')">\u21c4 Show ${other ? 'remainder invoice' : 'invoice 1'}</button>
         <button onclick="UI.closeModal(); Invoices.sendModal('${kind || ''}', '${inv.customerId}')">\u2709 Email this one</button>
-        <button class="primary" onclick="document.getElementById('invframe').contentWindow.print()">\u2b07 Download PDF</button></div>`, true);
+        <button class="primary" onclick="printFrame('invframe')">\u2b07 Download PDF</button></div>`, true);
     document.getElementById('invframe').srcdoc = Invoices.docHtml(inv, false, kind);
   },
 };
@@ -7420,7 +7446,7 @@ const Actions = {
       <p class="small muted">${blurb}</p>
       <iframe class="invoice-frame" id="csframe"></iframe>
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
-        <button class="primary" onclick="document.getElementById('csframe').contentWindow.print()">\ud83d\udda8 Print / save PDF (${count} sheet${count === 1 ? '' : 's'})</button></div>`, true);
+        <button class="primary" onclick="printFrame('csframe')">\ud83d\udda8 Print / save PDF (${count} sheet${count === 1 ? '' : 's'})</button></div>`, true);
     document.getElementById('csframe').srcdoc = html;
   },
   /* One customer \u2192 one generic sheet row (used by the all-customers and
@@ -8117,7 +8143,7 @@ const Actions = {
       <p class="small muted">One sheet for the whole day: time, customer, who it's for, dress and their booking answers. Balances are deliberately left off.</p>
       <iframe class="invoice-frame" id="runframe"></iframe>
       <div class="modalfoot"><button onclick="UI.closeModal()">Close</button>
-        <button class="primary" onclick="document.getElementById('runframe').contentWindow.print()">\ud83d\udda8 Print / save PDF</button></div>`, true);
+        <button class="primary" onclick="printFrame('runframe')">\ud83d\udda8 Print / save PDF</button></div>`, true);
     document.getElementById('runframe').srcdoc = html;
   },
 };
